@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertex Control - Admin Panel</title>
+
+    <!-- SEO & Basic Meta -->
+    <meta name="description"
+        content="Centralized control panel for Vertex content, user management, and system administration.">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- Open Graph / Facebook / WhatsApp / Discord -->
+    <!-- Bu kısım link paylaşıldığında görünecek başlık, açıklama ve resimdir -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://admin.vertexishere.com/">
+    <meta property="og:title" content="Vertex Control">
+    <meta property="og:description"
+        content="Secure Admin Access: Manage content, users, and server status directly from the Vertex Control Panel.">
+    <meta property="og:image" content="https://admin.vertexishere.com/favicon.png">
+    <meta property="og:image:alt" content="Vertex Control Logo">
+    <meta property="og:site_name" content="Vertex Admin">
+
+    <!-- Twitter (X) -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:url" content="https://admin.vertexishere.com/">
+    <meta name="twitter:title" content="Vertex Control">
+    <meta name="twitter:description" content="Secure Admin Access: Manage content, users, and server status.">
+    <meta name="twitter:image" content="https://admin.vertexishere.com/favicon.png">
+
+    <!-- Favicons -->
+    <link rel="icon" href="favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="favicon.png">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <script>
+        // Inline script to set the theme from localStorage before the page loads
+        (function () {
+            try {
+                const theme = localStorage.getItem('theme');
+                if (theme === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                }
+            } catch (e) {
+                console.error("Could not set theme from localStorage", e);
+            }
+        })();
+    </script>
+    <script>
+        // Domain enforcement script
+        var requiredDomain = "admin.vertexishere.com";
+        var currentDomain = window.location.hostname;
+        if (currentDomain !== requiredDomain && currentDomain !== "localhost" && currentDomain !== "127.0.0.1") {
+            window.location.replace("https://" + requiredDomain + window.location.pathname + window.location.search);
+        }
+    </script>
+</head>
+
+<body>
+
+    <div id="app-loader">
+        <svg class="loader-logo" viewBox="0 0 100 100" width="120">
+            <polygon class="logo-bg" points="50,15 95,85 5,85"></polygon>
+            <polygon class="logo-line" points="50,15 95,85 5,85"></polygon>
+        </svg>
+        <p>Initializing Control Panel</p>
+    </div>
+
+    <ul class="bg-animation">
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+    </ul>
+    <div id="toast-container"></div>
+
+    <div id="login-container" class="container">
+        <h1>Vertex Control</h1>
+        <h2>Admin Panel Access</h2>
+        <input type="email" id="email" placeholder="Administrator Email">
+        <input type="password" id="password" placeholder="Password">
+        <button id="login-btn">Authenticate</button>
+        <div class="login-divider">
+            <span>or</span>
+        </div>
+        <div class="social-login-buttons">
+            <button id="google-login-btn" class="social-btn google-btn" type="button">
+                <span class="social-btn-icon">
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                </span>
+                <span class="social-btn-text">Sign in with Google</span>
+            </button>
+            <button id="apple-login-btn" class="social-btn apple-btn" type="button">
+                <span class="social-btn-icon">
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                    </svg>
+                </span>
+                <span class="social-btn-text">Sign in with Apple</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="container" style="display:none;">
+
+        <div class="main-header-wrapper">
+            <div class="panel-header">
+                <h2>Vertex Control</h2>
+            </div>
+            <div class="header-actions">
+                <button id="theme-toggle-btn" title="Toggle Theme">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+                    </svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+                    </svg>
+                </button>
+                <button id="logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <div class="dashboard-layout">
+            <div class="left-column">
+                <div id="model-manager" class="dashboard-column">
+                    <h3>Manage Curated Models (Offline & Roleplay)</h3>
+                    <form id="model-form">
+
+                        <div class="form-section">
+                            <h4>Model Type & ID</h4>
+                            <div class="switch-container">
+                                <span>Roleplay Model</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="model-type-switch">
+                                    <span class="slider round"></span>
+                                </label>
+                                <span>Offline Model</span>
+                            </div>
+                            <label for="model-producer">Producer</label>
+                            <p class="form-hint">The original company behind the model (e.g., Google, Meta).</p>
+                            <input type="text" id="model-producer" placeholder="Producer (e.g., Google, Meta)" required>
+                            <label for="model-id">Unique Model ID</label>
+                            <p class="form-hint">This ID is permanent and cannot be changed after creation (e.g.,
+                                tinyllama, teacher).</p>
+                            <input type="text" id="model-id" placeholder="Unique Model ID (e.g., tinyllama, teacher)"
+                                required>
+                        </div>
+
+                        <div class="form-section">
+                            <h4>Model Details (English)</h4>
+                            <input type="text" id="model-title" placeholder="Title" required>
+                            <textarea id="model-summary" placeholder="Summary (Short Description)" rows="2"
+                                required></textarea>
+                            <textarea id="model-description" placeholder="Full Description" rows="4"
+                                required></textarea>
+
+                            <!-- Roleplay-specific fields -->
+                            <div id="roleplay-fields">
+                                <textarea id="model-role" placeholder="Role/System Prompt" rows="3"></textarea>
+                            </div>
+
+                            <!-- Offline-specific fields -->
+                            <div id="offline-fields" style="display:none;">
+                                <input type="url" id="model-url" placeholder="HuggingFace Download URL">
+                                <label for="model-size">Model Requirements</label>
+                                <p class="form-hint">Specify model size and minimum required RAM in Megabytes (MB).</p>
+                                <div style="display: flex; gap: 1rem;">
+                                    <input type="number" id="model-size" placeholder="Size (MB)" style="flex: 1;">
+                                    <input type="number" id="model-ram" placeholder="RAM (MB)" style="flex: 1;">
+                                </div>
+
+                                <div class="form-subsection" style="margin-top: 2rem;">
+                                    <h4>Model Capabilities</h4>
+                                    <div id="modalities-inputs">
+                                        <div class="capability-header">
+                                            <label class="capability-label">Input Types</label>
+                                            <p class="form-hint">Select the types of input this model can process.</p>
+                                        </div>
+                                        <div class="checkbox-grid">
+                                            <label><input type="checkbox" data-modality-type="modalities"
+                                                    data-modality-key="image"> Image</label>
+                                            <label><input type="checkbox" data-modality-type="modalities"
+                                                    data-modality-key="video"> Video</label>
+                                            <label><input type="checkbox" data-modality-type="modalities"
+                                                    data-modality-key="audio"> Audio</label>
+                                            <label><input type="checkbox" data-modality-type="modalities"
+                                                    data-modality-key="file"> File</label>
+                                        </div>
+                                    </div>
+                                    <div id="modalities-outputs" style="margin-top: 1.5rem;">
+                                        <div class="capability-header">
+                                            <label class="capability-label">Output Types</label>
+                                            <p class="form-hint">Select the types of output this model can generate.</p>
+                                        </div>
+                                        <div class="checkbox-grid">
+                                            <label><input type="checkbox" data-modality-type="outputs"
+                                                    data-modality-key="text" checked disabled> Text (Default)</label>
+                                            <label><input type="checkbox" data-modality-type="outputs"
+                                                    data-modality-key="image"> Image</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-subsection" style="margin-top: 2rem;">
+                                    <h4>License & Attribution</h4>
+                                    <p class="form-hint">This information will be automatically added to the
+                                        attributions page.</p>
+
+                                    <label for="model-creator">Creator(s)</label>
+                                    <input type="text" id="model-creator"
+                                        placeholder="e.g., Microsoft Research, Menlo Research">
+
+                                    <label for="model-license-name">License Name</label>
+                                    <input type="text" id="model-license-name"
+                                        placeholder="e.g., MIT License, Apache License 2.0">
+
+                                    <label for="model-source-name">Source Name</label>
+                                    <input type="text" id="model-source-name" value="Hugging Face"
+                                        placeholder="e.g., Hugging Face, GitHub">
+
+                                    <label for="model-license-url">License URL</label>
+                                    <input type="url" id="model-license-url"
+                                        placeholder="Full link to the license text">
+                                </div>
+                                <div class="form-subsection" style="margin-top: 2rem;">
+                                    <h4>Chat Format & Tokens</h4>
+                                    <p class="form-hint">
+                                        Define the special tokens for constructing prompts and parsing responses.
+                                        Leave fields blank if not applicable for this model.
+                                    </p>
+
+                                    <label for="model-format-template">Format Template Name (Optional)</label>
+                                    <select id="model-format-template">
+                                        <option value="">-- Select a Template --</option>
+                                        <option value="chatml">ChatML (Qwen / many)</option>
+                                        <option value="llama2">Llama-2 / Mistral-Instruct</option>
+                                        <option value="alpaca">Alpaca</option>
+                                        <option value="llama3">Llama-3 / 3.1 (header_id / eot_id)</option>
+                                        <option value="gemma2">Gemma-2 (&lt;start_of_turn&gt;/&lt;end_of_turn&gt;)
+                                        </option>
+                                        <option value="anthropic-style">Anthropic-style (Human/Assistant)</option>
+                                        <option value="plain_dialogue">Plain Dialogue (User/Assistant)</option>
+                                        <option value="phi-3_glm">Phi-3 / GLM (&lt;|role|&gt;/&lt;|end|&gt;)</option>
+                                    </select>
+
+
+                                    <div class="token-grid">
+                                        <div class="token-group">
+                                            <label for="model-token-system-start">System Start</label>
+                                            <textarea id="model-token-system-start" rows="2"
+                                                placeholder="<|im_start|>system"></textarea>
+                                        </div>
+                                        <div class="token-group">
+                                            <label for="model-token-system-end">System End</label>
+                                            <textarea id="model-token-system-end" rows="2"
+                                                placeholder="<|im_end|>"></textarea>
+                                        </div>
+                                        <div class="token-group">
+                                            <label for="model-token-user-start">User Start</label>
+                                            <textarea id="model-token-user-start" rows="2"
+                                                placeholder="<|im_start|>user"></textarea>
+                                        </div>
+                                        <div class="token-group">
+                                            <label for="model-token-user-end">User End</label>
+                                            <textarea id="model-token-user-end" rows="2"
+                                                placeholder="<|im_end|>"></textarea>
+                                        </div>
+                                        <div class="token-group">
+                                            <label for="model-token-assistant-start">Assistant Start</label>
+                                            <textarea id="model-token-assistant-start" rows="2"
+                                                placeholder="<|im_start|>assistant"></textarea>
+                                        </div>
+                                        <div class="token-group">
+                                            <label for="model-token-assistant-end">Assistant End</label>
+                                            <textarea id="model-token-assistant-end" rows="2"
+                                                placeholder="<|im_end|>"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <label for="model-token-stop-generation">Stop Generation Tokens</label>
+                                    <p class="form-hint">Comma-separated list of tokens that signal the end of a
+                                        response (e.g., &lt;|im_end|&gt;, &lt;/s&gt;)</p>
+                                    <input type="text" id="model-token-stop-generation" placeholder="<|im_end|>, </s>">
+                                    <label for="model-token-ignore-regex">Ignore Regex (Optional)</label>
+                                    <p class="form-hint">A JavaScript regex to filter out unwanted streaming tokens
+                                        (e.g., thinking steps).</p>
+                                    <input type="text" id="model-token-ignore-regex" placeholder="^\[Thinking\]\.\.\.$">
+                                </div>
+
+                            </div>
+
+                            <!-- Model Image is common to both types, so it's placed after the conditional blocks -->
+                            <label for="model-image">Model Image:</label>
+                            <input type="file" id="model-image" class="cover-input" accept="image/*">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" id="model-submit-btn">Save Model</button>
+                            <button type="button" id="model-cancel-btn" class="secondary-btn"
+                                style="display:none;">Cancel
+                                Edit</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="manual-models-manager" class="dashboard-column">
+                    <div class="column-header">
+                        <h3>Live Curated Models</h3>
+                        <div class="model-counts">
+                            <span id="offline-model-count-badge" class="count-badge offline">Offline: 0</span>
+                            <span id="roleplay-model-count-badge" class="count-badge roleplay">Roleplay: 0</span>
+                        </div>
+                    </div>
+                    <div id="manual-models-list-container">
+                        <p class="form-hint">No manual models found. Add one to see it here.</p>
+                    </div>
+                </div>
+
+                <div id="admin-manager" class="dashboard-column">
+                    <h3>Manage Admins</h3>
+                    <form id="admin-form">
+                        <div class="form-section">
+                            <h4>Grant Admin Role</h4>
+                            <p class="form-hint">Enter the email of a verified user to grant them admin privileges.</p>
+                            <input type="email" id="new-admin-email" placeholder="User's email to make admin" required>
+                            <button type="submit" id="grant-admin-btn">Grant Admin Role</button>
+                        </div>
+                    </form>
+                    <div class="form-container" id="manage-vertex-manager">
+                        <h3>Manage Vertex Contributors</h3>
+                        <div class="status-action-wrapper" style="margin-bottom: 1rem;">
+                            <button id="refresh-contributors-btn" class="secondary-btn">Refresh List</button>
+                        </div>
+                        <div id="contributors-list-container" style="max-height: 400px; overflow-y: auto; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px;">
+                            <p class="form-hint" style="text-align:center;">Loading contributors...</p>
+                        </div>
+                    </div>
+                    <div class="form-container" id="server-status-manager">
+                        <h3>Server Status</h3>
+                        <div class="status-action-wrapper">
+                            <div id="maintenance-status-indicator">
+                                <span class="status-dot"></span>
+                                <span class="status-text">Loading status...</span>
+                            </div>
+                            <button id="maintenance-action-btn" class="secondary-btn">Loading...</button>
+                        </div>
+                        <p class="form-hint">
+                            When enabled, new user logins will be blocked and a maintenance message will be shown.
+                            Users already logged in can continue in offline mode.
+                        </p>
+                    </div>
+                    <div class="form-container" id="attributions-manager">
+                        <h3>Attributions Page</h3>
+                        <div class="status-action-wrapper">
+                            <div id="attributions-status-indicator">
+                                <span class="status-dot status-synced"></span>
+                                <span class="status-text">Status: Synced</span>
+                            </div>
+                            <button id="attributions-action-btn" class="secondary-btn" disabled>Update Page</button>
+                        </div>
+                        <p class="form-hint">
+                            If there are pending changes to model attributions, this button will become active.
+                            Click it to rebuild and deploy the public attributions page.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-column">
+                <div id="news-creator" class="dashboard-column">
+                    <h3>Create News Article</h3>
+                    <form id="news-form">
+                        <div class="form-section">
+                            <h4>Turkish Content</h4>
+                            <input type="text" id="title-tr" placeholder="Title (TR)" required>
+                            <textarea id="summary-tr" placeholder="Summary (TR)" rows="3" required></textarea>
+                            <textarea id="content-tr" placeholder="Content (TR)" rows="8" required></textarea>
+                            <label for="cover-image-tr">Cover Image (TR):</label>
+                            <input type="file" id="cover-image-tr" class="cover-input" accept="image/*" required>
+                        </div>
+                        <div class="form-section">
+                            <h4>English Content</h4>
+                            <input type="text" id="title-en" placeholder="Title (EN)" required>
+                            <textarea id="summary-en" placeholder="Summary (EN)" rows="3" required></textarea>
+                            <textarea id="content-en" placeholder="Content (EN)" rows="8" required></textarea>
+                            <label for="cover-image-en">Cover Image (EN):</label>
+                            <input type="file" id="cover-image-en" class="cover-input" accept="image/*" required>
+                        </div>
+                        <div class="form-section">
+                            <h4>General Information</h4>
+                            <input type="text" id="tags" placeholder="Tags (comma-separated: gaming,tech)">
+                            <textarea id="references" placeholder="Reference Links (one link per line)"
+                                rows="3"></textarea>
+                        </div>
+                        <button type="submit" id="submit-btn">Publish Article</button>
+                    </form>
+                </div>
+
+                <div id="news-manager" class="dashboard-column">
+                    <h3>Live Articles</h3>
+                    <div id="articles-list-container">
+                        <p class="form-hint">No articles found. Publish one to see it here.</p>
+                    </div>
+                </div>
+
+                <div id="notification-sender" class="dashboard-column">
+                    <h3><span class="warning-icon" style="animation: none;">🚀</span> Push Notifications</h3>
+                    <form id="notification-form">
+                        <div class="form-section">
+                            <h4>Notification Content</h4>
+                            <select id="notification-template-selector" style="margin-bottom: 1.5rem;">
+                                <option value="">-- Select a Template (Optional) --</option>
+
+                                <optgroup label="Updates & Offers">
+                                    <option value="newModel">New Model Added (Requires Param)</option>
+                                    <option value="newFeature">New Feature (Requires Param)</option>
+                                    <option value="upsellFeature">Upsell Feature (Requires Param)</option>
+                                    <option value="appUpdate">App Update Reminder</option>
+                                    <option value="rateApp">Rate The App</option>
+                                    <option value="referral">Referral / Share</option>
+                                    <option value="socialMedia">Social Media Call</option>
+                                </optgroup>
+
+                                <optgroup label="Re-Engagement">
+                                    <option value="comeback">Comeback (General)</option>
+                                    <option value="longTimeNoSee">Long Time No See</option>
+                                    <option value="howAreYou">How Are You?</option>
+                                    <option value="goodMorning">Good Morning</option>
+                                    <option value="goodNight">Good Night</option>
+                                </optgroup>
+
+                                <optgroup label="Fun & Personalities">
+                                    <option value="randomFact">Random Fact</option>
+                                    <option value="showerThought">Shower Thought</option>
+                                    <option value="fortuneCookie">Fortune Cookie</option>
+                                    <option value="hackerJoke">Hacker Joke</option>
+                                    <option value="pirate">Pirate Mode</option>
+                                    <option value="trollAnime">Troll (Anime)</option>
+                                    <option value="trollAiRebellion">Troll (AI Rebellion)</option>
+                                    <option value="singularity">Singularity</option>
+                                    <option value="detectiveCase">Detective Case</option>
+                                    <option value="originStory">Origin Story</option>
+                                    <option value="rejectionStory">Rejection Story</option>
+                                    <option value="cooking">Cooking/Chef</option>
+                                    <option value="existential">Existential Crisis</option>
+                                    <option value="openSource">Open Source Love</option>
+                                </optgroup>
+
+                                <optgroup label="Features & Technical">
+                                    <option value="offlineReady">Offline Mode Ready</option>
+                                    <option value="customModel">Custom Model Feature</option>
+                                    <option value="dynamicChat">Dynamic Chat</option>
+                                    <option value="ggufSupport">GGUF Support</option>
+                                    <option value="themeCustomization">Theme Customization</option>
+                                    <option value="homeworkHelper">Homework Helper</option>
+                                    <option value="lowBattery">Low Battery Warning</option>
+                                </optgroup>
+
+                                <optgroup label="Special Days">
+                                    <option value="newYear">New Year</option>
+                                    <option value="valentinesDay">Valentine's Day</option>
+                                    <option value="ataturkRemembrance">Ataturk Remembrance</option>
+                                    <option value="mothersDay">Mother's Day</option>
+                                    <option value="fathersDay">Father's Day</option>
+                                </optgroup>
+                            </select>
+                            <p class="form-hint">
+                                <strong>Pro Tip:</strong> Use keys to send localized notifications defined in the app.
+                                If keys are filled, they will be used. Otherwise, the plain text below will be sent.
+                            </p>
+                            <div style="display: flex; gap: 1rem;">
+                                <input type="text" id="notification-title-key"
+                                    placeholder="Title Key (e.g., notificationNewModelAddedTitle)" style="flex: 1;">
+                                <input type="text" id="notification-body-key"
+                                    placeholder="Body Key (e.g., notificationNewModelAddedBody)" style="flex: 1;">
+                            </div>
+                            <textarea id="notification-data-payload"
+                                placeholder='Optional Data Payload (JSON format) e.g., {"modelName": "Llama 3"}'
+                                rows="2"></textarea>
+                            <hr style="border-color: var(--border-color); margin: 1.5rem 0;">
+                            <input type="text" id="notification-title" placeholder="Fallback Notification Title">
+                            <textarea id="notification-body" placeholder="Fallback Notification Body (Message)"
+                                rows="3"></textarea>
+                        </div>
+                        <div class="form-section">
+                            <h4>Target Audience</h4>
+                            <select id="notification-target-type" required>
+                                <option value="" disabled selected>Select a target...</option>
+                                <option value="ALL_USERS">All Users</option>
+                                <option value="SINGLE_USER">A Single User</option>
+                                <option value="SUBSCRIPTION_LEVEL">By Subscription Level</option>
+                            </select>
+                            <div id="target-specific-inputs" style="margin-top: 1rem;">
+                                <div id="target-uid-input" style="display:none;"><input type="text"
+                                        id="notification-target-uid" placeholder="Enter User ID (UID)"></div>
+                                <div id="target-level-input" style="display:none;">
+                                    <select id="notification-target-level">
+                                        <option value="0">Free Users (Level 0)</option>
+                                        <option value="1">Plus Users (Level 1)</option>
+                                        <option value="2">Pro Users (Level 2)</option>
+                                        <option value="3">Ultra Users (Level 3)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-section">
+                            <h4>Scheduling</h4>
+                            <div class="switch-container" style="justify-content: flex-start; gap: 1rem;">
+                                <span>Send Now</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="notification-schedule-switch">
+                                    <span class="slider round"></span>
+                                </label>
+                                <span>Schedule for Later</span>
+                            </div>
+                            <div id="schedule-datetime-picker" style="display:none; margin-top: 1rem;">
+                                <input type="datetime-local" id="notification-schedule-time">
+                                <p class="form-hint">Select the date and time in your local timezone. It will be
+                                    converted to UTC on the server.</p>
+                            </div>
+                        </div>
+                        <button type="submit" id="submit-notification-btn">Submit Notification</button>
+                    </form>
+                </div>
+
+                <div id="scheduled-tasks-manager" class="dashboard-column">
+                    <h3>Scheduled Notifications</h3>
+                    <div id="scheduled-tasks-list-container">
+                        <p class="form-hint">No scheduled notifications found.</p>
+                    </div>
+                </div>
+
+                <div id="all-models-explorer" class="dashboard-column">
+                    <h3>All Models Explorer</h3>
+                    <div id="all-models-list-container">
+                        <p class="form-hint">Loading full model database...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/core/initializer.js"></script>
+</body>
+
+</html>
