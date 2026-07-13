@@ -1,5 +1,8 @@
 // js/utils/ui.js
 
+// Re-export translation functions from lang.js
+export { __, getLang, setLang, onLangChange, translatePage } from '../lang.js';
+
 /**
  * Sanitizes a string to prevent XSS attacks by replacing HTML special characters.
  * This should be used before inserting any dynamic data into .innerHTML.

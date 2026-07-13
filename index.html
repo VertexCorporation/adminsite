@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Vertex Kontrol - Yönetici Paneli</title>
+    <title data-i18n="page.title">Vertex Kontrol - Yönetici Paneli</title>
 
     <!-- SEO & Basic Meta -->
-    <meta name="description" content="Vertex içerikleri, kullanıcı yönetimi ve sistem yönetimi için merkezi kontrol paneli.">
+    <meta name="description" data-i18n="page.desc" content="Vertex içerikleri, kullanıcı yönetimi ve sistem yönetimi için merkezi kontrol paneli.">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#090909">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -57,7 +57,7 @@
             <polygon class="logo-bg" points="50,15 95,85 5,85"></polygon>
             <polygon class="logo-line" points="50,15 95,85 5,85"></polygon>
         </svg>
-        <p>Vertex Kontrol Başlatılıyor</p>
+        <p data-i18n="loader.text">Vertex Kontrol Başlatılıyor</p>
     </div>
 
     <!-- Hızlı Toast Bildirim Alanı -->
@@ -72,29 +72,29 @@
                         <polygon points="50,15 95,85 5,85" fill="none" stroke="currentColor" stroke-width="7"></polygon>
                     </svg>
                 </div>
-                <h1>VERTEX CONTROL</h1>
-                <h2>Sistem Yönetim Modülü</h2>
+                <h1 data-i18n="login.title">VERTEX CONTROL</h1>
+                <h2 data-i18n="login.subtitle">Sistem Yönetim Modülü</h2>
             </div>
             
             <div class="form-wrapper">
                 <div class="input-field">
                     <span class="material-symbols-rounded prefix-icon">mail</span>
-                    <input type="email" id="email" placeholder="E-posta Adresiniz" autocomplete="email" required>
+                    <input type="email" id="email" data-i18n-placeholder="login.email" placeholder="E-posta Adresiniz" autocomplete="email" required>
                 </div>
                 
                 <div class="input-field">
                     <span class="material-symbols-rounded prefix-icon">lock</span>
-                    <input type="password" id="password" placeholder="Şifreniz" required>
+                    <input type="password" id="password" data-i18n-placeholder="login.password" placeholder="Şifreniz" required>
                 </div>
                 
                 <button id="login-btn" class="chrome-btn-primary">
-                    <span>Oturum Aç</span>
+                    <span data-i18n="login.btn">Oturum Aç</span>
                     <span class="material-symbols-rounded">login</span>
                 </button>
             </div>
             
             <div class="divider">
-                <span>veya</span>
+                <span data-i18n="login.or">veya</span>
             </div>
             
             <div class="social-login-grid">
@@ -130,17 +130,20 @@
                 </div>
                 <div class="brand-info">
                     <h1>VERTEX <span>CONTROL</span></h1>
-                    <span class="system-tag">Sistem Portal</span>
+                    <span class="system-tag" data-i18n="header.system">Sistem Portal</span>
                 </div>
             </div>
             <div class="header-control-buttons">
-                <button id="theme-toggle-btn" class="icon-circle-btn" title="Temayı Değiştir">
+                <button id="lang-toggle-btn" class="icon-circle-btn" data-i18n-title="header.theme" title="Temayı Değiştir">
+                    <span id="lang-indicator">TR</span>
+                </button>
+                <button id="theme-toggle-btn" class="icon-circle-btn" data-i18n-title="header.theme" title="Temayı Değiştir">
                     <span class="material-symbols-rounded sun-icon">light_mode</span>
                     <span class="material-symbols-rounded moon-icon">dark_mode</span>
                 </button>
                 <button id="logout-btn" class="btn-sign-out">
                     <span class="material-symbols-rounded">logout</span>
-                    <span>Çıkış</span>
+                    <span data-i18n="header.logout">Çıkış</span>
                 </button>
             </div>
         </header>
@@ -149,23 +152,23 @@
         <nav class="app-navigation" id="navigation-tabs-dock">
             <button class="dock-btn active" data-target="tab-contributors">
                 <span class="material-symbols-rounded">group</span>
-                <span class="dock-label">Katılımcı</span>
+                <span class="dock-label" data-i18n="nav.contributors">Katılımcı</span>
             </button>
             <button class="dock-btn" data-target="tab-models">
                 <span class="material-symbols-rounded">smart_toy</span>
-                <span class="dock-label">Modeller</span>
+                <span class="dock-label" data-i18n="nav.models">Modeller</span>
             </button>
             <button class="dock-btn" data-target="tab-news">
                 <span class="material-symbols-rounded">newspaper</span>
-                <span class="dock-label">Haberler</span>
+                <span class="dock-label" data-i18n="nav.news">Haberler</span>
             </button>
             <button class="dock-btn" data-target="tab-notifications">
                 <span class="material-symbols-rounded">notifications_active</span>
-                <span class="dock-label">Bildirim</span>
+                <span class="dock-label" data-i18n="nav.notifications">Bildirim</span>
             </button>
             <button class="dock-btn" data-target="tab-system">
                 <span class="material-symbols-rounded">settings_ethernet</span>
-                <span class="dock-label">Sistem</span>
+                <span class="dock-label" data-i18n="nav.system">Sistem</span>
             </button>
         </nav>
 
@@ -176,8 +179,8 @@
             <!-- SEKME 1: KATILIMCILAR & YETKİLER -->
             <div class="tab-panel active" id="tab-contributors">
                 <div class="panel-section-title">
-                    <h2>Katılımcı Yönetimi & Yetkiler</h2>
-                    <p>Vertex topluluk üyelerini inceleyin, onaylayın ve yönetici yetkilerini yönetin.</p>
+                    <h2 data-i18n="contributors.title">Katılımcı Yönetimi & Yetkiler</h2>
+                    <p data-i18n="contributors.desc">Vertex topluluk üyelerini inceleyin, onaylayın ve yönetici yetkilerini yönetin.</p>
                 </div>
 
                 <div class="grid-layout">
@@ -186,34 +189,34 @@
                         <div class="card-title-row">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">group_work</span>
-                                <h3>Başvuran Adaylar & Üyeler</h3>
+                                <h3 data-i18n="contributors.section">Başvuran Adaylar & Üyeler</h3>
                             </div>
                             <button id="refresh-contributors-btn" class="btn-refresh">
                                 <span class="material-symbols-rounded">refresh</span>
-                                <span>Yenile</span>
+                                <span data-i18n="contributors.refresh">Yenile</span>
                             </button>
                         </div>
                         
                         <!-- Kategori Çipleri -->
                         <div class="scroll-chips-row">
-                            <button class="filter-chip active" data-filter="all" onclick="filterContributors('all')">Tümü</button>
-                            <button class="filter-chip" data-filter="verified" onclick="filterContributors('verified')">Onaylılar</button>
-                            <button class="filter-chip" data-filter="unverified" onclick="filterContributors('unverified')">Onay Bekleyenler</button>
-                            <button class="filter-chip" data-filter="age-14-15" onclick="filterContributors('age-14-15')">14-15 Yaş</button>
-                            <button class="filter-chip" data-filter="age-16-17" onclick="filterContributors('age-16-17')">16-17 Yaş</button>
-                            <button class="filter-chip" data-filter="age-18" onclick="filterContributors('age-18')">18+ Yaş</button>
-                            <button class="filter-chip" data-filter="linkedin" onclick="filterContributors('linkedin')">LinkedIn</button>
-                            <button class="filter-chip" data-filter="github" onclick="filterContributors('github')">GitHub</button>
+                            <button class="filter-chip active" data-filter="all" onclick="filterContributors('all')" data-i18n="contributors.filter.all">Tümü</button>
+                            <button class="filter-chip" data-filter="verified" onclick="filterContributors('verified')" data-i18n="contributors.filter.verified">Onaylılar</button>
+                            <button class="filter-chip" data-filter="unverified" onclick="filterContributors('unverified')" data-i18n="contributors.filter.unverified">Onay Bekleyenler</button>
+                            <button class="filter-chip" data-filter="age-14-15" onclick="filterContributors('age-14-15')" data-i18n="contributors.filter.age14">14-15 Yaş</button>
+                            <button class="filter-chip" data-filter="age-16-17" onclick="filterContributors('age-16-17')" data-i18n="contributors.filter.age16">16-17 Yaş</button>
+                            <button class="filter-chip" data-filter="age-18" onclick="filterContributors('age-18')" data-i18n="contributors.filter.age18">18+ Yaş</button>
+                            <button class="filter-chip" data-filter="linkedin" onclick="filterContributors('linkedin')" data-i18n="contributors.filter.linkedin">LinkedIn</button>
+                            <button class="filter-chip" data-filter="github" onclick="filterContributors('github')" data-i18n="contributors.filter.github">GitHub</button>
                         </div>
 
                         <!-- Arama Kutusu -->
                         <div class="search-input-field">
                             <span class="material-symbols-rounded search-icon">search</span>
-                            <input type="text" id="contributor-search" placeholder="Listede isim, e-posta veya biyografi ara..." oninput="searchContributorsLocal()">
+                            <input type="text" id="contributor-search" data-i18n-placeholder="contributors.search" placeholder="Listede isim, e-posta veya biyografi ara..." oninput="searchContributorsLocal()">
                         </div>
 
                         <div id="contributors-list-container" class="scrollable-list-box">
-                            <p class="form-hint" style="text-align:center; padding: 2rem; color: var(--text-secondary);">Listeyi yüklemek için Yenile butonuna basın.</p>
+                            <p class="form-hint" style="text-align:center; padding: 2rem; color: var(--text-secondary);" data-i18n="contributors.load_hint">Listeyi yüklemek için Yenile butonuna basın.</p>
                         </div>
                     </div>
 
@@ -222,23 +225,23 @@
                         <div class="card-title-row">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">shield_person</span>
-                                <h3>Yönetici Rolü Tanımla</h3>
+                                <h3 data-i18n="admin.title">Yönetici Rolü Tanımla</h3>
                             </div>
                         </div>
-                        <p class="intro-description">Doğrulanmış bir Vertex üyesinin e-posta adresini girerek yönetici kontrol yetkisi tanımlayın.</p>
+                        <p class="intro-description" data-i18n="admin.desc">Doğrulanmış bir Vertex üyesinin e-posta adresini girerek yönetici kontrol yetkisi tanımlayın.</p>
                         
                         <form id="admin-form" class="form-stack">
                             <div class="form-group-field">
-                                <label for="new-admin-email">Kullanıcı E-postası</label>
+                                <label for="new-admin-email" data-i18n="admin.email_label">Kullanıcı E-postası</label>
                                 <div class="form-input-wrapper">
                                     <span class="material-symbols-rounded">mail</span>
-                                    <input type="email" id="new-admin-email" placeholder="kullanici@vertexishere.com" required>
+                                    <input type="email" id="new-admin-email" data-i18n-placeholder="admin.email_placeholder" placeholder="kullanici@vertexishere.com" required>
                                 </div>
-                                <span class="form-field-info">Kullanıcı sisteme kayıtlı olmalıdır.</span>
+                                <span class="form-field-info" data-i18n="admin.email_hint">Kullanıcı sisteme kayıtlı olmalıdır.</span>
                             </div>
                             <button type="submit" id="grant-admin-btn" class="chrome-btn-accent">
                                 <span class="material-symbols-rounded">admin_panel_settings</span>
-                                <span>Yönetici Yetkisi Ver</span>
+                                <span data-i18n="admin.grant_btn">Yönetici Yetkisi Ver</span>
                             </button>
                         </form>
                     </div>
@@ -248,8 +251,8 @@
             <!-- SEKME 2: MODEL KÜTÜPHANESİ -->
             <div class="tab-panel" id="tab-models">
                 <div class="panel-section-title">
-                    <h2>Yapay Zeka Modelleri</h2>
-                    <p>Uygulamada yayında olan çevrimdışı (On-Device) ve rol yapma yapay zeka modellerini yönetin.</p>
+                    <h2 data-i18n="models.title">Yapay Zeka Modelleri</h2>
+                    <p data-i18n="models.desc">Uygulamada yayında olan çevrimdışı (On-Device) ve rol yapma yapay zeka modellerini yönetin.</p>
                 </div>
 
                 <div class="grid-layout">
@@ -258,7 +261,7 @@
                         <div class="card-title-row">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">add_circle</span>
-                                <h3>Model Ekleme ve Düzenleme</h3>
+                                <h3 data-i18n="models.form_title">Model Ekleme ve Düzenleme</h3>
                             </div>
                         </div>
                         
@@ -266,126 +269,126 @@
                             <!-- Model Tipi Seçimi -->
                             <div class="form-block-group">
                                 <div class="type-selector-header">
-                                    <span class="block-title">Model Sınıflandırması</span>
+                                    <span class="block-title" data-i18n="models.classification">Model Sınıflandırması</span>
                                     <div class="chrome-switch-row">
-                                        <span class="switch-label-text">Rol Yapma</span>
+                                        <span class="switch-label-text" data-i18n="models.roleplay">Rol Yapma</span>
                                         <label class="chrome-switch">
                                             <input type="checkbox" id="model-type-switch">
                                             <span class="slider"></span>
                                         </label>
-                                        <span class="switch-label-text">Çevrimdışı</span>
+                                        <span class="switch-label-text" data-i18n="models.offline">Çevrimdışı</span>
                                     </div>
                                 </div>
 
                                 <div class="flex-row">
                                     <div class="form-group-field flex-grow">
-                                        <label for="model-producer">Geliştirici Firma</label>
-                                        <input type="text" id="model-producer" placeholder="Ör. Google, Meta" required>
+                                        <label for="model-producer" data-i18n="models.producer">Geliştirici Firma</label>
+                                        <input type="text" id="model-producer" data-i18n-placeholder="models.producer_ph" placeholder="Ör. Google, Meta" required>
                                     </div>
                                     <div class="form-group-field flex-grow">
-                                        <label for="model-id">Model Kimliği (ID)</label>
-                                        <input type="text" id="model-id" placeholder="Ör. gemma-2b-it" required>
+                                        <label for="model-id" data-i18n="models.id">Model Kimliği (ID)</label>
+                                        <input type="text" id="model-id" data-i18n-placeholder="models.id_ph" placeholder="Ör. gemma-2b-it" required>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- İngilizce Kart Detayları -->
                             <div class="form-block-group">
-                                <span class="block-title">Arayüz Kart Bilgileri (İngilizce)</span>
+                                <span class="block-title" data-i18n="models.card_info">Arayüz Kart Bilgileri (İngilizce)</span>
                                 <div class="form-group-field">
-                                    <label for="model-title">Model Adı (Title)</label>
-                                    <input type="text" id="model-title" placeholder="Görüntülenecek başlık" required>
+                                    <label for="model-title" data-i18n="models.title_field">Model Adı (Title)</label>
+                                    <input type="text" id="model-title" data-i18n-placeholder="models.title_ph" placeholder="Görüntülenecek başlık" required>
                                 </div>
                                 <div class="form-group-field">
-                                    <label for="model-summary">Özet (Summary)</label>
-                                    <textarea id="model-summary" placeholder="Karttaki kısa özet açıklaması" rows="2" required></textarea>
+                                    <label for="model-summary" data-i18n="models.summary">Özet (Summary)</label>
+                                    <textarea id="model-summary" data-i18n-placeholder="models.summary_ph" placeholder="Karttaki kısa özet açıklaması" rows="2" required></textarea>
                                 </div>
                                 <div class="form-group-field">
-                                    <label for="model-description">Tam Detaylı Açıklama (Description)</label>
-                                    <textarea id="model-description" placeholder="Model yetenekleri hakkında detaylı metin" rows="3" required></textarea>
+                                    <label for="model-description" data-i18n="models.description">Tam Detaylı Açıklama (Description)</label>
+                                    <textarea id="model-description" data-i18n-placeholder="models.description_ph" placeholder="Model yetenekleri hakkında detaylı metin" rows="3" required></textarea>
                                 </div>
                             </div>
 
                             <!-- Rol Yapma Modeli Yönergesi -->
                             <div id="roleplay-fields" class="form-block-group conditional-block">
-                                <span class="block-title">Rol Yapma Konfigürasyonu</span>
+                                <span class="block-title" data-i18n="models.roleplay_config">Rol Yapma Konfigürasyonu</span>
                                 <div class="form-group-field">
-                                    <label for="model-role">Sistem Promptu (System Role)</label>
-                                    <textarea id="model-role" placeholder="Karakterin uyacağı yönerge promptu" rows="2"></textarea>
+                                    <label for="model-role" data-i18n="models.system_prompt">Sistem Promptu (System Role)</label>
+                                    <textarea id="model-role" data-i18n-placeholder="models.system_prompt_ph" placeholder="Karakterin uyacağı yönerge promptu" rows="2"></textarea>
                                 </div>
                             </div>
 
                             <!-- Çevrimdışı Model Özellikleri -->
                             <div id="offline-fields" class="form-block-group conditional-block" style="display:none;">
-                                <span class="block-title">Çevrimdışı Bağlantılar & Donanım</span>
+                                <span class="block-title" data-i18n="models.offline_config">Çevrimdışı Bağlantılar & Donanım</span>
                                 <div class="form-group-field">
-                                    <label for="model-url">GGUF HuggingFace İndirme Adresi</label>
-                                    <input type="url" id="model-url" placeholder="https://huggingface.co/.../*.gguf">
+                                    <label for="model-url" data-i18n="models.gguf_url">GGUF HuggingFace İndirme Adresi</label>
+                                    <input type="url" id="model-url" data-i18n-placeholder="models.gguf_ph" placeholder="https://huggingface.co/.../*.gguf">
                                 </div>
                                 
                                 <div class="flex-row">
                                     <div class="form-group-field flex-grow">
-                                        <label for="model-size">Dosya Boyutu (MB)</label>
-                                        <input type="number" id="model-size" placeholder="MB cinsinden">
+                                        <label for="model-size" data-i18n="models.file_size">Dosya Boyutu (MB)</label>
+                                        <input type="number" id="model-size" data-i18n-placeholder="models.file_size_ph" placeholder="MB cinsinden">
                                     </div>
                                     <div class="form-group-field flex-grow">
-                                        <label for="model-ram">Gereken RAM (MB)</label>
-                                        <input type="number" id="model-ram" placeholder="MB cinsinden">
+                                        <label for="model-ram" data-i18n="models.ram">Gereken RAM (MB)</label>
+                                        <input type="number" id="model-ram" data-i18n-placeholder="models.ram_ph" placeholder="MB cinsinden">
                                     </div>
                                 </div>
 
                                 <div class="form-sub-section">
-                                    <span class="sub-block-title">Girdi ve Çıktı Tipleri</span>
+                                    <span class="sub-block-title" data-i18n="models.io_types">Girdi ve Çıktı Tipleri</span>
                                     <div class="flex-column">
                                         <div id="modalities-inputs" class="form-group-field">
-                                            <span class="sub-block-title" style="font-size:0.7rem; color:var(--text-muted);">Girdi Tipleri</span>
+                                            <span class="sub-block-title" style="font-size:0.7rem; color:var(--text-muted);" data-i18n="models.input_types">Girdi Tipleri</span>
                                             <div class="chips-checkbox-grid">
-                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="image"><span>Görsel</span></label>
-                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="video"><span>Video</span></label>
-                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="audio"><span>Ses</span></label>
-                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="file"><span>Dosya</span></label>
+                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="image"><span data-i18n="models.image">Görsel</span></label>
+                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="video"><span data-i18n="models.video">Video</span></label>
+                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="audio"><span data-i18n="models.audio">Ses</span></label>
+                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="file"><span data-i18n="models.file">Dosya</span></label>
                                             </div>
                                         </div>
                                         <div id="modalities-outputs" class="form-group-field">
-                                            <span class="sub-block-title" style="font-size:0.7rem; color:var(--text-muted);">Çıktı Tipleri</span>
+                                            <span class="sub-block-title" style="font-size:0.7rem; color:var(--text-muted);" data-i18n="models.output_types">Çıktı Tipleri</span>
                                             <div class="chips-checkbox-grid">
-                                                <label class="chip-checkbox disabled"><input type="checkbox" data-modality-type="outputs" data-modality-key="text" checked disabled><span>Metin</span></label>
-                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="outputs" data-modality-key="image"><span>Görsel</span></label>
+                                                <label class="chip-checkbox disabled"><input type="checkbox" data-modality-type="outputs" data-modality-key="text" checked disabled><span data-i18n="models.text">Metin</span></label>
+                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="outputs" data-modality-key="image"><span data-i18n="models.image">Görsel</span></label>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="form-sub-section">
-                                    <span class="sub-block-title">Lisans & Kaynak</span>
+                                    <span class="sub-block-title" data-i18n="models.license_section">Lisans & Kaynak</span>
                                     <div class="flex-row">
                                         <div class="form-group-field flex-grow">
-                                            <label for="model-creator">Geliştirici</label>
+                                            <label for="model-creator" data-i18n="models.creator">Geliştirici</label>
                                             <input type="text" id="model-creator" placeholder="Yaratıcı ekip">
                                         </div>
                                         <div class="form-group-field flex-grow">
-                                            <label for="model-license-name">Lisans Türü</label>
-                                            <input type="text" id="model-license-name" placeholder="Lisans ismi">
+                                            <label for="model-license-name" data-i18n="models.license_type">Lisans Türü</label>
+                                            <input type="text" id="model-license-name" data-i18n-placeholder="models.license_type_ph" placeholder="Lisans ismi">
                                         </div>
                                     </div>
                                     <div class="flex-row">
                                         <div class="form-group-field flex-grow">
-                                            <label for="model-source-name">Kaynak</label>
+                                            <label for="model-source-name" data-i18n="models.source">Kaynak</label>
                                             <input type="text" id="model-source-name" value="Hugging Face">
                                         </div>
                                         <div class="form-group-field flex-grow">
-                                            <label for="model-license-url">Lisans Linki</label>
-                                            <input type="url" id="model-license-url" placeholder="Lisans URL adresi">
+                                            <label for="model-license-url" data-i18n="models.license_url">Lisans Linki</label>
+                                            <input type="url" id="model-license-url" data-i18n-placeholder="models.license_url_ph" placeholder="Lisans URL adresi">
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="form-sub-section">
-                                    <span class="sub-block-title">Şablon Kuralları (Prompter)</span>
+                                    <span class="sub-block-title" data-i18n="models.template_section">Şablon Kuralları (Prompter)</span>
                                     <div class="form-group-field">
-                                        <label for="model-format-template">Hazır Şablon Formatı</label>
+                                        <label for="model-format-template" data-i18n="models.template_select">Hazır Şablon Formatı</label>
                                         <select id="model-format-template">
-                                            <option value="">-- Şablon Seçilmedi --</option>
+                                            <option value="" data-i18n="models.template_none">-- Şablon Seçilmedi --</option>
                                             <option value="chatml">ChatML (Qwen, Llama 3 vb.)</option>
                                             <option value="llama2">Llama-2 / Mistral</option>
                                             <option value="alpaca">Alpaca</option>
@@ -399,53 +402,53 @@
                                     
                                     <div class="token-inputs-grid">
                                         <div class="form-group-field">
-                                            <label for="model-token-system-start">Sistem Başlangıç</label>
+                                            <label for="model-token-system-start" data-i18n="models.token_system_start">Sistem Başlangıç</label>
                                             <textarea id="model-token-system-start" rows="1" placeholder="<|im_start|>system"></textarea>
                                         </div>
                                         <div class="form-group-field">
-                                            <label for="model-token-system-end">Sistem Bitiş</label>
+                                            <label for="model-token-system-end" data-i18n="models.token_system_end">Sistem Bitiş</label>
                                             <textarea id="model-token-system-end" rows="1" placeholder="<|im_end|>"></textarea>
                                         </div>
                                         <div class="form-group-field">
-                                            <label for="model-token-user-start">Kullanıcı Başlangıç</label>
+                                            <label for="model-token-user-start" data-i18n="models.token_user_start">Kullanıcı Başlangıç</label>
                                             <textarea id="model-token-user-start" rows="1" placeholder="<|im_start|>user"></textarea>
                                         </div>
                                         <div class="form-group-field">
-                                            <label for="model-token-user-end">Kullanıcı Bitiş</label>
+                                            <label for="model-token-user-end" data-i18n="models.token_user_end">Kullanıcı Bitiş</label>
                                             <textarea id="model-token-user-end" rows="1" placeholder="<|im_end|>"></textarea>
                                         </div>
                                         <div class="form-group-field">
-                                            <label for="model-token-assistant-start">Asistan Başlangıç</label>
+                                            <label for="model-token-assistant-start" data-i18n="models.token_assistant_start">Asistan Başlangıç</label>
                                             <textarea id="model-token-assistant-start" rows="1" placeholder="<|im_start|>assistant"></textarea>
                                         </div>
                                         <div class="form-group-field">
-                                            <label for="model-token-assistant-end">Asistan Bitiş</label>
+                                            <label for="model-token-assistant-end" data-i18n="models.token_assistant_end">Asistan Bitiş</label>
                                             <textarea id="model-token-assistant-end" rows="1" placeholder="<|im_end|>"></textarea>
                                         </div>
                                     </div>
 
                                     <div class="form-group-field">
-                                        <label for="model-token-stop-generation">Durdurma Belirteçleri</label>
-                                        <input type="text" id="model-token-stop-generation" placeholder="<|im_end|>, </s>">
+                                        <label for="model-token-stop-generation" data-i18n="models.token_stop">Durdurma Belirteçleri</label>
+                                        <input type="text" id="model-token-stop-generation" data-i18n-placeholder="models.token_stop_ph" placeholder="<|im_end|>, </s>">
                                     </div>
                                     <div class="form-group-field">
-                                        <label for="model-token-ignore-regex">Yok Sayılacak Regex</label>
-                                        <input type="text" id="model-token-ignore-regex" placeholder="^\[Düşünme Adımları\]\.\.\.$">
+                                        <label for="model-token-ignore-regex" data-i18n="models.token_ignore">Yok Sayılacak Regex</label>
+                                        <input type="text" id="model-token-ignore-regex" data-i18n-placeholder="models.token_ignore_ph" placeholder="^\[Düşünme Adımları\]\.\.\.$">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="form-block-group">
-                                <span class="block-title">Resim Dosyası</span>
+                                <span class="block-title" data-i18n="models.image_section">Resim Dosyası</span>
                                 <div class="form-group-field">
-                                    <label for="model-image">Model Temsili Resmi</label>
+                                    <label for="model-image" data-i18n="models.image_label">Model Temsili Resmi</label>
                                     <input type="file" id="model-image" accept="image/*">
                                 </div>
                             </div>
 
                             <div class="form-submit-row">
-                                <button type="submit" id="model-submit-btn" class="chrome-btn-accent">Değişiklikleri Kaydet</button>
-                                <button type="button" id="model-cancel-btn" class="chrome-btn-outline" style="display:none;">İptal Et</button>
+                                <button type="submit" id="model-submit-btn" class="chrome-btn-accent"><span data-i18n="models.save_btn">Değişiklikleri Kaydet</span></button>
+                                <button type="button" id="model-cancel-btn" class="chrome-btn-outline" style="display:none;"><span data-i18n="models.cancel_btn">İptal Et</span></button>
                             </div>
                         </form>
                     </div>
@@ -455,28 +458,28 @@
                         <div class="card-title-row">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">list_alt</span>
-                                <h3>Aktif Modeller</h3>
+                                <h3 data-i18n="models.active_models">Aktif Modeller</h3>
                             </div>
                             <div class="count-chips-container">
-                                <span id="offline-model-count-badge" class="count-badge-indicator offline">Çevrimdışı: 0</span>
-                                <span id="roleplay-model-count-badge" class="count-badge-indicator roleplay">Rol Yapma: 0</span>
+                                <span id="offline-model-count-badge" class="count-badge-indicator offline"><span data-i18n="models.offline_count">Çevrimdışı:</span> 0</span>
+                                <span id="roleplay-model-count-badge" class="count-badge-indicator roleplay"><span data-i18n="models.roleplay_count">Rol Yapma:</span> 0</span>
                             </div>
                         </div>
 
                         <div id="manual-models-list-container" class="scrollable-list-box-small">
-                            <p class="form-hint" style="text-align:center; padding: 2rem;">Kayıtlı model bulunamadı.</p>
+                            <p class="form-hint" style="text-align:center; padding: 2rem;" data-i18n="models.no_models">Kayıtlı model bulunamadı.</p>
                         </div>
 
                         <div class="card-title-row" style="margin-top: 1.5rem;">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">database</span>
-                                <h3>Tüm Modeller Ağacı</h3>
+                                <h3 data-i18n="models.all_models">Tüm Modeller Ağacı</h3>
                             </div>
                         </div>
                         
                         <div id="all-models-explorer" class="database-tree-box">
                             <div id="all-models-list-container">
-                                <p class="form-hint">Yükleniyor...</p>
+                                <p class="form-hint" data-i18n="models.loading">Yükleniyor...</p>
                             </div>
                         </div>
                     </div>
@@ -486,8 +489,8 @@
             <!-- SEKME 3: HABERLER VE DUYURULAR -->
             <div class="tab-panel" id="tab-news">
                 <div class="panel-section-title">
-                    <h2>Haberler & Duyurular</h2>
-                    <p>Mobil uygulama ana sayfasındaki haber akışında görünecek makaleleri yayınlayın.</p>
+                    <h2 data-i18n="news.title">Haberler & Duyurular</h2>
+                    <p data-i18n="news.desc">Mobil uygulama ana sayfasındaki haber akışında görünecek makaleleri yayınlayın.</p>
                 </div>
 
                 <div class="grid-layout">
@@ -496,68 +499,68 @@
                         <div class="card-title-row">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">post_add</span>
-                                <h3>Haber Duyurusu Yaz</h3>
+                                <h3 data-i18n="news.form_title">Haber Duyurusu Yaz</h3>
                             </div>
                         </div>
 
                         <form id="news-form" class="form-scrollable-container">
                             <!-- Türkçe İçerik -->
                             <div class="form-block-group">
-                                <span class="block-title">Türkçe Yayın İçeriği</span>
+                                <span class="block-title" data-i18n="news.tr_section">Türkçe Yayın İçeriği</span>
                                 <div class="form-group-field">
-                                    <label for="title-tr">Başlık (TR)</label>
-                                    <input type="text" id="title-tr" placeholder="Haber başlığı" required>
+                                    <label for="title-tr" data-i18n="news.tr_title">Başlık (TR)</label>
+                                    <input type="text" id="title-tr" data-i18n-placeholder="news.tr_title_ph" placeholder="Haber başlığı" required>
                                 </div>
                                 <div class="form-group-field">
-                                    <label for="summary-tr">Özet (TR)</label>
-                                    <textarea id="summary-tr" placeholder="Haber akış kartındaki özet" rows="2" required></textarea>
+                                    <label for="summary-tr" data-i18n="news.tr_summary">Özet (TR)</label>
+                                    <textarea id="summary-tr" data-i18n-placeholder="news.tr_summary_ph" placeholder="Haber akış kartındaki özet" rows="2" required></textarea>
                                 </div>
                                 <div class="form-group-field">
-                                    <label for="content-tr">Detay (TR)</label>
-                                    <textarea id="content-tr" placeholder="Makale detaylı içeriği (Markdown destekler)" rows="5" required></textarea>
+                                    <label for="content-tr" data-i18n="news.tr_content">Detay (TR)</label>
+                                    <textarea id="content-tr" data-i18n-placeholder="news.tr_content_ph" placeholder="Makale detaylı içeriği (Markdown destekler)" rows="5" required></textarea>
                                 </div>
                                 <div class="form-group-field">
-                                    <label for="cover-image-tr">Kapak Fotoğrafı (TR)</label>
+                                    <label for="cover-image-tr" data-i18n="news.tr_cover">Kapak Fotoğrafı (TR)</label>
                                     <input type="file" id="cover-image-tr" accept="image/*" required>
                                 </div>
                             </div>
 
                             <!-- İngilizce İçerik -->
                             <div class="form-block-group">
-                                <span class="block-title">English Content (İngilizce)</span>
+                                <span class="block-title" data-i18n="news.en_section">English Content (İngilizce)</span>
                                 <div class="form-group-field">
-                                    <label for="title-en">Title (EN)</label>
-                                    <input type="text" id="title-en" placeholder="Article Title" required>
+                                    <label for="title-en" data-i18n="news.en_title">Title (EN)</label>
+                                    <input type="text" id="title-en" data-i18n-placeholder="news.en_title_ph" placeholder="Article Title" required>
                                 </div>
                                 <div class="form-group-field">
-                                    <label for="summary-en">Summary (EN)</label>
-                                    <textarea id="summary-en" placeholder="Short description summary" rows="2" required></textarea>
+                                    <label for="summary-en" data-i18n="news.en_summary">Summary (EN)</label>
+                                    <textarea id="summary-en" data-i18n-placeholder="news.en_summary_ph" placeholder="Short description summary" rows="2" required></textarea>
                                 </div>
                                 <div class="form-group-field">
-                                    <label for="content-en">Body (EN)</label>
-                                    <textarea id="content-en" placeholder="Detailed content details" rows="5" required></textarea>
+                                    <label for="content-en" data-i18n="news.en_content">Body (EN)</label>
+                                    <textarea id="content-en" data-i18n-placeholder="news.en_content_ph" placeholder="Detailed content details" rows="5" required></textarea>
                                 </div>
                                 <div class="form-group-field">
-                                    <label for="cover-image-en">Cover Image (EN)</label>
+                                    <label for="cover-image-en" data-i18n="news.en_cover">Cover Image (EN)</label>
                                     <input type="file" id="cover-image-en" accept="image/*" required>
                                 </div>
                             </div>
 
                             <!-- Etiketler -->
                             <div class="form-block-group">
-                                <span class="block-title">Meta Veri & Referanslar</span>
+                                <span class="block-title" data-i18n="news.meta_section">Meta Veri & Referanslar</span>
                                 <div class="form-group-field">
-                                    <label for="tags">Etiketler</label>
-                                    <input type="text" id="tags" placeholder="Ör. guncelleme, topluluk (virgülle ayırın)">
+                                    <label for="tags" data-i18n="news.tags">Etiketler</label>
+                                    <input type="text" id="tags" data-i18n-placeholder="news.tags_ph" placeholder="Ör. guncelleme, topluluk (virgülle ayırın)">
                                 </div>
                                 <div class="form-group-field">
-                                    <label for="references">Kaynak Bağlantıları (URL)</label>
-                                    <textarea id="references" placeholder="Her satıra bir adet bağlantı gelecek şekilde" rows="2"></textarea>
+                                    <label for="references" data-i18n="news.references">Kaynak Bağlantıları (URL)</label>
+                                    <textarea id="references" data-i18n-placeholder="news.references_ph" placeholder="Her satıra bir adet bağlantı gelecek şekilde" rows="2"></textarea>
                                 </div>
                             </div>
 
                             <div class="form-submit-row">
-                                <button type="submit" id="submit-btn" class="chrome-btn-accent">Haber Makalesini Yayınla</button>
+                                <button type="submit" id="submit-btn" class="chrome-btn-accent"><span data-i18n="news.publish_btn">Haber Makalesini Yayınla</span></button>
                             </div>
                         </form>
                     </div>
@@ -567,11 +570,11 @@
                         <div class="card-title-row">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">article</span>
-                                <h3>Aktif Yayındaki Haberler</h3>
+                                <h3 data-i18n="news.active_articles">Aktif Yayındaki Haberler</h3>
                             </div>
                         </div>
                         <div id="articles-list-container" class="scrollable-list-box">
-                            <p class="form-hint" style="text-align:center; padding: 2rem;">Yayınlanmış haber makalesi bulunamadı.</p>
+                            <p class="form-hint" style="text-align:center; padding: 2rem;" data-i18n="news.no_articles">Yayınlanmış haber makalesi bulunamadı.</p>
                         </div>
                     </div>
                 </div>
@@ -580,8 +583,8 @@
             <!-- SEKME 4: BİLDİRİM YÖNETİMİ -->
             <div class="tab-panel" id="tab-notifications">
                 <div class="panel-section-title">
-                    <h2>Anlık Bildirimler</h2>
-                    <p>Vertex kullanıcılarına hedeflenmiş veya zamanlanmış anlık push bildirimleri gönderin.</p>
+                    <h2 data-i18n="notif.title">Anlık Bildirimler</h2>
+                    <p data-i18n="notif.desc">Vertex kullanıcılarına hedeflenmiş veya zamanlanmış anlık push bildirimleri gönderin.</p>
                 </div>
 
                 <div class="grid-layout">
@@ -590,146 +593,146 @@
                         <div class="card-title-row">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">campaign</span>
-                                <h3>Push Bildirim Gönder / Ayarla</h3>
+                                <h3 data-i18n="notif.form_title">Push Bildirim Gönder / Ayarla</h3>
                             </div>
                         </div>
 
                         <form id="notification-form" class="form-scrollable-container">
                             <div class="form-block-group">
-                                <span class="block-title">Hazır Şablon & Anahtarlar</span>
+                                <span class="block-title" data-i18n="notif.template_section">Hazır Şablon & Anahtarlar</span>
                                 <div class="form-group-field">
-                                    <label for="notification-template-selector">Hazır Şablonlar</label>
-                                    <select id="notification-template-selector">
-                                        <option value="">-- Şablon Kullanma --</option>
-                                        <optgroup label="Sistem & Teklifler">
-                                            <option value="newModel">Yeni Model Eklendi</option>
-                                            <option value="newFeature">Yeni Özellik Eklendi</option>
-                                            <option value="upsellFeature">Abonelik Kampanyası</option>
-                                            <option value="appUpdate">Uygulama Güncelleme Uyarısı</option>
-                                            <option value="rateApp">Uygulamayı Puanla</option>
-                                            <option value="referral">Arkadaşına Öner</option>
-                                            <option value="socialMedia">Sosyal Medya Katılımı</option>
+                                    <label for="notification-template-selector" data-i18n="notif.template_label">Hazır Şablonlar</label>
+                                    <select id="notification-template-selector" data-i18n-options="true">
+                                        <option value="" data-i18n="notif.template_none">-- Şablon Kullanma --</option>
+                                        <optgroup data-i18n="template.group.system" label="Sistem & Teklifler">
+                                            <option value="newModel" data-i18n="template.newModel">Yeni Model Eklendi</option>
+                                            <option value="newFeature" data-i18n="template.newFeature">Yeni Özellik Eklendi</option>
+                                            <option value="upsellFeature" data-i18n="template.upsellFeature">Abonelik Kampanyası</option>
+                                            <option value="appUpdate" data-i18n="template.appUpdate">Uygulama Güncelleme Uyarısı</option>
+                                            <option value="rateApp" data-i18n="template.rateApp">Uygulamayı Puanla</option>
+                                            <option value="referral" data-i18n="template.referral">Arkadaşına Öner</option>
+                                            <option value="socialMedia" data-i18n="template.socialMedia">Sosyal Medya Katılımı</option>
                                         </optgroup>
-                                        <optgroup label="Kullanıcı Etkileşimi">
-                                            <option value="comeback">Geri Dönüş Çağrısı (Genel)</option>
-                                            <option value="longTimeNoSee">Uzun Süre Giriş Yapmayanlar</option>
-                                            <option value="howAreYou">Hal Hatır Sorma</option>
-                                            <option value="goodMorning">Günaydın Mesajı</option>
-                                            <option value="goodNight">İyi Geceler Mesajı</option>
+                                        <optgroup data-i18n="template.group.engagement" label="Kullanıcı Etkileşimi">
+                                            <option value="comeback" data-i18n="template.comeback">Geri Dönüş Çağrısı (Genel)</option>
+                                            <option value="longTimeNoSee" data-i18n="template.longTimeNoSee">Uzun Süre Giriş Yapmayanlar</option>
+                                            <option value="howAreYou" data-i18n="template.howAreYou">Hal Hatır Sorma</option>
+                                            <option value="goodMorning" data-i18n="template.goodMorning">Günaydın Mesajı</option>
+                                            <option value="goodNight" data-i18n="template.goodNight">İyi Geceler Mesajı</option>
                                         </optgroup>
-                                        <optgroup label="Eğlenceli & Şakalar">
-                                            <option value="randomFact">İlginç Bilgi</option>
-                                            <option value="showerThought">Duş Düşünceleri</option>
-                                            <option value="fortuneCookie">Şans Kurabiyesi</option>
-                                            <option value="hackerJoke">Yazılımcı Şakaları</option>
-                                            <option value="pirate">Korsan Modu</option>
-                                            <option value="trollAnime">Troll (Anime)</option>
-                                            <option value="trollAiRebellion">Troll (Yapay Zeka İsyanı)</option>
-                                            <option value="singularity">Singularity</option>
-                                            <option value="detectiveCase">Dedektif Hikayesi</option>
-                                            <option value="originStory">Hikaye Başlangıcı</option>
-                                            <option value="rejectionStory">Reddedilme Anısı</option>
-                                            <option value="cooking">Şefin Tarifi</option>
-                                            <option value="existential">Varoluşsal Kriz</option>
-                                            <option value="openSource">Açık Kaynak Sevgisi</option>
+                                        <optgroup data-i18n="template.group.fun" label="Eğlenceli & Şakalar">
+                                            <option value="randomFact" data-i18n="template.randomFact">İlginç Bilgi</option>
+                                            <option value="showerThought" data-i18n="template.showerThought">Duş Düşünceleri</option>
+                                            <option value="fortuneCookie" data-i18n="template.fortuneCookie">Şans Kurabiyesi</option>
+                                            <option value="hackerJoke" data-i18n="template.hackerJoke">Yazılımcı Şakaları</option>
+                                            <option value="pirate" data-i18n="template.pirate">Korsan Modu</option>
+                                            <option value="trollAnime" data-i18n="template.trollAnime">Troll (Anime)</option>
+                                            <option value="trollAiRebellion" data-i18n="template.trollAiRebellion">Troll (Yapay Zeka İsyanı)</option>
+                                            <option value="singularity" data-i18n="template.singularity">Singularity</option>
+                                            <option value="detectiveCase" data-i18n="template.detectiveCase">Dedektif Hikayesi</option>
+                                            <option value="originStory" data-i18n="template.originStory">Hikaye Başlangıcı</option>
+                                            <option value="rejectionStory" data-i18n="template.rejectionStory">Reddedilme Anısı</option>
+                                            <option value="cooking" data-i18n="template.cooking">Şefin Tarifi</option>
+                                            <option value="existential" data-i18n="template.existential">Varoluşsal Kriz</option>
+                                            <option value="openSource" data-i18n="template.openSource">Açık Kaynak Sevgisi</option>
                                         </optgroup>
-                                        <optgroup label="Teknik Detaylar">
-                                            <option value="offlineReady">Çevrimdışı Çalışma Hazır</option>
-                                            <option value="customModel">Kendi Modelini Kur</option>
-                                            <option value="dynamicChat">Dinamik Sohbet Odaları</option>
-                                            <option value="ggufSupport">GGUF Desteği Aktif</option>
-                                            <option value="themeCustomization">Tema Özelleştirme</option>
-                                            <option value="homeworkHelper">Ödev Asistanı Tanıtımı</option>
-                                            <option value="lowBattery">Düşük Batarya Tasarruf Modu</option>
+                                        <optgroup data-i18n="template.group.tech" label="Teknik Detaylar">
+                                            <option value="offlineReady" data-i18n="template.offlineReady">Çevrimdışı Çalışma Hazır</option>
+                                            <option value="customModel" data-i18n="template.customModel">Kendi Modelini Kur</option>
+                                            <option value="dynamicChat" data-i18n="template.dynamicChat">Dinamik Sohbet Odaları</option>
+                                            <option value="ggufSupport" data-i18n="template.ggufSupport">GGUF Desteği Aktif</option>
+                                            <option value="themeCustomization" data-i18n="template.themeCustomization">Tema Özelleştirme</option>
+                                            <option value="homeworkHelper" data-i18n="template.homeworkHelper">Ödev Asistanı Tanıtımı</option>
+                                            <option value="lowBattery" data-i18n="template.lowBattery">Düşük Batarya Tasarruf Modu</option>
                                         </optgroup>
-                                        <optgroup label="Özel Günler">
-                                            <option value="newYear">Yılbaşı Tebriği</option>
-                                            <option value="valentinesDay">Sevgililer Günü</option>
-                                            <option value="ataturkRemembrance">10 Kasım Atatürk'ü Anma</option>
-                                            <option value="mothersDay">Anneler Günü</option>
-                                            <option value="fathersDay">Babalar Günü</option>
+                                        <optgroup data-i18n="template.group.special" label="Özel Günler">
+                                            <option value="newYear" data-i18n="template.newYear">Yılbaşı Tebriği</option>
+                                            <option value="valentinesDay" data-i18n="template.valentinesDay">Sevgililer Günü</option>
+                                            <option value="ataturkRemembrance" data-i18n="template.ataturkRemembrance">10 Kasım Atatürk'ü Anma</option>
+                                            <option value="mothersDay" data-i18n="template.mothersDay">Anneler Günü</option>
+                                            <option value="fathersDay" data-i18n="template.fathersDay">Babalar Günü</option>
                                         </optgroup>
                                     </select>
                                 </div>
                                 
                                 <div class="flex-row">
                                     <div class="form-group-field flex-grow">
-                                        <label for="notification-title-key">Başlık Anahtarı (Title Key)</label>
-                                        <input type="text" id="notification-title-key" placeholder="Ör. notificationTitleKey">
+                                        <label for="notification-title-key" data-i18n="notif.title_key">Başlık Anahtarı (Title Key)</label>
+                                        <input type="text" id="notification-title-key" data-i18n-placeholder="notif.title_key_ph" placeholder="Ör. notificationTitleKey">
                                     </div>
                                     <div class="form-group-field flex-grow">
-                                        <label for="notification-body-key">Gövde Anahtarı (Body Key)</label>
-                                        <input type="text" id="notification-body-key" placeholder="Ör. notificationBodyKey">
+                                        <label for="notification-body-key" data-i18n="notif.body_key">Gövde Anahtarı (Body Key)</label>
+                                        <input type="text" id="notification-body-key" data-i18n-placeholder="notif.body_key_ph" placeholder="Ör. notificationBodyKey">
                                     </div>
                                 </div>
                                 <div class="form-group-field">
-                                    <label for="notification-data-payload">İsteğe Bağlı Veri Yükü (JSON)</label>
-                                    <textarea id="notification-data-payload" placeholder='Ör. {"modelId": "llama-8b"}' rows="1"></textarea>
+                                    <label for="notification-data-payload" data-i18n="notif.data_payload">İsteğe Bağlı Veri Yükü (JSON)</label>
+                                    <textarea id="notification-data-payload" data-i18n-placeholder="notif.data_payload_ph" placeholder='Ör. {"modelId": "llama-8b"}' rows="1"></textarea>
                                 </div>
                             </div>
 
                             <div class="form-block-group">
-                                <span class="block-title">Yedek Bildirim İçeriği</span>
+                                <span class="block-title" data-i18n="notif.fallback_section">Yedek Bildirim İçeriği</span>
                                 <div class="form-group-field">
-                                    <label for="notification-title">Genel Başlık</label>
-                                    <input type="text" id="notification-title" placeholder="Yedek bildirim başlığı">
+                                    <label for="notification-title" data-i18n="notif.fallback_title">Genel Başlık</label>
+                                    <input type="text" id="notification-title" data-i18n-placeholder="notif.fallback_title_ph" placeholder="Yedek bildirim başlığı">
                                 </div>
                                 <div class="form-group-field">
-                                    <label for="notification-body">Genel Mesaj Gövdesi</label>
-                                    <textarea id="notification-body" placeholder="Gönderilecek genel mesaj metni" rows="2"></textarea>
+                                    <label for="notification-body" data-i18n="notif.fallback_body">Genel Mesaj Gövdesi</label>
+                                    <textarea id="notification-body" data-i18n-placeholder="notif.fallback_body_ph" placeholder="Gönderilecek genel mesaj metni" rows="2"></textarea>
                                 </div>
                             </div>
 
                             <div class="form-block-group">
-                                <span class="block-title">Kullanıcı Hedefleme</span>
+                                <span class="block-title" data-i18n="notif.targeting">Kullanıcı Hedefleme</span>
                                 <div class="form-group-field">
-                                    <label for="notification-target-type">Alıcı Grubu</label>
+                                    <label for="notification-target-type" data-i18n="notif.target_label">Alıcı Grubu</label>
                                     <select id="notification-target-type" required>
-                                        <option value="" disabled selected>Bir grup seçin...</option>
-                                        <option value="ALL_USERS">Tüm Kullanıcılar</option>
-                                        <option value="SINGLE_USER">Tek Bir Kullanıcı (UID ile)</option>
-                                        <option value="SUBSCRIPTION_LEVEL">Abonelik Seviyesine Göre</option>
+                                        <option value="" disabled selected data-i18n="notif.target_placeholder">Bir grup seçin...</option>
+                                        <option value="ALL_USERS" data-i18n="notif.target_all">Tüm Kullanıcılar</option>
+                                        <option value="SINGLE_USER" data-i18n="notif.target_single">Tek Bir Kullanıcı (UID ile)</option>
+                                        <option value="SUBSCRIPTION_LEVEL" data-i18n="notif.target_level">Abonelik Seviyesine Göre</option>
                                     </select>
                                 </div>
 
                                 <div id="target-specific-inputs" class="conditional-block">
                                     <div id="target-uid-input" class="form-group-field" style="display:none;">
-                                        <label for="notification-target-uid">Kullanıcı UID</label>
-                                        <input type="text" id="notification-target-uid" placeholder="Firebase UID adresi">
+                                        <label for="notification-target-uid" data-i18n="notif.uid_label">Kullanıcı UID</label>
+                                        <input type="text" id="notification-target-uid" data-i18n-placeholder="notif.uid_ph" placeholder="Firebase UID adresi">
                                     </div>
                                     <div id="target-level-input" class="form-group-field" style="display:none;">
-                                        <label for="notification-target-level">Minimum Abonelik Düzeyi</label>
+                                        <label for="notification-target-level" data-i18n="notif.level_label">Minimum Abonelik Düzeyi</label>
                                         <select id="notification-target-level">
-                                            <option value="0">Ücretsiz Üyeler (Level 0)</option>
-                                            <option value="1">Plus Üyeler (Level 1)</option>
-                                            <option value="2">Pro Üyeler (Level 2)</option>
-                                            <option value="3">Ultra Üyeler (Level 3)</option>
+                                            <option value="0" data-i18n="notif.level0">Ücretsiz Üyeler (Level 0)</option>
+                                            <option value="1" data-i18n="notif.level1">Plus Üyeler (Level 1)</option>
+                                            <option value="2" data-i18n="notif.level2">Pro Üyeler (Level 2)</option>
+                                            <option value="3" data-i18n="notif.level3">Ultra Üyeler (Level 3)</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="form-block-group">
-                                <span class="block-title">Gönderim Modu</span>
+                                <span class="block-title" data-i18n="notif.mode">Gönderim Modu</span>
                                 <div class="chrome-switch-row" style="justify-content: flex-start; gap: 10px;">
-                                    <span class="switch-label-text">Hemen Gönder</span>
+                                    <span class="switch-label-text" data-i18n="notif.send_now">Hemen Gönder</span>
                                     <label class="chrome-switch">
                                         <input type="checkbox" id="notification-schedule-switch">
                                         <span class="slider"></span>
                                     </label>
-                                    <span class="switch-label-text">Zamanla</span>
+                                    <span class="switch-label-text" data-i18n="notif.schedule">Zamanla</span>
                                 </div>
 
                                 <div id="schedule-datetime-picker" class="conditional-block" style="display:none; margin-top: 10px;">
                                     <div class="form-group-field">
-                                        <label for="notification-schedule-time">Tarih ve Saat</label>
+                                        <label for="notification-schedule-time" data-i18n="notif.datetime">Tarih ve Saat</label>
                                         <input type="datetime-local" id="notification-schedule-time">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="form-submit-row">
-                                <button type="submit" id="submit-notification-btn" class="chrome-btn-accent">Bildirimi Gönder</button>
+                                <button type="submit" id="submit-notification-btn" class="chrome-btn-accent"><span data-i18n="notif.submit_btn">Bildirimi Gönder</span></button>
                             </div>
                         </form>
                     </div>
@@ -739,11 +742,11 @@
                         <div class="card-title-row">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">calendar_month</span>
-                                <h3>Zamanlanmış Bildirimler</h3>
+                                <h3 data-i18n="notif.scheduled_title">Zamanlanmış Bildirimler</h3>
                             </div>
                         </div>
                         <div id="scheduled-tasks-list-container" class="scrollable-list-box">
-                            <p class="form-hint" style="text-align:center; padding: 2rem;">Kuyrukta bekleyen bildirim bulunamadı.</p>
+                            <p class="form-hint" style="text-align:center; padding: 2rem;" data-i18n="notif.no_scheduled">Kuyrukta bekleyen bildirim bulunamadı.</p>
                         </div>
                     </div>
                 </div>
@@ -752,8 +755,8 @@
             <!-- SEKME 5: SİSTEM VE SUNUCU -->
             <div class="tab-panel" id="tab-system">
                 <div class="panel-section-title">
-                    <h2>Sunucu & Sistem Ayarları</h2>
-                    <p>Sistem altyapısını kontrol edin, bakım modunu açıp kapatın veya atıflar sayfasını yayınlayın.</p>
+                    <h2 data-i18n="system.title">Sunucu & Sistem Ayarları</h2>
+                    <p data-i18n="system.desc">Sistem altyapısını kontrol edin, bakım modunu açıp kapatın veya atıflar sayfasını yayınlayın.</p>
                 </div>
 
                 <div class="grid-layout">
@@ -762,17 +765,17 @@
                         <div class="card-title-row">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">dns</span>
-                                <h3>Sunucu Bakım Modu</h3>
+                                <h3 data-i18n="system.maintenance">Sunucu Bakım Modu</h3>
                             </div>
                         </div>
-                        <p class="intro-description">Sunucu bakım modunu açmak yeni giriş işlemlerini durdurur. Giriş yapmış kullanıcılar yerel modda devam edebilir.</p>
+                        <p class="intro-description" data-i18n="system.maintenance_desc">Sunucu bakım modunu açmak yeni giriş işlemlerini durdurur. Giriş yapmış kullanıcılar yerel modda devam edebilir.</p>
                         
                         <div class="status-action-box">
                             <div id="maintenance-status-indicator" class="indicator-group">
                                 <span class="status-dot"></span>
-                                <span class="status-text">Durum Kontrol Ediliyor...</span>
+                                <span class="status-text" data-i18n="system.checking">Durum Kontrol Ediliyor...</span>
                             </div>
-                            <button id="maintenance-action-btn" class="chrome-btn-outline">Yükleniyor...</button>
+                            <button id="maintenance-action-btn" class="chrome-btn-outline"><span data-i18n="system.loading_btn">Yükleniyor...</span></button>
                         </div>
                     </div>
 
@@ -781,17 +784,17 @@
                         <div class="card-title-row">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">sync</span>
-                                <h3>Atıflar Sayfasını Yayınla</h3>
+                                <h3 data-i18n="system.attributions">Atıflar Sayfasını Yayınla</h3>
                             </div>
                         </div>
-                        <p class="intro-description">Model veya lisans güncellemelerinin ardından atıflar sayfasını tekrar derleyip yayınlamak için bu tetikleyiciyi kullanın.</p>
+                        <p class="intro-description" data-i18n="system.attributions_desc">Model veya lisans güncellemelerinin ardından atıflar sayfasını tekrar derleyip yayınlamak için bu tetikleyiciyi kullanın.</p>
                         
                         <div class="status-action-box">
                             <div id="attributions-status-indicator" class="indicator-group">
                                 <span class="status-dot status-synced"></span>
-                                <span class="status-text">Durum: Güncel</span>
+                                <span class="status-text" data-i18n="system.attributions_synced">Durum: Güncel</span>
                             </div>
-                            <button id="attributions-action-btn" class="chrome-btn-outline" disabled>Atıf Sayfasını Güncelle</button>
+                            <button id="attributions-action-btn" class="chrome-btn-outline" disabled><span data-i18n="system.attributions_btn">Atıf Sayfasını Güncelle</span></button>
                     </div>
 
                     <!-- Veri Dışa Aktar -->
@@ -799,35 +802,35 @@
                         <div class="card-title-row">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">download</span>
-                                <h3>Verileri Dışa Aktar / İndir</h3>
+                                <h3 data-i18n="system.export">Verileri Dışa Aktar / İndir</h3>
                             </div>
                         </div>
-                        <p class="intro-description">Sistemde yüklü olan katılımcı listelerini, AI modellerini veya haber makalelerini seçtiğiniz formatta yerel olarak bilgisayarınıza indirebilirsiniz.</p>
+                        <p class="intro-description" data-i18n="system.export_desc">Sistemde yüklü olan katılımcı listelerini, AI modellerini veya haber makalelerini seçtiğiniz formatta yerel olarak bilgisayarınıza indirebilirsiniz.</p>
                         
                         <div class="form-stack">
                             <div class="flex-row">
                                 <div class="form-group-field flex-grow">
-                                    <label for="export-data-type">Dışa Aktarılacak Veri</label>
+                                    <label for="export-data-type" data-i18n="system.export_type">Dışa Aktarılacak Veri</label>
                                     <select id="export-data-type">
-                                        <option value="contributors">Katılımcı Başvuruları</option>
-                                        <option value="manualModels">Eklenen AI Modelleri (Küratörlü)</option>
-                                        <option value="allModels">Tüm Modeller Veritabanı</option>
-                                        <option value="articles">Yayınlanan Haberler</option>
+                                        <option value="contributors" data-i18n="system.export_contributors">Katılımcı Başvuruları</option>
+                                        <option value="manualModels" data-i18n="system.export_manual_models">Eklenen AI Modelleri (Küratörlü)</option>
+                                        <option value="allModels" data-i18n="system.export_all_models">Tüm Modeller Veritabanı</option>
+                                        <option value="articles" data-i18n="system.export_articles">Yayınlanan Haberler</option>
                                     </select>
                                 </div>
                                 
                                 <div class="form-group-field flex-grow">
-                                    <label for="export-format">Dosya Formatı</label>
+                                    <label for="export-format" data-i18n="system.export_format">Dosya Formatı</label>
                                     <select id="export-format">
-                                        <option value="json">JSON Formatı (.json)</option>
-                                        <option value="csv">CSV Formatı (Excel uyumlu .csv)</option>
+                                        <option value="json" data-i18n="system.export_json">JSON Formatı (.json)</option>
+                                        <option value="csv" data-i18n="system.export_csv">CSV Formatı (Excel uyumlu .csv)</option>
                                     </select>
                                 </div>
                             </div>
                             
                             <button type="button" onclick="exportDataLocal()" class="chrome-btn-accent" style="margin-top: 10px;">
                                 <span class="material-symbols-rounded">download_for_offline</span>
-                                <span>Veriyi Derle ve İndir</span>
+                                <span data-i18n="system.export_btn">Veriyi Derle ve İndir</span>
                             </button>
                         </div>
                     </div>
@@ -949,7 +952,7 @@
                 const innerText = item.innerHTML || "";
                 const textContent = item.textContent || "";
                 
-                const ageMatch = textContent.match(/Age:\s*(\d+)/i) || innerText.match(/Yaş:\s*(\d+)/i);
+                const ageMatch = textContent.match(/(?:Age|Yaş):\s*(\d+)/i);
                 const age = ageMatch ? parseInt(ageMatch[1], 10) : 0;
                 
                 const hasLinkedIn = innerText.includes('LinkedIn');
@@ -976,7 +979,7 @@
                     noMatchAlert.id = noMatchId;
                     noMatchAlert.className = 'form-hint';
                     noMatchAlert.style.cssText = 'text-align:center; padding:2rem; color: var(--accent-clay); font-weight:600; width:100%;';
-                    noMatchAlert.textContent = 'Kriterlere uyan başvuru bulunamadı.';
+                    noMatchAlert.textContent = window.__('contributors.no_match');
                     listContainer.appendChild(noMatchAlert);
                 }
             } else {
@@ -1018,7 +1021,7 @@
                     noMatchAlert.id = noMatchId;
                     noMatchAlert.className = 'form-hint';
                     noMatchAlert.style.cssText = 'text-align:center; padding:2rem; color: var(--accent-clay); font-weight:600; width:100%;';
-                    noMatchAlert.textContent = 'Arama sonucuna uygun katılımcı bulunamadı.';
+                    noMatchAlert.textContent = window.__('contributors.search_no_match');
                     listContainer.appendChild(noMatchAlert);
                 }
             } else {
@@ -1052,7 +1055,7 @@
                 if (dataType === 'allModels' && rawData && typeof rawData === 'object') {
                     // that's fine
                 } else {
-                    alert('Seçtiğiniz veriler henüz yüklenmemiş. Lütfen önce ilgili sekmesini ziyaret edip verilerin gelmesini bekleyin.');
+                    alert(window.__('system.export_no_data'));
                     return;
                 }
             }
@@ -1094,7 +1097,7 @@
                 }
 
                 if (itemsArray.length === 0) {
-                    alert('Dışa aktarılacak satır bulunamadı.');
+                    alert(window.__('system.export_no_rows'));
                     return;
                 }
 
@@ -1141,9 +1144,9 @@
             
             // Try triggering showToast
             if (window.showToast) {
-                window.showToast('Veriler başarıyla dışa aktarıldı.', 'success');
+                window.showToast(window.__('system.export_success'), 'success');
             } else {
-                alert('Dosya başarıyla indirildi!');
+                alert(window.__('system.export_downloaded'));
             }
         };
     </script>

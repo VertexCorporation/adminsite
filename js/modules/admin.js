@@ -1,6 +1,6 @@
 // js/modules/admin.js
 
-import { showToast } from '../utils/ui.js';
+import { showToast, __ } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
 import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn } from '../core/firebase.js';
 
@@ -19,9 +19,9 @@ function updateMaintenanceUI(isEnabled) {
 
     statusDot.className = 'status-dot'; // Reset classes
     statusDot.classList.add(isEnabled ? 'status-on' : 'status-off');
-    statusText.textContent = isEnabled ? 'Status: MAINTENANCE' : 'Status: LIVE';
+    statusText.textContent = isEnabled ? __('system.maintenance_on') : __('system.live');
 
-    dom.maintenanceActionBtn.textContent = isEnabled ? 'Disable Maintenance' : 'Enable Maintenance';
+    dom.maintenanceActionBtn.innerHTML = `<span>${isEnabled ? __('system.disable_maint') : __('system.enable_maint')}</span>`;
     dom.maintenanceActionBtn.className = 'secondary-btn'; // Reset classes
     if (isEnabled) {
         dom.maintenanceActionBtn.classList.add('btn-disable');
@@ -40,8 +40,8 @@ async function initializeMaintenanceStatus() {
         dom.maintenanceActionBtn.disabled = false;
     } catch (error) {
         console.error('[CLIENT] Could not fetch server status:', error);
-        if (statusText) statusText.textContent = 'Status: Error';
-        dom.maintenanceActionBtn.textContent = 'Retry';
+        if (statusText) statusText.textContent = __('system.checking');
+        dom.maintenanceActionBtn.innerHTML = `<span>${__('system.retry')}</span>`;
         dom.maintenanceActionBtn.disabled = true;
         showToast(`Could not load server status: ${error.message}`, 'error');
     }
@@ -56,12 +56,12 @@ async function handleMaintenanceToggle() {
     const newState = !currentState;
 
     dom.maintenanceActionBtn.disabled = true;
-    dom.maintenanceActionBtn.textContent = 'SAVING';
+    dom.maintenanceActionBtn.innerHTML = `<span>${__('system.saving')}</span>`;
 
     try {
         await setServerStatusFn({ maintenanceEnabled: newState });
         updateMaintenanceUI(newState);
-        showToast(`Maintenance mode successfully set to ${newState ? 'ON' : 'OFF'}.`, 'success');
+        showToast(__('system.maint_updated'), 'success');
     } catch (error) {
         console.error('[CLIENT] Failed to set maintenance mode:', error);
         showToast(`Error: ${error.message}`, 'error');
@@ -80,7 +80,7 @@ async function handleAdminFormSubmit(e) {
     const newAdminEmail = document.getElementById('new-admin-email').value;
     const grantBtn = document.getElementById('grant-admin-btn');
     grantBtn.disabled = true;
-    grantBtn.textContent = 'GRANTING';
+    grantBtn.innerHTML = `<span>${__('admin.granting')}</span>`;
 
     try {
         const result = await addAdminRoleFn({ email: newAdminEmail });
@@ -107,16 +107,16 @@ function updateAttributionsUI() {
 
     if (attributionsOutOfSync) {
         statusDot.className = 'status-dot status-pending';
-        statusText.textContent = 'Status: Update Required';
+        statusText.textContent = __('system.attributions_pending');
         actionBtn.disabled = false;
         actionBtn.className = 'secondary-btn btn-update';
-        actionBtn.textContent = 'Publish Changes';
+        actionBtn.innerHTML = `<span>${__('system.attributions_publish')}</span>`;
     } else {
         statusDot.className = 'status-dot status-synced';
-        statusText.textContent = 'Status: Synced';
+        statusText.textContent = __('system.attributions_synced');
         actionBtn.disabled = true;
         actionBtn.className = 'secondary-btn';
-        actionBtn.textContent = 'Up to Date';
+        actionBtn.innerHTML = `<span>${__('system.attributions_uptodate')}</span>`;
     }
 }
 
@@ -137,7 +137,7 @@ export function setAttributionsOutOfSync() {
 async function handleAttributionsUpdate() {
     const actionBtn = document.getElementById('attributions-action-btn');
     actionBtn.disabled = true;
-    actionBtn.textContent = 'TRIGGERING...';
+    actionBtn.innerHTML = `<span>${__('system.attributions_trigger')}</span>`;
     
     try {
         const result = await triggerAttributionsUpdateFn();

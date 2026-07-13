@@ -2,7 +2,7 @@
 
 import { initFirebase, auth } from './core/firebase.js';
 import * as dom from './utils/dom.js';
-import { showToast } from './utils/ui.js';
+import { showToast, __, getLang, setLang, translatePage } from './utils/ui.js';
 
 // Import module initializers
 import { initAdminModule } from './modules/admin.js';
@@ -153,7 +153,27 @@ export function startApp(firebaseConfig) {
         }
     });
 
-    // --- Step 6: Hide Loader and Show App ---
+    // --- Step 6: Bind Language Toggle ---
+    const langToggleBtn = document.getElementById('lang-toggle-btn');
+    if (langToggleBtn) {
+        const langIndicator = document.getElementById('lang-indicator');
+        langToggleBtn.addEventListener('click', () => {
+            const current = getLang();
+            const next = current === 'tr' ? 'en' : 'tr';
+            setLang(next);
+            if (langIndicator) {
+                langIndicator.textContent = __('lang.flag');
+            }
+            showToast(`Language: ${__('lang.name')}`, 'info');
+        });
+        // Initialize lang indicator and apply saved language
+        translatePage();
+        if (langIndicator) {
+            langIndicator.textContent = __('lang.flag');
+        }
+    }
+
+    // --- Step 7: Hide Loader and Show App ---
     // The app is now fully initialized and ready.
     if (dom.appLoader) {
         dom.appLoader.classList.add('hidden');
