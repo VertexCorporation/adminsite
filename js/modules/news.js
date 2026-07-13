@@ -89,15 +89,15 @@ export function listenForArticles() {
     unsubscribeFromArticles = db.collection('news').orderBy('publishedAt', 'desc').onSnapshot(snapshot => {
         dom.articlesListContainer.innerHTML = '';
         if (snapshot.empty) {
+            window.loadedArticles = [];
             dom.articlesListContainer.innerHTML = '<p class="form-hint">No articles found.</p>';
             return;
         }
+        const articles = [];
         snapshot.forEach(doc => {
+            articles.push({ id: doc.id, ...doc.data() });
             const item = document.createElement('div');
-            // FIX: The class 'article-item' is the container.
             item.className = 'article-item';
-            
-            // CORRECTED STRUCTURE: Details and actions are now in separate divs.
             item.innerHTML = `
                 <div class="item-details">
                     <span class="item-title">${doc.data().translations.en.title || 'Untitled'}</span>
@@ -107,6 +107,7 @@ export function listenForArticles() {
                 </div>`;
             dom.articlesListContainer.appendChild(item);
         });
+        window.loadedArticles = articles;
     }, error => {
         console.error("[CLIENT] Error listening for article updates:", error);
         showToast("Could not load articles in real-time.", 'error');

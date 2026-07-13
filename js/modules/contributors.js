@@ -79,6 +79,7 @@ export async function fetchContributorsData() {
     try {
         const result = await getVertexContributorsFn();
         const contributors = result.data.contributors || [];
+        window.loadedContributors = contributors;
         renderContributors(contributors);
     } catch (error) {
         console.error('[CONTRIBUTORS] Failed to fetch data:', error);

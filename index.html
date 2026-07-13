@@ -1,44 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vertex Control - Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Vertex Kontrol - Yönetici Paneli</title>
 
     <!-- SEO & Basic Meta -->
-    <meta name="description"
-        content="Centralized control panel for Vertex content, user management, and system administration.">
+    <meta name="description" content="Vertex içerikleri, kullanıcı yönetimi ve sistem yönetimi için merkezi kontrol paneli.">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#ffffff">
-
-    <!-- Open Graph / Facebook / WhatsApp / Discord -->
-    <!-- Bu kısım link paylaşıldığında görünecek başlık, açıklama ve resimdir -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://admin.vertexishere.com/">
-    <meta property="og:title" content="Vertex Control">
-    <meta property="og:description"
-        content="Secure Admin Access: Manage content, users, and server status directly from the Vertex Control Panel.">
-    <meta property="og:image" content="https://admin.vertexishere.com/favicon.png">
-    <meta property="og:image:alt" content="Vertex Control Logo">
-    <meta property="og:site_name" content="Vertex Admin">
-
-    <!-- Twitter (X) -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:url" content="https://admin.vertexishere.com/">
-    <meta name="twitter:title" content="Vertex Control">
-    <meta name="twitter:description" content="Secure Admin Access: Manage content, users, and server status.">
-    <meta name="twitter:image" content="https://admin.vertexishere.com/favicon.png">
+    <meta name="theme-color" content="#090909">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <!-- Favicons -->
     <link rel="icon" href="favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="favicon.png">
 
+    <!-- Google Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
     <!-- Styles -->
     <link rel="stylesheet" href="css/style.css">
 
     <script>
-        // Inline script to set the theme from localStorage before the page loads
+        // Sayfa yüklenmeden önce localStorage'dan temayı ayarlayan betik
         (function () {
             try {
                 const theme = localStorage.getItem('theme');
@@ -46,12 +35,12 @@
                     document.documentElement.setAttribute('data-theme', 'light');
                 }
             } catch (e) {
-                console.error("Could not set theme from localStorage", e);
+                console.error("localStorage'dan tema ayarlanamadı", e);
             }
         })();
     </script>
     <script>
-        // Domain enforcement script
+        // Alan adı kontrolü
         var requiredDomain = "admin.vertexishere.com";
         var currentDomain = window.location.hostname;
         if (currentDomain !== requiredDomain && currentDomain !== "localhost" && currentDomain !== "127.0.0.1") {
@@ -62,523 +51,1102 @@
 
 <body>
 
+    <!-- Başlatıcı Yükleme Ekranı -->
     <div id="app-loader">
-        <svg class="loader-logo" viewBox="0 0 100 100" width="120">
+        <svg class="loader-logo" viewBox="0 0 100 100" width="80">
             <polygon class="logo-bg" points="50,15 95,85 5,85"></polygon>
             <polygon class="logo-line" points="50,15 95,85 5,85"></polygon>
         </svg>
-        <p>Initializing Control Panel</p>
+        <p>Vertex Kontrol Başlatılıyor</p>
     </div>
 
-    <ul class="bg-animation">
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-    </ul>
+    <!-- Hızlı Toast Bildirim Alanı -->
     <div id="toast-container"></div>
 
+    <!-- GİRİŞ EKRANI -->
     <div id="login-container" class="container">
-        <h1>Vertex Control</h1>
-        <h2>Admin Panel Access</h2>
-        <input type="email" id="email" placeholder="Administrator Email">
-        <input type="password" id="password" placeholder="Password">
-        <button id="login-btn">Authenticate</button>
-        <div class="login-divider">
-            <span>or</span>
-        </div>
-        <div class="social-login-buttons">
-            <button id="google-login-btn" class="social-btn google-btn" type="button">
-                <span class="social-btn-icon">
-                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        <div class="login-box">
+            <div class="login-header">
+                <div class="logo-orb">
+                    <svg viewBox="0 0 100 100" width="32" class="logo-svg">
+                        <polygon points="50,15 95,85 5,85" fill="none" stroke="currentColor" stroke-width="7"></polygon>
                     </svg>
-                </span>
-                <span class="social-btn-text">Sign in with Google</span>
-            </button>
-            <button id="apple-login-btn" class="social-btn apple-btn" type="button">
-                <span class="social-btn-icon">
-                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                        <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-                    </svg>
-                </span>
-                <span class="social-btn-text">Sign in with Apple</span>
-            </button>
-        </div>
-    </div>
-
-    <div id="admin-panel" class="container" style="display:none;">
-
-        <div class="main-header-wrapper">
-            <div class="panel-header">
-                <h2>Vertex Control</h2>
+                </div>
+                <h1>VERTEX CONTROL</h1>
+                <h2>Sistem Yönetim Modülü</h2>
             </div>
-            <div class="header-actions">
-                <button id="theme-toggle-btn" title="Toggle Theme">
-                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-                    </svg>
-                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
-                    </svg>
+            
+            <div class="form-wrapper">
+                <div class="input-field">
+                    <span class="material-symbols-rounded prefix-icon">mail</span>
+                    <input type="email" id="email" placeholder="E-posta Adresiniz" autocomplete="email" required>
+                </div>
+                
+                <div class="input-field">
+                    <span class="material-symbols-rounded prefix-icon">lock</span>
+                    <input type="password" id="password" placeholder="Şifreniz" required>
+                </div>
+                
+                <button id="login-btn" class="chrome-btn-primary">
+                    <span>Oturum Aç</span>
+                    <span class="material-symbols-rounded">login</span>
                 </button>
-                <button id="logout-btn">Logout</button>
             </div>
-        </div>
-
-        <div class="dashboard-layout">
-            <div class="left-column">
-                <div id="model-manager" class="dashboard-column">
-                    <h3>Manage Curated Models (Offline & Roleplay)</h3>
-                    <form id="model-form">
-
-                        <div class="form-section">
-                            <h4>Model Type & ID</h4>
-                            <div class="switch-container">
-                                <span>Roleplay Model</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="model-type-switch">
-                                    <span class="slider round"></span>
-                                </label>
-                                <span>Offline Model</span>
-                            </div>
-                            <label for="model-producer">Producer</label>
-                            <p class="form-hint">The original company behind the model (e.g., Google, Meta).</p>
-                            <input type="text" id="model-producer" placeholder="Producer (e.g., Google, Meta)" required>
-                            <label for="model-id">Unique Model ID</label>
-                            <p class="form-hint">This ID is permanent and cannot be changed after creation (e.g.,
-                                tinyllama, teacher).</p>
-                            <input type="text" id="model-id" placeholder="Unique Model ID (e.g., tinyllama, teacher)"
-                                required>
-                        </div>
-
-                        <div class="form-section">
-                            <h4>Model Details (English)</h4>
-                            <input type="text" id="model-title" placeholder="Title" required>
-                            <textarea id="model-summary" placeholder="Summary (Short Description)" rows="2"
-                                required></textarea>
-                            <textarea id="model-description" placeholder="Full Description" rows="4"
-                                required></textarea>
-
-                            <!-- Roleplay-specific fields -->
-                            <div id="roleplay-fields">
-                                <textarea id="model-role" placeholder="Role/System Prompt" rows="3"></textarea>
-                            </div>
-
-                            <!-- Offline-specific fields -->
-                            <div id="offline-fields" style="display:none;">
-                                <input type="url" id="model-url" placeholder="HuggingFace Download URL">
-                                <label for="model-size">Model Requirements</label>
-                                <p class="form-hint">Specify model size and minimum required RAM in Megabytes (MB).</p>
-                                <div style="display: flex; gap: 1rem;">
-                                    <input type="number" id="model-size" placeholder="Size (MB)" style="flex: 1;">
-                                    <input type="number" id="model-ram" placeholder="RAM (MB)" style="flex: 1;">
-                                </div>
-
-                                <div class="form-subsection" style="margin-top: 2rem;">
-                                    <h4>Model Capabilities</h4>
-                                    <div id="modalities-inputs">
-                                        <div class="capability-header">
-                                            <label class="capability-label">Input Types</label>
-                                            <p class="form-hint">Select the types of input this model can process.</p>
-                                        </div>
-                                        <div class="checkbox-grid">
-                                            <label><input type="checkbox" data-modality-type="modalities"
-                                                    data-modality-key="image"> Image</label>
-                                            <label><input type="checkbox" data-modality-type="modalities"
-                                                    data-modality-key="video"> Video</label>
-                                            <label><input type="checkbox" data-modality-type="modalities"
-                                                    data-modality-key="audio"> Audio</label>
-                                            <label><input type="checkbox" data-modality-type="modalities"
-                                                    data-modality-key="file"> File</label>
-                                        </div>
-                                    </div>
-                                    <div id="modalities-outputs" style="margin-top: 1.5rem;">
-                                        <div class="capability-header">
-                                            <label class="capability-label">Output Types</label>
-                                            <p class="form-hint">Select the types of output this model can generate.</p>
-                                        </div>
-                                        <div class="checkbox-grid">
-                                            <label><input type="checkbox" data-modality-type="outputs"
-                                                    data-modality-key="text" checked disabled> Text (Default)</label>
-                                            <label><input type="checkbox" data-modality-type="outputs"
-                                                    data-modality-key="image"> Image</label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="form-subsection" style="margin-top: 2rem;">
-                                    <h4>License & Attribution</h4>
-                                    <p class="form-hint">This information will be automatically added to the
-                                        attributions page.</p>
-
-                                    <label for="model-creator">Creator(s)</label>
-                                    <input type="text" id="model-creator"
-                                        placeholder="e.g., Microsoft Research, Menlo Research">
-
-                                    <label for="model-license-name">License Name</label>
-                                    <input type="text" id="model-license-name"
-                                        placeholder="e.g., MIT License, Apache License 2.0">
-
-                                    <label for="model-source-name">Source Name</label>
-                                    <input type="text" id="model-source-name" value="Hugging Face"
-                                        placeholder="e.g., Hugging Face, GitHub">
-
-                                    <label for="model-license-url">License URL</label>
-                                    <input type="url" id="model-license-url"
-                                        placeholder="Full link to the license text">
-                                </div>
-                                <div class="form-subsection" style="margin-top: 2rem;">
-                                    <h4>Chat Format & Tokens</h4>
-                                    <p class="form-hint">
-                                        Define the special tokens for constructing prompts and parsing responses.
-                                        Leave fields blank if not applicable for this model.
-                                    </p>
-
-                                    <label for="model-format-template">Format Template Name (Optional)</label>
-                                    <select id="model-format-template">
-                                        <option value="">-- Select a Template --</option>
-                                        <option value="chatml">ChatML (Qwen / many)</option>
-                                        <option value="llama2">Llama-2 / Mistral-Instruct</option>
-                                        <option value="alpaca">Alpaca</option>
-                                        <option value="llama3">Llama-3 / 3.1 (header_id / eot_id)</option>
-                                        <option value="gemma2">Gemma-2 (&lt;start_of_turn&gt;/&lt;end_of_turn&gt;)
-                                        </option>
-                                        <option value="anthropic-style">Anthropic-style (Human/Assistant)</option>
-                                        <option value="plain_dialogue">Plain Dialogue (User/Assistant)</option>
-                                        <option value="phi-3_glm">Phi-3 / GLM (&lt;|role|&gt;/&lt;|end|&gt;)</option>
-                                    </select>
-
-
-                                    <div class="token-grid">
-                                        <div class="token-group">
-                                            <label for="model-token-system-start">System Start</label>
-                                            <textarea id="model-token-system-start" rows="2"
-                                                placeholder="<|im_start|>system"></textarea>
-                                        </div>
-                                        <div class="token-group">
-                                            <label for="model-token-system-end">System End</label>
-                                            <textarea id="model-token-system-end" rows="2"
-                                                placeholder="<|im_end|>"></textarea>
-                                        </div>
-                                        <div class="token-group">
-                                            <label for="model-token-user-start">User Start</label>
-                                            <textarea id="model-token-user-start" rows="2"
-                                                placeholder="<|im_start|>user"></textarea>
-                                        </div>
-                                        <div class="token-group">
-                                            <label for="model-token-user-end">User End</label>
-                                            <textarea id="model-token-user-end" rows="2"
-                                                placeholder="<|im_end|>"></textarea>
-                                        </div>
-                                        <div class="token-group">
-                                            <label for="model-token-assistant-start">Assistant Start</label>
-                                            <textarea id="model-token-assistant-start" rows="2"
-                                                placeholder="<|im_start|>assistant"></textarea>
-                                        </div>
-                                        <div class="token-group">
-                                            <label for="model-token-assistant-end">Assistant End</label>
-                                            <textarea id="model-token-assistant-end" rows="2"
-                                                placeholder="<|im_end|>"></textarea>
-                                        </div>
-                                    </div>
-
-                                    <label for="model-token-stop-generation">Stop Generation Tokens</label>
-                                    <p class="form-hint">Comma-separated list of tokens that signal the end of a
-                                        response (e.g., &lt;|im_end|&gt;, &lt;/s&gt;)</p>
-                                    <input type="text" id="model-token-stop-generation" placeholder="<|im_end|>, </s>">
-                                    <label for="model-token-ignore-regex">Ignore Regex (Optional)</label>
-                                    <p class="form-hint">A JavaScript regex to filter out unwanted streaming tokens
-                                        (e.g., thinking steps).</p>
-                                    <input type="text" id="model-token-ignore-regex" placeholder="^\[Thinking\]\.\.\.$">
-                                </div>
-
-                            </div>
-
-                            <!-- Model Image is common to both types, so it's placed after the conditional blocks -->
-                            <label for="model-image">Model Image:</label>
-                            <input type="file" id="model-image" class="cover-input" accept="image/*">
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" id="model-submit-btn">Save Model</button>
-                            <button type="button" id="model-cancel-btn" class="secondary-btn"
-                                style="display:none;">Cancel
-                                Edit</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div id="manual-models-manager" class="dashboard-column">
-                    <div class="column-header">
-                        <h3>Live Curated Models</h3>
-                        <div class="model-counts">
-                            <span id="offline-model-count-badge" class="count-badge offline">Offline: 0</span>
-                            <span id="roleplay-model-count-badge" class="count-badge roleplay">Roleplay: 0</span>
-                        </div>
-                    </div>
-                    <div id="manual-models-list-container">
-                        <p class="form-hint">No manual models found. Add one to see it here.</p>
-                    </div>
-                </div>
-
-                <div id="admin-manager" class="dashboard-column">
-                    <h3>Manage Admins</h3>
-                    <form id="admin-form">
-                        <div class="form-section">
-                            <h4>Grant Admin Role</h4>
-                            <p class="form-hint">Enter the email of a verified user to grant them admin privileges.</p>
-                            <input type="email" id="new-admin-email" placeholder="User's email to make admin" required>
-                            <button type="submit" id="grant-admin-btn">Grant Admin Role</button>
-                        </div>
-                    </form>
-                    <div class="form-container" id="manage-vertex-manager">
-                        <h3>Manage Vertex Contributors</h3>
-                        <div class="status-action-wrapper" style="margin-bottom: 1rem;">
-                            <button id="refresh-contributors-btn" class="secondary-btn">Refresh List</button>
-                        </div>
-                        <div id="contributors-list-container" style="max-height: 400px; overflow-y: auto; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px;">
-                            <p class="form-hint" style="text-align:center;">Loading contributors...</p>
-                        </div>
-                    </div>
-                    <div class="form-container" id="server-status-manager">
-                        <h3>Server Status</h3>
-                        <div class="status-action-wrapper">
-                            <div id="maintenance-status-indicator">
-                                <span class="status-dot"></span>
-                                <span class="status-text">Loading status...</span>
-                            </div>
-                            <button id="maintenance-action-btn" class="secondary-btn">Loading...</button>
-                        </div>
-                        <p class="form-hint">
-                            When enabled, new user logins will be blocked and a maintenance message will be shown.
-                            Users already logged in can continue in offline mode.
-                        </p>
-                    </div>
-                    <div class="form-container" id="attributions-manager">
-                        <h3>Attributions Page</h3>
-                        <div class="status-action-wrapper">
-                            <div id="attributions-status-indicator">
-                                <span class="status-dot status-synced"></span>
-                                <span class="status-text">Status: Synced</span>
-                            </div>
-                            <button id="attributions-action-btn" class="secondary-btn" disabled>Update Page</button>
-                        </div>
-                        <p class="form-hint">
-                            If there are pending changes to model attributions, this button will become active.
-                            Click it to rebuild and deploy the public attributions page.
-                        </p>
-                    </div>
-                </div>
+            
+            <div class="divider">
+                <span>veya</span>
             </div>
-
-            <div class="right-column">
-                <div id="news-creator" class="dashboard-column">
-                    <h3>Create News Article</h3>
-                    <form id="news-form">
-                        <div class="form-section">
-                            <h4>Turkish Content</h4>
-                            <input type="text" id="title-tr" placeholder="Title (TR)" required>
-                            <textarea id="summary-tr" placeholder="Summary (TR)" rows="3" required></textarea>
-                            <textarea id="content-tr" placeholder="Content (TR)" rows="8" required></textarea>
-                            <label for="cover-image-tr">Cover Image (TR):</label>
-                            <input type="file" id="cover-image-tr" class="cover-input" accept="image/*" required>
-                        </div>
-                        <div class="form-section">
-                            <h4>English Content</h4>
-                            <input type="text" id="title-en" placeholder="Title (EN)" required>
-                            <textarea id="summary-en" placeholder="Summary (EN)" rows="3" required></textarea>
-                            <textarea id="content-en" placeholder="Content (EN)" rows="8" required></textarea>
-                            <label for="cover-image-en">Cover Image (EN):</label>
-                            <input type="file" id="cover-image-en" class="cover-input" accept="image/*" required>
-                        </div>
-                        <div class="form-section">
-                            <h4>General Information</h4>
-                            <input type="text" id="tags" placeholder="Tags (comma-separated: gaming,tech)">
-                            <textarea id="references" placeholder="Reference Links (one link per line)"
-                                rows="3"></textarea>
-                        </div>
-                        <button type="submit" id="submit-btn">Publish Article</button>
-                    </form>
-                </div>
-
-                <div id="news-manager" class="dashboard-column">
-                    <h3>Live Articles</h3>
-                    <div id="articles-list-container">
-                        <p class="form-hint">No articles found. Publish one to see it here.</p>
-                    </div>
-                </div>
-
-                <div id="notification-sender" class="dashboard-column">
-                    <h3><span class="warning-icon" style="animation: none;">🚀</span> Push Notifications</h3>
-                    <form id="notification-form">
-                        <div class="form-section">
-                            <h4>Notification Content</h4>
-                            <select id="notification-template-selector" style="margin-bottom: 1.5rem;">
-                                <option value="">-- Select a Template (Optional) --</option>
-
-                                <optgroup label="Updates & Offers">
-                                    <option value="newModel">New Model Added (Requires Param)</option>
-                                    <option value="newFeature">New Feature (Requires Param)</option>
-                                    <option value="upsellFeature">Upsell Feature (Requires Param)</option>
-                                    <option value="appUpdate">App Update Reminder</option>
-                                    <option value="rateApp">Rate The App</option>
-                                    <option value="referral">Referral / Share</option>
-                                    <option value="socialMedia">Social Media Call</option>
-                                </optgroup>
-
-                                <optgroup label="Re-Engagement">
-                                    <option value="comeback">Comeback (General)</option>
-                                    <option value="longTimeNoSee">Long Time No See</option>
-                                    <option value="howAreYou">How Are You?</option>
-                                    <option value="goodMorning">Good Morning</option>
-                                    <option value="goodNight">Good Night</option>
-                                </optgroup>
-
-                                <optgroup label="Fun & Personalities">
-                                    <option value="randomFact">Random Fact</option>
-                                    <option value="showerThought">Shower Thought</option>
-                                    <option value="fortuneCookie">Fortune Cookie</option>
-                                    <option value="hackerJoke">Hacker Joke</option>
-                                    <option value="pirate">Pirate Mode</option>
-                                    <option value="trollAnime">Troll (Anime)</option>
-                                    <option value="trollAiRebellion">Troll (AI Rebellion)</option>
-                                    <option value="singularity">Singularity</option>
-                                    <option value="detectiveCase">Detective Case</option>
-                                    <option value="originStory">Origin Story</option>
-                                    <option value="rejectionStory">Rejection Story</option>
-                                    <option value="cooking">Cooking/Chef</option>
-                                    <option value="existential">Existential Crisis</option>
-                                    <option value="openSource">Open Source Love</option>
-                                </optgroup>
-
-                                <optgroup label="Features & Technical">
-                                    <option value="offlineReady">Offline Mode Ready</option>
-                                    <option value="customModel">Custom Model Feature</option>
-                                    <option value="dynamicChat">Dynamic Chat</option>
-                                    <option value="ggufSupport">GGUF Support</option>
-                                    <option value="themeCustomization">Theme Customization</option>
-                                    <option value="homeworkHelper">Homework Helper</option>
-                                    <option value="lowBattery">Low Battery Warning</option>
-                                </optgroup>
-
-                                <optgroup label="Special Days">
-                                    <option value="newYear">New Year</option>
-                                    <option value="valentinesDay">Valentine's Day</option>
-                                    <option value="ataturkRemembrance">Ataturk Remembrance</option>
-                                    <option value="mothersDay">Mother's Day</option>
-                                    <option value="fathersDay">Father's Day</option>
-                                </optgroup>
-                            </select>
-                            <p class="form-hint">
-                                <strong>Pro Tip:</strong> Use keys to send localized notifications defined in the app.
-                                If keys are filled, they will be used. Otherwise, the plain text below will be sent.
-                            </p>
-                            <div style="display: flex; gap: 1rem;">
-                                <input type="text" id="notification-title-key"
-                                    placeholder="Title Key (e.g., notificationNewModelAddedTitle)" style="flex: 1;">
-                                <input type="text" id="notification-body-key"
-                                    placeholder="Body Key (e.g., notificationNewModelAddedBody)" style="flex: 1;">
-                            </div>
-                            <textarea id="notification-data-payload"
-                                placeholder='Optional Data Payload (JSON format) e.g., {"modelName": "Llama 3"}'
-                                rows="2"></textarea>
-                            <hr style="border-color: var(--border-color); margin: 1.5rem 0;">
-                            <input type="text" id="notification-title" placeholder="Fallback Notification Title">
-                            <textarea id="notification-body" placeholder="Fallback Notification Body (Message)"
-                                rows="3"></textarea>
-                        </div>
-                        <div class="form-section">
-                            <h4>Target Audience</h4>
-                            <select id="notification-target-type" required>
-                                <option value="" disabled selected>Select a target...</option>
-                                <option value="ALL_USERS">All Users</option>
-                                <option value="SINGLE_USER">A Single User</option>
-                                <option value="SUBSCRIPTION_LEVEL">By Subscription Level</option>
-                            </select>
-                            <div id="target-specific-inputs" style="margin-top: 1rem;">
-                                <div id="target-uid-input" style="display:none;"><input type="text"
-                                        id="notification-target-uid" placeholder="Enter User ID (UID)"></div>
-                                <div id="target-level-input" style="display:none;">
-                                    <select id="notification-target-level">
-                                        <option value="0">Free Users (Level 0)</option>
-                                        <option value="1">Plus Users (Level 1)</option>
-                                        <option value="2">Pro Users (Level 2)</option>
-                                        <option value="3">Ultra Users (Level 3)</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-section">
-                            <h4>Scheduling</h4>
-                            <div class="switch-container" style="justify-content: flex-start; gap: 1rem;">
-                                <span>Send Now</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="notification-schedule-switch">
-                                    <span class="slider round"></span>
-                                </label>
-                                <span>Schedule for Later</span>
-                            </div>
-                            <div id="schedule-datetime-picker" style="display:none; margin-top: 1rem;">
-                                <input type="datetime-local" id="notification-schedule-time">
-                                <p class="form-hint">Select the date and time in your local timezone. It will be
-                                    converted to UTC on the server.</p>
-                            </div>
-                        </div>
-                        <button type="submit" id="submit-notification-btn">Submit Notification</button>
-                    </form>
-                </div>
-
-                <div id="scheduled-tasks-manager" class="dashboard-column">
-                    <h3>Scheduled Notifications</h3>
-                    <div id="scheduled-tasks-list-container">
-                        <p class="form-hint">No scheduled notifications found.</p>
-                    </div>
-                </div>
-
-                <div id="all-models-explorer" class="dashboard-column">
-                    <h3>All Models Explorer</h3>
-                    <div id="all-models-list-container">
-                        <p class="form-hint">Loading full model database...</p>
-                    </div>
-                </div>
+            
+            <div class="social-login-grid">
+                <button id="google-login-btn" class="chrome-social-btn google" type="button">
+                    <svg viewBox="0 0 24 24" width="16" height="16">
+                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    <span>Google</span>
+                </button>
+                <button id="apple-login-btn" class="chrome-social-btn apple" type="button">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                    </svg>
+                    <span>Apple</span>
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- ANA PANEL (FULLSCREEN SHELL) -->
+    <div id="admin-panel" class="app-layout" style="display:none;">
+
+        <!-- ÜST BAŞLIK (SABİT HEADER) -->
+        <header class="app-header">
+            <div class="brand-container">
+                <div class="brand-symbol">
+                    <svg viewBox="0 0 100 100" width="22">
+                        <polygon points="50,15 95,85 5,85" fill="none" stroke="currentColor" stroke-width="8"></polygon>
+                    </svg>
+                </div>
+                <div class="brand-info">
+                    <h1>VERTEX <span>CONTROL</span></h1>
+                    <span class="system-tag">Sistem Portal</span>
+                </div>
+            </div>
+            <div class="header-control-buttons">
+                <button id="theme-toggle-btn" class="icon-circle-btn" title="Temayı Değiştir">
+                    <span class="material-symbols-rounded sun-icon">light_mode</span>
+                    <span class="material-symbols-rounded moon-icon">dark_mode</span>
+                </button>
+                <button id="logout-btn" class="btn-sign-out">
+                    <span class="material-symbols-rounded">logout</span>
+                    <span>Çıkış</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- ORTAK HİBRİT NAVİGASYON (MOBİLDE ALT BAR, DESKTOPTA SOL SIDEBAR) -->
+        <nav class="app-navigation" id="navigation-tabs-dock">
+            <button class="dock-btn active" data-target="tab-contributors">
+                <span class="material-symbols-rounded">group</span>
+                <span class="dock-label">Katılımcı</span>
+            </button>
+            <button class="dock-btn" data-target="tab-models">
+                <span class="material-symbols-rounded">smart_toy</span>
+                <span class="dock-label">Modeller</span>
+            </button>
+            <button class="dock-btn" data-target="tab-news">
+                <span class="material-symbols-rounded">newspaper</span>
+                <span class="dock-label">Haberler</span>
+            </button>
+            <button class="dock-btn" data-target="tab-notifications">
+                <span class="material-symbols-rounded">notifications_active</span>
+                <span class="dock-label">Bildirim</span>
+            </button>
+            <button class="dock-btn" data-target="tab-system">
+                <span class="material-symbols-rounded">settings_ethernet</span>
+                <span class="dock-label">Sistem</span>
+            </button>
+        </nav>
+
+        <!-- İÇERİK ALANI -->
+        <main class="app-viewport">
+            <div class="tab-scroll-container" id="tab-scroll-container">
+
+            <!-- SEKME 1: KATILIMCILAR & YETKİLER -->
+            <div class="tab-panel active" id="tab-contributors">
+                <div class="panel-section-title">
+                    <h2>Katılımcı Yönetimi & Yetkiler</h2>
+                    <p>Vertex topluluk üyelerini inceleyin, onaylayın ve yönetici yetkilerini yönetin.</p>
+                </div>
+
+                <div class="grid-layout">
+                    <!-- Başvurular Listesi -->
+                    <div class="panel-card col-span-8">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">group_work</span>
+                                <h3>Başvuran Adaylar & Üyeler</h3>
+                            </div>
+                            <button id="refresh-contributors-btn" class="btn-refresh">
+                                <span class="material-symbols-rounded">refresh</span>
+                                <span>Yenile</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Kategori Çipleri -->
+                        <div class="scroll-chips-row">
+                            <button class="filter-chip active" data-filter="all" onclick="filterContributors('all')">Tümü</button>
+                            <button class="filter-chip" data-filter="verified" onclick="filterContributors('verified')">Onaylılar</button>
+                            <button class="filter-chip" data-filter="unverified" onclick="filterContributors('unverified')">Onay Bekleyenler</button>
+                            <button class="filter-chip" data-filter="age-14-15" onclick="filterContributors('age-14-15')">14-15 Yaş</button>
+                            <button class="filter-chip" data-filter="age-16-17" onclick="filterContributors('age-16-17')">16-17 Yaş</button>
+                            <button class="filter-chip" data-filter="age-18" onclick="filterContributors('age-18')">18+ Yaş</button>
+                            <button class="filter-chip" data-filter="linkedin" onclick="filterContributors('linkedin')">LinkedIn</button>
+                            <button class="filter-chip" data-filter="github" onclick="filterContributors('github')">GitHub</button>
+                        </div>
+
+                        <!-- Arama Kutusu -->
+                        <div class="search-input-field">
+                            <span class="material-symbols-rounded search-icon">search</span>
+                            <input type="text" id="contributor-search" placeholder="Listede isim, e-posta veya biyografi ara..." oninput="searchContributorsLocal()">
+                        </div>
+
+                        <div id="contributors-list-container" class="scrollable-list-box">
+                            <p class="form-hint" style="text-align:center; padding: 2rem; color: var(--text-secondary);">Listeyi yüklemek için Yenile butonuna basın.</p>
+                        </div>
+                    </div>
+
+                    <!-- Yönetici Ekleme -->
+                    <div class="panel-card col-span-4" id="admin-manager">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">shield_person</span>
+                                <h3>Yönetici Rolü Tanımla</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description">Doğrulanmış bir Vertex üyesinin e-posta adresini girerek yönetici kontrol yetkisi tanımlayın.</p>
+                        
+                        <form id="admin-form" class="form-stack">
+                            <div class="form-group-field">
+                                <label for="new-admin-email">Kullanıcı E-postası</label>
+                                <div class="form-input-wrapper">
+                                    <span class="material-symbols-rounded">mail</span>
+                                    <input type="email" id="new-admin-email" placeholder="kullanici@vertexishere.com" required>
+                                </div>
+                                <span class="form-field-info">Kullanıcı sisteme kayıtlı olmalıdır.</span>
+                            </div>
+                            <button type="submit" id="grant-admin-btn" class="chrome-btn-accent">
+                                <span class="material-symbols-rounded">admin_panel_settings</span>
+                                <span>Yönetici Yetkisi Ver</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEKME 2: MODEL KÜTÜPHANESİ -->
+            <div class="tab-panel" id="tab-models">
+                <div class="panel-section-title">
+                    <h2>Yapay Zeka Modelleri</h2>
+                    <p>Uygulamada yayında olan çevrimdışı (On-Device) ve rol yapma yapay zeka modellerini yönetin.</p>
+                </div>
+
+                <div class="grid-layout">
+                    <!-- Model Kayıt Formu -->
+                    <div id="model-manager" class="panel-card col-span-7">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">add_circle</span>
+                                <h3>Model Ekleme ve Düzenleme</h3>
+                            </div>
+                        </div>
+                        
+                        <form id="model-form" class="form-scrollable-container">
+                            <!-- Model Tipi Seçimi -->
+                            <div class="form-block-group">
+                                <div class="type-selector-header">
+                                    <span class="block-title">Model Sınıflandırması</span>
+                                    <div class="chrome-switch-row">
+                                        <span class="switch-label-text">Rol Yapma</span>
+                                        <label class="chrome-switch">
+                                            <input type="checkbox" id="model-type-switch">
+                                            <span class="slider"></span>
+                                        </label>
+                                        <span class="switch-label-text">Çevrimdışı</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex-row">
+                                    <div class="form-group-field flex-grow">
+                                        <label for="model-producer">Geliştirici Firma</label>
+                                        <input type="text" id="model-producer" placeholder="Ör. Google, Meta" required>
+                                    </div>
+                                    <div class="form-group-field flex-grow">
+                                        <label for="model-id">Model Kimliği (ID)</label>
+                                        <input type="text" id="model-id" placeholder="Ör. gemma-2b-it" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- İngilizce Kart Detayları -->
+                            <div class="form-block-group">
+                                <span class="block-title">Arayüz Kart Bilgileri (İngilizce)</span>
+                                <div class="form-group-field">
+                                    <label for="model-title">Model Adı (Title)</label>
+                                    <input type="text" id="model-title" placeholder="Görüntülenecek başlık" required>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="model-summary">Özet (Summary)</label>
+                                    <textarea id="model-summary" placeholder="Karttaki kısa özet açıklaması" rows="2" required></textarea>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="model-description">Tam Detaylı Açıklama (Description)</label>
+                                    <textarea id="model-description" placeholder="Model yetenekleri hakkında detaylı metin" rows="3" required></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Rol Yapma Modeli Yönergesi -->
+                            <div id="roleplay-fields" class="form-block-group conditional-block">
+                                <span class="block-title">Rol Yapma Konfigürasyonu</span>
+                                <div class="form-group-field">
+                                    <label for="model-role">Sistem Promptu (System Role)</label>
+                                    <textarea id="model-role" placeholder="Karakterin uyacağı yönerge promptu" rows="2"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Çevrimdışı Model Özellikleri -->
+                            <div id="offline-fields" class="form-block-group conditional-block" style="display:none;">
+                                <span class="block-title">Çevrimdışı Bağlantılar & Donanım</span>
+                                <div class="form-group-field">
+                                    <label for="model-url">GGUF HuggingFace İndirme Adresi</label>
+                                    <input type="url" id="model-url" placeholder="https://huggingface.co/.../*.gguf">
+                                </div>
+                                
+                                <div class="flex-row">
+                                    <div class="form-group-field flex-grow">
+                                        <label for="model-size">Dosya Boyutu (MB)</label>
+                                        <input type="number" id="model-size" placeholder="MB cinsinden">
+                                    </div>
+                                    <div class="form-group-field flex-grow">
+                                        <label for="model-ram">Gereken RAM (MB)</label>
+                                        <input type="number" id="model-ram" placeholder="MB cinsinden">
+                                    </div>
+                                </div>
+
+                                <div class="form-sub-section">
+                                    <span class="sub-block-title">Girdi ve Çıktı Tipleri</span>
+                                    <div class="flex-column">
+                                        <div id="modalities-inputs" class="form-group-field">
+                                            <span class="sub-block-title" style="font-size:0.7rem; color:var(--text-muted);">Girdi Tipleri</span>
+                                            <div class="chips-checkbox-grid">
+                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="image"><span>Görsel</span></label>
+                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="video"><span>Video</span></label>
+                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="audio"><span>Ses</span></label>
+                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="file"><span>Dosya</span></label>
+                                            </div>
+                                        </div>
+                                        <div id="modalities-outputs" class="form-group-field">
+                                            <span class="sub-block-title" style="font-size:0.7rem; color:var(--text-muted);">Çıktı Tipleri</span>
+                                            <div class="chips-checkbox-grid">
+                                                <label class="chip-checkbox disabled"><input type="checkbox" data-modality-type="outputs" data-modality-key="text" checked disabled><span>Metin</span></label>
+                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="outputs" data-modality-key="image"><span>Görsel</span></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-sub-section">
+                                    <span class="sub-block-title">Lisans & Kaynak</span>
+                                    <div class="flex-row">
+                                        <div class="form-group-field flex-grow">
+                                            <label for="model-creator">Geliştirici</label>
+                                            <input type="text" id="model-creator" placeholder="Yaratıcı ekip">
+                                        </div>
+                                        <div class="form-group-field flex-grow">
+                                            <label for="model-license-name">Lisans Türü</label>
+                                            <input type="text" id="model-license-name" placeholder="Lisans ismi">
+                                        </div>
+                                    </div>
+                                    <div class="flex-row">
+                                        <div class="form-group-field flex-grow">
+                                            <label for="model-source-name">Kaynak</label>
+                                            <input type="text" id="model-source-name" value="Hugging Face">
+                                        </div>
+                                        <div class="form-group-field flex-grow">
+                                            <label for="model-license-url">Lisans Linki</label>
+                                            <input type="url" id="model-license-url" placeholder="Lisans URL adresi">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-sub-section">
+                                    <span class="sub-block-title">Şablon Kuralları (Prompter)</span>
+                                    <div class="form-group-field">
+                                        <label for="model-format-template">Hazır Şablon Formatı</label>
+                                        <select id="model-format-template">
+                                            <option value="">-- Şablon Seçilmedi --</option>
+                                            <option value="chatml">ChatML (Qwen, Llama 3 vb.)</option>
+                                            <option value="llama2">Llama-2 / Mistral</option>
+                                            <option value="alpaca">Alpaca</option>
+                                            <option value="llama3">Llama-3</option>
+                                            <option value="gemma2">Gemma-2</option>
+                                            <option value="anthropic-style">Anthropic (Human/Assistant)</option>
+                                            <option value="plain_dialogue">Plain Dialogue</option>
+                                            <option value="phi-3_glm">Phi-3 / GLM</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="token-inputs-grid">
+                                        <div class="form-group-field">
+                                            <label for="model-token-system-start">Sistem Başlangıç</label>
+                                            <textarea id="model-token-system-start" rows="1" placeholder="<|im_start|>system"></textarea>
+                                        </div>
+                                        <div class="form-group-field">
+                                            <label for="model-token-system-end">Sistem Bitiş</label>
+                                            <textarea id="model-token-system-end" rows="1" placeholder="<|im_end|>"></textarea>
+                                        </div>
+                                        <div class="form-group-field">
+                                            <label for="model-token-user-start">Kullanıcı Başlangıç</label>
+                                            <textarea id="model-token-user-start" rows="1" placeholder="<|im_start|>user"></textarea>
+                                        </div>
+                                        <div class="form-group-field">
+                                            <label for="model-token-user-end">Kullanıcı Bitiş</label>
+                                            <textarea id="model-token-user-end" rows="1" placeholder="<|im_end|>"></textarea>
+                                        </div>
+                                        <div class="form-group-field">
+                                            <label for="model-token-assistant-start">Asistan Başlangıç</label>
+                                            <textarea id="model-token-assistant-start" rows="1" placeholder="<|im_start|>assistant"></textarea>
+                                        </div>
+                                        <div class="form-group-field">
+                                            <label for="model-token-assistant-end">Asistan Bitiş</label>
+                                            <textarea id="model-token-assistant-end" rows="1" placeholder="<|im_end|>"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group-field">
+                                        <label for="model-token-stop-generation">Durdurma Belirteçleri</label>
+                                        <input type="text" id="model-token-stop-generation" placeholder="<|im_end|>, </s>">
+                                    </div>
+                                    <div class="form-group-field">
+                                        <label for="model-token-ignore-regex">Yok Sayılacak Regex</label>
+                                        <input type="text" id="model-token-ignore-regex" placeholder="^\[Düşünme Adımları\]\.\.\.$">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-block-group">
+                                <span class="block-title">Resim Dosyası</span>
+                                <div class="form-group-field">
+                                    <label for="model-image">Model Temsili Resmi</label>
+                                    <input type="file" id="model-image" accept="image/*">
+                                </div>
+                            </div>
+
+                            <div class="form-submit-row">
+                                <button type="submit" id="model-submit-btn" class="chrome-btn-accent">Değişiklikleri Kaydet</button>
+                                <button type="button" id="model-cancel-btn" class="chrome-btn-outline" style="display:none;">İptal Et</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Model Listeleri -->
+                    <div class="panel-card col-span-5">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">list_alt</span>
+                                <h3>Aktif Modeller</h3>
+                            </div>
+                            <div class="count-chips-container">
+                                <span id="offline-model-count-badge" class="count-badge-indicator offline">Çevrimdışı: 0</span>
+                                <span id="roleplay-model-count-badge" class="count-badge-indicator roleplay">Rol Yapma: 0</span>
+                            </div>
+                        </div>
+
+                        <div id="manual-models-list-container" class="scrollable-list-box-small">
+                            <p class="form-hint" style="text-align:center; padding: 2rem;">Kayıtlı model bulunamadı.</p>
+                        </div>
+
+                        <div class="card-title-row" style="margin-top: 1.5rem;">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">database</span>
+                                <h3>Tüm Modeller Ağacı</h3>
+                            </div>
+                        </div>
+                        
+                        <div id="all-models-explorer" class="database-tree-box">
+                            <div id="all-models-list-container">
+                                <p class="form-hint">Yükleniyor...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEKME 3: HABERLER VE DUYURULAR -->
+            <div class="tab-panel" id="tab-news">
+                <div class="panel-section-title">
+                    <h2>Haberler & Duyurular</h2>
+                    <p>Mobil uygulama ana sayfasındaki haber akışında görünecek makaleleri yayınlayın.</p>
+                </div>
+
+                <div class="grid-layout">
+                    <!-- Haber Editörü -->
+                    <div id="news-creator" class="panel-card col-span-7">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">post_add</span>
+                                <h3>Haber Duyurusu Yaz</h3>
+                            </div>
+                        </div>
+
+                        <form id="news-form" class="form-scrollable-container">
+                            <!-- Türkçe İçerik -->
+                            <div class="form-block-group">
+                                <span class="block-title">Türkçe Yayın İçeriği</span>
+                                <div class="form-group-field">
+                                    <label for="title-tr">Başlık (TR)</label>
+                                    <input type="text" id="title-tr" placeholder="Haber başlığı" required>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="summary-tr">Özet (TR)</label>
+                                    <textarea id="summary-tr" placeholder="Haber akış kartındaki özet" rows="2" required></textarea>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="content-tr">Detay (TR)</label>
+                                    <textarea id="content-tr" placeholder="Makale detaylı içeriği (Markdown destekler)" rows="5" required></textarea>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="cover-image-tr">Kapak Fotoğrafı (TR)</label>
+                                    <input type="file" id="cover-image-tr" accept="image/*" required>
+                                </div>
+                            </div>
+
+                            <!-- İngilizce İçerik -->
+                            <div class="form-block-group">
+                                <span class="block-title">English Content (İngilizce)</span>
+                                <div class="form-group-field">
+                                    <label for="title-en">Title (EN)</label>
+                                    <input type="text" id="title-en" placeholder="Article Title" required>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="summary-en">Summary (EN)</label>
+                                    <textarea id="summary-en" placeholder="Short description summary" rows="2" required></textarea>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="content-en">Body (EN)</label>
+                                    <textarea id="content-en" placeholder="Detailed content details" rows="5" required></textarea>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="cover-image-en">Cover Image (EN)</label>
+                                    <input type="file" id="cover-image-en" accept="image/*" required>
+                                </div>
+                            </div>
+
+                            <!-- Etiketler -->
+                            <div class="form-block-group">
+                                <span class="block-title">Meta Veri & Referanslar</span>
+                                <div class="form-group-field">
+                                    <label for="tags">Etiketler</label>
+                                    <input type="text" id="tags" placeholder="Ör. guncelleme, topluluk (virgülle ayırın)">
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="references">Kaynak Bağlantıları (URL)</label>
+                                    <textarea id="references" placeholder="Her satıra bir adet bağlantı gelecek şekilde" rows="2"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="form-submit-row">
+                                <button type="submit" id="submit-btn" class="chrome-btn-accent">Haber Makalesini Yayınla</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Yayınlanmış Makaleler -->
+                    <div id="news-manager" class="panel-card col-span-5">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">article</span>
+                                <h3>Aktif Yayındaki Haberler</h3>
+                            </div>
+                        </div>
+                        <div id="articles-list-container" class="scrollable-list-box">
+                            <p class="form-hint" style="text-align:center; padding: 2rem;">Yayınlanmış haber makalesi bulunamadı.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEKME 4: BİLDİRİM YÖNETİMİ -->
+            <div class="tab-panel" id="tab-notifications">
+                <div class="panel-section-title">
+                    <h2>Anlık Bildirimler</h2>
+                    <p>Vertex kullanıcılarına hedeflenmiş veya zamanlanmış anlık push bildirimleri gönderin.</p>
+                </div>
+
+                <div class="grid-layout">
+                    <!-- Bildirim Gönderici Form -->
+                    <div id="notification-sender" class="panel-card col-span-7">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">campaign</span>
+                                <h3>Push Bildirim Gönder / Ayarla</h3>
+                            </div>
+                        </div>
+
+                        <form id="notification-form" class="form-scrollable-container">
+                            <div class="form-block-group">
+                                <span class="block-title">Hazır Şablon & Anahtarlar</span>
+                                <div class="form-group-field">
+                                    <label for="notification-template-selector">Hazır Şablonlar</label>
+                                    <select id="notification-template-selector">
+                                        <option value="">-- Şablon Kullanma --</option>
+                                        <optgroup label="Sistem & Teklifler">
+                                            <option value="newModel">Yeni Model Eklendi</option>
+                                            <option value="newFeature">Yeni Özellik Eklendi</option>
+                                            <option value="upsellFeature">Abonelik Kampanyası</option>
+                                            <option value="appUpdate">Uygulama Güncelleme Uyarısı</option>
+                                            <option value="rateApp">Uygulamayı Puanla</option>
+                                            <option value="referral">Arkadaşına Öner</option>
+                                            <option value="socialMedia">Sosyal Medya Katılımı</option>
+                                        </optgroup>
+                                        <optgroup label="Kullanıcı Etkileşimi">
+                                            <option value="comeback">Geri Dönüş Çağrısı (Genel)</option>
+                                            <option value="longTimeNoSee">Uzun Süre Giriş Yapmayanlar</option>
+                                            <option value="howAreYou">Hal Hatır Sorma</option>
+                                            <option value="goodMorning">Günaydın Mesajı</option>
+                                            <option value="goodNight">İyi Geceler Mesajı</option>
+                                        </optgroup>
+                                        <optgroup label="Eğlenceli & Şakalar">
+                                            <option value="randomFact">İlginç Bilgi</option>
+                                            <option value="showerThought">Duş Düşünceleri</option>
+                                            <option value="fortuneCookie">Şans Kurabiyesi</option>
+                                            <option value="hackerJoke">Yazılımcı Şakaları</option>
+                                            <option value="pirate">Korsan Modu</option>
+                                            <option value="trollAnime">Troll (Anime)</option>
+                                            <option value="trollAiRebellion">Troll (Yapay Zeka İsyanı)</option>
+                                            <option value="singularity">Singularity</option>
+                                            <option value="detectiveCase">Dedektif Hikayesi</option>
+                                            <option value="originStory">Hikaye Başlangıcı</option>
+                                            <option value="rejectionStory">Reddedilme Anısı</option>
+                                            <option value="cooking">Şefin Tarifi</option>
+                                            <option value="existential">Varoluşsal Kriz</option>
+                                            <option value="openSource">Açık Kaynak Sevgisi</option>
+                                        </optgroup>
+                                        <optgroup label="Teknik Detaylar">
+                                            <option value="offlineReady">Çevrimdışı Çalışma Hazır</option>
+                                            <option value="customModel">Kendi Modelini Kur</option>
+                                            <option value="dynamicChat">Dinamik Sohbet Odaları</option>
+                                            <option value="ggufSupport">GGUF Desteği Aktif</option>
+                                            <option value="themeCustomization">Tema Özelleştirme</option>
+                                            <option value="homeworkHelper">Ödev Asistanı Tanıtımı</option>
+                                            <option value="lowBattery">Düşük Batarya Tasarruf Modu</option>
+                                        </optgroup>
+                                        <optgroup label="Özel Günler">
+                                            <option value="newYear">Yılbaşı Tebriği</option>
+                                            <option value="valentinesDay">Sevgililer Günü</option>
+                                            <option value="ataturkRemembrance">10 Kasım Atatürk'ü Anma</option>
+                                            <option value="mothersDay">Anneler Günü</option>
+                                            <option value="fathersDay">Babalar Günü</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                
+                                <div class="flex-row">
+                                    <div class="form-group-field flex-grow">
+                                        <label for="notification-title-key">Başlık Anahtarı (Title Key)</label>
+                                        <input type="text" id="notification-title-key" placeholder="Ör. notificationTitleKey">
+                                    </div>
+                                    <div class="form-group-field flex-grow">
+                                        <label for="notification-body-key">Gövde Anahtarı (Body Key)</label>
+                                        <input type="text" id="notification-body-key" placeholder="Ör. notificationBodyKey">
+                                    </div>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="notification-data-payload">İsteğe Bağlı Veri Yükü (JSON)</label>
+                                    <textarea id="notification-data-payload" placeholder='Ör. {"modelId": "llama-8b"}' rows="1"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="form-block-group">
+                                <span class="block-title">Yedek Bildirim İçeriği</span>
+                                <div class="form-group-field">
+                                    <label for="notification-title">Genel Başlık</label>
+                                    <input type="text" id="notification-title" placeholder="Yedek bildirim başlığı">
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="notification-body">Genel Mesaj Gövdesi</label>
+                                    <textarea id="notification-body" placeholder="Gönderilecek genel mesaj metni" rows="2"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="form-block-group">
+                                <span class="block-title">Kullanıcı Hedefleme</span>
+                                <div class="form-group-field">
+                                    <label for="notification-target-type">Alıcı Grubu</label>
+                                    <select id="notification-target-type" required>
+                                        <option value="" disabled selected>Bir grup seçin...</option>
+                                        <option value="ALL_USERS">Tüm Kullanıcılar</option>
+                                        <option value="SINGLE_USER">Tek Bir Kullanıcı (UID ile)</option>
+                                        <option value="SUBSCRIPTION_LEVEL">Abonelik Seviyesine Göre</option>
+                                    </select>
+                                </div>
+
+                                <div id="target-specific-inputs" class="conditional-block">
+                                    <div id="target-uid-input" class="form-group-field" style="display:none;">
+                                        <label for="notification-target-uid">Kullanıcı UID</label>
+                                        <input type="text" id="notification-target-uid" placeholder="Firebase UID adresi">
+                                    </div>
+                                    <div id="target-level-input" class="form-group-field" style="display:none;">
+                                        <label for="notification-target-level">Minimum Abonelik Düzeyi</label>
+                                        <select id="notification-target-level">
+                                            <option value="0">Ücretsiz Üyeler (Level 0)</option>
+                                            <option value="1">Plus Üyeler (Level 1)</option>
+                                            <option value="2">Pro Üyeler (Level 2)</option>
+                                            <option value="3">Ultra Üyeler (Level 3)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-block-group">
+                                <span class="block-title">Gönderim Modu</span>
+                                <div class="chrome-switch-row" style="justify-content: flex-start; gap: 10px;">
+                                    <span class="switch-label-text">Hemen Gönder</span>
+                                    <label class="chrome-switch">
+                                        <input type="checkbox" id="notification-schedule-switch">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span class="switch-label-text">Zamanla</span>
+                                </div>
+
+                                <div id="schedule-datetime-picker" class="conditional-block" style="display:none; margin-top: 10px;">
+                                    <div class="form-group-field">
+                                        <label for="notification-schedule-time">Tarih ve Saat</label>
+                                        <input type="datetime-local" id="notification-schedule-time">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-submit-row">
+                                <button type="submit" id="submit-notification-btn" class="chrome-btn-accent">Bildirimi Gönder</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Zamanlanmış Görevler Listesi -->
+                    <div id="scheduled-tasks-manager" class="panel-card col-span-5">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">calendar_month</span>
+                                <h3>Zamanlanmış Bildirimler</h3>
+                            </div>
+                        </div>
+                        <div id="scheduled-tasks-list-container" class="scrollable-list-box">
+                            <p class="form-hint" style="text-align:center; padding: 2rem;">Kuyrukta bekleyen bildirim bulunamadı.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEKME 5: SİSTEM VE SUNUCU -->
+            <div class="tab-panel" id="tab-system">
+                <div class="panel-section-title">
+                    <h2>Sunucu & Sistem Ayarları</h2>
+                    <p>Sistem altyapısını kontrol edin, bakım modunu açıp kapatın veya atıflar sayfasını yayınlayın.</p>
+                </div>
+
+                <div class="grid-layout">
+                    <!-- Sunucu Durumu -->
+                    <div class="panel-card col-span-6" id="server-status-manager">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">dns</span>
+                                <h3>Sunucu Bakım Modu</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description">Sunucu bakım modunu açmak yeni giriş işlemlerini durdurur. Giriş yapmış kullanıcılar yerel modda devam edebilir.</p>
+                        
+                        <div class="status-action-box">
+                            <div id="maintenance-status-indicator" class="indicator-group">
+                                <span class="status-dot"></span>
+                                <span class="status-text">Durum Kontrol Ediliyor...</span>
+                            </div>
+                            <button id="maintenance-action-btn" class="chrome-btn-outline">Yükleniyor...</button>
+                        </div>
+                    </div>
+
+                    <!-- Atıflar Sayfası Güncelleme -->
+                    <div class="panel-card col-span-6" id="attributions-manager">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">sync</span>
+                                <h3>Atıflar Sayfasını Yayınla</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description">Model veya lisans güncellemelerinin ardından atıflar sayfasını tekrar derleyip yayınlamak için bu tetikleyiciyi kullanın.</p>
+                        
+                        <div class="status-action-box">
+                            <div id="attributions-status-indicator" class="indicator-group">
+                                <span class="status-dot status-synced"></span>
+                                <span class="status-text">Durum: Güncel</span>
+                            </div>
+                            <button id="attributions-action-btn" class="chrome-btn-outline" disabled>Atıf Sayfasını Güncelle</button>
+                    </div>
+
+                    <!-- Veri Dışa Aktar -->
+                    <div class="panel-card col-span-12" id="data-exporter-manager">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">download</span>
+                                <h3>Verileri Dışa Aktar / İndir</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description">Sistemde yüklü olan katılımcı listelerini, AI modellerini veya haber makalelerini seçtiğiniz formatta yerel olarak bilgisayarınıza indirebilirsiniz.</p>
+                        
+                        <div class="form-stack">
+                            <div class="flex-row">
+                                <div class="form-group-field flex-grow">
+                                    <label for="export-data-type">Dışa Aktarılacak Veri</label>
+                                    <select id="export-data-type">
+                                        <option value="contributors">Katılımcı Başvuruları</option>
+                                        <option value="manualModels">Eklenen AI Modelleri (Küratörlü)</option>
+                                        <option value="allModels">Tüm Modeller Veritabanı</option>
+                                        <option value="articles">Yayınlanan Haberler</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group-field flex-grow">
+                                    <label for="export-format">Dosya Formatı</label>
+                                    <select id="export-format">
+                                        <option value="json">JSON Formatı (.json)</option>
+                                        <option value="csv">CSV Formatı (Excel uyumlu .csv)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <button type="button" onclick="exportDataLocal()" class="chrome-btn-accent" style="margin-top: 10px;">
+                                <span class="material-symbols-rounded">download_for_offline</span>
+                                <span>Veriyi Derle ve İndir</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Firebase SDK ve Entegrasyon Modülleri -->
     <script type="module" src="js/core/initializer.js"></script>
+
+    <!-- Hızlı Filtreleme & Buton Senkronizasyon Betikleri -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dockButtons = document.querySelectorAll('.dock-btn');
+            const scrollContainer = document.getElementById('tab-scroll-container');
+            const panels = document.querySelectorAll('.tab-panel');
+
+            if (!scrollContainer || dockButtons.length === 0 || panels.length === 0) return;
+
+            // Initial snap on load to prevent scroll restoration bugs
+            const initialActiveBtn = document.querySelector('.dock-btn.active');
+            if (initialActiveBtn) {
+                const initialTargetId = initialActiveBtn.getAttribute('data-target');
+                const initialTargetPanel = document.getElementById(initialTargetId);
+                if (initialTargetPanel) {
+                    scrollContainer.scrollLeft = initialTargetPanel.offsetLeft;
+                }
+            }
+
+            // Click listener for tab switcher (smooth scrolling)
+            dockButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-target');
+                    const targetPanel = document.getElementById(targetId);
+                    
+                    if (targetPanel) {
+                        scrollContainer.scrollTo({
+                            left: targetPanel.offsetLeft,
+                            behavior: 'smooth'
+                        });
+                        
+                        dockButtons.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    }
+                });
+            });
+
+            // Scroll listener for swipe-to-switch synchronization (debounced for stability)
+            let scrollTimeout;
+            scrollContainer.addEventListener('scroll', () => {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    const width = scrollContainer.clientWidth;
+                    if (width === 0) return;
+                    const index = Math.round(scrollContainer.scrollLeft / width);
+                    
+                    const activePanel = panels[index];
+                    if (activePanel) {
+                        const activeId = activePanel.id;
+                        const targetBtn = document.querySelector(`.dock-btn[data-target="${activeId}"]`);
+                        
+                        if (targetBtn && !targetBtn.classList.contains('active')) {
+                            dockButtons.forEach(b => b.classList.remove('active'));
+                            targetBtn.classList.add('active');
+                            targetBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }
+                    }
+                }, 100);
+            });
+
+            // Align scroll position on window resize
+            window.addEventListener('resize', () => {
+                const activeBtn = document.querySelector('.dock-btn.active');
+                if (activeBtn) {
+                    const targetId = activeBtn.getAttribute('data-target');
+                    const targetPanel = document.getElementById(targetId);
+                    if (targetPanel) {
+                        scrollContainer.scrollLeft = targetPanel.offsetLeft;
+                    }
+                }
+            });
+            
+            // Yenileme butonuna basıldığında filtreleri sıfırla
+            const refBtn = document.getElementById('refresh-contributors-btn');
+            if (refBtn) {
+                refBtn.addEventListener('click', () => {
+                    filterContributors('all');
+                    const searchInput = document.getElementById('contributor-search');
+                    if (searchInput) searchInput.value = '';
+                });
+            }
+        });
+
+        // Hızlı filtreleme
+        window.filterContributors = function(filterType) {
+            const listContainer = document.getElementById('contributors-list-container');
+            if (!listContainer) return;
+            const items = listContainer.children;
+            
+            document.querySelectorAll('.filter-chip').forEach(btn => {
+                if (btn.getAttribute('data-filter') === filterType) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            let matchCount = 0;
+            for (let item of items) {
+                if (item.tagName === 'P') continue;
+
+                const toggleInput = item.querySelector('.verify-toggle');
+                const isVerified = toggleInput ? toggleInput.checked : false;
+                const innerText = item.innerHTML || "";
+                const textContent = item.textContent || "";
+                
+                const ageMatch = textContent.match(/Age:\s*(\d+)/i) || innerText.match(/Yaş:\s*(\d+)/i);
+                const age = ageMatch ? parseInt(ageMatch[1], 10) : 0;
+                
+                const hasLinkedIn = innerText.includes('LinkedIn');
+                const hasGitHub = innerText.includes('GitHub');
+
+                let visible = true;
+                if (filterType === 'verified' && !isVerified) visible = false;
+                else if (filterType === 'unverified' && isVerified) visible = false;
+                else if (filterType === 'age-14-15' && (age < 14 || age > 15)) visible = false;
+                else if (filterType === 'age-16-17' && (age < 16 || age > 17)) visible = false;
+                else if (filterType === 'age-18' && age < 18) visible = false;
+                else if (filterType === 'linkedin' && !hasLinkedIn) visible = false;
+                else if (filterType === 'github' && !hasGitHub) visible = false;
+
+                item.style.display = visible ? 'flex' : 'none';
+                if (visible) matchCount++;
+            }
+
+            const noMatchId = 'contributor-no-match-alert';
+            let noMatchAlert = document.getElementById(noMatchId);
+            if (matchCount === 0 && items.length > 0) {
+                if (!noMatchAlert) {
+                    noMatchAlert = document.createElement('p');
+                    noMatchAlert.id = noMatchId;
+                    noMatchAlert.className = 'form-hint';
+                    noMatchAlert.style.cssText = 'text-align:center; padding:2rem; color: var(--accent-clay); font-weight:600; width:100%;';
+                    noMatchAlert.textContent = 'Kriterlere uyan başvuru bulunamadı.';
+                    listContainer.appendChild(noMatchAlert);
+                }
+            } else {
+                if (noMatchAlert) noMatchAlert.remove();
+            }
+        };
+
+        // İstemci tarafı hızlı arama
+        window.searchContributorsLocal = function() {
+            const searchInput = document.getElementById('contributor-search');
+            if (!searchInput) return;
+            const query = searchInput.value.toLowerCase().trim();
+            const listContainer = document.getElementById('contributors-list-container');
+            if (!listContainer) return;
+            const items = listContainer.children;
+            
+            if (query.length > 0) {
+                document.querySelectorAll('.filter-chip').forEach(btn => {
+                    if (btn.getAttribute('data-filter') === 'all') btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+            }
+
+            let matchCount = 0;
+            for (let item of items) {
+                if (item.tagName === 'P' || item.id === 'contributor-no-match-alert') continue;
+                
+                const text = item.textContent.toLowerCase();
+                const visible = text.includes(query);
+                item.style.display = visible ? 'flex' : 'none';
+                if (visible) matchCount++;
+            }
+
+            const noMatchId = 'contributor-no-match-alert';
+            let noMatchAlert = document.getElementById(noMatchId);
+            if (matchCount === 0 && items.length > 0) {
+                if (!noMatchAlert) {
+                    noMatchAlert = document.createElement('p');
+                    noMatchAlert.id = noMatchId;
+                    noMatchAlert.className = 'form-hint';
+                    noMatchAlert.style.cssText = 'text-align:center; padding:2rem; color: var(--accent-clay); font-weight:600; width:100%;';
+                    noMatchAlert.textContent = 'Arama sonucuna uygun katılımcı bulunamadı.';
+                    listContainer.appendChild(noMatchAlert);
+                }
+            } else {
+                if (noMatchAlert) noMatchAlert.remove();
+            }
+        };
+
+        // Verileri CSV/JSON Formatında Yerel Olarak Derleme ve İndirme Betiği
+        window.exportDataLocal = function() {
+            const dataType = document.getElementById('export-data-type').value;
+            const format = document.getElementById('export-format').value;
+            
+            let rawData = null;
+            let fileNamePrefix = '';
+
+            if (dataType === 'contributors') {
+                rawData = window.loadedContributors;
+                fileNamePrefix = 'katilimci_basvurulari';
+            } else if (dataType === 'manualModels') {
+                rawData = window.loadedManualModels;
+                fileNamePrefix = 'eklenen_modeller';
+            } else if (dataType === 'allModels') {
+                rawData = window.loadedAllModels;
+                fileNamePrefix = 'tum_modeller_veritabani';
+            } else if (dataType === 'articles') {
+                rawData = window.loadedArticles;
+                fileNamePrefix = 'yayinlanan_haberler';
+            }
+
+            if (!rawData || (Array.isArray(rawData) && rawData.length === 0)) {
+                if (dataType === 'allModels' && rawData && typeof rawData === 'object') {
+                    // that's fine
+                } else {
+                    alert('Seçtiğiniz veriler henüz yüklenmemiş. Lütfen önce ilgili sekmesini ziyaret edip verilerin gelmesini bekleyin.');
+                    return;
+                }
+            }
+
+            let fileContent = '';
+            let mimeType = '';
+            let fileExtension = '';
+
+            if (format === 'json') {
+                fileContent = JSON.stringify(rawData, null, 2);
+                mimeType = 'application/json';
+                fileExtension = 'json';
+            } else if (format === 'csv') {
+                let itemsArray = [];
+                if (dataType === 'allModels' && typeof rawData === 'object' && !Array.isArray(rawData)) {
+                    if (rawData.producers) {
+                        for (const pName in rawData.producers) {
+                            for (const sName in rawData.producers[pName]) {
+                                if (sName === 'series_description') continue;
+                                for (const vName in rawData.producers[pName][sName]) {
+                                    if (['series_description', 'hidden'].includes(vName)) continue;
+                                    const model = rawData.producers[pName][sName][vName];
+                                    if (model) {
+                                        itemsArray.push({
+                                            producer: pName,
+                                            series: sName,
+                                            variant: vName,
+                                            id: model.id || '',
+                                            source: model.source || '',
+                                            type: model.type || ''
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    itemsArray = Array.isArray(rawData) ? rawData : [rawData];
+                }
+
+                if (itemsArray.length === 0) {
+                    alert('Dışa aktarılacak satır bulunamadı.');
+                    return;
+                }
+
+                const keys = new Set();
+                itemsArray.forEach(item => {
+                    Object.keys(item).forEach(k => keys.add(k));
+                });
+                const headers = Array.from(keys);
+
+                let csvRows = [];
+                csvRows.push(headers.map(h => `"${h.replace(/"/g, '""')}"`).join(';'));
+
+                itemsArray.forEach(item => {
+                    const values = headers.map(header => {
+                        let val = item[header];
+                        if (val === undefined || val === null) {
+                            return '""';
+                        }
+                        if (typeof val === 'object') {
+                            val = JSON.stringify(val);
+                        } else {
+                            val = String(val);
+                        }
+                        return `"${val.replace(/"/g, '""')}"`;
+                    });
+                    csvRows.push(values.join(';'));
+                });
+
+                fileContent = '\uFEFF' + csvRows.join('\n');
+                mimeType = 'text/csv;charset=utf-8;';
+                fileExtension = 'csv';
+            }
+
+            const blob = new Blob([fileContent], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const dateStr = new Date().toISOString().split('T')[0];
+            link.setAttribute('href', url);
+            link.setAttribute('download', `${fileNamePrefix}_${dateStr}.${fileExtension}`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Try triggering showToast
+            if (window.showToast) {
+                window.showToast('Veriler başarıyla dışa aktarıldı.', 'success');
+            } else {
+                alert('Dosya başarıyla indirildi!');
+            }
+        };
+    </script>
 </body>
 
 </html>

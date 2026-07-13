@@ -627,6 +627,8 @@ export async function fetchFullModelsData() {
         });
 
         // --- Render final content, replacing the loaders ---
+        window.loadedManualModels = allManualModels;
+        window.loadedAllModels = modelsData;
         renderManualModelsList();
         renderAllModelsExplorer();
 
