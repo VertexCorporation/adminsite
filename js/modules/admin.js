@@ -2,7 +2,7 @@
 
 import { showToast, __ } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
-import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn } from '../core/firebase.js';
+import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn } from '../core/firebase.js';
 
 // --- Module state for attributions ---
 let attributionsOutOfSync = false;
@@ -156,6 +156,30 @@ async function handleAttributionsUpdate() {
 
 
 /**
+ * Handles the submission of the form to toggle a user's isVertex status.
+ * @param {Event} e - The form submission event.
+ */
+async function handleVertexStatusToggle(e) {
+    e.preventDefault();
+    const targetUid = document.getElementById('vertex-target-uid').value;
+    const toggleBtn = document.getElementById('toggle-vertex-btn');
+    toggleBtn.disabled = true;
+    toggleBtn.innerHTML = `<span>Updating...</span>`;
+
+    try {
+        const result = await toggleVertexStatusFn({ targetUid });
+        showToast(result.data.message, 'success');
+        document.getElementById('vertex-status-form').reset();
+    } catch (error) {
+        console.error("[CLIENT] Error toggling vertex status:", error);
+        showToast(`Error: ${error.message}`, 'error');
+    } finally {
+        toggleBtn.disabled = false;
+        toggleBtn.innerHTML = `<span class="material-symbols-rounded">swap_vert</span><span>Toggle isVertex Status</span>`;
+    }
+}
+
+/**
  * Initializes all event listeners and logic for the admin management module.
  */
 export function initAdminModule() {
@@ -169,4 +193,10 @@ export function initAdminModule() {
         attributionsBtn.addEventListener('click', handleAttributionsUpdate);
     }
     updateAttributionsUI(); // Initial UI setup
+
+    // Add listener for the Vertex Status toggle form
+    const vertexForm = document.getElementById('vertex-status-form');
+    if (vertexForm) {
+        vertexForm.addEventListener('submit', handleVertexStatusToggle);
+    }
 }

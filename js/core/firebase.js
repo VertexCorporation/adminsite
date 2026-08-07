@@ -7,6 +7,7 @@ let cancelScheduledNotificationFn, getServerStatusFn, setServerStatusFn, blockOn
 let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn;
 let getModelImageUploadUrlFn, getCoverUploadUrlFn, triggerAttributionsUpdateFn;
 let getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn;
+let toggleVertexStatusFn;
 
 
 /**
@@ -58,6 +59,7 @@ function initFirebase(firebaseConfig) {
     getVertexContributorsFn = europeFunctions.httpsCallable('getVertexContributors');
     toggleContributorVerificationFn = europeFunctions.httpsCallable('toggleContributorVerification');
     deleteVertexContributorFn = europeFunctions.httpsCallable('deleteVertexContributor');
+    toggleVertexStatusFn = europeFunctions.httpsCallable('toggleVertexStatus');
 }
 
 // Export the initializer function and all the service variables
@@ -84,5 +86,6 @@ export {
     triggerAttributionsUpdateFn,
     getVertexContributorsFn,
     toggleContributorVerificationFn,
-    deleteVertexContributorFn
+    deleteVertexContributorFn,
+    toggleVertexStatusFn
 };

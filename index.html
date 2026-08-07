@@ -245,6 +245,32 @@
                             </button>
                         </form>
                     </div>
+
+                    <!-- Vertex Status Toggle -->
+                    <div class="panel-card col-span-4" id="vertex-status-manager">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">verified_user</span>
+                                <h3>Toggle Vertex Status</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description">Enter the UID of a user to grant or revoke internal Vertex Corporation access privileges.</p>
+                        
+                        <form id="vertex-status-form" class="form-stack">
+                            <div class="form-group-field">
+                                <label for="vertex-target-uid">User UID</label>
+                                <div class="form-input-wrapper">
+                                    <span class="material-symbols-rounded">badge</span>
+                                    <input type="text" id="vertex-target-uid" placeholder="Enter target User ID" required>
+                                </div>
+                                <span class="form-field-info">UID can be found in Firebase Console.</span>
+                            </div>
+                            <button type="submit" id="toggle-vertex-btn" class="chrome-btn-outline">
+                                <span class="material-symbols-rounded">swap_vert</span>
+                                <span>Toggle isVertex Status</span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
 
