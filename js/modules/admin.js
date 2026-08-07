@@ -191,11 +191,11 @@ async function handleManualVerifySubmit(e) {
 
     try {
         const result = await toggleContributorVerificationFn({ contributorId, hasVerified: true });
-        showToast("Contributor successfully verified.", 'success');
+        showToast(__('system.verify_success'), 'success');
         document.getElementById('verify-user-form').reset();
     } catch (error) {
         console.error("[CLIENT] Error verifying contributor:", error);
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(`${__('system.error')}: ${error.message}`, 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = `<span>${__('system.verify_btn')}</span>`;
@@ -214,12 +214,12 @@ async function handleRemoveAdminSubmit(e) {
 
     try {
         const result = await removeAdminRoleFn({ email });
-        showToast(result.data.message, 'success');
+        showToast(__('system.remove_success'), 'success');
         document.getElementById('remove-admin-form').reset();
         loadAdminsList(); // Refresh the list
     } catch (error) {
         console.error("[CLIENT] Error removing admin role:", error);
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(`${__('system.error')}: ${error.message}`, 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = `<span>${__('system.remove_btn')}</span>`;

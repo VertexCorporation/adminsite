@@ -224,12 +224,15 @@ const LANG = {
     'system.verify_desc': 'Bir katılımcıyı (Contributor) ID\'si üzerinden anında doğrulanmış duruma getirin.',
     'system.verify_id': 'Katılımcı ID',
     'system.verify_btn': 'Doğrula & Bildir',
+    'system.verify_success': 'Katılımcı başarıyla doğrulandı.',
     'system.remove_admin': 'Yönetici Yetkisi Al',
     'system.remove_admin_desc': 'Bir sistem yöneticisinin (Admin) yetkilerini e-posta adresi üzerinden iptal edin.',
     'system.remove_email': 'E-posta Adresi',
     'system.remove_btn': 'Yetkiyi İptal Et',
+    'system.remove_success': 'Yönetici yetkisi başarıyla iptal edildi.',
     'system.admin_list': 'Aktif Sistem Yöneticileri',
     'system.loading_admins': 'Yükleniyor...',
+    'system.error': 'Hata',
     'auth.not_admin': 'Bu panele erişim yetkiniz bulunmamaktadır.',
     'auth.login_failed': 'Giriş başarısız:',
     'auth.enter_credentials': 'Lütfen e-posta ve şifrenizi girin.',
@@ -505,12 +508,15 @@ const LANG = {
     'system.verify_desc': 'Instantly verify a contributor by their Document ID.',
     'system.verify_id': 'Contributor ID',
     'system.verify_btn': 'Verify & Notify',
+    'system.verify_success': 'Contributor successfully verified.',
     'system.remove_admin': 'Revoke Admin Access',
     'system.remove_admin_desc': 'Revoke an administrator\'s privileges using their email address.',
     'system.remove_email': 'Email Address',
     'system.remove_btn': 'Revoke Access',
+    'system.remove_success': 'Admin access successfully revoked.',
     'system.admin_list': 'Active System Administrators',
     'system.loading_admins': 'Loading...',
+    'system.error': 'Error',
     'auth.not_admin': 'You are not authorized to access this panel.',
     'auth.login_failed': 'Login Failed:',
     'auth.enter_credentials': 'Please enter both email and password.',
@@ -600,7 +606,12 @@ function dispatchLangChange() {
 export function translatePage() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    el.textContent = __(key);
+    const translation = __(key);
+    if (translation.includes('<')) {
+      el.innerHTML = translation;
+    } else {
+      el.textContent = translation;
+    }
   });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     const key = el.getAttribute('data-i18n-placeholder');
