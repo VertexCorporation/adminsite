@@ -11,18 +11,18 @@
     --bg-surface: #121212;        /* Kartlar, header ve dock zemini */
     --bg-input: #1a1a1a;          /* Girdi elemanları arka planı */
     
-    --text-primary: #efeee9;      /* Sıcak krem ana metin */
-    --text-secondary: #94918a;    /* Mat gri alt metin */
-    --text-muted: #5c5953;        /* Pasif başlıklar ve sınırlar */
+    --text-primary: #ffffff;      /* Saf beyaz ana metin */
+    --text-secondary: #a0a0a0;    /* Mat gri alt metin */
+    --text-muted: #666666;        /* Pasif başlıklar ve sınırlar */
     
-    --accent-gold: #c5a880;       /* Vertex bronz pirinç rengi */
-    --accent-gold-hover: #b0936b;
+    --accent-gold: #ffffff;       /* Siyah beyaz tema için ana renk (eskiden gold) */
+    --accent-gold-hover: #cccccc;
     --accent-sage: #6e826b;       /* Başarılı ve onaylanmış yeşil */
     --accent-clay: #a65042;       /* Hata, uyarı ve bakım kırmızı */
     --accent-slate: #566773;      /* Bilgi ve nötr mavi */
     
-    --border-color: #222220;      /* Çok ince arayüz bölücü çizgisi */
-    --border-focus: #c5a880;
+    --border-color: #222222;      /* Çok ince arayüz bölücü çizgisi */
+    --border-focus: #ffffff;
     
     --radius-sm: 8px;
     --radius-md: 12px;
@@ -35,22 +35,22 @@
 
 /* --- Light Theme Vars --- */
 html[data-theme="light"] {
-    --bg-base: #f6f5f0;
+    --bg-base: #f0f0f0;
     --bg-surface: #ffffff;
-    --bg-input: #eeede6;
+    --bg-input: #e8e8e8;
     
-    --text-primary: #1b1a18;
-    --text-secondary: #6b6861;
-    --text-muted: #99968d;
+    --text-primary: #000000;
+    --text-secondary: #555555;
+    --text-muted: #888888;
     
-    --accent-gold: #9c805e;
-    --accent-gold-hover: #826a4e;
+    --accent-gold: #000000;
+    --accent-gold-hover: #333333;
     --accent-sage: #4e634c;
     --accent-clay: #8e3e32;
     --accent-slate: #445461;
     
-    --border-color: #dedcd4;
-    --border-focus: #9c805e;
+    --border-color: #dddddd;
+    --border-focus: #000000;
 }
 
 /* --- Temel Tarayıcı Sıfırlaması --- */

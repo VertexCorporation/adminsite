@@ -786,6 +786,69 @@
                 </div>
 
                 <div class="grid-layout">
+                    <!-- GCS Backup Status -->
+                    <div class="panel-card col-span-12" id="gcs-backup-status" style="border: 1px solid var(--accent-sage);">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded" style="color: var(--accent-sage);">cloud_done</span>
+                                <h3 data-i18n="system.gcs_backup">Google Cloud Storage (GCS) Yedekleme</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description" data-i18n="system.gcs_desc">Otomatik GCS organizasyon yedekleme mekanizması (GitHub Actions üzerinden) şu anda <strong style="color: var(--accent-sage);">AKTİF</strong> ve çalışır durumda.</p>
+                    </div>
+
+                    <!-- Katılımcı Doğrulama (Manuel) -->
+                    <div class="panel-card col-span-6" id="manual-verify-manager">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">verified_user</span>
+                                <h3 data-i18n="system.verify_user">Katılımcı Doğrula (Manuel)</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description" data-i18n="system.verify_desc">Bir katılımcıyı (Contributor) ID'si üzerinden anında doğrulanmış duruma getirin.</p>
+                        <form id="verify-user-form" class="form-stack" style="margin-top:10px;">
+                            <div class="form-group-field">
+                                <label for="verify-user-id" data-i18n="system.verify_id">Katılımcı ID</label>
+                                <input type="text" id="verify-user-id" placeholder="Katılımcı Doküman ID'si" required>
+                            </div>
+                            <button type="submit" class="chrome-btn-outline"><span data-i18n="system.verify_btn">Doğrula & Bildir</span></button>
+                        </form>
+                    </div>
+
+                    <!-- Yetki Alma -->
+                    <div class="panel-card col-span-6" id="remove-admin-manager">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">person_remove</span>
+                                <h3 data-i18n="system.remove_admin">Yönetici Yetkisi Al</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description" data-i18n="system.remove_admin_desc">Bir sistem yöneticisinin (Admin) yetkilerini e-posta adresi üzerinden iptal edin.</p>
+                        <form id="remove-admin-form" class="form-stack" style="margin-top:10px;">
+                            <div class="form-group-field">
+                                <label for="remove-admin-email" data-i18n="system.remove_email">E-posta Adresi</label>
+                                <input type="email" id="remove-admin-email" placeholder="admin@example.com" required>
+                            </div>
+                            <button type="submit" class="chrome-btn-outline" style="color: var(--accent-clay); border-color: var(--accent-clay);"><span data-i18n="system.remove_btn">Yetkiyi İptal Et</span></button>
+                        </form>
+                    </div>
+
+                    <!-- Aktif Yöneticiler Listesi -->
+                    <div class="panel-card col-span-12" id="admin-list-manager">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">admin_panel_settings</span>
+                                <h3 data-i18n="system.admin_list">Aktif Sistem Yöneticileri</h3>
+                            </div>
+                            <button class="icon-action-btn" id="refresh-admins-btn" title="Yenile">
+                                <span class="material-symbols-rounded">refresh</span>
+                            </button>
+                        </div>
+                        <div id="admin-list-container" class="scrollable-list-box-small" style="max-height: 250px; overflow-y: auto;">
+                            <p class="form-hint" style="text-align:center; padding: 1rem;" data-i18n="system.loading_admins">Yükleniyor...</p>
+                        </div>
+                    </div>
+
                     <!-- Sunucu Durumu -->
                     <div class="panel-card col-span-6" id="server-status-manager">
                         <div class="card-title-row">

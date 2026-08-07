@@ -2,7 +2,7 @@
 
 import { showToast, __ } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
-import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn } from '../core/firebase.js';
+import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn } from '../core/firebase.js';
 
 // --- Module state for attributions ---
 let attributionsOutOfSync = false;
@@ -180,6 +180,89 @@ async function handleVertexStatusToggle(e) {
 }
 
 /**
+ * Handles the submission to manually verify a contributor by ID.
+ */
+async function handleManualVerifySubmit(e) {
+    e.preventDefault();
+    const contributorId = document.getElementById('verify-user-id').value;
+    const btn = document.querySelector('#verify-user-form button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = `<span>${__('system.saving')}</span>`;
+
+    try {
+        const result = await toggleContributorVerificationFn({ contributorId, hasVerified: true });
+        showToast("Contributor successfully verified.", 'success');
+        document.getElementById('verify-user-form').reset();
+    } catch (error) {
+        console.error("[CLIENT] Error verifying contributor:", error);
+        showToast(`Error: ${error.message}`, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>${__('system.verify_btn')}</span>`;
+    }
+}
+
+/**
+ * Handles the submission to remove admin privileges from a user.
+ */
+async function handleRemoveAdminSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('remove-admin-email').value;
+    const btn = document.querySelector('#remove-admin-form button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = `<span>${__('system.saving')}</span>`;
+
+    try {
+        const result = await removeAdminRoleFn({ email });
+        showToast(result.data.message, 'success');
+        document.getElementById('remove-admin-form').reset();
+        loadAdminsList(); // Refresh the list
+    } catch (error) {
+        console.error("[CLIENT] Error removing admin role:", error);
+        showToast(`Error: ${error.message}`, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>${__('system.remove_btn')}</span>`;
+    }
+}
+
+/**
+ * Fetches and displays the list of active administrators.
+ */
+async function loadAdminsList() {
+    const container = document.getElementById('admin-list-container');
+    if (!container) return;
+    
+    container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem;">${__('system.loading_admins')}</p>`;
+
+    try {
+        const result = await listAdminsFn();
+        const admins = result.data.admins;
+        
+        if (!admins || admins.length === 0) {
+            container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem;">Sistem yöneticisi bulunamadı.</p>`;
+            return;
+        }
+
+        let html = '';
+        admins.forEach(admin => {
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color);">
+                    <div>
+                        <strong style="color: var(--text-primary);">${admin.email}</strong>
+                        <div style="color: var(--text-secondary); font-size: 0.85rem;">UID: ${admin.uid}</div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    } catch (error) {
+        console.error("[CLIENT] Error loading admins list:", error);
+        container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem; color: var(--accent-clay);">Hata: ${error.message}</p>`;
+    }
+}
+
+/**
  * Initializes all event listeners and logic for the admin management module.
  */
 export function initAdminModule() {
@@ -199,4 +282,18 @@ export function initAdminModule() {
     if (vertexForm) {
         vertexForm.addEventListener('submit', handleVertexStatusToggle);
     }
+
+    const verifyForm = document.getElementById('verify-user-form');
+    if (verifyForm) verifyForm.addEventListener('submit', handleManualVerifySubmit);
+
+    const removeAdminForm = document.getElementById('remove-admin-form');
+    if (removeAdminForm) removeAdminForm.addEventListener('submit', handleRemoveAdminSubmit);
+
+    const refreshAdminsBtn = document.getElementById('refresh-admins-btn');
+    if (refreshAdminsBtn) {
+        refreshAdminsBtn.addEventListener('click', loadAdminsList);
+    }
+    
+    // Load admins list initially
+    loadAdminsList();
 }
