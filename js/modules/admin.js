@@ -239,9 +239,17 @@ async function loadAdminsList() {
         const result = await listAdminsFn();
         console.log("[CLIENT] listAdmins response:", result);
         const admins = result.data.admins;
+        const debug = result.data.debug;
         
         if (!admins || admins.length === 0) {
-            container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem;">Sistem yöneticisi bulunamadı. (Returned: ${JSON.stringify(result.data)})</p>`;
+            let debugInfo = '';
+            if (debug) {
+                debugInfo = `<br><small style="color: var(--text-muted);">Scanned: ${debug.totalScanned} users | Users with claims: ${debug.usersWithClaims}</small>`;
+                if (debug.claimsLog && debug.claimsLog.length > 0) {
+                    debugInfo += `<br><small style="color: var(--text-muted);">Claims found: ${JSON.stringify(debug.claimsLog)}</small>`;
+                }
+            }
+            container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem;">Sistem yöneticisi bulunamadı.${debugInfo}</p>`;
             return;
         }
 
