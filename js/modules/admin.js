@@ -237,10 +237,11 @@ async function loadAdminsList() {
 
     try {
         const result = await listAdminsFn();
+        console.log("[CLIENT] listAdmins response:", result);
         const admins = result.data.admins;
         
         if (!admins || admins.length === 0) {
-            container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem;">Sistem yöneticisi bulunamadı.</p>`;
+            container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem;">Sistem yöneticisi bulunamadı. (Returned: ${JSON.stringify(result.data)})</p>`;
             return;
         }
 
@@ -258,7 +259,8 @@ async function loadAdminsList() {
         container.innerHTML = html;
     } catch (error) {
         console.error("[CLIENT] Error loading admins list:", error);
-        container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem; color: var(--accent-clay);">Hata: ${error.message}</p>`;
+        const details = error.code ? `${error.code}: ${error.message}` : error.message;
+        container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem; color: var(--accent-clay);">Hata: ${details}</p>`;
     }
 }
 
