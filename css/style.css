@@ -1199,12 +1199,14 @@ button {
     border-left: 3px solid var(--accent-gold);
     font-size: 0.8rem;
     pointer-events: auto;
-    animation: toastFade 0.2s ease-out;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-@keyframes toastFade {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* --- Modallar --- */
