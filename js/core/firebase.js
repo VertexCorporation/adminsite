@@ -7,6 +7,7 @@ let cancelScheduledNotificationFn, getServerStatusFn, setServerStatusFn, blockOn
 let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn;
 let getModelImageUploadUrlFn, getCoverUploadUrlFn, triggerAttributionsUpdateFn;
 let getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn;
+let verifyUserEmailFn;
 let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn;
 
 
@@ -58,6 +59,7 @@ function initFirebase(firebaseConfig) {
     triggerAttributionsUpdateFn = europeFunctions.httpsCallable('triggerAttributionsUpdate');
     getVertexContributorsFn = europeFunctions.httpsCallable('getVertexContributors');
     toggleContributorVerificationFn = europeFunctions.httpsCallable('toggleContributorVerification');
+    verifyUserEmailFn = europeFunctions.httpsCallable('verifyUserEmail');
     deleteVertexContributorFn = europeFunctions.httpsCallable('deleteVertexContributor');
     toggleVertexStatusFn = europeFunctions.httpsCallable('toggleVertexStatus');
     removeAdminRoleFn = europeFunctions.httpsCallable('removeAdminRole');
@@ -88,6 +90,7 @@ export {
     triggerAttributionsUpdateFn,
     getVertexContributorsFn,
     toggleContributorVerificationFn,
+    verifyUserEmailFn,
     deleteVertexContributorFn,
     toggleVertexStatusFn,
     removeAdminRoleFn,

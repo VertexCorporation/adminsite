@@ -2,7 +2,7 @@
 
 import { showToast, __ } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
-import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn } from '../core/firebase.js';
+import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn } from '../core/firebase.js';
 
 // --- Module state for attributions ---
 let attributionsOutOfSync = false;
@@ -184,17 +184,17 @@ async function handleVertexStatusToggle(e) {
  */
 async function handleManualVerifySubmit(e) {
     e.preventDefault();
-    const contributorId = document.getElementById('verify-user-id').value;
+    const identifier = document.getElementById('verify-user-id').value;
     const btn = document.querySelector('#verify-user-form button[type="submit"]');
     btn.disabled = true;
     btn.innerHTML = `<span>${__('system.saving')}</span>`;
 
     try {
-        const result = await toggleContributorVerificationFn({ contributorId, hasVerified: true });
+        const result = await verifyUserEmailFn({ identifier });
         showToast(__('system.verify_success'), 'success');
         document.getElementById('verify-user-form').reset();
     } catch (error) {
-        console.error("[CLIENT] Error verifying contributor:", error);
+        console.error("[CLIENT] Error verifying email:", error);
         showToast(`${__('system.error')}: ${error.message}`, 'error');
     } finally {
         btn.disabled = false;
