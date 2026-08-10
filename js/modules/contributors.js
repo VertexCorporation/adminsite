@@ -138,6 +138,7 @@ function renderContributors(contributors) {
             <div style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; margin-top: 8px;">
                 <div style="display:flex; align-items:center;">${emailIcon} <a href="mailto:${contributor.email}" style="color:var(--text-muted);">${contributor.email}</a></div>
                 ${contributor.phone ? `<div style="display:flex; align-items:center; margin-top:4px;">${phoneIcon} ${contributor.phone}</div>` : ''}
+                ${contributor.department ? `<div style="display:flex; align-items:center; margin-top:4px; font-weight: 500; color: var(--primary-color);">Department: ${contributor.department.charAt(0).toUpperCase() + contributor.department.slice(1)}</div>` : ''}
                 <div style="display:flex; align-items:center; margin-top:4px;">${extraInfo}</div>
                 <div style="display:flex; align-items:center; margin-top:4px;">${dateIcon} ${dateStr}</div>
             </div>
