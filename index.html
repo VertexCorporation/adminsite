@@ -213,6 +213,7 @@
                             <button class="filter-chip" data-filter="age-18" onclick="filterContributors('age-18')" data-i18n="contributors.filter.age18">18+ Yaş</button>
                             <button class="filter-chip" data-filter="linkedin" onclick="filterContributors('linkedin')" data-i18n="contributors.filter.linkedin">LinkedIn</button>
                             <button class="filter-chip" data-filter="github" onclick="filterContributors('github')" data-i18n="contributors.filter.github">GitHub</button>
+                            <button class="filter-chip" data-filter="interview" onclick="filterContributors('interview')" data-i18n="contributors.filter.interview">Mülakatlılar</button>
                         </div>
 
                         <!-- Arama Kutusu -->
@@ -1052,6 +1053,7 @@
                 
                 const hasLinkedIn = innerText.includes('LinkedIn');
                 const hasGitHub = innerText.includes('GitHub');
+                const hasInterview = innerText.includes('Interview:');
 
                 let visible = true;
                 if (filterType === 'verified' && !isVerified) visible = false;
@@ -1061,6 +1063,7 @@
                 else if (filterType === 'age-18' && age < 18) visible = false;
                 else if (filterType === 'linkedin' && !hasLinkedIn) visible = false;
                 else if (filterType === 'github' && !hasGitHub) visible = false;
+                else if (filterType === 'interview' && !hasInterview) visible = false;
 
                 item.style.display = visible ? 'flex' : 'none';
                 if (visible) matchCount++;
