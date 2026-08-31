@@ -150,20 +150,32 @@ function renderContributors(contributors) {
                 <div style="display:flex; align-items:center;">${emailIcon} <a href="mailto:${contributor.email}" style="color:var(--text-muted);">${contributor.email}</a></div>
                 ${contributor.phone ? `<div style="display:flex; align-items:center; margin-top:4px;">${phoneIcon} ${contributor.phone}</div>` : ''}
                 ${contributor.department ? `<div style="display:flex; align-items:center; margin-top:4px; font-weight: 500; color: var(--primary-color);">Department: ${contributor.department.charAt(0).toUpperCase() + contributor.department.slice(1)}</div>` : ''}
-                ${interviewDateStr ? `<div style="display:flex; align-items:center; margin-top:4px; font-weight: 600; color: #22c55e;">${interviewIcon} <span>Interview: ${interviewDateStr}</span>${contributor.interviewBookingUid ? `<span style="font-size:0.75rem; color:var(--text-muted); margin-left:6px; font-weight:normal;">(UID: ${contributor.interviewBookingUid})</span>` : ''}</div>` : ''}
                 <div style="display:flex; align-items:center; margin-top:4px;">${extraInfo}</div>
                 <div style="display:flex; align-items:center; margin-top:4px;">${dateIcon} ${dateStr}</div>
+                <div class="interview-date-row" data-has-date="${!!interviewDateStr}" data-date-val="${interviewDateStr}" data-uid="${contributor.interviewBookingUid || ''}" style="display:flex; align-items:center; margin-top:4px; ${interviewDateStr ? 'font-weight: 600; color: #22c55e;' : 'color: var(--text-muted);'}">
+                    ${interviewIcon} <span>${__('contributors.interview_date')}: ${interviewDateStr || __('contributors.no_interview')}</span>
+                    ${contributor.interviewBookingUid ? `<span style="font-size:0.75rem; color:var(--text-muted); margin-left:6px; font-weight:normal;">(UID: ${contributor.interviewBookingUid})</span>` : ''}
+                </div>
             </div>
             ${contributor.about ? `<div style="font-size: 0.9rem; padding:12px; background: rgba(128,128,128,0.05); border-left: 3px solid var(--primary-color); border-radius:4px; margin-top:10px; color: var(--text-color);">${contributor.about}</div>` : ''}
         `;
         listContainer.appendChild(div);
     });
 
-    // Re-translate verify status texts when language changes
+    // Re-translate verify status texts and interview rows when language changes
     onLangChange(() => {
         document.querySelectorAll('.verify-status-text').forEach(el => {
             const isVerif = el.classList.contains('verified');
             el.textContent = isVerif ? __('contributors.verified_label') : __('contributors.unverified_label');
+        });
+        document.querySelectorAll('.interview-date-row').forEach(el => {
+            const hasDate = el.getAttribute('data-has-date') === 'true';
+            const dateVal = el.getAttribute('data-date-val');
+            const uid = el.getAttribute('data-uid');
+            const labelText = __('contributors.interview_date');
+            const valText = hasDate ? dateVal : __('contributors.no_interview');
+            const uidText = uid ? `<span style="font-size:0.75rem; color:var(--text-muted); margin-left:6px; font-weight:normal;">(UID: ${uid})</span>` : '';
+            el.innerHTML = `${interviewIcon} <span>${labelText}: ${valText}</span>${uidText}`;
         });
     });
 
