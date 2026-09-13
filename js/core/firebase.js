@@ -8,7 +8,7 @@ let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn
 let getModelImageUploadUrlFn, getCoverUploadUrlFn, triggerAttributionsUpdateFn;
 let getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn;
 let verifyUserEmailFn;
-let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn;
+let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, saveDepartmentPermissionsFn;
 
 
 /**
@@ -65,6 +65,7 @@ function initFirebase(firebaseConfig) {
     removeAdminRoleFn = europeFunctions.httpsCallable('removeAdminRole');
     listAdminsFn = europeFunctions.httpsCallable('listAdmins');
     setUserDepartmentFn = europeFunctions.httpsCallable('setUserDepartment');
+    saveDepartmentPermissionsFn = europeFunctions.httpsCallable('saveDepartmentPermissions');
 }
 
 // Export the initializer function and all the service variables
@@ -96,5 +97,6 @@ export {
     toggleVertexStatusFn,
     removeAdminRoleFn,
     listAdminsFn,
-    setUserDepartmentFn
+    setUserDepartmentFn,
+    saveDepartmentPermissionsFn
 };
