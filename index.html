@@ -804,6 +804,58 @@
                         <p class="intro-description" data-i18n="system.gcs_desc">Otomatik GCS organizasyon yedekleme mekanizması (GitHub Actions üzerinden) şu anda <strong style="color: var(--accent-sage);">AKTİF</strong> ve çalışır durumda.</p>
                     </div>
 
+                    <!-- Departman İzinleri Yönetimi -->
+                    <div class="panel-card col-span-12" id="dept-perms-manager">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">admin_panel_settings</span>
+                                <h3 data-i18n="dept.title">Departman Erişim Yetkileri</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description" data-i18n="dept.desc">Her departmanın hangi yönetim sekmelerine erişebileceğini belirleyin. Değişiklikler otomatik kaydedilir.</p>
+                        <div id="dept-permissions-container" class="scrollable-list-box" style="max-height: none; overflow-x: auto;">
+                            <p class="form-hint" style="text-align:center; padding: 1rem;" data-i18n="dept.loading">Yükleniyor...</p>
+                        </div>
+                    </div>
+
+                    <!-- Departman Atama -->
+                    <div class="panel-card col-span-6" id="dept-assign-manager">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">person_add</span>
+                                <h3 data-i18n="dept.assign_title">Kullanıcıya Departman Ata</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description" data-i18n="dept.assign_desc">Bir kullanıcıya departman rolü atayarak ilgili sekmelere erişim sağlayın.</p>
+                        <form id="dept-assign-form" class="form-stack" style="margin-top:10px;">
+                            <div class="form-group-field">
+                                <label for="dept-user-email" data-i18n="dept.assign_email">Kullanıcı E-postası</label>
+                                <input type="email" id="dept-user-email" data-i18n-placeholder="admin.email_placeholder" placeholder="kullanici@vertexishere.com" required>
+                            </div>
+                            <div class="form-group-field">
+                                <label for="dept-select" data-i18n="dept.assign_dept">Departman</label>
+                                <select id="dept-select" required>
+                                    <option value="" disabled selected data-i18n="dept.select_dept">Departman seçin...</option>
+                                    <option value="Essence" data-i18n="dept.essence">Essence | Yönetim Kurulu</option>
+                                    <option value="Core" data-i18n="dept.core">Core | Çekirdek Departmanı</option>
+                                    <option value="Senatus" data-i18n="dept.senatus">Senatus | Yönetim Departmanı</option>
+                                    <option value="Pulse" data-i18n="dept.pulse">Pulse | Sosyal Medya</option>
+                                    <option value="Chroma" data-i18n="dept.chroma">Chroma | Dijital Tasarım</option>
+                                    <option value="Catalyst" data-i18n="dept.catalyst">Catalyst | Finans</option>
+                                    <option value="Envoy" data-i18n="dept.envoy">Envoy | Operasyon</option>
+                                    <option value="Aero" data-i18n="dept.aero">Aero | İnsan Kaynakları</option>
+                                    <option value="Array" data-i18n="dept.array">Array | Yazılım Geliştirme</option>
+                                    <option value="Scout" data-i18n="dept.scout">Scout | Operasyon</option>
+                                    <option value="Vertest" data-i18n="dept.vertest">Vertest | Test</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="chrome-btn-accent">
+                                <span class="material-symbols-rounded">assignment_ind</span>
+                                <span data-i18n="dept.assign_btn">Departman Ata</span>
+                            </button>
+                        </form>
+                    </div>
+
                     <!-- Katılımcı Doğrulama (Manuel) -->
                     <div class="panel-card col-span-6" id="manual-verify-manager">
                         <div class="card-title-row">

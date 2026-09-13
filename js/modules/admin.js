@@ -2,7 +2,7 @@
 
 import { showToast, __ } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
-import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn } from '../core/firebase.js';
+import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn } from '../core/firebase.js';
 
 // --- Module state for attributions ---
 let attributionsOutOfSync = false;
@@ -273,6 +273,31 @@ async function loadAdminsList() {
 }
 
 /**
+ * Handles the submission of the form to assign a department to a user.
+ * @param {Event} e - The form submission event.
+ */
+async function handleDeptAssignSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('dept-user-email').value;
+    const department = document.getElementById('dept-select').value;
+    const btn = document.querySelector('#dept-assign-form button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = `<span>${__('system.saving')}</span>`;
+
+    try {
+        const result = await setUserDepartmentFn({ email, department });
+        showToast(result.data.message || __('dept.assign_success'), 'success');
+        document.getElementById('dept-assign-form').reset();
+    } catch (error) {
+        console.error("[CLIENT] Error assigning department:", error);
+        showToast(`${__('system.error')}: ${error.message}`, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span class="material-symbols-rounded">assignment_ind</span><span>${__('dept.assign_btn')}</span>`;
+    }
+}
+
+/**
  * Initializes all event listeners and logic for the admin management module.
  */
 export function initAdminModule() {
@@ -303,6 +328,9 @@ export function initAdminModule() {
     if (refreshAdminsBtn) {
         refreshAdminsBtn.addEventListener('click', loadAdminsList);
     }
+    
+    const deptAssignForm = document.getElementById('dept-assign-form');
+    if (deptAssignForm) deptAssignForm.addEventListener('submit', handleDeptAssignSubmit);
     
     // Load admins list initially
     loadAdminsList();

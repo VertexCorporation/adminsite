@@ -10,6 +10,7 @@ import { initModelsModule, fetchFullModelsData } from './modules/models.js';
 import { initNewsModule, listenForArticles, stopListeningForArticles } from './modules/news.js';
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
 import { initContributorsModule, fetchContributorsData } from './modules/contributors.js';
+import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule } from './modules/roles.js';
 
 /**
  * The main application function.
@@ -34,31 +35,42 @@ export function startApp(firebaseConfig) {
     // This is the central control point that reacts to user login/logout.
     auth.onAuthStateChanged(async (user) => {
         if (user) {
-            // --- User is LOGGED IN ---
             console.log(`[AUTH] User signed in: ${user.email}`);
             dom.loginContainer.style.display = 'none';
             dom.adminPanel.style.display = 'block';
 
             try {
-                // Verify admin privileges
                 const idTokenResult = await user.getIdTokenResult(true);
-                if (!idTokenResult.claims.admin) {
-                    throw new Error("User does not have admin privileges.");
+                const isAdmin = !!idTokenResult.claims.admin;
+                const department = idTokenResult.claims.department || null;
+
+                if (!isAdmin && !department) {
+                    throw new Error("User does not have admin or department privileges.");
                 }
 
-                console.log("[AUTH] Access Level: Admin. Full panel enabled.");
-                dom.adminManagerSection.style.display = 'block';
-
-                // Fetch data and start real-time listeners for the admin session
-                fetchFullModelsData();
-                listenForArticles();
-                listenForScheduledTasks();
-                fetchContributorsData();
+                if (isAdmin) {
+                    console.log("[AUTH] Access Level: Admin. Full panel enabled.");
+                    dom.adminManagerSection.style.display = 'block';
+                    initRolesModule();
+                    fetchFullModelsData();
+                    listenForArticles();
+                    listenForScheduledTasks();
+                    fetchContributorsData();
+                } else {
+                    console.log(`[AUTH] Access Level: Department (${department}). Limited panel.`);
+                    dom.adminManagerSection.style.display = 'none';
+                    await loadDepartmentPermissions();
+                    const allowedTabs = getAccessibleTabs(department);
+                    console.log(`[AUTH] Allowed tabs for ${department}:`, allowedTabs);
+                    applyTabFilter(allowedTabs);
+                    document.getElementById('dept-perms-manager').style.display = 'none';
+                    document.getElementById('dept-assign-manager').style.display = 'none';
+                }
 
             } catch (error) {
-                console.error("[AUTH] Admin check failed:", error.message);
+                console.error("[AUTH] Access check failed:", error.message);
                 showToast("You are not authorized to access this panel.", "error");
-                auth.signOut(); // Force sign out if not an admin
+                auth.signOut();
             }
         } else {
             // --- User is LOGGED OUT ---
@@ -181,5 +193,52 @@ export function startApp(firebaseConfig) {
         dom.appLoader.addEventListener('transitionend', () => {
            dom.appLoader.remove();
         }, { once: true });
+    }
+}
+
+function applyTabFilter(allowedTabs) {
+    const dockButtons = document.querySelectorAll('.dock-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    dockButtons.forEach(btn => {
+        const targetId = btn.getAttribute('data-target');
+        const tabId = targetId?.replace('tab-', '');
+        if (tabId && !allowedTabs.includes(tabId)) {
+            btn.style.display = 'none';
+        }
+    });
+
+    tabPanels.forEach(panel => {
+        const tabId = panel.id.replace('tab-', '');
+        if (!allowedTabs.includes(tabId)) {
+            panel.style.display = 'none';
+        }
+    });
+
+    if (allowedTabs.length > 0) {
+        const firstTab = allowedTabs[0];
+        const firstBtn = document.querySelector(`.dock-btn[data-target="tab-${firstTab}"]`);
+        const firstPanel = document.getElementById(`tab-${firstTab}`);
+        if (firstBtn && firstPanel) {
+            firstBtn.classList.add('active');
+            firstPanel.classList.add('active');
+            const scrollContainer = document.getElementById('tab-scroll-container');
+            if (scrollContainer) {
+                scrollContainer.scrollLeft = 0;
+            }
+        }
+
+        if (allowedTabs.includes('contributors')) {
+            fetchContributorsData();
+        }
+        if (allowedTabs.includes('models')) {
+            fetchFullModelsData();
+        }
+        if (allowedTabs.includes('news')) {
+            listenForArticles();
+        }
+        if (allowedTabs.includes('notifications')) {
+            listenForScheduledTasks();
+        }
     }
 }

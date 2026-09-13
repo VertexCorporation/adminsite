@@ -1326,3 +1326,129 @@ button {
         width: 320px;
     }
 }
+
+/* ===== Department Permissions Table ===== */
+.dept-perms-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.82rem;
+    min-width: 600px;
+}
+
+.dept-perms-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 8px;
+    border-bottom: 2px solid var(--border-color);
+    background: var(--surface-secondary);
+    border-radius: 8px 8px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.dept-perms-header > span:first-child {
+    min-width: 110px;
+    flex-shrink: 0;
+}
+
+.dept-perm-th {
+    flex: 1;
+    min-width: 80px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.dept-perm-th .material-symbols-rounded {
+    font-size: 1rem;
+}
+
+.dept-perm-group-header {
+    padding: 10px 12px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--accent-primary);
+    background: var(--surface-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.dept-perm-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background 0.15s ease;
+}
+
+.dept-perm-row:hover {
+    background: var(--surface-hover);
+}
+
+.dept-perm-label {
+    min-width: 110px;
+    flex-shrink: 0;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+}
+
+.dept-perm-check {
+    flex: 1;
+    min-width: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.dept-perm-check input[type="checkbox"] {
+    display: none;
+}
+
+.perm-checkmark {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 2px solid var(--border-color);
+    background: var(--surface-primary);
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dept-perm-check input:checked + .perm-checkmark {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.dept-perm-check input:checked + .perm-checkmark::after {
+    content: '';
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    position: absolute;
+    top: 2px;
+}
+
+.dept-perm-check:hover .perm-checkmark {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb, 99, 102, 241), 0.15);
+}
