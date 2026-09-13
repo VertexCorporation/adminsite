@@ -1,6 +1,6 @@
 // js/modules/roles.js
 
-import { db } from '../core/firebase.js';
+import { db, saveDepartmentPermissionsFn } from '../core/firebase.js';
 import { showToast, __ } from '../utils/ui.js';
 
 const TABS = [
@@ -62,9 +62,8 @@ export function departmentHasAccess(department, tabId) {
 }
 
 export async function saveDepartmentPermissions(permissions) {
-    if (!permissionDocRef) return;
     try {
-        await permissionDocRef.set({ departments: permissions }, { merge: true });
+        await saveDepartmentPermissionsFn({ departments: permissions });
         departmentPermissions = permissions;
     } catch (error) {
         console.error('[ROLES] Failed to save permissions:', error);
@@ -167,7 +166,7 @@ export async function loadDepartmentPermissions() {
             DEPARTMENTS.forEach(dept => {
                 departmentPermissions[dept.id] = defaultPerms(dept.id);
             });
-            await permissionDocRef.set({ departments: departmentPermissions });
+            await saveDepartmentPermissionsFn({ departments: departmentPermissions });
         }
         console.log('[ROLES] Department permissions loaded:', departmentPermissions);
     } catch (error) {
