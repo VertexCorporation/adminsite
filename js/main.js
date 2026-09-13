@@ -211,6 +211,7 @@ function applyTabFilter(allowedTabs) {
     tabPanels.forEach(panel => {
         const tabId = panel.id.replace('tab-', '');
         if (!allowedTabs.includes(tabId)) {
+            panel.classList.remove('active');
             panel.style.display = 'none';
         }
     });
@@ -222,10 +223,6 @@ function applyTabFilter(allowedTabs) {
         if (firstBtn && firstPanel) {
             firstBtn.classList.add('active');
             firstPanel.classList.add('active');
-            const scrollContainer = document.getElementById('tab-scroll-container');
-            if (scrollContainer) {
-                scrollContainer.scrollLeft = 0;
-            }
         }
 
         if (allowedTabs.includes('contributors')) {

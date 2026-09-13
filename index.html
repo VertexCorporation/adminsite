@@ -998,74 +998,25 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const dockButtons = document.querySelectorAll('.dock-btn');
-            const scrollContainer = document.getElementById('tab-scroll-container');
             const panels = document.querySelectorAll('.tab-panel');
 
-            if (!scrollContainer || dockButtons.length === 0 || panels.length === 0) return;
+            if (dockButtons.length === 0 || panels.length === 0) return;
 
-            // Initial snap on load to prevent scroll restoration bugs
-            const initialActiveBtn = document.querySelector('.dock-btn.active');
-            if (initialActiveBtn) {
-                const initialTargetId = initialActiveBtn.getAttribute('data-target');
-                const initialTargetPanel = document.getElementById(initialTargetId);
-                if (initialTargetPanel) {
-                    scrollContainer.scrollLeft = initialTargetPanel.offsetLeft;
-                }
-            }
-
-            // Click listener for tab switcher (smooth scrolling)
             dockButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const targetId = btn.getAttribute('data-target');
                     const targetPanel = document.getElementById(targetId);
                     
                     if (targetPanel) {
-                        scrollContainer.scrollTo({
-                            left: targetPanel.offsetLeft,
-                            behavior: 'smooth'
-                        });
-                        
+                        panels.forEach(p => p.classList.remove('active'));
+                        targetPanel.classList.add('active');
+
                         dockButtons.forEach(b => b.classList.remove('active'));
                         btn.classList.add('active');
                     }
                 });
             });
 
-            // Scroll listener for swipe-to-switch synchronization (debounced for stability)
-            let scrollTimeout;
-            scrollContainer.addEventListener('scroll', () => {
-                clearTimeout(scrollTimeout);
-                scrollTimeout = setTimeout(() => {
-                    const width = scrollContainer.clientWidth;
-                    if (width === 0) return;
-                    const index = Math.round(scrollContainer.scrollLeft / width);
-                    
-                    const activePanel = panels[index];
-                    if (activePanel) {
-                        const activeId = activePanel.id;
-                        const targetBtn = document.querySelector(`.dock-btn[data-target="${activeId}"]`);
-                        
-                        if (targetBtn && !targetBtn.classList.contains('active')) {
-                            dockButtons.forEach(b => b.classList.remove('active'));
-                            targetBtn.classList.add('active');
-                            targetBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
-                    }
-                }, 100);
-            });
-
-            // Align scroll position on window resize
-            window.addEventListener('resize', () => {
-                const activeBtn = document.querySelector('.dock-btn.active');
-                if (activeBtn) {
-                    const targetId = activeBtn.getAttribute('data-target');
-                    const targetPanel = document.getElementById(targetId);
-                    if (targetPanel) {
-                        scrollContainer.scrollLeft = targetPanel.offsetLeft;
-                    }
-                }
-            });
-            
             // Yenileme butonuna basıldığında filtreleri sıfırla
             const refBtn = document.getElementById('refresh-contributors-btn');
             if (refBtn) {

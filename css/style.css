@@ -291,44 +291,34 @@ html[data-theme="light"] .icon-circle-btn .moon-icon { display: block; }
 .app-viewport {
     position: absolute;
     top: 56px;
-    bottom: 56px; /* Alt bar için boşluk */
-    left: 0;
+    bottom: 0;
+    left: 56px; /* Sidebar genişliği */
     right: 0;
     overflow: hidden;
 }
 
 .tab-scroll-container {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    height: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.tab-scroll-container::-webkit-scrollbar {
-    display: none;
-}
-
-/* Dikey Scrollable Bölümler */
-.tab-panel {
-    flex: 0 0 100%;
     width: 100%;
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    scroll-snap-align: start;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tab-panel {
+    display: none;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
     box-sizing: border-box;
     padding: 16px;
-    display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+.tab-panel.active {
+    display: flex;
 }
 
 
@@ -1132,15 +1122,20 @@ button {
 /* --- Sabit Alt Bar (App Navigation - Mobile Default) --- */
 .app-navigation {
     position: fixed;
+    top: 56px;
     bottom: 0;
     left: 0;
-    width: 100%;
-    height: 56px;
+    width: 56px;
+    height: auto;
     background-color: var(--bg-surface);
-    border-top: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    border-top: none;
     display: flex;
-    justify-content: space-around;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
+    gap: 4px;
+    padding: 8px 0;
     z-index: 100;
 }
 
@@ -1153,28 +1148,32 @@ button {
     justify-content: center;
     gap: 2px;
     color: var(--text-secondary);
-    padding: 4px;
+    padding: 8px 2px;
     cursor: pointer;
     transition: var(--transition);
-    flex: 1;
-    height: 100%;
+    width: 100%;
+    border-radius: 0;
 }
 
 .dock-btn .material-symbols-rounded {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
 }
 
 .dock-label {
-    font-size: 0.65rem;
+    font-size: 0.55rem;
     font-weight: 600;
+    text-align: center;
 }
 
 .dock-btn:hover {
     color: var(--text-primary);
+    background-color: var(--bg-input);
 }
 
 .dock-btn.active {
     color: var(--accent-gold);
+    background-color: var(--bg-input);
+    border-right: 2px solid var(--accent-gold);
 }
 
 /* --- Toast Bildirimleri --- */
@@ -1236,43 +1235,28 @@ button {
     color: var(--text-primary);
 }
 
-/* --- MASAÜSTÜ MEDYA SORGULARI (RESPONSIVE DOCK-TO-SIDEBAR SHELL) --- */
+/* --- MASAÜSTÜ MEDYA SORGULARI (RESPONSIVE SIDEBAR) --- */
 @media (min-width: 768px) {
-    /* Masaüstünde sol taraf sidebar, sağ taraf ana alan olur */
-    
-    /* 1. Navigasyon sol sidebar olur */
+    /* 1. Navigasyon sol sidebar - genişler */
     .app-navigation {
-        top: 56px;
-        bottom: 0;
-        left: 0;
         width: 220px;
-        height: calc(100% - 56px);
-        border-right: 1px solid var(--border-color);
-        border-top: none;
-        flex-direction: column;
-        justify-content: flex-start;
         padding: 16px 8px;
         gap: 8px;
+        align-items: stretch;
     }
     
     .dock-btn {
-        flex: none;
         flex-direction: row;
-        width: 100%;
         height: 40px;
         justify-content: flex-start;
         padding: 0 16px;
         gap: 12px;
         border-radius: var(--radius-sm);
+        border-right: none;
     }
-    
-    .dock-btn:hover {
-        background-color: var(--bg-input);
-    }
-    
+
     .dock-btn.active {
-        background-color: var(--bg-input);
-        color: var(--accent-gold);
+        border-right: none;
     }
     
     .dock-label {
@@ -1282,8 +1266,6 @@ button {
     /* 2. Sağ taraftaki ana içerik kayar */
     .app-viewport {
         left: 220px;
-        bottom: 0;
-        height: calc(100% - 56px);
     }
     
     .tab-panel {
