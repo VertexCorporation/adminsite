@@ -49,10 +49,9 @@ function defaultPerms(deptId) {
 }
 
 export function getAccessibleTabs(department) {
-    if (!department || !departmentPermissions || !departmentPermissions[department]) {
-        return [];
-    }
-    return departmentPermissions[department];
+    if (!departmentPermissions) return [];
+    const departments = Array.isArray(department) ? department : [department];
+    return [...new Set(departments.flatMap(id => departmentPermissions[id] || []))];
 }
 
 export function departmentHasAccess(department, tabId) {

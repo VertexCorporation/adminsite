@@ -2,10 +2,10 @@
 
 import { initFirebase, auth } from './core/firebase.js';
 import * as dom from './utils/dom.js';
-import { showToast, __, getLang, setLang, translatePage } from './utils/ui.js';
+import { showToast, __, getLang, setLang, translatePage, onLangChange } from './utils/ui.js';
 
 // Import module initializers
-import { initAdminModule } from './modules/admin.js';
+import { initAdminModule, refreshDepartmentUsers } from './modules/admin.js';
 import { initModelsModule, fetchFullModelsData } from './modules/models.js';
 import { initNewsModule, listenForArticles, stopListeningForArticles } from './modules/news.js';
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
@@ -30,41 +30,76 @@ export function startApp(firebaseConfig) {
     initNewsModule();
     initNotificationModule();
     initContributorsModule();
+    onLangChange(() => {
+        if (auth.currentUser) {
+            auth.currentUser.getIdTokenResult().then(token => {
+                const departments = Array.isArray(token.claims.departments)
+                    ? token.claims.departments
+                    : (token.claims.department ? [token.claims.department] : []);
+                renderProfile(auth.currentUser, !!token.claims.admin, departments);
+            }).catch(console.error);
+        }
+    });
+    document.getElementById('profile-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const user = auth.currentUser;
+        if (!user) return;
+        const name = document.getElementById('profile-display-name').value.trim();
+        const button = event.currentTarget.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+            await user.updateProfile({ displayName: name });
+            document.getElementById('profile-name').textContent = name || user.email || '—';
+            showToast(__('profile.saved'), 'success');
+        } catch (error) {
+            showToast(`${__('system.error')}: ${error.message}`, 'error');
+        } finally {
+            button.disabled = false;
+        }
+    });
 
     // --- Step 3: Set up the Core Authentication State Listener ---
     // This is the central control point that reacts to user login/logout.
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             console.log(`[AUTH] User signed in: ${user.email}`);
-            dom.loginContainer.style.display = 'none';
-            dom.adminPanel.style.display = 'block';
-
             try {
                 const idTokenResult = await user.getIdTokenResult(true);
                 const isAdmin = !!idTokenResult.claims.admin;
-                const department = idTokenResult.claims.department || null;
+                const departments = Array.isArray(idTokenResult.claims.departments)
+                    ? idTokenResult.claims.departments
+                    : (idTokenResult.claims.department ? [idTokenResult.claims.department] : []);
 
-                if (!isAdmin && !department) {
+                if (!isAdmin && !departments.length) {
                     throw new Error("User does not have admin or department privileges.");
                 }
+                dom.loginContainer.style.display = 'none';
+                dom.adminPanel.style.display = 'block';
+                renderProfile(user, isAdmin, departments);
 
                 if (isAdmin) {
                     console.log("[AUTH] Access Level: Admin. Full panel enabled.");
+                    resetTabFilter();
                     dom.adminManagerSection.style.display = 'block';
+                    document.getElementById('dept-perms-manager').style.display = '';
+                    document.getElementById('dept-assign-manager').style.display = '';
+                    document.getElementById('dept-users-manager').style.display = '';
                     initRolesModule();
+                    refreshDepartmentUsers();
                     fetchFullModelsData();
                     listenForArticles();
                     listenForScheduledTasks();
                     fetchContributorsData();
                 } else {
-                    console.log(`[AUTH] Access Level: Department (${department}). Limited panel.`);
+                    console.log(`[AUTH] Access Level: Department (${departments.join(', ')}). Limited panel.`);
                     dom.adminManagerSection.style.display = 'none';
                     await loadDepartmentPermissions();
-                    const allowedTabs = getAccessibleTabs(department);
-                    console.log(`[AUTH] Allowed tabs for ${department}:`, allowedTabs);
+                    const allowedTabs = getAccessibleTabs(departments);
+                    console.log(`[AUTH] Allowed tabs for ${departments.join(', ')}:`, allowedTabs);
                     applyTabFilter(allowedTabs);
                     document.getElementById('dept-perms-manager').style.display = 'none';
                     document.getElementById('dept-assign-manager').style.display = 'none';
+                    document.getElementById('dept-users-manager').style.display = 'none';
                 }
 
             } catch (error) {
@@ -196,46 +231,68 @@ export function startApp(firebaseConfig) {
     }
 }
 
+function resetTabFilter() {
+    document.querySelectorAll('.dock-btn, .tab-panel').forEach(element => {
+        element.style.display = '';
+        element.classList.remove('active');
+    });
+    document.querySelector('[data-target="tab-contributors"]').classList.add('active');
+    document.getElementById('tab-contributors').classList.add('active');
+}
+
 function applyTabFilter(allowedTabs) {
+    const visibleTabs = new Set([...allowedTabs, 'profile']);
     const dockButtons = document.querySelectorAll('.dock-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
+
+    [...dockButtons, ...tabPanels].forEach(element => {
+        element.style.display = '';
+        element.classList.remove('active');
+    });
 
     dockButtons.forEach(btn => {
         const targetId = btn.getAttribute('data-target');
         const tabId = targetId?.replace('tab-', '');
-        if (tabId && !allowedTabs.includes(tabId)) {
+        if (tabId && !visibleTabs.has(tabId)) {
             btn.style.display = 'none';
         }
     });
 
     tabPanels.forEach(panel => {
         const tabId = panel.id.replace('tab-', '');
-        if (!allowedTabs.includes(tabId)) {
+        if (!visibleTabs.has(tabId)) {
             panel.classList.remove('active');
             panel.style.display = 'none';
         }
     });
 
-    if (allowedTabs.length > 0) {
-        const firstTab = allowedTabs[0];
-        const firstBtn = document.querySelector(`.dock-btn[data-target="tab-${firstTab}"]`);
-        const firstPanel = document.getElementById(`tab-${firstTab}`);
-        if (firstBtn && firstPanel) {
-            firstBtn.classList.add('active');
-            firstPanel.classList.add('active');
-        }
-
-        if (allowedTabs.includes('contributors')) {
-            fetchContributorsData();
-        }
-        if (allowedTabs.includes('models')) {
-            fetchFullModelsData();
-        }
-        if (allowedTabs.includes('news')) {
-            listenForArticles();
-        }
-        if (allowedTabs.includes('notifications')) {
-            listenForScheduledTasks();
-        }
+    const firstTab = allowedTabs[0] || 'profile';
+    const firstBtn = document.querySelector(`.dock-btn[data-target="tab-${firstTab}"]`);
+    const firstPanel = document.getElementById(`tab-${firstTab}`);
+    if (firstBtn && firstPanel) {
+        firstBtn.classList.add('active');
+        firstPanel.classList.add('active');
     }
+
+    if (allowedTabs.includes('contributors')) {
+        fetchContributorsData();
+    }
+    if (allowedTabs.includes('models')) {
+        fetchFullModelsData();
+    }
+    if (allowedTabs.includes('news')) {
+        listenForArticles();
+    }
+    if (allowedTabs.includes('notifications')) {
+        listenForScheduledTasks();
+    }
+}
+
+function renderProfile(user, isAdmin, departments) {
+    document.getElementById('profile-name').textContent = user.displayName || user.email || '—';
+    document.getElementById('profile-email').textContent = user.email || '—';
+    document.getElementById('profile-display-name').value = user.displayName || '';
+    document.getElementById('profile-role').textContent = isAdmin ? __('profile.admin') : __('profile.member');
+    document.getElementById('profile-departments').textContent = departments.join(', ') || __('profile.none');
+    document.getElementById('profile-uid').textContent = user.uid;
 }

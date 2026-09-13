@@ -1460,3 +1460,74 @@ button {
     border-color: var(--accent-primary);
     box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb, 99, 102, 241), 0.15);
 }
+
+.field-label {
+    display: block;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.dept-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 8px;
+}
+
+.dept-choice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.dept-choice:has(input:checked) {
+    border-color: var(--accent-sage);
+    background: color-mix(in srgb, var(--accent-sage) 14%, var(--bg-input));
+}
+
+.dept-choice input { accent-color: var(--accent-sage); }
+.dept-choice:focus-within { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+
+.dept-users-list { max-height: 420px; overflow-y: auto; }
+.dept-list-message { padding: 16px 4px; text-align: center; }
+.dept-user-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 2px;
+    border-bottom: 1px solid var(--border-color);
+}
+.dept-user-row:last-child { border-bottom: 0; }
+.dept-user-main { min-width: 0; display: grid; gap: 4px; }
+.dept-user-main strong, .dept-user-main > span { overflow-wrap: anywhere; }
+.dept-user-main strong { font-size: 0.86rem; }
+.dept-user-main > span { color: var(--text-secondary); font-size: 0.75rem; }
+.dept-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
+.dept-badge {
+    padding: 3px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+}
+.dept-user-edit { flex: none; width: auto; padding: 7px 10px; font-size: 0.75rem; }
+
+.profile-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+.profile-avatar { font-size: 3.5rem; color: var(--text-secondary); }
+.profile-heading h3 { font-size: 1.05rem; overflow-wrap: anywhere; }
+.profile-heading p { color: var(--text-secondary); font-size: 0.8rem; overflow-wrap: anywhere; }
+.profile-details { display: grid; gap: 0; }
+.profile-details > div { display: grid; grid-template-columns: minmax(100px, 35%) 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+.profile-details > div:last-child { border-bottom: 0; }
+.profile-details dt { color: var(--text-secondary); font-size: 0.8rem; }
+.profile-details dd { font-size: 0.8rem; overflow-wrap: anywhere; }

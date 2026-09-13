@@ -1,11 +1,85 @@
 // js/modules/admin.js
 
-import { showToast, __ } from '../utils/ui.js';
+import { showToast, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
-import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn } from '../core/firebase.js';
+import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn } from '../core/firebase.js';
+import { DEPARTMENTS } from './roles.js';
 
 // --- Module state for attributions ---
 let attributionsOutOfSync = false;
+let departmentUsers = [];
+
+function selectedDepartments() {
+    return [...document.querySelectorAll('#dept-options input:checked')].map(input => input.value);
+}
+
+function renderDepartmentOptions() {
+    const container = document.getElementById('dept-options');
+    const selected = new Set(selectedDepartments());
+    container.replaceChildren();
+    DEPARTMENTS.forEach(dept => {
+        const label = document.createElement('label');
+        label.className = 'dept-choice';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.value = dept.id;
+        input.checked = selected.has(dept.id);
+        label.append(input, document.createTextNode(__(dept.nameKey)));
+        container.append(label);
+    });
+}
+
+function renderDepartmentUsers() {
+    const container = document.getElementById('dept-users-list');
+    const query = document.getElementById('dept-users-search').value.trim().toLocaleLowerCase();
+    const filtered = departmentUsers.filter(user =>
+        [user.displayName, user.email, ...(user.departments || [])]
+            .some(value => String(value || '').toLocaleLowerCase().includes(query))
+    );
+    if (!filtered.length) {
+        container.innerHTML = `<p class="form-hint dept-list-message">${query ? __('dept.no_match') : __('dept.empty')}</p>`;
+        return;
+    }
+    container.innerHTML = filtered.map(user => `
+        <div class="dept-user-row">
+            <div class="dept-user-main">
+                <strong>${sanitizeHTML(user.displayName || user.email || user.uid)}</strong>
+                ${user.displayName ? `<span>${sanitizeHTML(user.email || '')}</span>` : ''}
+                <div class="dept-badges">${user.departments.map(id => `<span class="dept-badge">${sanitizeHTML(id)}</span>`).join('')}</div>
+            </div>
+            <button type="button" class="dept-user-edit chrome-btn-outline" data-uid="${sanitizeHTML(user.uid)}">${__('dept.edit')}</button>
+        </div>
+    `).join('');
+}
+
+async function loadDepartmentUsers() {
+    const container = document.getElementById('dept-users-list');
+    const button = document.getElementById('refresh-dept-users-btn');
+    container.innerHTML = `<p class="form-hint dept-list-message">${__('dept.loading')}</p>`;
+    button.disabled = true;
+    try {
+        const users = [];
+        let pageToken;
+        do {
+            const result = await listDepartmentUsersFn({ pageToken: pageToken || null });
+            users.push(...(result.data.users || []));
+            pageToken = result.data.nextPageToken || null;
+        } while (pageToken);
+        departmentUsers = users.map(user => ({
+            uid: String(user.uid || ''),
+            email: String(user.email || ''),
+            displayName: String(user.displayName || ''),
+            departments: Array.isArray(user.departments) ? user.departments : (user.department ? [user.department] : [])
+        })).filter(user => user.departments.length);
+        departmentUsers.sort((a, b) => a.email.localeCompare(b.email));
+        renderDepartmentUsers();
+    } catch (error) {
+        console.error('[CLIENT] Error loading department users:', error);
+        container.innerHTML = `<p class="form-hint dept-list-message">${__('dept.load_error')}</p>`;
+    } finally {
+        button.disabled = false;
+    }
+}
 
 /**
  * Updates the maintenance mode UI based on the server's status.
@@ -278,16 +352,30 @@ async function loadAdminsList() {
  */
 async function handleDeptAssignSubmit(e) {
     e.preventDefault();
-    const email = document.getElementById('dept-user-email').value;
-    const department = document.getElementById('dept-select').value;
+    const email = document.getElementById('dept-user-email').value.trim();
+    const departments = selectedDepartments();
+    if (!departments.length) {
+        showToast(__('dept.select_hint'), 'error');
+        return;
+    }
     const btn = document.querySelector('#dept-assign-form button[type="submit"]');
     btn.disabled = true;
     btn.innerHTML = `<span>${__('system.saving')}</span>`;
 
     try {
-        const result = await setUserDepartmentFn({ email, department });
+        let result;
+        try {
+            result = await setUserDepartmentsFn({ email, departments });
+        } catch (error) {
+            if (error.code !== 'functions/not-found') throw error;
+            if (departments.length !== 1) {
+                throw new Error(__('dept.backend_required'));
+            }
+            result = await setUserDepartmentFn({ email, department: departments[0] });
+        }
         showToast(result.data.message || __('dept.assign_success'), 'success');
         document.getElementById('dept-assign-form').reset();
+        await loadDepartmentUsers();
     } catch (error) {
         console.error("[CLIENT] Error assigning department:", error);
         showToast(`${__('system.error')}: ${error.message}`, 'error');
@@ -300,7 +388,30 @@ async function handleDeptAssignSubmit(e) {
 /**
  * Initializes all event listeners and logic for the admin management module.
  */
+export function refreshDepartmentUsers() {
+    return loadDepartmentUsers();
+}
+
 export function initAdminModule() {
+    renderDepartmentOptions();
+    onLangChange(() => {
+        renderDepartmentOptions();
+        if (departmentUsers.length) renderDepartmentUsers();
+    });
+    document.getElementById('refresh-dept-users-btn').addEventListener('click', loadDepartmentUsers);
+    document.getElementById('dept-users-search').addEventListener('input', renderDepartmentUsers);
+    document.getElementById('dept-users-list').addEventListener('click', event => {
+        const button = event.target.closest('.dept-user-edit');
+        if (!button) return;
+        const user = departmentUsers.find(item => item.uid === button.dataset.uid);
+        if (!user) return;
+        document.getElementById('dept-user-email').value = user.email;
+        document.querySelectorAll('#dept-options input').forEach(input => {
+            input.checked = user.departments.includes(input.value);
+        });
+        document.getElementById('dept-assign-manager').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('dept-user-email').focus({ preventScroll: true });
+    });
     dom.adminForm.addEventListener('submit', handleAdminFormSubmit);
     dom.maintenanceActionBtn.addEventListener('click', handleMaintenanceToggle);
     initializeMaintenanceStatus();

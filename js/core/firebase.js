@@ -8,7 +8,7 @@ let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn
 let getModelImageUploadUrlFn, getCoverUploadUrlFn, triggerAttributionsUpdateFn;
 let getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn;
 let verifyUserEmailFn;
-let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, saveDepartmentPermissionsFn;
+let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
 
 
 /**
@@ -65,6 +65,8 @@ function initFirebase(firebaseConfig) {
     removeAdminRoleFn = europeFunctions.httpsCallable('removeAdminRole');
     listAdminsFn = europeFunctions.httpsCallable('listAdmins');
     setUserDepartmentFn = europeFunctions.httpsCallable('setUserDepartment');
+    setUserDepartmentsFn = europeFunctions.httpsCallable('setUserDepartments');
+    listDepartmentUsersFn = europeFunctions.httpsCallable('listDepartmentUsers');
     saveDepartmentPermissionsFn = europeFunctions.httpsCallable('saveDepartmentPermissions');
 }
 
@@ -98,5 +100,7 @@ export {
     removeAdminRoleFn,
     listAdminsFn,
     setUserDepartmentFn,
+    setUserDepartmentsFn,
+    listDepartmentUsersFn,
     saveDepartmentPermissionsFn
 };

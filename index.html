@@ -176,6 +176,10 @@
                 <span class="material-symbols-rounded">settings_ethernet</span>
                 <span class="dock-label" data-i18n="nav.system">Sistem</span>
             </button>
+            <button class="dock-btn" data-target="tab-profile">
+                <span class="material-symbols-rounded">account_circle</span>
+                <span class="dock-label" data-i18n="nav.profile">Profil</span>
+            </button>
         </nav>
 
         <!-- İÇERİK ALANI -->
@@ -826,34 +830,40 @@
                                 <h3 data-i18n="dept.assign_title">Kullanıcıya Departman Ata</h3>
                             </div>
                         </div>
-                        <p class="intro-description" data-i18n="dept.assign_desc">Bir kullanıcıya departman rolü atayarak ilgili sekmelere erişim sağlayın.</p>
+                        <p class="intro-description" data-i18n="dept.assign_desc">Kullanıcının erişeceği departmanları seçin. Kaydetme mevcut departman listesinin yerini alır.</p>
                         <form id="dept-assign-form" class="form-stack" style="margin-top:10px;">
                             <div class="form-group-field">
                                 <label for="dept-user-email" data-i18n="dept.assign_email">Kullanıcı E-postası</label>
                                 <input type="email" id="dept-user-email" data-i18n-placeholder="admin.email_placeholder" placeholder="kullanici@vertexishere.com" required>
                             </div>
                             <div class="form-group-field">
-                                <label for="dept-select" data-i18n="dept.assign_dept">Departman</label>
-                                <select id="dept-select" required>
-                                    <option value="" disabled selected data-i18n="dept.select_dept">Departman seçin...</option>
-                                    <option value="Essence" data-i18n="dept.essence">Essence | Yönetim Kurulu</option>
-                                    <option value="Core" data-i18n="dept.core">Core | Çekirdek Departmanı</option>
-                                    <option value="Senatus" data-i18n="dept.senatus">Senatus | Yönetim Departmanı</option>
-                                    <option value="Pulse" data-i18n="dept.pulse">Pulse | Sosyal Medya</option>
-                                    <option value="Chroma" data-i18n="dept.chroma">Chroma | Dijital Tasarım</option>
-                                    <option value="Catalyst" data-i18n="dept.catalyst">Catalyst | Finans</option>
-                                    <option value="Envoy" data-i18n="dept.envoy">Envoy | Operasyon</option>
-                                    <option value="Aero" data-i18n="dept.aero">Aero | İnsan Kaynakları</option>
-                                    <option value="Array" data-i18n="dept.array">Array | Yazılım Geliştirme</option>
-                                    <option value="Scout" data-i18n="dept.scout">Scout | Operasyon</option>
-                                    <option value="Vertest" data-i18n="dept.vertest">Vertest | Test</option>
-                                </select>
+                                <span class="field-label" id="dept-options-label" data-i18n="dept.assign_dept">Departmanlar</span>
+                                <div id="dept-options" class="dept-options" role="group" aria-labelledby="dept-options-label"></div>
+                                <span class="form-field-info" data-i18n="dept.select_hint">En az bir departman seçin.</span>
                             </div>
                             <button type="submit" class="chrome-btn-accent">
                                 <span class="material-symbols-rounded">assignment_ind</span>
                                 <span data-i18n="dept.assign_btn">Departman Ata</span>
                             </button>
                         </form>
+                    </div>
+
+                    <div class="panel-card col-span-6" id="dept-users-manager">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">groups</span>
+                                <h3 data-i18n="dept.users_title">Departman Kullanıcıları</h3>
+                            </div>
+                            <button type="button" id="refresh-dept-users-btn" class="btn-refresh" data-i18n-title="dept.refresh" title="Yenile">
+                                <span class="material-symbols-rounded">refresh</span>
+                                <span data-i18n="dept.refresh">Yenile</span>
+                            </button>
+                        </div>
+                        <div class="search-input-field">
+                            <span class="material-symbols-rounded search-icon">search</span>
+                            <input type="search" id="dept-users-search" data-i18n-placeholder="dept.search" placeholder="İsim, e-posta veya departman ara..." aria-label="Departman kullanıcılarını ara">
+                        </div>
+                        <div id="dept-users-list" class="dept-users-list" aria-live="polite"></div>
                     </div>
 
                     <!-- Katılımcı Doğrulama (Manuel) -->
@@ -986,6 +996,39 @@
                 </div>
             </div>
 
+            </div>
+
+            <div class="tab-panel" id="tab-profile">
+                <div class="panel-section-title">
+                    <h2 data-i18n="profile.title">Profilim</h2>
+                    <p data-i18n="profile.desc">Hesap bilgilerinizi ve panel erişiminizi görüntüleyin.</p>
+                </div>
+                <div class="grid-layout">
+                    <div class="panel-card col-span-6 profile-card">
+                        <div class="profile-heading">
+                            <span class="material-symbols-rounded profile-avatar">account_circle</span>
+                            <div>
+                                <h3 id="profile-name">—</h3>
+                                <p id="profile-email">—</p>
+                            </div>
+                        </div>
+                        <form id="profile-form" class="form-stack">
+                            <div class="form-group-field">
+                                <label for="profile-display-name" data-i18n="profile.display_name">Görünen ad</label>
+                                <input id="profile-display-name" type="text" maxlength="80" autocomplete="name">
+                            </div>
+                            <button type="submit" class="chrome-btn-accent"><span class="material-symbols-rounded">save</span><span data-i18n="profile.save">Profili Kaydet</span></button>
+                        </form>
+                    </div>
+                    <div class="panel-card col-span-6 profile-card">
+                        <div class="card-title-row"><div class="title-details"><span class="material-symbols-rounded">verified_user</span><h3 data-i18n="profile.access">Erişim Bilgileri</h3></div></div>
+                        <dl class="profile-details">
+                            <div><dt data-i18n="profile.role">Rol</dt><dd id="profile-role">—</dd></div>
+                            <div><dt data-i18n="profile.departments">Departmanlar</dt><dd id="profile-departments">—</dd></div>
+                            <div><dt data-i18n="profile.uid">Kullanıcı kimliği</dt><dd id="profile-uid">—</dd></div>
+                        </dl>
+                    </div>
+                </div>
             </div>
         </main>
 
