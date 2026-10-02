@@ -2,7 +2,7 @@
 
 import { showToast, __, onLangChange } from '../utils/ui.js';
 import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn } from '../core/firebase.js';
-import { getEffectivePanelLevel, DEPARTMENTS } from './roles.js';
+import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS } from './roles.js';
 
 const emailIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:text-bottom; margin-right:5px; color:var(--primary-color)"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
 const phoneIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:text-bottom; margin-right:5px; color:var(--primary-color)"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>`;
@@ -96,6 +96,15 @@ export function initContributorsModule() {
         }
     `;
     document.head.appendChild(style);
+}
+
+/** Rank bazli gizlenen filtre ciplerini uygula (adminler hepsini gorur). */
+export function applyChipVisibility() {
+    const hidden = new Set(getHiddenChipsFor('contributors.list'));
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        const filter = chip.getAttribute('data-filter');
+        if (filter && filter !== 'all') chip.style.display = hidden.has(filter) ? 'none' : '';
+    });
 }
 
 export async function fetchContributorsData() {

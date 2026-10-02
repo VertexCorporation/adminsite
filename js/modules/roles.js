@@ -28,9 +28,7 @@ const DEPARTMENTS = [
     { id: 'Vertest', group: 'alt', nameKey: 'dept.vertest' }
 ];
 
-// Panel kataloğu: her sekmenin "kanalları" (panelleri). Matrix hücresi
-// `${tabId}.*` genel seviyesini, Ayar paneli ise `${tabId}.${panelId}`
-// özel seviyesini yazar. Seviyeler: none < read < write.
+// Panel kataloğu: her sekmenin "kanalları". Anahtar formatı `${tabId}.${panelId}`.
 export const PANELS = {
     contributors: [
         { id: 'list', key: 'panel.contributors.list', icon: 'group_work' },
@@ -66,23 +64,38 @@ export const PANELS = {
     ]
 };
 
+// Panel köşe menüsünde içerik ayarı sunulan paneller.
+const CONTENT_OPTIONS = {
+    'contributors.list': {
+        fieldGroups: [
+            { tag: 'contact', key: 'perms.hidden_contact' },
+            { tag: 'age', key: 'perms.hidden_age' },
+            { tag: 'links', key: 'perms.hidden_links' },
+            { tag: 'interview', key: 'perms.hidden_interview' }
+        ],
+        chips: [
+            { id: 'verified', key: 'contributors.filter.verified' },
+            { id: 'unverified', key: 'contributors.filter.unverified' },
+            { id: 'age-14-15', key: 'contributors.filter.age14' },
+            { id: 'age-16-17', key: 'contributors.filter.age16' },
+            { id: 'age-18', key: 'contributors.filter.age18' },
+            { id: 'linkedin', key: 'contributors.filter.linkedin' },
+            { id: 'github', key: 'contributors.filter.github' },
+            { id: 'interview', key: 'contributors.filter.interview' }
+        ]
+    }
+};
+
 const LEVELS = ['none', 'read', 'write'];
 const LEVEL_RANK = { none: 0, read: 1, write: 2 };
 const LEVEL_ICON = { none: 'close', read: 'visibility', write: 'edit' };
-const HIDDEN_FIELD_OPTIONS = {
-    contributors: [
-        { tag: 'contact', key: 'perms.hidden_contact' },
-        { tag: 'age', key: 'perms.hidden_age' },
-        { tag: 'links', key: 'perms.hidden_links' },
-        { tag: 'interview', key: 'perms.hidden_interview' }
-    ]
-};
 const LEVEL_CLASS = { none: 'perm-none', read: 'perm-read', write: 'perm-write' };
 
-let departmentPermissions = null; // { [deptId]: { panels: { [key]: level } } }
+let departmentPermissions = null; // { [deptId]: { panels, hiddenFields?, hiddenChips? } }
 let currentUser = { isAdmin: false, departments: [] };
-let detailTab = null;
 let saveTimeout = null;
+let openMenuPanel = null;
+let menuContentDept = 'Senatus';
 
 const wildcardKey = tabId => `${tabId}.*`;
 
@@ -107,7 +120,7 @@ function nextLevel(level) {
     return LEVELS[(LEVELS.indexOf(level) + 1) % LEVELS.length];
 }
 
-// --- Current user context (main.js auth akışından beslenir) ---
+// --- Kullanıcı bağlamı ---
 
 export function setCurrentUser(isAdmin, departments) {
     currentUser = {
@@ -120,14 +133,22 @@ export function isPanelAdmin() {
     return currentUser.isAdmin;
 }
 
-/** Panel kartlarının (görünürlük + yazma affordansları) kullanacağı efektif seviye. */
 export function getEffectivePanelLevel(panelKey) {
     if (currentUser.isAdmin) return 'write';
     if (!departmentPermissions) return 'none';
     return bestLevel(panelKey, currentUser.departments);
 }
 
-/** Sekme görünürlüğü: tab'ın herhangi bir paneli none değilse sekme açılır. */
+/** Kullanıcının rankları için gizlenen filtre çipleri (birleşim). */
+export function getHiddenChipsFor(panelKey) {
+    if (currentUser.isAdmin || !departmentPermissions) return [];
+    const hidden = new Set();
+    for (const dept of currentUser.departments) {
+        (departmentPermissions[dept]?.hiddenChips?.[panelKey] || []).forEach(chip => hidden.add(chip));
+    }
+    return [...hidden];
+}
+
 export function getAccessibleTabs(departments) {
     if (!departmentPermissions) return [];
     return TABS
@@ -141,7 +162,7 @@ export function departmentHasAccess(department, tabId) {
     return (PANELS[tabId] || []).some(panel => bestLevel(`${tabId}.${panel.id}`, deptList) !== 'none');
 }
 
-// --- Document normalize (eski tab-dizisi şekli de desteklenir) ---
+// --- Doküman normalize (eski tab-dizisi şekli de desteklenir) ---
 
 function normalizeDoc(raw) {
     const source = raw && typeof raw.departments === 'object' && raw.departments !== null
@@ -156,24 +177,31 @@ function normalizeDoc(raw) {
                 if (typeof tabId === 'string' && tabId) panels[wildcardKey(tabId)] = 'read';
             });
             departments[dept] = { panels };
-        } else if (value && typeof value === 'object') {
+            continue;
+        }
+        if (value && typeof value === 'object') {
             const panels = {};
             const rawPanels = value.panels && typeof value.panels === 'object' ? value.panels : {};
             for (const [key, level] of Object.entries(rawPanels)) {
                 if (typeof key === 'string' && key && LEVELS.includes(level)) panels[key] = level;
             }
             const entry = { panels };
-            // hiddenFields: panel bazında gizlenecek alan grupları (PII maskeleme).
-            if (value.hiddenFields && typeof value.hiddenFields === 'object' && !Array.isArray(value.hiddenFields)) {
-                const hiddenFields = {};
-                for (const [key, tags] of Object.entries(value.hiddenFields)) {
-                    if (typeof key === 'string' && key && Array.isArray(tags)) {
-                        const valid = tags.filter(tag => typeof tag === 'string' && tag);
-                        if (valid.length) hiddenFields[key] = valid;
+            const readMap = (obj) => {
+                const out = {};
+                if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+                    for (const [key, tags] of Object.entries(obj)) {
+                        if (typeof key === 'string' && key && Array.isArray(tags)) {
+                            const valid = tags.filter(tag => typeof tag === 'string' && tag);
+                            if (valid.length) out[key] = valid;
+                        }
                     }
                 }
-                if (Object.keys(hiddenFields).length) entry.hiddenFields = hiddenFields;
-            }
+                return out;
+            };
+            const hiddenFields = readMap(value.hiddenFields);
+            if (Object.keys(hiddenFields).length) entry.hiddenFields = hiddenFields;
+            const hiddenChips = readMap(value.hiddenChips);
+            if (Object.keys(hiddenChips).length) entry.hiddenChips = hiddenChips;
             departments[dept] = entry;
         }
     }
@@ -181,12 +209,14 @@ function normalizeDoc(raw) {
 }
 
 function seedDefaults() {
-    const panels = {};
-    TABS.forEach(tab => { panels[wildcardKey(tab.id)] = 'write'; });
+    const writePanels = {};
     const readPanels = {};
-    TABS.forEach(tab => { readPanels[wildcardKey(tab.id)] = 'read'; });
+    TABS.forEach(tab => {
+        writePanels[wildcardKey(tab.id)] = 'write';
+        readPanels[wildcardKey(tab.id)] = 'read';
+    });
     return {
-        Core: { panels },
+        Core: { panels: writePanels },
         Senatus: { panels: readPanels },
         Aero: { panels: { 'contributors.list': 'write' } }
     };
@@ -215,9 +245,6 @@ export async function saveDepartmentPermissions(permissions) {
     } catch (error) {
         console.error('[ROLES] Failed to save permissions:', error);
         let message = `Yetkiler kaydedilemedi: ${error.message}`;
-        // 'internal'/'not-found' = sunucudaki saveDepartmentPermissions eski
-        // sekli (tab dizisi) dogruluyor veya yok; yeni panel-map seklini kabul
-        // etmesi icin drop-in guncellenmeli.
         if (error.code === 'internal' || error.code === 'not-found' || error.code === 'unknown' ||
             /must be an array/i.test(String(error.message))) {
             message = `${message} — ${__('perms.save_hint')}`;
@@ -231,7 +258,7 @@ export function getDepartmentPermissions() {
     return departmentPermissions;
 }
 
-// --- Matrix render ---
+// --- Matrix render (Sistem sekmesi) ---
 
 const cycleIcon = level => `<span class="material-symbols-rounded">${LEVEL_ICON[level]}</span>`;
 
@@ -254,8 +281,7 @@ function renderMatrixTable() {
     html += '<div class="dept-perms-header">';
     html += `<span class="perm-dept-col">${__('perms.dept_col')}</span><span class="perm-preset-col"></span>`;
     TABS.forEach(tab => {
-        html += `<span class="dept-perm-th perm-th-cell"><span class="material-symbols-rounded">${tab.icon}</span> ${__(tab.key)}` +
-            `<button type="button" class="panel-detail-btn" data-tab="${tab.id}" title="${__('perms.detail_btn')}"><span class="material-symbols-rounded">tune</span></button></span>`;
+        html += `<span class="dept-perm-th"><span class="material-symbols-rounded">${tab.icon}</span> ${__(tab.key)}</span>`;
     });
     html += '</div>';
 
@@ -284,7 +310,6 @@ function renderMatrixTable() {
     });
 
     html += '</div>';
-    html += `<div id="panel-detail-container">${detailTab ? renderDetailPanel(detailTab) : ''}</div>`;
     container.innerHTML = html;
 
     container.querySelectorAll('.perm-cycle').forEach(btn => {
@@ -293,77 +318,6 @@ function renderMatrixTable() {
     container.querySelectorAll('.perm-preset-btn').forEach(btn => {
         btn.addEventListener('click', () => handlePreset(btn));
     });
-    container.querySelectorAll('.panel-detail-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            detailTab = detailTab === btn.dataset.tab ? null : btn.dataset.tab;
-            renderMatrixTable();
-        });
-    });
-    const detail = container.querySelector('#panel-detail-container');
-    if (detail) {
-        detail.querySelectorAll('.perm-cycle-panel').forEach(btn => {
-            btn.addEventListener('click', () => handlePanelCycle(btn));
-        });
-        detail.querySelectorAll('.perm-reset-btn').forEach(btn => {
-            btn.addEventListener('click', () => handlePanelReset(btn));
-        });
-        detail.querySelectorAll('.perm-hidden-choice input').forEach(input => {
-            input.addEventListener('change', () => handleHiddenToggle(input));
-        });
-    }
-}
-
-function renderDetailPanel(tabId) {
-    const panels = PANELS[tabId] || [];
-    const tab = TABS.find(t => t.id === tabId);
-    let html = `<div class="panel-detail-box">`;
-    html += `<div class="panel-detail-title"><span class="material-symbols-rounded">${tab?.icon || 'tune'}</span> ` +
-        `${__('perms.detail_title')}: <strong>${__(tab?.key || tabId)}</strong></div>`;
-    html += `<p class="intro-description">${__('perms.detail_hint')}</p>`;
-    html += '<div class="panel-detail-grid">';
-    html += `<div class="panel-detail-row panel-detail-head"><span class="dept-perm-label">${__('perms.dept_col')}</span>`;
-    panels.forEach(panel => {
-        html += `<span class="panel-detail-col"><span class="material-symbols-rounded">${panel.icon}</span> ${__(panel.key)}</span>`;
-    });
-    html += '</div>';
-
-    DEPARTMENTS.forEach(dept => {
-        html += `<div class="panel-detail-row"><span class="dept-perm-label">${__(dept.nameKey)}</span>`;
-        panels.forEach(panel => {
-            const key = `${tabId}.${panel.id}`;
-            const explicit = departmentPermissions?.[dept.id]?.panels?.[key];
-            const effective = levelFor(dept.id, key);
-            html += '<span class="perm-cell">';
-            html += `<button type="button" class="perm-cycle perm-cycle-panel ${LEVEL_CLASS[effective]}" data-dept="${dept.id}" data-panel="${key}" data-level="${effective}" title="${__('perms.cycle_hint')}">${cycleIcon(effective)}</button>`;
-            if (explicit) {
-                html += `<button type="button" class="perm-reset-btn" data-dept="${dept.id}" data-panel="${key}" title="${__('perms.reset_btn')}"><span class="material-symbols-rounded">restart_alt</span></button>`;
-            } else {
-                html += `<span class="perm-inherit-dot" title="${__('perms.inherit_label')}"></span>`;
-            }
-            html += '</span>';
-        });
-        html += '</div>';
-    });
-
-    html += '</div>';
-
-    // Gizlenecek alan grupları: yalnızca PII maskeleme destekleyen kanallar.
-    if (HIDDEN_FIELD_OPTIONS[tabId]) {
-        const tags = HIDDEN_FIELD_OPTIONS[tabId];
-        html += `<div class="panel-detail-hidden"><span class="sub-block-title">${__('perms.hidden_title')}</span>`;
-        html += `<p class="intro-description">${__('perms.hidden_hint')}</p>`;
-        DEPARTMENTS.forEach(dept => {
-            const hidden = new Set(departmentPermissions?.[dept.id]?.hiddenFields?.['contributors.list'] || []);
-            const boxes = tags.map(opt =>
-                `<label class="perm-hidden-choice"><input type="checkbox" data-dept="${dept.id}" data-panel="contributors.list" data-tag="${opt.tag}" ${hidden.has(opt.tag) ? 'checked' : ''}><span>${__(opt.key)}</span></label>`
-            ).join('');
-            html += `<div class="panel-detail-hidden-row"><span class="dept-perm-label">${__(dept.nameKey)}</span><div class="perm-hidden-boxes">${boxes}</div></div>`;
-        });
-        html += '</div>';
-    }
-
-    html += '</div>';
-    return html;
 }
 
 function ensureDeptEntry(deptId) {
@@ -400,6 +354,7 @@ function handleMatrixCycle(btn) {
     }
     scheduleSave();
     renderMatrixTable();
+    if (openMenuPanel) renderPanelMenuContent();
 }
 
 function handlePreset(btn) {
@@ -409,36 +364,151 @@ function handlePreset(btn) {
     if (preset !== 'none') {
         TABS.forEach(tab => { panels[wildcardKey(tab.id)] = preset; });
     }
+    delete departmentPermissions[dept].hiddenFields;
+    delete departmentPermissions[dept].hiddenChips;
     scheduleSave();
     renderMatrixTable();
+    if (openMenuPanel) renderPanelMenuContent();
 }
 
-function handlePanelCycle(btn) {
-    const { dept, panel } = btn.dataset;
-    const panels = ensureDeptEntry(dept);
-    panels[panel] = nextLevel(panels[panel] ?? 'none');
-    scheduleSave();
-    renderMatrixTable();
+// --- Panel köşe menüsü (her panelin sağ üstündeki ayar tuşu) ---
+
+function findPanelMeta(panelKey) {
+    const [tabId, panelId] = panelKey.split('.');
+    const tab = TABS.find(t => t.id === tabId);
+    const panel = (PANELS[tabId] || []).find(p => p.id === panelId);
+    return { tabId, tab, panel };
 }
 
-function handlePanelReset(btn) {
-    const { dept, panel } = btn.dataset;
-    const panels = departmentPermissions[dept]?.panels;
-    if (panels) delete panels[panel];
-    scheduleSave();
-    renderMatrixTable();
+export function initPanelMenus() {
+    document.querySelectorAll('[data-panel]').forEach(card => {
+        const key = card.getAttribute('data-panel');
+        const row = card.querySelector('.card-title-row');
+        if (!key || !row || row.querySelector('.panel-menu-btn')) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'panel-menu-btn';
+        btn.title = __('perms.panel_menu');
+        btn.setAttribute('data-menu-panel', key);
+        btn.innerHTML = '<span class="material-symbols-rounded">settings</span>';
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (openMenuPanel === key) closePanelMenu();
+            else openPanelMenu(key, card);
+        });
+        row.appendChild(btn);
+    });
+    document.addEventListener('click', (e) => {
+        if (openMenuPanel && !e.target.closest('.panel-menu-pop') && !e.target.closest('.panel-menu-btn')) {
+            closePanelMenu();
+        }
+    });
+    onLangChange(() => { if (openMenuPanel) renderPanelMenuContent(); });
 }
 
-function handleHiddenToggle(input) {
-    const { dept, panel, tag } = input.dataset;
-    if (!departmentPermissions[dept]) departmentPermissions[dept] = { panels: {} };
-    const hiddenFields = departmentPermissions[dept].hiddenFields || (departmentPermissions[dept].hiddenFields = {});
-    const tags = new Set(hiddenFields[panel] || []);
-    if (input.checked) tags.add(tag); else tags.delete(tag);
-    if (tags.size) hiddenFields[panel] = [...tags];
-    else delete hiddenFields[panel];
-    if (!Object.keys(hiddenFields).length) delete departmentPermissions[dept].hiddenFields;
-    scheduleSave();
+function closePanelMenu() {
+    document.querySelectorAll('.panel-menu-pop').forEach(el => el.remove());
+    openMenuPanel = null;
+}
+
+function openPanelMenu(panelKey, card) {
+    closePanelMenu();
+    openMenuPanel = panelKey;
+    const pop = document.createElement('div');
+    pop.className = 'panel-menu-pop';
+    pop.dataset.panel = panelKey;
+    card.appendChild(pop);
+    renderPanelMenuContent();
+}
+
+function renderPanelMenuContent() {
+    const pop = document.querySelector(`.panel-menu-pop[data-panel="${openMenuPanel}"]`);
+    if (!pop || !departmentPermissions) return;
+    const panelKey = openMenuPanel;
+    const { panel } = findPanelMeta(panelKey);
+    const contentOpts = CONTENT_OPTIONS[panelKey];
+
+    let html = `<div class="panel-menu-title"><span class="material-symbols-rounded">${panel?.icon || 'tune'}</span> ${__(panel?.key || panelKey)}</div>`;
+
+    // Erişim: tüm ranklar için Gizle/Gör/Düzenle
+    html += `<div class="panel-menu-section-title">${__('perms.menu_access')}</div>`;
+    DEPARTMENTS.forEach(dept => {
+        const explicit = departmentPermissions[dept.id]?.panels?.[panelKey];
+        const effective = levelFor(dept.id, panelKey);
+        html += `<div class="panel-menu-row">` +
+            `<span class="panel-menu-rank">${__(dept.nameKey)}</span>` +
+            `<span class="perm-cell">` +
+            `<button type="button" class="perm-cycle ${LEVEL_CLASS[effective]}" data-menu-dept="${dept.id}" data-menu-level="${effective}" title="${__('perms.cycle_hint')}">${cycleIcon(effective)}</button>` +
+            `${explicit !== undefined ? `<button type="button" class="perm-reset-btn" data-menu-reset="${dept.id}" title="${__('perms.reset_btn')}"><span class="material-symbols-rounded">restart_alt</span></button>` : ''}` +
+            `</span></div>`;
+    });
+
+    // İçerik ayarları (destekleyen panellerde)
+    if (contentOpts) {
+        html += `<div class="panel-menu-section-title">${__('perms.menu_content')}</div>`;
+        html += `<select class="panel-menu-rank-select">` +
+            DEPARTMENTS.map(d => `<option value="${d.id}" ${d.id === menuContentDept ? 'selected' : ''}>${__(d.nameKey)}</option>`).join('') +
+            `</select>`;
+        const deptData = departmentPermissions[menuContentDept] || {};
+        const hiddenTags = new Set(deptData.hiddenFields?.[panelKey] || []);
+        const hiddenChips = new Set(deptData.hiddenChips?.[panelKey] || []);
+
+        html += `<div class="panel-menu-checks">`;
+        contentOpts.fieldGroups.forEach(opt => {
+            html += `<label class="perm-hidden-choice"><input type="checkbox" data-cfg="hiddenFields" data-tag="${opt.tag}" ${hiddenTags.has(opt.tag) ? 'checked' : ''}><span>${__(opt.key)}</span></label>`;
+        });
+        html += `</div>`;
+        html += `<div class="panel-menu-section-title">${__('perms.menu_chips')}</div>`;
+        html += `<div class="panel-menu-checks">`;
+        contentOpts.chips.forEach(opt => {
+            html += `<label class="perm-hidden-choice"><input type="checkbox" data-cfg="hiddenChips" data-tag="${opt.id}" ${hiddenChips.has(opt.id) ? 'checked' : ''}><span>${__(opt.key)}</span></label>`;
+        });
+        html += `</div>`;
+        html += `<p class="intro-description" style="margin-top:6px;">${__('perms.hidden_hint')}</p>`;
+    }
+
+    pop.innerHTML = html;
+
+    pop.querySelectorAll('.perm-cycle[data-menu-dept]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dept = btn.dataset.menuDept;
+            const panels = ensureDeptEntry(dept);
+            panels[panelKey] = nextLevel(btn.dataset.menuLevel);
+            scheduleSave();
+            renderMatrixTable();
+            renderPanelMenuContent();
+        });
+    });
+    pop.querySelectorAll('[data-menu-reset]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dept = btn.dataset.menuReset;
+            const panels = departmentPermissions[dept]?.panels;
+            if (panels) delete panels[panelKey];
+            scheduleSave();
+            renderMatrixTable();
+            renderPanelMenuContent();
+        });
+    });
+    const select = pop.querySelector('.panel-menu-rank-select');
+    if (select) {
+        select.addEventListener('change', () => { menuContentDept = select.value; renderPanelMenuContent(); });
+    }
+    pop.querySelectorAll('input[data-cfg]').forEach(input => {
+        input.addEventListener('change', () => {
+            if (!departmentPermissions[menuContentDept]) departmentPermissions[menuContentDept] = { panels: {} };
+            const bucket = departmentPermissions[menuContentDept][input.dataset.cfg] || (departmentPermissions[menuContentDept][input.dataset.cfg] = {});
+            const tags = new Set(bucket[panelKey] || []);
+            if (input.checked) tags.add(input.dataset.tag); else tags.delete(input.dataset.tag);
+            if (tags.size) bucket[panelKey] = [...tags];
+            else {
+                delete bucket[panelKey];
+                if (!Object.keys(bucket).length) delete departmentPermissions[menuContentDept][input.dataset.cfg];
+            }
+            scheduleSave();
+        });
+    });
 }
 
 export function initRolesModule() {

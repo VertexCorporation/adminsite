@@ -1748,3 +1748,101 @@ html[data-theme="light"] .perm-cycle.perm-write { color: #3f7a4c; background: rg
 .panel-readonly form { pointer-events: none; opacity: 0.72; }
 .panel-readonly .scrollable-list-box,
 .panel-readonly .dept-users-list { pointer-events: auto; opacity: 1; }
+
+/* --- Panel boyut/okunaklik artisi --- */
+.panel-card { padding: 22px 24px; gap: 14px; font-size: 0.95rem; }
+.panel-card .title-details h3 { font-size: 1rem; }
+.panel-card .intro-description { font-size: 0.85rem; }
+.panel-card input, .panel-card textarea, .panel-card select { font-size: 0.9rem; padding: 11px 13px; }
+.panel-card .form-group-field label { font-size: 0.78rem; }
+.panel-card { position: relative; }
+
+/* --- Panel kose menusu --- */
+.panel-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    margin-left: auto;
+}
+body.admin-mode .panel-menu-btn { display: inline-flex; }
+.panel-menu-btn:hover { color: var(--accent-gold); background: rgba(201, 176, 143, 0.1); }
+.panel-menu-btn .material-symbols-rounded { font-size: 18px; }
+.panel-menu-pop {
+    position: absolute;
+    top: 46px;
+    right: 14px;
+    z-index: 60;
+    width: 340px;
+    max-width: calc(100% - 28px);
+    max-height: 420px;
+    overflow-y: auto;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+}
+.panel-menu-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+.panel-menu-title .material-symbols-rounded { font-size: 18px; color: var(--text-secondary); }
+.panel-menu-section-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-secondary);
+    font-weight: 700;
+    margin: 10px 0 4px;
+}
+.panel-menu-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.12));
+    font-size: 0.8rem;
+}
+.panel-menu-row:last-child { border-bottom: 0; }
+.panel-menu-rank { color: var(--text-primary); }
+.panel-menu-rank-select {
+    width: 100%;
+    margin: 4px 0 8px;
+}
+.panel-menu-checks { display: flex; flex-direction: column; gap: 6px; }
+
+/* --- Profil yetki ozeti --- */
+.profile-perms { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.perm-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: rgba(128, 128, 128, 0.04);
+}
+.perm-badge {
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+.perm-badge.perm-read { color: var(--accent-slate); border-color: var(--accent-slate); }
+.perm-badge.perm-write { color: var(--accent-sage); border-color: var(--accent-sage); }
+.loader-logo .logo-bg { fill: none !important; stroke: var(--accent-gold); stroke-width: 7; stroke-linejoin: round; }

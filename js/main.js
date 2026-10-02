@@ -9,9 +9,9 @@ import { initAdminModule, refreshDepartmentUsers } from './modules/admin.js';
 import { initModelsModule, fetchFullModelsData } from './modules/models.js';
 import { initNewsModule, listenForArticles, stopListeningForArticles } from './modules/news.js';
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
-import { initContributorsModule, fetchContributorsData } from './modules/contributors.js';
+import { initContributorsModule, fetchContributorsData, applyChipVisibility } from './modules/contributors.js';
 import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscriptions.js';
-import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel } from './modules/roles.js';
+import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, PANELS } from './modules/roles.js';
 
 /**
  * The main application function.
@@ -76,6 +76,7 @@ export function startApp(firebaseConfig) {
                     throw new Error("User does not have admin or department privileges.");
                 }
                 setCurrentUser(isAdmin, departments);
+                document.body.classList.toggle('admin-mode', isAdmin);
                 dom.loginContainer.style.display = 'none';
                 dom.adminPanel.style.display = 'block';
                 renderProfile(user, isAdmin, departments);
@@ -86,6 +87,8 @@ export function startApp(firebaseConfig) {
                     applyPanelGate(true);
                     dom.adminManagerSection.style.display = 'block';
                     initRolesModule();
+                    initPanelMenus();
+                    applyChipVisibility();
                     refreshDepartmentUsers();
                     fetchFullModelsData();
                     listenForArticles();
@@ -100,6 +103,7 @@ export function startApp(firebaseConfig) {
                     console.log(`[AUTH] Allowed tabs for ${departments.join(', ')}:`, allowedTabs);
                     applyTabFilter(allowedTabs);
                     applyPanelGate(false);
+                    applyChipVisibility();
                 }
 
             } catch (error) {
@@ -325,4 +329,20 @@ function renderProfile(user, isAdmin, departments) {
     document.getElementById('profile-role').textContent = isAdmin ? __('profile.admin') : __('profile.member');
     document.getElementById('profile-departments').textContent = departments.join(', ') || __('profile.none');
     document.getElementById('profile-uid').textContent = user.uid;
+    renderPermSummary();
+}
+
+/** Profil kartinda kullanacinin sekmeler bazindaki efektif yetkileri. */
+function renderPermSummary() {
+    const container = document.getElementById('profile-perms');
+    if (!container) return;
+    container.innerHTML = PANELS ? Object.entries(PANELS).map(([tabId, panels]) => {
+        const best = panels.reduce((acc, p) => {
+            const lvl = getEffectivePanelLevel(`${tabId}.${p.id}`);
+            return ({ none: 0, read: 1, write: 2 })[lvl] > ({ none: 0, read: 1, write: 2 })[acc] ? lvl : acc;
+        }, 'none');
+        const label = best === 'write' ? __('perms.level_write') : best === 'read' ? __('perms.level_read') : __('perms.level_none');
+        const cls = best === 'write' ? 'perm-write' : best === 'read' ? 'perm-read' : 'perm-none';
+        return `<div class="perm-summary-row"><span>${__(`nav.${tabId}`)}</span><span class="perm-badge ${cls}">${label}</span></div>`;
+    }).join('') : '';
 }
