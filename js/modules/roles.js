@@ -69,6 +69,14 @@ export const PANELS = {
 const LEVELS = ['none', 'read', 'write'];
 const LEVEL_RANK = { none: 0, read: 1, write: 2 };
 const LEVEL_ICON = { none: 'close', read: 'visibility', write: 'edit' };
+const HIDDEN_FIELD_OPTIONS = {
+    contributors: [
+        { tag: 'contact', key: 'perms.hidden_contact' },
+        { tag: 'age', key: 'perms.hidden_age' },
+        { tag: 'links', key: 'perms.hidden_links' },
+        { tag: 'interview', key: 'perms.hidden_interview' }
+    ]
+};
 const LEVEL_CLASS = { none: 'perm-none', read: 'perm-read', write: 'perm-write' };
 
 let departmentPermissions = null; // { [deptId]: { panels: { [key]: level } } }
@@ -154,7 +162,19 @@ function normalizeDoc(raw) {
             for (const [key, level] of Object.entries(rawPanels)) {
                 if (typeof key === 'string' && key && LEVELS.includes(level)) panels[key] = level;
             }
-            departments[dept] = { panels };
+            const entry = { panels };
+            // hiddenFields: panel bazında gizlenecek alan grupları (PII maskeleme).
+            if (value.hiddenFields && typeof value.hiddenFields === 'object' && !Array.isArray(value.hiddenFields)) {
+                const hiddenFields = {};
+                for (const [key, tags] of Object.entries(value.hiddenFields)) {
+                    if (typeof key === 'string' && key && Array.isArray(tags)) {
+                        const valid = tags.filter(tag => typeof tag === 'string' && tag);
+                        if (valid.length) hiddenFields[key] = valid;
+                    }
+                }
+                if (Object.keys(hiddenFields).length) entry.hiddenFields = hiddenFields;
+            }
+            departments[dept] = entry;
         }
     }
     return departments;
@@ -194,7 +214,15 @@ export async function saveDepartmentPermissions(permissions) {
         departmentPermissions = permissions;
     } catch (error) {
         console.error('[ROLES] Failed to save permissions:', error);
-        showToast(`Yetkiler kaydedilemedi: ${error.message}`, 'error');
+        let message = `Yetkiler kaydedilemedi: ${error.message}`;
+        // 'internal'/'not-found' = sunucudaki saveDepartmentPermissions eski
+        // sekli (tab dizisi) dogruluyor veya yok; yeni panel-map seklini kabul
+        // etmesi icin drop-in guncellenmeli.
+        if (error.code === 'internal' || error.code === 'not-found' || error.code === 'unknown' ||
+            /must be an array/i.test(String(error.message))) {
+            message = `${message} — ${__('perms.save_hint')}`;
+        }
+        showToast(message, 'error');
         throw error;
     }
 }
@@ -247,7 +275,10 @@ function renderMatrixTable() {
             '</span>';
         TABS.forEach(tab => {
             const level = levelFor(dept.id, wildcardKey(tab.id));
-            html += `<span class="perm-cell"><button type="button" class="perm-cycle ${LEVEL_CLASS[level]}" data-dept="${dept.id}" data-tab="${tab.id}" data-level="${level}" title="${__('perms.cycle_hint')}">${cycleIcon(level)}</button></span>`;
+            const hasOverride = Object.keys(departmentPermissions[dept.id]?.panels || {})
+                .some(key => key.startsWith(`${tab.id}.`) && key !== wildcardKey(tab.id));
+            html += `<span class="perm-cell"><button type="button" class="perm-cycle ${LEVEL_CLASS[level]}" data-dept="${dept.id}" data-tab="${tab.id}" data-level="${level}" title="${__('perms.cycle_hint')}">${cycleIcon(level)}</button>` +
+                `${hasOverride ? `<span class="perm-override-dot" title="${__('perms.override_hint')}"></span>` : ''}</span>`;
         });
         html += '</div>';
     });
@@ -275,6 +306,9 @@ function renderMatrixTable() {
         });
         detail.querySelectorAll('.perm-reset-btn').forEach(btn => {
             btn.addEventListener('click', () => handlePanelReset(btn));
+        });
+        detail.querySelectorAll('.perm-hidden-choice input').forEach(input => {
+            input.addEventListener('change', () => handleHiddenToggle(input));
         });
     }
 }
@@ -311,7 +345,24 @@ function renderDetailPanel(tabId) {
         html += '</div>';
     });
 
-    html += '</div></div>';
+    html += '</div>';
+
+    // Gizlenecek alan grupları: yalnızca PII maskeleme destekleyen kanallar.
+    if (HIDDEN_FIELD_OPTIONS[tabId]) {
+        const tags = HIDDEN_FIELD_OPTIONS[tabId];
+        html += `<div class="panel-detail-hidden"><span class="sub-block-title">${__('perms.hidden_title')}</span>`;
+        html += `<p class="intro-description">${__('perms.hidden_hint')}</p>`;
+        DEPARTMENTS.forEach(dept => {
+            const hidden = new Set(departmentPermissions?.[dept.id]?.hiddenFields?.['contributors.list'] || []);
+            const boxes = tags.map(opt =>
+                `<label class="perm-hidden-choice"><input type="checkbox" data-dept="${dept.id}" data-panel="contributors.list" data-tag="${opt.tag}" ${hidden.has(opt.tag) ? 'checked' : ''}><span>${__(opt.key)}</span></label>`
+            ).join('');
+            html += `<div class="panel-detail-hidden-row"><span class="dept-perm-label">${__(dept.nameKey)}</span><div class="perm-hidden-boxes">${boxes}</div></div>`;
+        });
+        html += '</div>';
+    }
+
+    html += '</div>';
     return html;
 }
 
@@ -376,6 +427,18 @@ function handlePanelReset(btn) {
     if (panels) delete panels[panel];
     scheduleSave();
     renderMatrixTable();
+}
+
+function handleHiddenToggle(input) {
+    const { dept, panel, tag } = input.dataset;
+    if (!departmentPermissions[dept]) departmentPermissions[dept] = { panels: {} };
+    const hiddenFields = departmentPermissions[dept].hiddenFields || (departmentPermissions[dept].hiddenFields = {});
+    const tags = new Set(hiddenFields[panel] || []);
+    if (input.checked) tags.add(tag); else tags.delete(tag);
+    if (tags.size) hiddenFields[panel] = [...tags];
+    else delete hiddenFields[panel];
+    if (!Object.keys(hiddenFields).length) delete departmentPermissions[dept].hiddenFields;
+    scheduleSave();
 }
 
 export function initRolesModule() {

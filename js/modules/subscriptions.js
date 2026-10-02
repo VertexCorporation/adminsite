@@ -4,6 +4,7 @@ import { showToast, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
 import { removeUserSubscriptionFn, listUserSubscriptionsFn } from '../core/firebase.js';
 import { grantPremium, grantPremiumBulk } from './admin.js';
+import { getEffectivePanelLevel } from './roles.js';
 
 // Abonelik kataloğu — yeni seviye eklemek için buraya bir satır ekleyin;
 // form listesi ve rozetler otomatik güncellenir. `level` değerleri sunucu
@@ -92,7 +93,7 @@ function renderSubscriptions() {
                 </div>
                 <span class="sub-dates">${__('subs.end_label_short')}: ${formatDate(sub.expiresAt)}</span>
             </div>
-            <button type="button" class="dept-user-edit cancel-task-btn" data-uid="${sanitizeHTML(sub.uid)}">${__('subs.remove_btn')}</button>
+            ${getEffectivePanelLevel('subscriptions.list') === 'write' ? `<button type="button" class="dept-user-edit cancel-task-btn" data-uid="${sanitizeHTML(sub.uid)}">${__('subs.remove_btn')}</button>` : ''}
         </div>`;
     }).join('');
 }

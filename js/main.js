@@ -300,10 +300,17 @@ function applyPanelGate(isAdmin) {
     document.querySelectorAll('[data-panel]').forEach(el => {
         if (isAdmin) {
             el.style.display = '';
+            el.classList.remove('panel-readonly');
             return;
         }
         const level = getEffectivePanelLevel(el.getAttribute('data-panel'));
-        if (level === 'none') el.style.display = 'none';
+        if (level === 'none') {
+            el.style.display = 'none';
+        } else {
+            el.style.display = '';
+            // Salt-okunur kartlar: içerik görünür, düzenleme öğeleri CSS ile gizli.
+            el.classList.toggle('panel-readonly', level !== 'write');
+        }
     });
     if (!isAdmin) {
         const permsCard = document.getElementById('dept-perms-manager');

@@ -1629,3 +1629,122 @@ button {
 .panel-detail-head { font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; }
 .panel-detail-col { display: inline-flex; align-items: center; gap: 4px; }
 .panel-detail-col .material-symbols-rounded { font-size: 15px; color: var(--text-muted); }
+.panel-matrix .perm-dept-col { min-width: 110px; flex-shrink: 0; font-weight: 600; font-size: 0.8rem; color: var(--text-primary); }
+.panel-matrix .perm-preset-col { flex: 0 0 auto; min-width: 74px; justify-content: center; }
+.panel-matrix .perm-cell { flex: 1; min-width: 80px; }
+.panel-matrix .dept-perm-th { flex-direction: column; gap: 2px; padding-bottom: 4px; }
+.panel-matrix .panel-detail-btn { margin-top: 2px; }
+.perm-override-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-gold);
+    display: inline-block;
+    flex: 0 0 auto;
+}
+
+/* --- Panel Yetki Matrixi v2 (hizalama + sakin renkler) --- */
+.panel-matrix .dept-perms-header {
+    display: grid;
+    grid-template-columns: minmax(130px, 150px) minmax(86px, 96px) repeat(6, minmax(96px, 1fr));
+    gap: 10px;
+    align-items: center;
+    padding: 12px 14px;
+}
+.panel-matrix .dept-perm-row {
+    display: grid;
+    grid-template-columns: minmax(130px, 150px) minmax(86px, 96px) repeat(6, minmax(96px, 1fr));
+    gap: 10px;
+    align-items: center;
+    padding: 9px 14px;
+}
+.panel-matrix .dept-perm-group-header { padding: 11px 14px; }
+.panel-matrix .perm-dept-col,
+.panel-matrix .dept-perm-label { min-width: 0; font-size: 0.82rem; }
+.panel-matrix .perm-preset-col {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    border-right: 1px solid var(--border-subtle, var(--border-color));
+    margin-right: 2px;
+}
+.perm-preset-btn {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.perm-preset-btn .material-symbols-rounded { font-size: 16px; }
+.perm-preset-btn:hover { color: var(--text-primary); background: rgba(128, 128, 128, 0.1); }
+.perm-cell { display: inline-flex; align-items: center; justify-content: center; gap: 3px; }
+.perm-cycle {
+    width: 34px;
+    height: 30px;
+    padding: 0;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+.perm-cycle .material-symbols-rounded { font-size: 17px; }
+/* Yok: kısa çizgili, geri planda */
+.perm-cycle.perm-none { color: var(--text-muted); border-color: color-mix(in srgb, var(--border-color) 70%, transparent); opacity: 0.75; }
+.perm-cycle.perm-none:hover { color: var(--text-secondary); border-color: var(--border-color); opacity: 1; }
+/* Gör: dingin mavi */
+.perm-cycle.perm-read { color: #8fb6d9; border-color: rgba(143, 182, 217, 0.45); background: rgba(143, 182, 217, 0.08); }
+.perm-cycle.perm-read:hover { background: rgba(143, 182, 217, 0.16); }
+/* Düzenle: dingin yeşil */
+.perm-cycle.perm-write { color: #9dc9a2; border-color: rgba(157, 201, 162, 0.45); background: rgba(157, 201, 162, 0.1); }
+.perm-cycle.perm-write:hover { background: rgba(157, 201, 162, 0.2); }
+html[data-theme="light"] .perm-cycle.perm-read { color: #3e6a8e; background: rgba(93, 143, 184, 0.12); }
+html[data-theme="light"] .perm-cycle.perm-write { color: #3f7a4c; background: rgba(110, 130, 107, 0.14); }
+
+/* Kanal detayı hizalama */
+.panel-detail-row {
+    display: grid;
+    grid-template-columns: minmax(130px, 150px) repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    padding: 9px 2px;
+}
+.panel-detail-hidden { margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 12px; }
+.panel-detail-hidden-row {
+    display: grid;
+    grid-template-columns: minmax(130px, 150px) 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 0;
+}
+.perm-hidden-boxes { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.perm-hidden-choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+.perm-hidden-choice input { width: auto; accent-color: var(--accent-sage); }
+
+/* Salt-okunur kartlar: içerik görünür, düzenleme öğeleri gizli */
+.panel-readonly .form-submit-row,
+.panel-readonly button[type="submit"],
+.panel-readonly .form-field-info button { display: none !important; }
+.panel-readonly .status-action-box button { display: none !important; }
+.panel-readonly form { pointer-events: none; opacity: 0.72; }
+.panel-readonly .scrollable-list-box,
+.panel-readonly .dept-users-list { pointer-events: auto; opacity: 1; }

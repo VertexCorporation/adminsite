@@ -25,3 +25,6 @@ Deploy from the Fulcrum repository root:
 ```bash
 firebase deploy --only functions:setUserSubscription,functions:removeUserSubscription,functions:listUserSubscriptions
 ```
+
+
+> **2026-10-01 güncellemesi:** Bu üç fonksiyon artık Fulcrum'un kendisinde (`functions/src/departmentAdmin.js`, Tensor/Curia dahil 13 departman + panel-matrix kabul eden `saveDepartmentPermissions`). Fulcrum'dan deploy edin: `firebase deploy --only functions:listDepartmentUsers,functions:setUserDepartments,functions:saveDepartmentPermissions`. Aşağıdaki drop-in, Fulcrum kullanmak istemeyenler için yedek olarak duruyor.

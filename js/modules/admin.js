@@ -3,7 +3,7 @@
 import { showToast, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
 import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, setUserSubscriptionFn, bulkSetUserSubscriptionsFn } from '../core/firebase.js';
-import { DEPARTMENTS } from './roles.js';
+import { DEPARTMENTS, getEffectivePanelLevel } from './roles.js';
 
 // --- Module state for attributions ---
 let attributionsOutOfSync = false;
@@ -117,7 +117,7 @@ function renderDepartmentUsers() {
                 ${user.displayName ? `<span>${sanitizeHTML(user.email || '')}</span>` : ''}
                 <div class="dept-badges">${user.departments.map(id => `<span class="dept-badge">${sanitizeHTML(id)}</span>`).join('')}</div>
             </div>
-            <button type="button" class="dept-user-edit chrome-btn-outline" data-uid="${sanitizeHTML(user.uid)}">${__('dept.edit')}</button>
+            ${getEffectivePanelLevel('system.deptUsers') === 'write' ? `<button type="button" class="dept-user-edit chrome-btn-outline" data-uid="${sanitizeHTML(user.uid)}">${__('dept.edit')}</button>` : ''}
         </div>
     `).join('');
 }
