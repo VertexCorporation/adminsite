@@ -7,22 +7,25 @@
 
 /* --- Design Tokens & Color Palettes --- */
 :root {
-    --bg-base: #090909;           /* Derin mat zemin */
-    --bg-surface: #121212;        /* Kartlar, header ve dock zemini */
-    --bg-input: #1a1a1a;          /* Girdi elemanları arka planı */
+    --bg-base: #000000;           /* #000000 — Saf Siyah */
+    --bg-deep: #070707;           /* #070707 — Derin Siyah */
+    --bg-surface: #0D0D0D;        /* #0D0D0D — Siyah: kartlar, header */
+    --bg-input: #141414;          /* #141414 — Yumuşak Siyah: girdiler */
+    --bg-raised: #1C1C1C;         /* #1C1C1C — Açık Siyah: hover/yükseltilmiş */
     
-    --text-primary: #ffffff;      /* Saf beyaz ana metin */
-    --text-secondary: #a0a0a0;    /* Mat gri alt metin */
-    --text-muted: #666666;        /* Pasif başlıklar ve sınırlar */
+    --text-primary: #F2F2F2;      /* #F2F2F2 — Kırık Beyaz */
+    --text-secondary: #B8B8B8;    /* #B8B8B8 — Açık Gri */
+    --text-muted: #777777;        /* #777777 — Orta Gri */
     
-    --accent-gold: #ffffff;       /* Siyah beyaz tema için ana renk (eskiden gold) */
-    --accent-gold-hover: #cccccc;
-    --accent-sage: #6e826b;       /* Başarılı ve onaylanmış yeşil */
-    --accent-clay: #a65042;       /* Hata, uyarı ve bakım kırmızı */
-    --accent-slate: #566773;      /* Bilgi ve nötr mavi */
+    --accent-gold: #FFFFFF;       /* Vurgu: Saf Beyaz */
+    --accent-gold-hover: #E5E5E5; /* #E5E5E5 — Çok Açık Gri */
+    --accent-sage: #9dc9a2;       /* Başarı yeşili (canlı) */
+    --accent-clay: #e08573;       /* Hata kırmızısı (canlı) */
+    --accent-slate: #8fb6d9;      /* Bilgi mavisi (canlı) */
     
-    --border-color: #222222;      /* Çok ince arayüz bölücü çizgisi */
-    --border-focus: #ffffff;
+    --border-color: #262626;      /* #262626 — Koyu Gri bölücü */
+    --border-focus: #FFFFFF;
+    --gray-mid: #4D4D4D;          /* #4D4D4D — Gri */
     
     --radius-sm: 8px;
     --radius-md: 12px;
@@ -35,21 +38,23 @@
 
 /* --- Light Theme Vars --- */
 html[data-theme="light"] {
-    --bg-base: #f0f0f0;
-    --bg-surface: #ffffff;
-    --bg-input: #e8e8e8;
+    --bg-base: #E5E5E5;           /* Çok Açık Gri */
+    --bg-deep: #B8B8B8;
+    --bg-surface: #F2F2F2;        /* Kırık Beyaz */
+    --bg-input: #FFFFFF;          /* Saf Beyaz */
+    --bg-raised: #FFFFFF;
     
-    --text-primary: #000000;
-    --text-secondary: #555555;
-    --text-muted: #888888;
+    --text-primary: #0D0D0D;      /* Siyah */
+    --text-secondary: #4D4D4D;    /* Gri */
+    --text-muted: #777777;        /* Orta Gri */
     
     --accent-gold: #000000;
-    --accent-gold-hover: #333333;
+    --accent-gold-hover: #262626;
     --accent-sage: #4e634c;
     --accent-clay: #8e3e32;
     --accent-slate: #445461;
     
-    --border-color: #dddddd;
+    --border-color: #B8B8B8;      /* Açık Gri bölücü */
     --border-focus: #000000;
 }
 
