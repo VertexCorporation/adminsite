@@ -72,6 +72,8 @@ async function loadChannels() {
         const result = await listConsoleChatChannelsFn();
         channels = result.data.channels || [];
         isAdmin = result.data.isAdmin || isPanelAdmin();
+        const createBtn = el('chat-create-btn');
+        if (createBtn) createBtn.style.display = isAdmin ? 'inline-flex' : 'none';
         renderChannelList();
         // Açık kanal hâlâ erişilebilir mi?
         if (currentChannelId && !channels.some(c => c.id === currentChannelId)) {
@@ -82,7 +84,10 @@ async function loadChannels() {
         if (!currentChannelId && channels.length) selectChannel(channels[0].id);
     } catch (error) {
         console.error('[CHAT] Kanallar yüklenemedi:', error);
-        el('chat-channel-list').innerHTML = `<p class="form-hint chat-hint">${escapeHTML(error.message)}</p>`;
+        const msg = /unauthenticated|permission/i.test(error.message)
+            ? __('chat.login_hint')
+            : error.message;
+        el('chat-channel-list').innerHTML = `<p class="form-hint chat-hint">${escapeHTML(msg)}</p>`;
     }
 }
 
@@ -288,6 +293,11 @@ async function submitChannelForm() {
 }
 
 // --- Başlatma ---
+
+/** Giriş/oturum değişiminde dışarıdan tetiklenir. */
+export function refreshConsoleChat() {
+    return loadChannels();
+}
 
 export function initConsoleChat() {
     if (!el('chat-channel-list')) return;

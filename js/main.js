@@ -16,7 +16,8 @@ import { initDashboardLayout } from './modules/dashboardLayout.js';
 import { initAsciiRipple } from './modules/asciiRipple.js';
 import { initBorderGlow } from './modules/borderGlow.js';
 import { initUserMenu } from './modules/userMenu.js';
-import { initConsoleChat } from './modules/consoleChat.js';
+import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
+import { initDockNav } from './modules/dockNav.js';
 
 /**
  * The main application function.
@@ -41,6 +42,7 @@ export function startApp(firebaseConfig) {
     initBorderGlow();
     initUserMenu();
     initConsoleChat();
+    initDockNav();
     initPanelCollapsers();
     initDashboardLayout();
     initProfileMenu();
@@ -116,6 +118,7 @@ export function startApp(firebaseConfig) {
                     listenForScheduledTasks();
                     fetchContributorsData();
                     refreshSubscriptions();
+                    refreshConsoleChat();
                 } else {
                     console.log(`[AUTH] Access Level: Department (${departments.join(', ')}). Limited panel.`);
                     dom.adminManagerSection.style.display = 'none';

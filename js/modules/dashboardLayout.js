@@ -28,7 +28,7 @@
 
 import { showToast } from '../utils/ui.js';
 
-const STORAGE_KEY = 'vertex-dash-layout';
+const STORAGE_KEY = 'vertex-dash-layout-v2'; // v2: bozuk eski konumlar yok sayilir
 const COLS = 12;
 const GAP = 20;
 const MIN_W = 3;
@@ -402,13 +402,24 @@ export function initDashboardLayout() {
         const cards = [...grid.querySelectorAll('[data-panel]')];
         if (!cards.length) return;
         const savedTab = loadSaved()[tabId] || {};
+        // Kaydedilmemiş öğeler varsayılan masonry sırasına dizilir (8+4, 7+5, 6+6...)
+        let cursorX = 0;
         const items = cards.map((el, i) => {
             const key = el.getAttribute('data-panel');
             const s = savedTab[key] || {};
+            const w = s.w || spanOf(el);
+            let x = 0;
+            if (Number.isInteger(s.x)) {
+                x = s.x;
+            } else {
+                x = cursorX;
+                cursorX += w;
+                if (cursorX + MIN_W > COLS) cursorX = 0;
+            }
             return {
                 key, el, index: i,
-                x: Number.isInteger(s.x) ? s.x : 0,
-                w: s.w || spanOf(el),
+                x,
+                w,
                 userH: s.userH || 0,
                 hPx: 0,
                 y: i * 20

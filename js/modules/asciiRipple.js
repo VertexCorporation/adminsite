@@ -61,24 +61,43 @@ function isLight() {
     return document.documentElement.hasAttribute('data-theme');
 }
 
+const WAVE_PALETTE = [
+    [230, 182, 103],
+    [143, 182, 217],
+    [157, 201, 162],
+    [192, 132, 252],
+    [244, 114, 182],
+];
+
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.font = `${CELL - 2}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
     ctx.textBaseline = 'middle';
     const light = isLight();
+    const timeHue = performance.now() / 9000;
     for (let y = 1; y < rows - 1; y++) {
         for (let x = 1; x < cols - 1; x++) {
             const h = cur[y * cols + x];
             const a = Math.abs(h);
-            if (a < 0.12) continue;
+            if (a < 0.12) {
+                if ((x * 7 + y * 13) % 11 === 0) {
+                    ctx.fillStyle = light ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.045)';
+                    ctx.fillText('·', x * CELL, y * CELL + CELL / 2);
+                }
+                continue;
+            }
             const idx = Math.min(RAMP.length - 1, Math.floor(a));
             const ch = RAMP[idx];
             const t = Math.min(1, a / 5);
+            const cIdx = Math.floor((x / cols + timeHue) * WAVE_PALETTE.length) % WAVE_PALETTE.length;
+            const r0 = WAVE_PALETTE[cIdx][0], g0 = WAVE_PALETTE[cIdx][1], b0 = WAVE_PALETTE[cIdx][2];
+            const mix = Math.min(1, t * 0.55);
+            const fr = light ? (1 - mix) * 60 : r0 * mix + 255 * (t * 0.35);
+            const fg = light ? (1 - mix) * 70 : g0 * mix + 255 * (t * 0.35);
+            const fb = light ? (1 - mix) * 70 : b0 * mix + 255 * (t * 0.35);
             ctx.fillStyle = light
-                ? `rgba(80, 90, 80, ${(0.12 + t * 0.5).toFixed(3)})`
-                : h > 0
-                    ? `rgba(230, 182, 103, ${(0.10 + t * 0.55).toFixed(3)})`
-                    : `rgba(150, 150, 160, ${(0.08 + t * 0.45).toFixed(3)})`;
+                ? `rgba(${fr | 0}, ${fg | 0}, ${fb | 0}, ${(0.2 + t * 0.55).toFixed(3)})`
+                : `rgba(${fr | 0}, ${fg | 0}, ${fb | 0}, ${(0.14 + t * 0.6).toFixed(3)})`;
             ctx.fillText(ch, x * CELL, y * CELL + CELL / 2);
         }
     }

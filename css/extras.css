@@ -295,3 +295,63 @@
 .chat-dept-choice:has(input:checked), .chat-dept-all:has(input:checked) { border-color: var(--accent-sage); color: var(--accent-sage); background: rgba(110, 130, 107, 0.1); }
 .chat-dept-choice input, .chat-dept-all input { width: auto; accent-color: var(--accent-sage); }
 .chat-hint { text-align: center; padding: 18px 8px; }
+
+/* ============================================================
+   SEKME BASLIGININ HOVER PARLAMASI (foto 1)
+   ============================================================ */
+.panel-section-title {
+    transition: border-color .25s ease, box-shadow .25s ease;
+    cursor: default;
+}
+.panel-section-title:hover {
+    border-color: rgba(230, 182, 103, 0.45);
+    box-shadow:
+        0 0 22px rgba(230, 182, 103, 0.12),
+        inset 0 0 18px rgba(230, 182, 103, 0.05);
+}
+
+/* ============================================================
+   DOCK MAGNIFICATION (dockNav engine)
+   ============================================================ */
+.app-navigation .dock-btn {
+    transition: none;
+    will-change: width, transform;
+    transform: translateY(calc(var(--dock-lift, 0) * -0.12px));
+}
+.app-navigation .dock-btn .dock-label {
+    opacity: calc(0.75 + var(--dock-lift, 0) / 60);
+}
+
+/* ============================================================
+   KULLANICI MENUSU — 20x ANIMASYON PAKETI
+   ============================================================ */
+.user-menu-trigger:active .user-menu-face { transform: scale(0.9); }
+.user-menu-face { transition: transform .18s cubic-bezier(.34, 1.56, .64, 1); }
+.user-menu-pop {
+    transform-origin: top right;
+    animation: userMenuSpring .46s cubic-bezier(.3, 1.6, .4, 1) backwards;
+}
+@keyframes userMenuSpring {
+    0%   { opacity: 0; transform: scale(.8) translateY(-10px); filter: blur(6px); }
+    60%  { opacity: 1; filter: blur(0); }
+    100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+.user-menu-pop > * {
+    animation: menuRowIn .34s cubic-bezier(.22, 1, .36, 1) backwards;
+}
+.user-menu-pop > *:nth-child(1) { animation-delay: .04s; }
+.user-menu-pop > *:nth-child(2) { animation-delay: .08s; }
+.user-menu-pop > *:nth-child(3) { animation-delay: .11s; }
+.user-menu-pop > *:nth-child(4) { animation-delay: .13s; }
+.user-menu-pop > *:nth-child(5) { animation-delay: .15s; }
+.user-menu-pop > *:nth-child(6) { animation-delay: .17s; }
+.user-menu-pop > *:nth-child(7) { animation-delay: .19s; }
+.user-menu-pop > *:nth-child(8) { animation-delay: .21s; }
+@keyframes menuRowIn {
+    from { opacity: 0; transform: translateY(6px); filter: blur(3px); }
+    to   { opacity: 1; transform: none; filter: blur(0); }
+}
+.user-menu-plan { animation: planPop .4s cubic-bezier(.34, 1.56, .64, 1) .18s backwards; }
+@keyframes planPop { from { transform: scale(0); } to { transform: scale(1); } }
+
+.app-navigation .dock-btn .dock-label { white-space: nowrap; }
