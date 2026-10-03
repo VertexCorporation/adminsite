@@ -30,6 +30,11 @@ export function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.textContent = message;
+    toast.title = __('toast.dismiss_hint');
+    toast.addEventListener('click', () => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 250);
+    });
 
     container.appendChild(toast);
     // Trigger the animation

@@ -355,3 +355,79 @@
 @keyframes planPop { from { transform: scale(0); } to { transform: scale(1); } }
 
 .app-navigation .dock-btn .dock-label { white-space: nowrap; }
+
+/* ============================================================
+   GLOW AZALTMA (tum paneller — cok daha dusuk yoğunluk)
+   ============================================================ */
+.panel-card > .edge-light {
+    opacity: calc((var(--edge-proximity) - var(--edge-sensitivity)) / (100 - var(--edge-sensitivity)) * 0.18);
+}
+.panel-card::before {
+    opacity: calc((var(--edge-proximity) - var(--color-sensitivity)) / (100 - var(--color-sensitivity)) * 0.22);
+}
+.panel-card:not(:hover) > .edge-light,
+.panel-card:not(:hover)::before { opacity: 0; }
+
+/* ============================================================
+   SEKME BASLIGI KARTI + HAFIF PARLAMA (foto 1)
+   ============================================================ */
+.panel-section-title {
+    transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+}
+.panel-section-title:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.05);
+    transform: translateY(-1px);
+}
+
+/* ============================================================
+   LIGHT TEMA DUZELTMELERI
+   ============================================================ */
+html[data-theme="light"] .chat-messages { background: rgba(0, 0, 0, 0.03); }
+html[data-theme="light"] .chat-msg { border-bottom-color: rgba(0, 0, 0, 0.07); }
+html[data-theme="light"] .chat-avatar { background: #ffffff; }
+html[data-theme="light"] .chat-task-chip.open { color: #a65042; border-color: #a65042; }
+html[data-theme="light"] .chat-task-chip.done { color: #4e634c; border-color: #4e634c; }
+html[data-theme="light"] .chat-mention-dept { color: #8a6d1f; }
+html[data-theme="light"] .chat-mention-mail { color: #445461; }
+html[data-theme="light"] .chat-task-toggle-btn { color: #4D4D4D; }
+html[data-theme="light"] .user-menu-pop { box-shadow: 0 14px 36px rgba(0, 0, 0, 0.16); }
+html[data-theme="light"] .user-menu-face { color: #ffffff; }
+html[data-theme="light"] .panel-card > .edge-light { mix-blend-mode: multiply; }
+html[data-theme="light"] .panel-card > .edge-light::before {
+    box-shadow:
+        inset 0 0 0 1px rgba(13, 13, 13, 0.35),
+        inset 0 0 6px 0 rgba(13, 13, 13, 0.12),
+        0 0 10px 0 rgba(13, 13, 13, 0.08);
+}
+html[data-theme="light"] .ascii-ripple { display: none; }
+html[data-theme="light"] .login-slats { filter: saturate(0.85); }
+html[data-theme="light"] .panel-card > .edge-light,
+html[data-theme="light"] .panel-card::before { mix-blend-mode: normal; }
+
+/* ============================================================
+   TOAST TIKLANABILIR
+   ============================================================ */
+.toast { cursor: pointer; }
+
+/* ============================================================
+   MIKROSLATS LOGIN ALANI
+   ============================================================ */
+.login-slats {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+}
+#login-container .login-box { position: relative; z-index: 2; }
+
+/* ============================================================
+   BASLIK SATIRI TEMIZLIGI (ic ice gecen butonlar)
+   ============================================================ */
+.card-title-row { align-items: center; gap: 8px; }
+.card-title-row .title-details { flex: 1 1 auto; min-width: 0; }
+.card-title-row .title-details h3 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-title-row .btn-refresh,
+.card-title-row .icon-action-btn { flex: 0 0 auto; }
+.panel-drag-handle { margin-left: 6px; }
+.panel-collapse-chevron { margin-left: 2px; }

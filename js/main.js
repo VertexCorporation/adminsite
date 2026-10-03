@@ -18,6 +18,7 @@ import { initBorderGlow } from './modules/borderGlow.js';
 import { initUserMenu } from './modules/userMenu.js';
 import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
 import { initDockNav } from './modules/dockNav.js';
+import { initMicroSlats } from './modules/microSlats.js';
 
 /**
  * The main application function.
@@ -43,6 +44,7 @@ export function startApp(firebaseConfig) {
     initUserMenu();
     initConsoleChat();
     initDockNav();
+    initMicroSlats();
     initPanelCollapsers();
     initDashboardLayout();
     initProfileMenu();
@@ -100,6 +102,7 @@ export function startApp(firebaseConfig) {
                 setCurrentUser(isAdmin, departments);
                 document.body.classList.toggle('admin-mode', isAdmin);
                 document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
+                refreshConsoleChat();
                 dom.loginContainer.style.display = 'none';
                 dom.adminPanel.style.display = 'block';
                 renderProfile(user, isAdmin, departments);
