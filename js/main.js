@@ -11,7 +11,7 @@ import { initNewsModule, listenForArticles, stopListeningForArticles } from './m
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
 import { initContributorsModule, fetchContributorsData, applyChipVisibility } from './modules/contributors.js';
 import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscriptions.js';
-import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, PANELS } from './modules/roles.js';
+import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, initPanelCollapsers, PANELS } from './modules/roles.js';
 
 /**
  * The main application function.
@@ -32,6 +32,16 @@ export function startApp(firebaseConfig) {
     initNotificationModule();
     initContributorsModule();
     initSubscriptionsModule();
+    initPanelCollapsers();
+    initProfileMenu();
+
+    // Icerik kaydirildikca ust bar kuculur (tek satir, kompakt mod).
+    const scroller = document.getElementById('tab-scroll-container');
+    if (scroller) {
+        scroller.addEventListener('scroll', () => {
+            document.body.classList.toggle('bar-compact', scroller.scrollTop > 32);
+        }, { passive: true });
+    }
     onLangChange(() => {
         if (auth.currentUser) {
             auth.currentUser.getIdTokenResult().then(token => {
@@ -330,6 +340,35 @@ function renderProfile(user, isAdmin, departments) {
     document.getElementById('profile-departments').textContent = departments.join(', ') || __('profile.none');
     document.getElementById('profile-uid').textContent = user.uid;
     renderPermSummary();
+}
+
+/** Profil menusu: 8 sablon ogeli (icerikler sonradan doldurulacak). */
+function initProfileMenu() {
+    const btn = document.getElementById('profile-menu-btn');
+    const pop = document.getElementById('profile-menu-pop');
+    if (!btn || !pop) return;
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = pop.style.display !== 'none';
+        if (open) { pop.style.display = 'none'; return; }
+        let html = '';
+        for (let i = 1; i <= 8; i++) {
+            html += `<div class="profile-menu-item" data-item="${i}"><span class="profile-menu-num">${i}</span><span>${__(`profile.menu_${i}`)}</span></div>`;
+        }
+        pop.innerHTML = html;
+        pop.style.display = 'block';
+        pop.querySelectorAll('.profile-menu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                showToast(__('profile.menu_soon'), 'info');
+                pop.style.display = 'none';
+            });
+        });
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#profile-menu-pop') && !e.target.closest('#profile-menu-btn')) {
+            pop.style.display = 'none';
+        }
+    });
 }
 
 /** Profil kartinda kullanacinin sekmeler bazindaki efektif yetkileri. */

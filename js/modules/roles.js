@@ -32,7 +32,6 @@ const DEPARTMENTS = [
 export const PANELS = {
     contributors: [
         { id: 'list', key: 'panel.contributors.list', icon: 'group_work' },
-        { id: 'adminRole', key: 'panel.contributors.adminRole', icon: 'shield_person' },
         { id: 'vertexStatus', key: 'panel.contributors.vertexStatus', icon: 'verified_user' }
     ],
     models: [
@@ -55,6 +54,7 @@ export const PANELS = {
         { id: 'deptPerms', key: 'panel.system.deptPerms', icon: 'admin_panel_settings' },
         { id: 'deptAssign', key: 'panel.system.deptAssign', icon: 'person_add' },
         { id: 'deptUsers', key: 'panel.system.deptUsers', icon: 'groups' },
+        { id: 'adminRole', key: 'panel.system.adminRole', icon: 'shield_person' },
         { id: 'manualVerify', key: 'panel.system.manualVerify', icon: 'verified_user' },
         { id: 'removeAdmin', key: 'panel.system.removeAdmin', icon: 'person_remove' },
         { id: 'adminList', key: 'panel.system.adminList', icon: 'admin_panel_settings' },
@@ -378,6 +378,32 @@ function findPanelMeta(panelKey) {
     const tab = TABS.find(t => t.id === tabId);
     const panel = (PANELS[tabId] || []).find(p => p.id === panelId);
     return { tabId, tab, panel };
+}
+
+/** Panelleri baslik satirindan acilip kapanir yapar (durum localStorage'da). */
+export function initPanelCollapsers() {
+    const read = () => new Set(JSON.parse(localStorage.getItem('vertex-collapsed-panels') || '[]'));
+    const write = (set) => localStorage.setItem('vertex-collapsed-panels', JSON.stringify([...set]));
+    const stored = read();
+    document.querySelectorAll('[data-panel]').forEach(card => {
+        const key = card.getAttribute('data-panel');
+        const row = card.querySelector('.card-title-row');
+        if (!key || !row || row.querySelector('.panel-collapse-chevron')) return;
+        const chev = document.createElement('span');
+        chev.className = 'material-symbols-rounded panel-collapse-chevron';
+        chev.textContent = 'keyboard_arrow_up';
+        row.appendChild(chev);
+        if (stored.has(key)) card.classList.add('panel-collapsed');
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('.panel-menu-btn') || e.target.closest('.panel-menu-pop')) return;
+            if (e.target.closest('button') && !e.target.closest('.panel-collapse-chevron')) return;
+            const collapsed = card.classList.toggle('panel-collapsed');
+            chev.textContent = collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up';
+            const set = read();
+            if (collapsed) set.add(key); else set.delete(key);
+            write(set);
+        });
+    });
 }
 
 export function initPanelMenus() {

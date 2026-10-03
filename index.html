@@ -153,6 +153,37 @@
                     <span class="system-tag" data-i18n="header.system">Sistem Portal</span>
                 </div>
             </div>
+            <!-- ORTAK HİBRİT NAVİGASYON (MOBİLDE ALT BAR, DESKTOPTA SOL SIDEBAR) -->
+            <nav class="app-navigation" id="navigation-tabs-dock">
+                <button class="dock-btn active" data-target="tab-contributors">
+                    <span class="material-symbols-rounded">group</span>
+                    <span class="dock-label" data-i18n="nav.contributors">Katılımcı</span>
+                </button>
+                <button class="dock-btn" data-target="tab-models">
+                    <span class="material-symbols-rounded">smart_toy</span>
+                    <span class="dock-label" data-i18n="nav.models">Modeller</span>
+                </button>
+                <button class="dock-btn" data-target="tab-news">
+                    <span class="material-symbols-rounded">newspaper</span>
+                    <span class="dock-label" data-i18n="nav.news">Haberler</span>
+                </button>
+                <button class="dock-btn" data-target="tab-notifications">
+                    <span class="material-symbols-rounded">notifications_active</span>
+                    <span class="dock-label" data-i18n="nav.notifications">Bildirim</span>
+                </button>
+                <button class="dock-btn" data-target="tab-subscriptions">
+                    <span class="material-symbols-rounded">workspace_premium</span>
+                    <span class="dock-label" data-i18n="nav.subscriptions">Abonelik</span>
+                </button>
+                <button class="dock-btn" data-target="tab-system">
+                    <span class="material-symbols-rounded">settings_ethernet</span>
+                    <span class="dock-label" data-i18n="nav.system">Sistem</span>
+                </button>
+                <button class="dock-btn" data-target="tab-profile">
+                    <span class="material-symbols-rounded">account_circle</span>
+                    <span class="dock-label" data-i18n="nav.profile">Profil</span>
+                </button>
+            </nav>
             <div class="header-control-buttons">
                 <button id="lang-toggle-btn" class="icon-circle-btn" data-i18n-title="header.theme" title="Temayı Değiştir">
                     <span id="lang-indicator">TR</span>
@@ -167,38 +198,6 @@
                 </button>
             </div>
         </header>
-
-        <!-- ORTAK HİBRİT NAVİGASYON (MOBİLDE ALT BAR, DESKTOPTA SOL SIDEBAR) -->
-        <nav class="app-navigation" id="navigation-tabs-dock">
-            <button class="dock-btn active" data-target="tab-contributors">
-                <span class="material-symbols-rounded">group</span>
-                <span class="dock-label" data-i18n="nav.contributors">Katılımcı</span>
-            </button>
-            <button class="dock-btn" data-target="tab-models">
-                <span class="material-symbols-rounded">smart_toy</span>
-                <span class="dock-label" data-i18n="nav.models">Modeller</span>
-            </button>
-            <button class="dock-btn" data-target="tab-news">
-                <span class="material-symbols-rounded">newspaper</span>
-                <span class="dock-label" data-i18n="nav.news">Haberler</span>
-            </button>
-            <button class="dock-btn" data-target="tab-notifications">
-                <span class="material-symbols-rounded">notifications_active</span>
-                <span class="dock-label" data-i18n="nav.notifications">Bildirim</span>
-            </button>
-            <button class="dock-btn" data-target="tab-subscriptions">
-                <span class="material-symbols-rounded">workspace_premium</span>
-                <span class="dock-label" data-i18n="nav.subscriptions">Abonelik</span>
-            </button>
-            <button class="dock-btn" data-target="tab-system">
-                <span class="material-symbols-rounded">settings_ethernet</span>
-                <span class="dock-label" data-i18n="nav.system">Sistem</span>
-            </button>
-            <button class="dock-btn" data-target="tab-profile">
-                <span class="material-symbols-rounded">account_circle</span>
-                <span class="dock-label" data-i18n="nav.profile">Profil</span>
-            </button>
-        </nav>
 
         <!-- İÇERİK ALANI -->
         <main class="app-viewport">
@@ -249,33 +248,7 @@
                         </div>
                     </div>
 
-                    <!-- Yönetici Ekleme -->
-                    <div class="panel-card col-span-4" id="admin-manager" data-panel="contributors.adminRole">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">shield_person</span>
-                                <h3 data-i18n="admin.title">Yönetici Rolü Tanımla</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="admin.desc">Doğrulanmış bir Vertex üyesinin e-posta adresini girerek yönetici kontrol yetkisi tanımlayın.</p>
-                        
-                        <form id="admin-form" class="form-stack">
-                            <div class="form-group-field">
-                                <label for="new-admin-email" data-i18n="admin.email_label">Kullanıcı E-postası</label>
-                                <div class="form-input-wrapper">
-                                    <span class="material-symbols-rounded">mail</span>
-                                    <input type="email" id="new-admin-email" data-i18n-placeholder="admin.email_placeholder" placeholder="kullanici@vertexishere.com" required>
-                                </div>
-                                <span class="form-field-info" data-i18n="admin.email_hint">Kullanıcı sisteme kayıtlı olmalıdır.</span>
-                            </div>
-                            <button type="submit" id="grant-admin-btn" class="chrome-btn-accent">
-                                <span class="material-symbols-rounded">admin_panel_settings</span>
-                                <span data-i18n="admin.grant_btn">Yönetici Yetkisi Ver</span>
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Vertex Status Toggle -->
+<!-- Vertex Status Toggle -->
                     <div class="panel-card col-span-4" id="vertex-status-manager" data-panel="contributors.vertexStatus">
                         <div class="card-title-row">
                             <div class="title-details">
@@ -920,6 +893,34 @@
                         </form>
                     </div>
 
+                    <!-- Yönetici Ekleme -->
+                    <div class="panel-card col-span-6" id="admin-manager" data-panel="system.adminRole">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">shield_person</span>
+                                <h3 data-i18n="admin.title">Yönetici Rolü Tanımla</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description" data-i18n="admin.desc">Doğrulanmış bir Vertex üyesinin e-posta adresini girerek yönetici kontrol yetkisi tanımlayın.</p>
+                        
+                        <form id="admin-form" class="form-stack">
+                            <div class="form-group-field">
+                                <label for="new-admin-email" data-i18n="admin.email_label">Kullanıcı E-postası</label>
+                                <div class="form-input-wrapper">
+                                    <span class="material-symbols-rounded">mail</span>
+                                    <input type="email" id="new-admin-email" data-i18n-placeholder="admin.email_placeholder" placeholder="kullanici@vertexishere.com" required>
+                                </div>
+                                <span class="form-field-info" data-i18n="admin.email_hint">Kullanıcı sisteme kayıtlı olmalıdır.</span>
+                            </div>
+                            <button type="submit" id="grant-admin-btn" class="chrome-btn-accent">
+                                <span class="material-symbols-rounded">admin_panel_settings</span>
+                                <span data-i18n="admin.grant_btn">Yönetici Yetkisi Ver</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    
+
                     <!-- Aktif Yöneticiler Listesi -->
                     <div class="panel-card col-span-12" id="admin-list-manager" data-panel="system.adminList">
                         <div class="card-title-row">
@@ -1130,11 +1131,17 @@
                 <div class="grid-layout">
                     <div class="panel-card col-span-6 profile-card">
                         <div class="profile-heading">
-                            <span class="material-symbols-rounded profile-avatar">account_circle</span>
-                            <div>
+                            <div class="profile-avatar-ring">
+                                <span class="profile-avatar-icon material-symbols-rounded">person</span>
+                            </div>
+                            <div class="profile-heading-info">
                                 <h3 id="profile-name">—</h3>
                                 <p id="profile-email">—</p>
                             </div>
+                            <button type="button" id="profile-menu-btn" class="panel-menu-btn" style="display:inline-flex;" title="Menü">
+                                <span class="material-symbols-rounded">apps</span>
+                            </button>
+                            <div id="profile-menu-pop" class="panel-menu-pop profile-menu-pop" style="display:none;"></div>
                         </div>
                         <form id="profile-form" class="form-stack">
                             <div class="form-group-field">

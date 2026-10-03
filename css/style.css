@@ -1900,3 +1900,135 @@ body.admin-mode .panel-menu-btn { display: inline-flex; }
         top: 108px; /* 56 header + 52 menü çubuğu */
     }
 }
+
+/* --- TEK BAR: navigasyon header'in icinde (masaustu) --- */
+@media (min-width: 768px) {
+    .app-header { gap: 14px; padding: 0 18px; justify-content: flex-start; }
+    .brand-container { flex: none; }
+    .header-control-buttons { margin-left: auto; flex: none; }
+    .app-navigation {
+        position: static;
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 100%;
+        width: auto;
+        top: auto; bottom: auto; left: auto; right: auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 4px;
+        padding: 0 4px;
+        border: none;
+        background: transparent;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .app-navigation::-webkit-scrollbar { display: none; }
+    .app-navigation .dock-btn {
+        flex-direction: row;
+        flex: 0 0 auto;
+        width: auto;
+        height: 38px;
+        padding: 0 14px;
+        margin: 0;
+        gap: 8px;
+        border-radius: 12px;
+    }
+    .app-navigation .dock-btn.active { border-radius: 12px; }
+    .app-navigation .dock-btn:hover { border-radius: 12px; }
+    .app-viewport { top: 56px; left: 0; }
+    body.bar-compact .app-viewport { top: 46px; }
+}
+
+/* --- Kaydirinca kuculen ust bar + yumusak gecisler --- */
+.app-header { transition: height .25s ease; }
+.app-viewport { transition: top .25s ease; }
+.brand-info h1 { transition: font-size .2s ease; }
+body.bar-compact .app-header { height: 46px; }
+body.bar-compact .app-viewport { top: 46px; }
+body.bar-compact .brand-info h1 { font-size: 0.92rem; }
+body.bar-compact .brand-info .system-tag { display: none; }
+body.bar-compact .app-navigation .dock-btn { height: 30px; }
+body.bar-compact .app-navigation .dock-label { font-size: 0.76rem; }
+.tab-scroll-container { scroll-behavior: smooth; }
+.tab-panel { animation: tabIn .28s ease; }
+@keyframes tabIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.panel-card {
+    transition: transform .18s ease, box-shadow .18s ease, padding .22s ease, border-radius .22s ease, background-color .22s ease;
+}
+.panel-card:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16); }
+
+/* --- Acilir-kapanir paneller (kapali: yuvarlak baslik cubugu) --- */
+.panel-card[data-panel] > .card-title-row { cursor: pointer; user-select: none; }
+.panel-collapse-chevron {
+    color: var(--text-muted);
+    font-size: 20px;
+    margin-left: 6px;
+    transition: transform .2s ease;
+    pointer-events: none;
+}
+.panel-card.panel-collapsed { padding: 10px 16px; gap: 0; border-radius: 14px; background: var(--bg-input); }
+.panel-card.panel-collapsed:hover { box-shadow: none; transform: none; }
+.panel-card.panel-collapsed > *:not(.card-title-row):not(.panel-menu-pop) { display: none !important; }
+.panel-card.panel-collapsed .panel-collapse-chevron { transform: rotate(180deg); }
+
+/* --- Profil: animasyonlu renkli halka + menü --- */
+.profile-heading { position: relative; }
+.profile-avatar-ring {
+    position: relative;
+    width: 68px;
+    height: 68px;
+    flex: none;
+    border-radius: 50%;
+}
+.profile-avatar-ring::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(#7aa2ff, #9dc9a2, #e6b667, #d97a6c, #9d7ae6, #7aa2ff);
+    animation: profileRingSpin 5s linear infinite;
+}
+.profile-avatar-ring::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+}
+.profile-avatar-ring .profile-avatar-icon {
+    position: absolute;
+    inset: 3px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--accent-gold);
+}
+@keyframes profileRingSpin { to { transform: rotate(360deg); } }
+html[data-theme="light"] .profile-avatar-ring::after { background: var(--bg-surface); }
+.profile-menu-pop { width: 260px; }
+.profile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background .15s ease;
+}
+.profile-menu-item:hover { background: rgba(128, 128, 128, 0.1); }
+.profile-menu-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    flex: none;
+}
