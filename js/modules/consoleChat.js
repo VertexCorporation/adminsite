@@ -105,9 +105,6 @@ function renderChannelList() {
             ${ch.postLevel === 'admins' ? '<span class="material-symbols-rounded chat-channel-lock" title="Yönetici kanalı">shield</span>' : ''}
         </button>
     `).join('');
-    container.querySelectorAll('.chat-channel-item').forEach(btn => {
-        btn.addEventListener('click', () => selectChannel(btn.dataset.channel));
-    });
 }
 
 function selectChannel(channelId) {
@@ -196,18 +193,8 @@ function renderMessages(messages) {
     container.innerHTML = html;
     container.scrollTop = container.scrollHeight;
 
-    container.querySelectorAll('.chat-task-toggle-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            btn.disabled = true;
-            try {
-                await updateConsoleChatTaskStatusFn({ channelId: currentChannelId, messageId: btn.dataset.task, status: btn.dataset.status });
-                loadMessages();
-            } catch (error) {
-                showToast(`${__('system.error')}: ${error.message}`, 'error');
-                btn.disabled = false;
-            }
-        });
-    });
+    const pending = container.querySelector('.chat-task-toggle-btn');
+    if (pending) pending.disabled = false;
 }
 
 // --- Gönderme ---
@@ -308,6 +295,25 @@ export function initConsoleChat() {
     el('chat-channel-edit').addEventListener('click', () => {
         const channel = channels.find(c => c.id === currentChannelId);
         if (channel) openChannelForm('edit', channel);
+    });
+
+    // Kalici delegation: kanal listesi her yenilense bile tiklamalar asla kaybolmaz
+    el('chat-channel-list').addEventListener('click', (e) => {
+        const btn = e.target.closest('.chat-channel-item');
+        if (btn && btn.dataset.channel) selectChannel(btn.dataset.channel);
+    });
+    el('chat-messages').addEventListener('click', (e) => {
+        const btn = e.target.closest('.chat-task-toggle-btn');
+        if (!btn || btn.disabled) return;
+        btn.disabled = true;
+        updateConsoleChatTaskStatusFn({
+            channelId: currentChannelId,
+            messageId: btn.dataset.task,
+            status: btn.dataset.status
+        }).then(() => loadMessages()).catch((error) => {
+            showToast(`${__('system.error')}: ${error.message}`, 'error');
+            btn.disabled = false;
+        });
     });
     el('chat-form-cancel').addEventListener('click', closeChannelForm);
     el('chat-form-save').addEventListener('click', submitChannelForm);
