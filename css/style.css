@@ -2032,3 +2032,22 @@ html[data-theme="light"] .profile-avatar-ring::after { background: var(--bg-surf
     color: var(--text-secondary);
     flex: none;
 }
+
+/* --- Panel surukle-birak + duzeltmeler --- */
+.panel-drag-handle { color: var(--text-muted); font-size: 18px; cursor: grab; margin-left: 2px; }
+.panel-drag-handle:hover { color: var(--text-primary); }
+.panel-drag-handle:active { cursor: grabbing; }
+.panel-card.dragging { opacity: 0.45; }
+.panel-card.panel-collapsed { align-self: start; height: fit-content; }
+#tab-profile { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow-y: auto; }
+.panel-order-reset {
+    width: 100%;
+    margin-top: 10px;
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: none;
+    color: var(--text-secondary);
+    justify-content: center;
+}
+.panel-order-reset:hover { color: var(--accent-gold); border-color: var(--accent-gold); }

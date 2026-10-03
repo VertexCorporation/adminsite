@@ -406,6 +406,80 @@ export function initPanelCollapsers() {
     });
 }
 
+// --- Panel surukle-birak siralama (yerel, tab bazli, kalici) ---
+
+const PANEL_ORDER_KEY = 'vertex-panel-order';
+const originalPanelOrder = {};
+
+function getPanelOrder() {
+    try { return JSON.parse(localStorage.getItem(PANEL_ORDER_KEY) || '{}'); } catch { return {}; }
+}
+
+function savePanelOrder(tabId, grid) {
+    const all = getPanelOrder();
+    all[tabId] = [...grid.querySelectorAll('[data-panel]')].map(el => el.getAttribute('data-panel'));
+    localStorage.setItem(PANEL_ORDER_KEY, JSON.stringify(all));
+}
+
+export function initPanelDragOrder() {
+    document.querySelectorAll('.tab-panel .grid-layout').forEach(grid => {
+        const tabId = grid.closest('.tab-panel')?.id.replace('tab-', '');
+        if (!tabId) return;
+        originalPanelOrder[tabId] = [...grid.querySelectorAll('[data-panel]')];
+        const saved = getPanelOrder()[tabId];
+        if (Array.isArray(saved)) {
+            saved.forEach(key => {
+                const el = grid.querySelector(`[data-panel="${key}"]`);
+                if (el) grid.appendChild(el);
+            });
+        }
+        grid.querySelectorAll('[data-panel]').forEach(card => attachPanelDrag(card, grid, tabId));
+    });
+}
+
+function attachPanelDrag(card, grid, tabId) {
+    const row = card.querySelector('.card-title-row');
+    if (!row || row.querySelector('.panel-drag-handle')) return;
+    const handle = document.createElement('span');
+    handle.className = 'material-symbols-rounded panel-drag-handle';
+    handle.textContent = 'drag_indicator';
+    handle.title = __('perms.drag_hint');
+    row.insertBefore(handle, row.querySelector('.panel-collapse-chevron'));
+
+    handle.addEventListener('mousedown', () => { card.draggable = true; });
+    handle.addEventListener('mouseup', () => { card.draggable = false; });
+
+    card.addEventListener('dragstart', (e) => {
+        if (!card.draggable) { e.preventDefault(); return; }
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        try { e.dataTransfer.setData('text/plain', card.getAttribute('data-panel') || ''); } catch (_err) {}
+    });
+    card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        card.draggable = false;
+        savePanelOrder(tabId, grid);
+    });
+    card.addEventListener('dragover', (e) => {
+        const dragging = grid.querySelector('.dragging');
+        if (!dragging || dragging === card) return;
+        e.preventDefault();
+        const rect = card.getBoundingClientRect();
+        const dx = (e.clientX - (rect.left + rect.width / 2));
+        const dy = (e.clientY - (rect.top + rect.height / 2));
+        const before = Math.abs(dx) > Math.abs(dy) ? dx < 0 : dy < 0;
+        if (before) grid.insertBefore(dragging, card);
+        else grid.insertBefore(dragging, card.nextSibling);
+    });
+}
+
+function resetPanelOrder(tabId, grid) {
+    const all = getPanelOrder();
+    delete all[tabId];
+    localStorage.setItem(PANEL_ORDER_KEY, JSON.stringify(all));
+    (originalPanelOrder[tabId] || []).forEach(el => grid.appendChild(el));
+}
+
 export function initPanelMenus() {
     document.querySelectorAll('[data-panel]').forEach(card => {
         const key = card.getAttribute('data-panel');
@@ -493,8 +567,6 @@ function renderPanelMenuContent() {
         html += `<p class="intro-description" style="margin-top:6px;">${__('perms.hidden_hint')}</p>`;
     }
 
-    pop.innerHTML = html;
-
     pop.querySelectorAll('.perm-cycle[data-menu-dept]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -521,6 +593,18 @@ function renderPanelMenuContent() {
     if (select) {
         select.addEventListener('change', () => { menuContentDept = select.value; renderPanelMenuContent(); });
     }
+    html += `<button type="button" class="perm-hidden-choice panel-order-reset" data-reset-tab="${findPanelMeta(panelKey).tabId}"><span class="material-symbols-rounded">restart_alt</span><span>${__('perms.order_reset')}</span></button>`;
+    pop.innerHTML = html;
+
+    pop.querySelector('.panel-order-reset')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tabId = e.currentTarget.dataset.resetTab;
+        const grid = document.querySelector(`#tab-${tabId} .grid-layout`);
+        if (grid) resetPanelOrder(tabId, grid);
+        showToast(__('dept.saved'), 'success');
+        closePanelMenu();
+    });
+
     pop.querySelectorAll('input[data-cfg]').forEach(input => {
         input.addEventListener('change', () => {
             if (!departmentPermissions[menuContentDept]) departmentPermissions[menuContentDept] = { panels: {} };
