@@ -25,6 +25,7 @@
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/extras.css">
 
     <script>
         // Sayfa yüklenmeden önce localStorage'dan temayı ayarlayan betik
@@ -50,6 +51,9 @@
 </head>
 
 <body>
+
+    <!-- ASCII Ripple arkaplan -->
+    <canvas id="ascii-ripple" class="ascii-ripple"></canvas>
 
     <!-- Başlatıcı Yükleme Ekranı -->
     <div id="app-loader">
@@ -175,6 +179,10 @@
                     <span class="material-symbols-rounded">workspace_premium</span>
                     <span class="dock-label" data-i18n="nav.subscriptions">Abonelik</span>
                 </button>
+                <button class="dock-btn" data-target="tab-chat">
+                    <span class="material-symbols-rounded">forum</span>
+                    <span class="dock-label" data-i18n="nav.chat">Sohbet</span>
+                </button>
                 <button class="dock-btn" data-target="tab-system">
                     <span class="material-symbols-rounded">settings_ethernet</span>
                     <span class="dock-label" data-i18n="nav.system">Sistem</span>
@@ -184,6 +192,7 @@
                     <span class="dock-label" data-i18n="nav.profile">Profil</span>
                 </button>
             </nav>
+            <div id="user-menu-root" class="user-menu-root"></div>
             <div class="header-control-buttons">
                 <button id="lang-toggle-btn" class="icon-circle-btn" data-i18n-title="header.theme" title="Temayı Değiştir">
                     <span id="lang-indicator">TR</span>
@@ -1013,6 +1022,87 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+
+            <!-- SEKME: SOHBET -->
+            <div class="tab-panel" id="tab-chat">
+                <div class="panel-section-title">
+                    <h2 data-i18n="chat.title">Sohbet</h2>
+                    <p data-i18n="chat.desc">Departman kanalları, görev takibi ve @etiket bildirimleri.</p>
+                </div>
+
+                <div class="chat-layout">
+                    <div class="panel-card chat-sidebar">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">forum</span>
+                                <h3 data-i18n="chat.channels">Kanallar</h3>
+                            </div>
+                            <button type="button" id="chat-create-btn" class="icon-action-btn" title="Kanal Oluştur" style="display:none;">
+                                <span class="material-symbols-rounded">add</span>
+                            </button>
+                        </div>
+                        <div id="chat-channel-list" class="chat-channel-list"></div>
+                    </div>
+
+                    <div class="panel-card chat-main">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded" id="chat-channel-icon">tag</span>
+                                <h3 id="chat-channel-title">—</h3>
+                            </div>
+                            <div id="chat-channel-badges" class="dept-badges"></div>
+                            <button type="button" id="chat-channel-edit" class="icon-action-btn" title="Kanalı Düzenle" style="display:none;">
+                                <span class="material-symbols-rounded">settings</span>
+                            </button>
+                        </div>
+                        <div id="chat-channel-desc" class="intro-description"></div>
+                        <div id="chat-messages" class="chat-messages">
+                            <p class="form-hint chat-hint" data-i18n="chat.select_hint">Bir kanal seçin.</p>
+                        </div>
+                        <div id="chat-composer" class="chat-composer" style="display:none;">
+                            <textarea id="chat-input" rows="2" data-i18n-placeholder="chat.placeholder" placeholder="Mesaj yazın — @Departman veya @mail ile etiketleyin"></textarea>
+                            <div class="chat-composer-actions">
+                                <label class="chat-task-toggle"><input type="checkbox" id="chat-as-task"><span data-i18n="chat.as_task">Görev/Sorun</span></label>
+                                <button type="button" id="chat-send" class="chrome-btn-accent"><span class="material-symbols-rounded">send</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="chat-channel-form" class="panel-card chat-channel-form" style="display:none;">
+                    <div class="card-title-row">
+                        <div class="title-details">
+                            <span class="material-symbols-rounded">add_circle</span>
+                            <h3 id="chat-form-title">Kanal Oluştur</h3>
+                        </div>
+                    </div>
+                    <div class="form-stack">
+                        <div class="form-group-field">
+                            <label for="chat-form-name">Kanal Adı</label>
+                            <input type="text" id="chat-form-name" maxlength="60" placeholder="örn. Genel, Array Görev Kanalı">
+                        </div>
+                        <div class="form-group-field">
+                            <label for="chat-form-desc">Açıklama</label>
+                            <input type="text" id="chat-form-desc" maxlength="300" placeholder="Kanalın amacı">
+                        </div>
+                        <div class="form-group-field">
+                            <label>Hangi departmanlara açık?</label>
+                            <div id="chat-form-depts" class="chat-form-depts"></div>
+                        </div>
+                        <div class="form-group-field">
+                            <label for="chat-form-postlevel">Kimler yazabilir?</label>
+                            <select id="chat-form-postlevel">
+                                <option value="all">Herkes</option>
+                                <option value="admins">Yalnızca Yöneticiler</option>
+                            </select>
+                        </div>
+                        <div class="form-submit-row">
+                            <button type="button" id="chat-form-save" class="chrome-btn-accent">Kaydet</button>
+                            <button type="button" id="chat-form-cancel" class="chrome-btn-outline">İptal</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

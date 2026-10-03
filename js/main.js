@@ -13,6 +13,10 @@ import { initContributorsModule, fetchContributorsData, applyChipVisibility } fr
 import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscriptions.js';
 import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, initPanelCollapsers, PANELS } from './modules/roles.js';
 import { initDashboardLayout } from './modules/dashboardLayout.js';
+import { initAsciiRipple } from './modules/asciiRipple.js';
+import { initBorderGlow } from './modules/borderGlow.js';
+import { initUserMenu } from './modules/userMenu.js';
+import { initConsoleChat } from './modules/consoleChat.js';
 
 /**
  * The main application function.
@@ -33,6 +37,10 @@ export function startApp(firebaseConfig) {
     initNotificationModule();
     initContributorsModule();
     initSubscriptionsModule();
+    initAsciiRipple();
+    initBorderGlow();
+    initUserMenu();
+    initConsoleChat();
     initPanelCollapsers();
     initDashboardLayout();
     initProfileMenu();
@@ -89,6 +97,7 @@ export function startApp(firebaseConfig) {
                 }
                 setCurrentUser(isAdmin, departments);
                 document.body.classList.toggle('admin-mode', isAdmin);
+                document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
                 dom.loginContainer.style.display = 'none';
                 dom.adminPanel.style.display = 'block';
                 renderProfile(user, isAdmin, departments);
@@ -257,7 +266,7 @@ function resetTabFilter() {
 }
 
 function applyTabFilter(allowedTabs) {
-    const visibleTabs = new Set([...allowedTabs, 'profile']);
+    const visibleTabs = new Set([...allowedTabs, 'profile', 'chat']);
     const dockButtons = document.querySelectorAll('.dock-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
 

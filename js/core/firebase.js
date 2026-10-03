@@ -11,6 +11,7 @@ let verifyUserEmailFn;
 let updateContributorApplicationFn;
 let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
 let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn;
+let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn;
 
 
 /**
@@ -75,6 +76,12 @@ function initFirebase(firebaseConfig) {
     removeUserSubscriptionFn = europeFunctions.httpsCallable('removeUserSubscription');
     listUserSubscriptionsFn = europeFunctions.httpsCallable('listUserSubscriptions');
     bulkSetUserSubscriptionsFn = europeFunctions.httpsCallable('bulkSetUserSubscriptions');
+    listConsoleChatChannelsFn = europeFunctions.httpsCallable('listConsoleChatChannels');
+    createConsoleChatChannelFn = europeFunctions.httpsCallable('createConsoleChatChannel');
+    updateConsoleChatChannelFn = europeFunctions.httpsCallable('updateConsoleChatChannel');
+    postConsoleChatMessageFn = europeFunctions.httpsCallable('postConsoleChatMessage');
+    listConsoleChatMessagesFn = europeFunctions.httpsCallable('listConsoleChatMessages');
+    updateConsoleChatTaskStatusFn = europeFunctions.httpsCallable('updateConsoleChatTaskStatus');
 }
 
 // Export the initializer function and all the service variables
@@ -114,5 +121,11 @@ export {
     setUserSubscriptionFn,
     removeUserSubscriptionFn,
     listUserSubscriptionsFn,
-    bulkSetUserSubscriptionsFn
+    bulkSetUserSubscriptionsFn,
+    listConsoleChatChannelsFn,
+    createConsoleChatChannelFn,
+    updateConsoleChatChannelFn,
+    postConsoleChatMessageFn,
+    listConsoleChatMessagesFn,
+    updateConsoleChatTaskStatusFn
 };
