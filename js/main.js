@@ -11,7 +11,8 @@ import { initNewsModule, listenForArticles, stopListeningForArticles } from './m
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
 import { initContributorsModule, fetchContributorsData, applyChipVisibility } from './modules/contributors.js';
 import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscriptions.js';
-import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, initPanelCollapsers, initPanelDragOrder, PANELS } from './modules/roles.js';
+import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, initPanelCollapsers, PANELS } from './modules/roles.js';
+import { initDashboardLayout } from './modules/dashboardLayout.js';
 
 /**
  * The main application function.
@@ -33,7 +34,7 @@ export function startApp(firebaseConfig) {
     initContributorsModule();
     initSubscriptionsModule();
     initPanelCollapsers();
-    initPanelDragOrder();
+    initDashboardLayout();
     initProfileMenu();
 
     // Icerik kaydirildikca ust bar kuculur (tek satir, kompakt mod).
