@@ -1,6 +1,6 @@
 // js/modules/roles.js
 
-import { db, saveDepartmentPermissionsFn } from '../core/firebase.js';
+import { db, saveDepartmentPermissionsFn, getPanelPermissionsFn } from '../core/firebase.js';
 import { resetTabLayout } from './dashboardLayout.js';
 import { showToast, __, onLangChange } from '../utils/ui.js';
 
@@ -232,10 +232,21 @@ export async function loadDepartmentPermissions() {
             await saveDepartmentPermissionsFn({ departments: departmentPermissions });
         }
         console.log('[ROLES] Panel permissions loaded:', departmentPermissions);
-    } catch (error) {
-        console.error('[ROLES] Failed to load panel permissions:', error);
-        departmentPermissions = {};
-        showToast(`Departman yetkileri yüklenemedi: ${error.message}`, 'error');
+    } catch (directError) {
+        // Firestore 'config' okuma kuralı engelliyse callable'a düş (deploy edilmişse).
+        console.warn('[ROLES] Direkt okuma başarısız, callable fallback deneniyor:', directError.message);
+        try {
+            const result = await getPanelPermissionsFn();
+            departmentPermissions = normalizeDoc(result.data.departments || {});
+            if (!Object.keys(departmentPermissions).length) {
+                departmentPermissions = seedDefaults();
+            }
+            console.log('[ROLES] Panel permissions loaded via fallback:', departmentPermissions);
+        } catch (fallbackError) {
+            console.error('[ROLES] Panel permissions yüklenemedi:', fallbackError);
+            departmentPermissions = {};
+            showToast(`Departman yetkileri yüklenemedi: ${fallbackError.message}`, 'error');
+        }
     }
 }
 

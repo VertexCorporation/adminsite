@@ -359,6 +359,16 @@ function renderProfile(user, isAdmin, departments) {
     renderPermSummary();
 }
 
+// UID'yi panoya kopyala
+document.getElementById('copy-uid-btn')?.addEventListener('click', () => {
+    const uid = document.getElementById('profile-uid').textContent;
+    if (!uid || uid === '—') return;
+    navigator.clipboard?.writeText(uid).then(
+        () => showToast(__('profile.uid_copied'), 'success'),
+        () => showToast(__('profile.uid_copied_fail'), 'error')
+    );
+});
+
 /** Profil menusu: 8 sablon ogeli (icerikler sonradan doldurulacak). */
 function initProfileMenu() {
     const btn = document.getElementById('profile-menu-btn');

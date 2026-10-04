@@ -431,3 +431,58 @@ html[data-theme="light"] .panel-card::before { mix-blend-mode: normal; }
 .card-title-row .icon-action-btn { flex: 0 0 auto; }
 .panel-drag-handle { margin-left: 6px; }
 .panel-collapse-chevron { margin-left: 2px; }
+
+/* ============================================================
+   FINAL TUR: profil polish + title-row temizlik + smooth animasyonlar
+   ============================================================ */
+
+/* --- Profil karti polish --- */
+.profile-copy-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 6px;
+    display: inline-flex;
+    vertical-align: middle;
+    transition: var(--transition);
+}
+.profile-copy-btn .material-symbols-rounded { font-size: 15px; }
+.profile-copy-btn:hover { color: var(--accent-gold); background: rgba(128, 128, 128, 0.1); }
+.profile-card { transition: transform .25s cubic-bezier(.22, 1, .36, 1), box-shadow .25s ease; }
+.profile-card:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.2); }
+.perm-summary-row { transition: background .15s ease, transform .15s ease; }
+.perm-summary-row:hover { background: rgba(128, 128, 128, 0.08); transform: translateX(2px); }
+
+/* --- Title-row buton temizligi: hicbir sey uste binmez --- */
+.card-title-row { flex-wrap: nowrap; }
+.card-title-row .btn-refresh,
+.card-title-row .icon-action-btn,
+.card-title-row .panel-menu-btn,
+.card-title-row .panel-collapse-chevron,
+.card-title-row .panel-drag-handle { flex: 0 0 auto; }
+.card-title-row .title-details { flex: 1 1 auto; min-width: 0; padding-right: 6px; }
+.card-title-row .title-details h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.panel-drag-handle { opacity: 0.45; }
+.panel-card:hover .panel-drag-handle { opacity: 0.9; }
+
+/* --- Smooth mikro-animasyonlar (yapiyi bozmadan) --- */
+.chrome-btn-accent, .chrome-btn-outline, .btn-refresh, .icon-action-btn {
+    transition: transform .16s cubic-bezier(.22, 1, .36, 1), box-shadow .18s ease, background-color .18s ease, color .18s ease, border-color .18s ease, opacity .18s ease;
+}
+.chrome-btn-accent:hover:not(:disabled), .chrome-btn-outline:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+.chrome-btn-accent:active:not(:disabled), .chrome-btn-outline:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+}
+.filter-chip { transition: transform .15s cubic-bezier(.22, 1, .36, 1), background .18s ease, color .18s ease, border-color .18s ease; }
+.filter-chip:hover { transform: translateY(-1px); }
+.chat-channel-item:hover .chat-channel-name { color: var(--text-primary); }
+.chat-msg { transition: background .15s ease; }
+.chat-msg:hover { background: rgba(128, 128, 128, 0.05); }
+.toast.show { cursor: pointer; }
+.toast:hover { filter: brightness(1.08); }

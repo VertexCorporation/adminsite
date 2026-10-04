@@ -1,6 +1,6 @@
 // js/modules/contributors.js
 
-import { showToast, __, onLangChange } from '../utils/ui.js';
+import { showToast, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn } from '../core/firebase.js';
 import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS } from './roles.js';
 
@@ -151,11 +151,11 @@ function renderContributors(contributors) {
         const canWrite = getEffectivePanelLevel('contributors.list') === 'write';
         
         let mediaLinks = '';
-        if (contributor.linkedin) mediaLinks += `<a href="${contributor.linkedin}" target="_blank" style="color:var(--primary-color); text-decoration:none; margin-right:15px;">${linkedInIcon} LinkedIn</a>`;
-        if (contributor.github) mediaLinks += `<a href="${contributor.github}" target="_blank" style="color:var(--primary-color); text-decoration:none;">${githubIcon} GitHub</a>`;
+        if (contributor.linkedin) mediaLinks += `<a href="${escapeHTML(contributor.linkedin)}" target="_blank" style="color:var(--primary-color); text-decoration:none; margin-right:15px;">${linkedInIcon} LinkedIn</a>`;
+        if (contributor.github) mediaLinks += `<a href="${escapeHTML(contributor.github)}" target="_blank" style="color:var(--primary-color); text-decoration:none;">${githubIcon} GitHub</a>`;
         
         let extraInfo = '';
-        if (contributor.age) extraInfo += `${ageIcon} Age: ${contributor.age} &nbsp;&nbsp;`;
+        if (contributor.age) extraInfo += `${ageIcon} Age: ${escapeHTML(String(contributor.age || ''))} ?? ''))} &nbsp;&nbsp;`;
         if (mediaLinks) extraInfo += mediaLinks;
 
         let interviewDateStr = '';
@@ -170,7 +170,7 @@ function renderContributors(contributors) {
 
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <strong style="color: var(--text-color); font-size: 1.1rem; margin-top: 4px;">${contributor.name}</strong>
+                <strong style="color: var(--text-color); font-size: 1.1rem; margin-top: 4px;">${sanitizeHTML(contributor.name)}</strong>
                 <div style="display: flex; align-items: flex-start;">
                     ${canWrite ? `
                     <button class="edit-contributor-btn" data-id="${contributor.id}" title="${__('contributors.edit_title')}" style="margin-top: 2px;">
@@ -194,9 +194,9 @@ function renderContributors(contributors) {
                 </div>
             </div>
             <div style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; margin-top: 8px;">
-                ${contributor.email ? `<div style="display:flex; align-items:center;">${emailIcon} <a href="mailto:${contributor.email}" style="color:var(--text-muted);">${contributor.email}</a></div>` : ''}
-                ${contributor.phone ? `<div style="display:flex; align-items:center; margin-top:4px;">${phoneIcon} ${contributor.phone}</div>` : ''}
-                ${contributor.department ? `<div style="display:flex; align-items:center; margin-top:4px; font-weight: 500; color: var(--primary-color);">Department: ${contributor.department.charAt(0).toUpperCase() + contributor.department.slice(1)}</div>` : ''}
+                ${contributor.email ? `<div style="display:flex; align-items:center;">${emailIcon} <a href="mailto:${escapeHTML(contributor.email)}" style="color:var(--text-muted);">${escapeHTML(contributor.email)}</a></div>` : ''}
+                ${contributor.phone ? `<div style="display:flex; align-items:center; margin-top:4px;">${phoneIcon} ${escapeHTML(contributor.phone)}</div>` : ''}
+                ${contributor.department ? `<div style="display:flex; align-items:center; margin-top:4px; font-weight: 500; color: var(--primary-color);">Department: ${escapeHTML(contributor.department)}</div>` : ''}
                 <div style="display:flex; align-items:center; margin-top:4px;">${extraInfo}</div>
                 <div style="display:flex; align-items:center; margin-top:4px;">${dateIcon} ${dateStr}</div>
                 ${interviewDateStr ? `
@@ -205,7 +205,7 @@ function renderContributors(contributors) {
                     ${contributor.interviewBookingUid ? `<span style="font-size:0.75rem; color:var(--text-muted); margin-left:6px; font-weight:normal;">(UID: ${contributor.interviewBookingUid})</span>` : ''}
                 </div>` : ''}
             </div>
-            ${contributor.about ? `<div style="font-size: 0.9rem; padding:12px; background: rgba(128,128,128,0.05); border-left: 3px solid var(--primary-color); border-radius:4px; margin-top:10px; color: var(--text-color);">${contributor.about}</div>` : ''}
+            ${contributor.about ? `<div style="font-size: 0.9rem; padding:12px; background: rgba(128,128,128,0.05); border-left: 3px solid var(--primary-color); border-radius:4px; margin-top:10px; color: var(--text-color);">${sanitizeHTML(contributor.about)}</div>` : ''}
         `;
         listContainer.appendChild(div);
     });
@@ -323,19 +323,19 @@ function openContributorEditor(contributor) {
             <div class="contributor-edit-grid">
                 <div class="form-group-field">
                     <label for="ce-name">${__('contributors.field_name')}</label>
-                    <input type="text" id="ce-name" value="${contributor.name || ''}" required>
+                    <input type="text" id="ce-name" value="${escapeHTML(contributor.name || '')}" required>
                 </div>
                 <div class="form-group-field">
                     <label for="ce-email">${__('contributors.field_email')}</label>
-                    <input type="email" id="ce-email" value="${contributor.email || ''}">
+                    <input type="email" id="ce-email" value="${escapeHTML(contributor.email || '')}">
                 </div>
                 <div class="form-group-field">
                     <label for="ce-phone">${__('contributors.field_phone')}</label>
-                    <input type="text" id="ce-phone" value="${contributor.phone || ''}">
+                    <input type="text" id="ce-phone" value="${escapeHTML(contributor.phone || '')}">
                 </div>
                 <div class="form-group-field">
                     <label for="ce-age">${__('contributors.field_age')}</label>
-                    <input type="number" id="ce-age" value="${contributor.age || ''}">
+                    <input type="number" id="ce-age" value="${escapeHTML(String(contributor.age || ''))} || ''))} || ''}">
                 </div>
                 <div class="form-group-field">
                     <label for="ce-dept">${__('contributors.field_department')}</label>
@@ -347,11 +347,11 @@ function openContributorEditor(contributor) {
                 </div>
                 <div class="form-group-field">
                     <label for="ce-linkedin">${__('contributors.field_linkedin')}</label>
-                    <input type="url" id="ce-linkedin" value="${contributor.linkedin || ''}">
+                    <input type="url" id="ce-linkedin" value="${escapeHTML(contributor.linkedin || '')}">
                 </div>
                 <div class="form-group-field">
                     <label for="ce-github">${__('contributors.field_github')}</label>
-                    <input type="url" id="ce-github" value="${contributor.github || ''}">
+                    <input type="url" id="ce-github" value="${escapeHTML(contributor.github || '')}">
                 </div>
                 <div class="form-group-field">
                     <label for="ce-interview">${__('contributors.field_interview')}</label>
@@ -360,11 +360,11 @@ function openContributorEditor(contributor) {
             </div>
             <div class="form-group-field">
                 <label for="ce-about">${__('contributors.field_about')}</label>
-                <textarea id="ce-about" rows="4">${contributor.about || ''}</textarea>
+                <textarea id="ce-about" rows="4">${escapeHTML(contributor.about || '')}</textarea>
             </div>
             <div class="form-group-field">
                 <label for="ce-details">${__('contributors.field_interview_details')}</label>
-                <textarea id="ce-details" rows="2">${contributor.interviewDetails || ''}</textarea>
+                <textarea id="ce-details" rows="2">${escapeHTML(contributor.interviewDetails || '')}</textarea>
             </div>
             <div class="form-submit-row">
                 <button type="submit" class="chrome-btn-accent">

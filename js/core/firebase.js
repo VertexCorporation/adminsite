@@ -12,6 +12,7 @@ let updateContributorApplicationFn;
 let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
 let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn;
 let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn;
+let getPanelPermissionsFn;
 
 
 /**
@@ -82,6 +83,7 @@ function initFirebase(firebaseConfig) {
     postConsoleChatMessageFn = europeFunctions.httpsCallable('postConsoleChatMessage');
     listConsoleChatMessagesFn = europeFunctions.httpsCallable('listConsoleChatMessages');
     updateConsoleChatTaskStatusFn = europeFunctions.httpsCallable('updateConsoleChatTaskStatus');
+    getPanelPermissionsFn = europeFunctions.httpsCallable('getPanelPermissions');
 }
 
 // Export the initializer function and all the service variables
@@ -127,5 +129,6 @@ export {
     updateConsoleChatChannelFn,
     postConsoleChatMessageFn,
     listConsoleChatMessagesFn,
-    updateConsoleChatTaskStatusFn
+    updateConsoleChatTaskStatusFn,
+    getPanelPermissionsFn
 };
