@@ -155,7 +155,7 @@ function renderContributors(contributors) {
         if (contributor.github) mediaLinks += `<a href="${escapeHTML(contributor.github)}" target="_blank" style="color:var(--primary-color); text-decoration:none;">${githubIcon} GitHub</a>`;
         
         let extraInfo = '';
-        if (contributor.age) extraInfo += `${ageIcon} Age: ${escapeHTML(String(contributor.age || ''))} ?? ''))} &nbsp;&nbsp;`;
+        if (contributor.age) extraInfo += `${ageIcon} Age: ${escapeHTML(String(contributor.age ?? ''))} &nbsp;&nbsp;`;
         if (mediaLinks) extraInfo += mediaLinks;
 
         let interviewDateStr = '';
@@ -335,7 +335,7 @@ function openContributorEditor(contributor) {
                 </div>
                 <div class="form-group-field">
                     <label for="ce-age">${__('contributors.field_age')}</label>
-                    <input type="number" id="ce-age" value="${escapeHTML(String(contributor.age || ''))} || ''))} || ''}">
+                    <input type="number" id="ce-age" value="${escapeHTML(String(contributor.age ?? ''))}">
                 </div>
                 <div class="form-group-field">
                     <label for="ce-dept">${__('contributors.field_department')}</label>

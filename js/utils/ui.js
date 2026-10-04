@@ -9,6 +9,16 @@ export { __, getLang, setLang, onLangChange, translatePage } from '../lang.js';
  * @param {string} str The string to sanitize.
  * @returns {string} The sanitized, HTML-safe string.
  */
+/** HTML özel karakterlerini kaçırır (güvenli string interpolasyonu için). */
+export function escapeHTML(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 export function sanitizeHTML(str) {
     if (str === null || typeof str === 'undefined') {
         return '';
