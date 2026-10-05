@@ -46,6 +46,10 @@ async function callCallable(name, data) {
     return { data: json.result !== undefined ? json.result : null };
 }
 
+// httpsCallable yerine gecen sarmalayici: cagrilinca callCallable'i isletir
+// (initFirebase'de binding'e Promise degil FONKSIYON atanir).
+const callable = (name) => (data) => callCallable(name, data);
+
 function initFirebase(firebaseConfig) {
     if (firebase.apps.length) return; // Prevent re-initialization
 
@@ -73,43 +77,43 @@ function initFirebase(firebaseConfig) {
 
     // Initialize Cloud Functions with the correct region
     const europeFunctions = firebase.app().functions('europe-west1');
-    sendTargetedNotificationFn = callCallable('sendTargetedNotification');
-    scheduleNotificationFn = callCallable('scheduleNotification');
-    listScheduledNotificationsFn = callCallable('listScheduledNotifications');
-    cancelScheduledNotificationFn = callCallable('cancelScheduledNotification');
-    getServerStatusFn = callCallable('getServerStatus');
-    setServerStatusFn = callCallable('setServerStatus');
-    blockOnlineModelFn = callCallable('blockOnlineModel');
-    updateModelsListFn = callCallable('updateModelsList');
-    createNewsArticleFn = callCallable('createNewsArticle');
-    deleteNewsArticleFn = callCallable('deleteNewsArticle');
-    addAdminRoleFn = callCallable('addAdminRole');
-    getModelImageUploadUrlFn = callCallable('getModelImageUploadUrl');
-    getCoverUploadUrlFn = callCallable('getCoverUploadUrl');
-    triggerAttributionsUpdateFn = callCallable('triggerAttributionsUpdate');
-    getVertexContributorsFn = callCallable('getVertexContributors');
-    toggleContributorVerificationFn = callCallable('toggleContributorVerification');
-    verifyUserEmailFn = callCallable('verifyUserEmail');
-    deleteVertexContributorFn = callCallable('deleteVertexContributor');
-    updateContributorApplicationFn = callCallable('updateContributorApplication');
-    toggleVertexStatusFn = callCallable('toggleVertexStatus');
-    removeAdminRoleFn = callCallable('removeAdminRole');
-    listAdminsFn = callCallable('listAdmins');
-    setUserDepartmentFn = callCallable('setUserDepartment');
-    setUserDepartmentsFn = callCallable('setUserDepartments');
-    listDepartmentUsersFn = callCallable('listDepartmentUsers');
-    saveDepartmentPermissionsFn = callCallable('saveDepartmentPermissions');
-    setUserSubscriptionFn = callCallable('setUserSubscription');
-    removeUserSubscriptionFn = callCallable('removeUserSubscription');
-    listUserSubscriptionsFn = callCallable('listUserSubscriptions');
-    bulkSetUserSubscriptionsFn = callCallable('bulkSetUserSubscriptions');
-    listConsoleChatChannelsFn = callCallable('listConsoleChatChannels');
-    createConsoleChatChannelFn = callCallable('createConsoleChatChannel');
-    updateConsoleChatChannelFn = callCallable('updateConsoleChatChannel');
-    postConsoleChatMessageFn = callCallable('postConsoleChatMessage');
-    listConsoleChatMessagesFn = callCallable('listConsoleChatMessages');
-    updateConsoleChatTaskStatusFn = callCallable('updateConsoleChatTaskStatus');
-    getPanelPermissionsFn = callCallable('getPanelPermissions');
+    sendTargetedNotificationFn = callable('sendTargetedNotification');
+    scheduleNotificationFn = callable('scheduleNotification');
+    listScheduledNotificationsFn = callable('listScheduledNotifications');
+    cancelScheduledNotificationFn = callable('cancelScheduledNotification');
+    getServerStatusFn = callable('getServerStatus');
+    setServerStatusFn = callable('setServerStatus');
+    blockOnlineModelFn = callable('blockOnlineModel');
+    updateModelsListFn = callable('updateModelsList');
+    createNewsArticleFn = callable('createNewsArticle');
+    deleteNewsArticleFn = callable('deleteNewsArticle');
+    addAdminRoleFn = callable('addAdminRole');
+    getModelImageUploadUrlFn = callable('getModelImageUploadUrl');
+    getCoverUploadUrlFn = callable('getCoverUploadUrl');
+    triggerAttributionsUpdateFn = callable('triggerAttributionsUpdate');
+    getVertexContributorsFn = callable('getVertexContributors');
+    toggleContributorVerificationFn = callable('toggleContributorVerification');
+    verifyUserEmailFn = callable('verifyUserEmail');
+    deleteVertexContributorFn = callable('deleteVertexContributor');
+    updateContributorApplicationFn = callable('updateContributorApplication');
+    toggleVertexStatusFn = callable('toggleVertexStatus');
+    removeAdminRoleFn = callable('removeAdminRole');
+    listAdminsFn = callable('listAdmins');
+    setUserDepartmentFn = callable('setUserDepartment');
+    setUserDepartmentsFn = callable('setUserDepartments');
+    listDepartmentUsersFn = callable('listDepartmentUsers');
+    saveDepartmentPermissionsFn = callable('saveDepartmentPermissions');
+    setUserSubscriptionFn = callable('setUserSubscription');
+    removeUserSubscriptionFn = callable('removeUserSubscription');
+    listUserSubscriptionsFn = callable('listUserSubscriptions');
+    bulkSetUserSubscriptionsFn = callable('bulkSetUserSubscriptions');
+    listConsoleChatChannelsFn = callable('listConsoleChatChannels');
+    createConsoleChatChannelFn = callable('createConsoleChatChannel');
+    updateConsoleChatChannelFn = callable('updateConsoleChatChannel');
+    postConsoleChatMessageFn = callable('postConsoleChatMessage');
+    listConsoleChatMessagesFn = callable('listConsoleChatMessages');
+    updateConsoleChatTaskStatusFn = callable('updateConsoleChatTaskStatus');
+    getPanelPermissionsFn = callable('getPanelPermissions');
 }
 
 // Export the initializer function and all the service variables
