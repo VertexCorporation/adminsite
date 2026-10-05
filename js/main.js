@@ -17,7 +17,6 @@ import { initAsciiRipple } from './modules/asciiRipple.js';
 import { initBorderGlow } from './modules/borderGlow.js';
 import { initUserMenu } from './modules/userMenu.js';
 import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
-import { initDockNav } from './modules/dockNav.js';
 import { initMicroSlats } from './modules/microSlats.js';
 
 /**
@@ -43,7 +42,8 @@ export function startApp(firebaseConfig) {
     initBorderGlow();
     initUserMenu();
     initConsoleChat();
-    initDockNav();
+    // initDockNav kaldirildi: yay fiziği döngüsü nav butonlarina surekli inline
+    // genislik yazip titreme/taşmaya yol açiyordu (kullanicinin istedigi kaldirim).
     initMicroSlats();
     initPanelCollapsers();
     initDashboardLayout();
