@@ -225,7 +225,7 @@ async function sendMessage() {
 function renderDeptCheckboxes(selected = []) {
     const container = el('chat-form-depts');
     container.innerHTML = `<label class="chat-dept-all"><input type="checkbox" value="" ${selected.length ? '' : 'checked'}><span>${__('chat.open_all')}</span></label>` +
-        DEPARTMENTS.map(d => `<label class="chat-dept-choice"><input type="checkbox" value="${d}" ${selected.includes(d) ? 'checked' : ''}><span>${d}</span></label>`).join('');
+        DEPARTMENTS.map(d => `<label class="chat-dept-choice"><input type="checkbox" value="${d.id}" ${selected.includes(d.id) ? 'checked' : ''}><span>${d.id}</span></label>`).join('');
     // "Tümü" işaretliyse diğerlerini kapat
     container.querySelectorAll('input').forEach(input => {
         input.addEventListener('change', () => {

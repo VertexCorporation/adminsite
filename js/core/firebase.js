@@ -20,6 +20,32 @@ let getPanelPermissionsFn;
  * This function must be called once with the secure config.
  * @param {object} firebaseConfig The configuration object from the server.
  */
+/**
+ * Callable cagrilari dogrudan Cloud Run URL'lerine yapar —
+ * cloudfunctions.net alias'i kota/revizyon sorunlarinda kiriliyor;
+ * run.app URL'leri bagimsiz calisir ve CORS basliklariyla doner.
+ */
+async function callCallable(name, data) {
+    const user = auth ? auth.currentUser : null;
+    const idToken = user ? await user.getIdToken() : null;
+    const res = await fetch(`https://${name.toLowerCase()}-o5h7dmtija-ew.a.run.app`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(idToken ? { Authorization: 'Bearer ' + idToken } : {})
+        },
+        body: JSON.stringify({ data: data ?? {} })
+    });
+    let json = {};
+    try { json = await res.json(); } catch { /* bos govde */ }
+    if (!res.ok || json.error) {
+        const err = json.error || {};
+        const e = new Error(`${err.status || 'INTERNAL'}: ${err.message || 'HTTP ' + res.status}`);
+        throw e;
+    }
+    return { data: json.result !== undefined ? json.result : null };
+}
+
 function initFirebase(firebaseConfig) {
     if (firebase.apps.length) return; // Prevent re-initialization
 
@@ -47,43 +73,43 @@ function initFirebase(firebaseConfig) {
 
     // Initialize Cloud Functions with the correct region
     const europeFunctions = firebase.app().functions('europe-west1');
-    sendTargetedNotificationFn = europeFunctions.httpsCallable('sendTargetedNotification');
-    scheduleNotificationFn = europeFunctions.httpsCallable('scheduleNotification');
-    listScheduledNotificationsFn = europeFunctions.httpsCallable('listScheduledNotifications');
-    cancelScheduledNotificationFn = europeFunctions.httpsCallable('cancelScheduledNotification');
-    getServerStatusFn = europeFunctions.httpsCallable('getServerStatus');
-    setServerStatusFn = europeFunctions.httpsCallable('setServerStatus');
-    blockOnlineModelFn = europeFunctions.httpsCallable('blockOnlineModel');
-    updateModelsListFn = europeFunctions.httpsCallable('updateModelsList');
-    createNewsArticleFn = europeFunctions.httpsCallable('createNewsArticle');
-    deleteNewsArticleFn = europeFunctions.httpsCallable('deleteNewsArticle');
-    addAdminRoleFn = europeFunctions.httpsCallable('addAdminRole');
-    getModelImageUploadUrlFn = europeFunctions.httpsCallable('getModelImageUploadUrl');
-    getCoverUploadUrlFn = europeFunctions.httpsCallable('getCoverUploadUrl');
-    triggerAttributionsUpdateFn = europeFunctions.httpsCallable('triggerAttributionsUpdate');
-    getVertexContributorsFn = europeFunctions.httpsCallable('getVertexContributors');
-    toggleContributorVerificationFn = europeFunctions.httpsCallable('toggleContributorVerification');
-    verifyUserEmailFn = europeFunctions.httpsCallable('verifyUserEmail');
-    deleteVertexContributorFn = europeFunctions.httpsCallable('deleteVertexContributor');
-    updateContributorApplicationFn = europeFunctions.httpsCallable('updateContributorApplication');
-    toggleVertexStatusFn = europeFunctions.httpsCallable('toggleVertexStatus');
-    removeAdminRoleFn = europeFunctions.httpsCallable('removeAdminRole');
-    listAdminsFn = europeFunctions.httpsCallable('listAdmins');
-    setUserDepartmentFn = europeFunctions.httpsCallable('setUserDepartment');
-    setUserDepartmentsFn = europeFunctions.httpsCallable('setUserDepartments');
-    listDepartmentUsersFn = europeFunctions.httpsCallable('listDepartmentUsers');
-    saveDepartmentPermissionsFn = europeFunctions.httpsCallable('saveDepartmentPermissions');
-    setUserSubscriptionFn = europeFunctions.httpsCallable('setUserSubscription');
-    removeUserSubscriptionFn = europeFunctions.httpsCallable('removeUserSubscription');
-    listUserSubscriptionsFn = europeFunctions.httpsCallable('listUserSubscriptions');
-    bulkSetUserSubscriptionsFn = europeFunctions.httpsCallable('bulkSetUserSubscriptions');
-    listConsoleChatChannelsFn = europeFunctions.httpsCallable('listConsoleChatChannels');
-    createConsoleChatChannelFn = europeFunctions.httpsCallable('createConsoleChatChannel');
-    updateConsoleChatChannelFn = europeFunctions.httpsCallable('updateConsoleChatChannel');
-    postConsoleChatMessageFn = europeFunctions.httpsCallable('postConsoleChatMessage');
-    listConsoleChatMessagesFn = europeFunctions.httpsCallable('listConsoleChatMessages');
-    updateConsoleChatTaskStatusFn = europeFunctions.httpsCallable('updateConsoleChatTaskStatus');
-    getPanelPermissionsFn = europeFunctions.httpsCallable('getPanelPermissions');
+    sendTargetedNotificationFn = callCallable('sendTargetedNotification');
+    scheduleNotificationFn = callCallable('scheduleNotification');
+    listScheduledNotificationsFn = callCallable('listScheduledNotifications');
+    cancelScheduledNotificationFn = callCallable('cancelScheduledNotification');
+    getServerStatusFn = callCallable('getServerStatus');
+    setServerStatusFn = callCallable('setServerStatus');
+    blockOnlineModelFn = callCallable('blockOnlineModel');
+    updateModelsListFn = callCallable('updateModelsList');
+    createNewsArticleFn = callCallable('createNewsArticle');
+    deleteNewsArticleFn = callCallable('deleteNewsArticle');
+    addAdminRoleFn = callCallable('addAdminRole');
+    getModelImageUploadUrlFn = callCallable('getModelImageUploadUrl');
+    getCoverUploadUrlFn = callCallable('getCoverUploadUrl');
+    triggerAttributionsUpdateFn = callCallable('triggerAttributionsUpdate');
+    getVertexContributorsFn = callCallable('getVertexContributors');
+    toggleContributorVerificationFn = callCallable('toggleContributorVerification');
+    verifyUserEmailFn = callCallable('verifyUserEmail');
+    deleteVertexContributorFn = callCallable('deleteVertexContributor');
+    updateContributorApplicationFn = callCallable('updateContributorApplication');
+    toggleVertexStatusFn = callCallable('toggleVertexStatus');
+    removeAdminRoleFn = callCallable('removeAdminRole');
+    listAdminsFn = callCallable('listAdmins');
+    setUserDepartmentFn = callCallable('setUserDepartment');
+    setUserDepartmentsFn = callCallable('setUserDepartments');
+    listDepartmentUsersFn = callCallable('listDepartmentUsers');
+    saveDepartmentPermissionsFn = callCallable('saveDepartmentPermissions');
+    setUserSubscriptionFn = callCallable('setUserSubscription');
+    removeUserSubscriptionFn = callCallable('removeUserSubscription');
+    listUserSubscriptionsFn = callCallable('listUserSubscriptions');
+    bulkSetUserSubscriptionsFn = callCallable('bulkSetUserSubscriptions');
+    listConsoleChatChannelsFn = callCallable('listConsoleChatChannels');
+    createConsoleChatChannelFn = callCallable('createConsoleChatChannel');
+    updateConsoleChatChannelFn = callCallable('updateConsoleChatChannel');
+    postConsoleChatMessageFn = callCallable('postConsoleChatMessage');
+    listConsoleChatMessagesFn = callCallable('listConsoleChatMessages');
+    updateConsoleChatTaskStatusFn = callCallable('updateConsoleChatTaskStatus');
+    getPanelPermissionsFn = callCallable('getPanelPermissions');
 }
 
 // Export the initializer function and all the service variables
