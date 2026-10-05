@@ -11,7 +11,7 @@ let verifyUserEmailFn;
 let updateContributorApplicationFn;
 let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
 let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn;
-let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn;
+let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn;
 let getPanelPermissionsFn;
 
 
@@ -114,6 +114,9 @@ function initFirebase(firebaseConfig) {
     listConsoleChatMessagesFn = callable('listConsoleChatMessages');
     updateConsoleChatTaskStatusFn = callable('updateConsoleChatTaskStatus');
     getPanelPermissionsFn = callable('getPanelPermissions');
+    deleteConsoleChatMessageFn = callable('deleteConsoleChatMessage');
+    deleteConsoleChatChannelFn = callable('deleteConsoleChatChannel');
+    listConsoleChatDirectoryFn = callable('listConsoleChatDirectory');
 }
 
 // Export the initializer function and all the service variables
@@ -160,5 +163,8 @@ export {
     postConsoleChatMessageFn,
     listConsoleChatMessagesFn,
     updateConsoleChatTaskStatusFn,
+    deleteConsoleChatMessageFn,
+    deleteConsoleChatChannelFn,
+    listConsoleChatDirectoryFn,
     getPanelPermissionsFn
 };

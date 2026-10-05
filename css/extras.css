@@ -486,3 +486,94 @@ html[data-theme="light"] .panel-card::before { mix-blend-mode: normal; }
 .chat-msg:hover { background: rgba(128, 128, 128, 0.05); }
 .toast.show { cursor: pointer; }
 .toast:hover { filter: brightness(1.08); }
+
+/* ============================================================
+   SOHBET EKLENTILERI: mesaj silme, sabitleme, hizli kanal,
+   @ otomatik tamamlama
+   ============================================================ */
+.chat-msg-del {
+    opacity: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted, #777777);
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 2px;
+    line-height: 1;
+    transition: opacity .15s ease, color .15s ease;
+}
+.chat-msg:hover .chat-msg-del { opacity: .65; }
+.chat-msg-del:hover { opacity: 1 !important; color: #e05252; }
+.chat-msg-del .material-symbols-rounded { font-size: 16px; }
+.chat-pin-flag { font-size: 14px !important; color: var(--accent-gold, #FFF); margin-left: auto; }
+.chat-channel-new {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px dashed var(--border-color, #262626);
+    background: transparent;
+    color: var(--text-muted, #777777);
+    cursor: pointer;
+    font-size: .85rem;
+    transition: color .15s ease, border-color .15s ease;
+}
+.chat-channel-new:hover { color: var(--text-color, #F2F2F2); border-color: var(--text-muted, #777777); }
+.chat-channel-new .material-symbols-rounded { font-size: 18px; }
+.chat-form-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(224, 82, 82, .4);
+    background: transparent;
+    color: #e05252;
+    cursor: pointer;
+    font-size: .88rem;
+    transition: background .15s ease;
+}
+.chat-form-delete-btn:hover { background: rgba(224, 82, 82, .08); }
+.chat-form-delete-btn .material-symbols-rounded { font-size: 18px; }
+.chat-composer { position: relative; }
+.chat-mention-pop {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: calc(100% - 4px);
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px;
+    border-radius: 12px;
+    background: var(--bg-raised, #1C1C1C);
+    border: 1px solid var(--border-color, #262626);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .35);
+    max-height: 240px;
+    overflow-y: auto;
+    animation: mentionPop .18s cubic-bezier(.22, 1, .36, 1);
+}
+@keyframes mentionPop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.chat-mention-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-color, #F2F2F2);
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    font-size: .86rem;
+    font-family: inherit;
+}
+.chat-mention-row:hover, .chat-mention-row.active { background: rgba(255, 255, 255, .06); }
+.chat-mention-row .material-symbols-rounded { font-size: 18px; color: var(--text-muted, #777777); }
+.chat-mention-main { font-weight: 600; }
+.chat-mention-badges { margin-left: auto; display: flex; gap: 4px; }
+[data-theme="light"] .chat-mention-row:hover, [data-theme="light"] .chat-mention-row.active { background: rgba(0, 0, 0, .05); }

@@ -16,6 +16,9 @@ import {
     postConsoleChatMessageFn,
     listConsoleChatMessagesFn,
     updateConsoleChatTaskStatusFn,
+    deleteConsoleChatMessageFn,
+    deleteConsoleChatChannelFn,
+    listConsoleChatDirectoryFn,
     auth
 } from '../core/firebase.js';
 
@@ -24,6 +27,13 @@ let currentChannelId = null;
 let isAdmin = false;
 let pollTimer = null;
 let channelFormMode = 'create'; // 'create' | 'edit'
+let lastChannelsKey = '';
+let lastMessagesKey = '';
+let myUid = null;
+let mentionIndex = null;
+let mentionPop = null;
+let mentionMatches = [];
+let mentionActive = -1;
 
 const el = (id) => document.getElementById(id);
 
@@ -71,7 +81,8 @@ function initialsOf(name) {
 async function loadChannels() {
     try {
         const result = await listConsoleChatChannelsFn();
-        channels = result.data.channels || [];
+        channels = (result.data.channels || []).slice().sort((a, b) => (b.pinned === true) - (a.pinned === true));
+        myUid = auth && auth.currentUser ? auth.currentUser.uid : null;
         isAdmin = result.data.isAdmin || isPanelAdmin();
         const createBtn = el('chat-create-btn');
         if (createBtn) createBtn.style.display = isAdmin ? 'inline-flex' : 'none';
@@ -97,15 +108,22 @@ function renderChannelList() {
     if (!container) return;
     if (!channels.length) {
         container.innerHTML = `<p class="form-hint chat-hint">${__('chat.no_channels')}</p>`;
+        lastChannelsKey = '';
         return;
     }
+    // Poll yenilemelerinde icerik degismemisse DOM'a dokunma (titreme fix).
+    const key = JSON.stringify([isAdmin, currentChannelId, channels.map(c => [c.id, c.name, !!c.pinned, c.postLevel, !!c.departments?.length])]);
+    if (key === lastChannelsKey) return;
+    lastChannelsKey = key;
     container.innerHTML = channels.map(ch => `
         <button type="button" class="chat-channel-item ${ch.id === currentChannelId ? 'active' : ''}" data-channel="${ch.id}">
             <span class="material-symbols-rounded">${ch.departments?.length ? 'lock' : 'tag'}</span>
             <span class="chat-channel-name">${escapeHTML(ch.name)}</span>
+            ${ch.pinned ? `<span class="material-symbols-rounded chat-pin-flag" title="${__('chat.pin')}">push_pin</span>` : ''}
             ${ch.postLevel === 'admins' ? '<span class="material-symbols-rounded chat-channel-lock" title="Yönetici kanalı">shield</span>' : ''}
         </button>
-    `).join('');
+    `).join('') + (isAdmin ? `
+        <button type="button" class="chat-channel-new"><span class="material-symbols-rounded">add</span><span>${__('chat.new_channel')}</span></button>` : '');
 }
 
 function selectChannel(channelId) {
@@ -114,15 +132,19 @@ function selectChannel(channelId) {
     loadMessages();
 }
 
-async function loadMessages() {
+async function loadMessages(animate = true) {
     const channel = channels.find(c => c.id === currentChannelId);
     renderChatHeader(channel);
     if (!channel) return;
     const container = el('chat-messages');
-    container.innerHTML = `<p class="form-hint chat-hint">${__('chat.loading')}</p>`;
+    if (animate) container.innerHTML = `<p class="form-hint chat-hint">${__('chat.loading')}</p>`;
     try {
         const result = await listConsoleChatMessagesFn({ channelId: currentChannelId });
-        renderMessages(result.data.messages || [], channel);
+        const messages = result.data.messages || [];
+        const key = messages.map(m => `${m.id}:${m.taskStatus || ''}`).join('|');
+        if (!animate && key === lastMessagesKey) return; // degisiklik yoksa DOM'a dokunma
+        lastMessagesKey = key;
+        renderMessages(messages, channel, animate);
         // composer görünürlüğü
         el('chat-composer').style.display = channel.canPost ? 'flex' : 'none';
         if (!channel.canPost) {
@@ -149,7 +171,7 @@ function renderChatHeader(channel) {
 
 // --- Mesaj akışı (Timeline benzeri gün gruplu feed) ---
 
-function renderMessages(messages) {
+function renderMessages(messages, channel, animate = true) {
     const container = el('chat-messages');
     if (!messages.length) {
         container.innerHTML = `<p class="form-hint chat-hint">${__('chat.empty')}</p>`;
@@ -171,7 +193,7 @@ function renderMessages(messages) {
             const task = m.kind === 'task';
             const done = m.taskStatus === 'done';
             html += `
-            <div class="chat-msg chat-msg-enter" data-id="${m.id}" style="animation-delay:${Math.min(delay * 40, 400)}ms">
+            <div class="chat-msg ${animate ? 'chat-msg-enter' : ''}" data-id="${m.id}"${animate ? ` style="animation-delay:${Math.min(delay * 40, 400)}ms"` : ''}>
                 <span class="chat-avatar">${escapeHTML(initialsOf(m.authorName || m.authorEmail))}</span>
                 <div class="chat-msg-body">
                     <div class="chat-msg-head">
@@ -179,6 +201,7 @@ function renderMessages(messages) {
                         <span class="chat-msg-mail">${escapeHTML(m.authorEmail)}</span>
                         ${m.authorDepartments?.map(d => `<span class="dept-badge">${escapeHTML(d)}</span>`).join('') || ''}
                         <span class="chat-msg-time" title="${m.createdAt ? new Date(m.createdAt).toLocaleString() : ''}">${relativeTime(m.createdAt)}</span>
+                        ${(isAdmin || (m.authorUid && m.authorUid === myUid)) ? `<button type="button" class="chat-msg-del" data-del="${m.id}" title="${__('chat.msg_delete')}"><span class="material-symbols-rounded">delete</span></button>` : ''}
                     </div>
                     <div class="chat-msg-text ${done ? 'chat-task-done' : ''}">${linkify(m.text)}</div>
                     ${task ? `
@@ -211,7 +234,7 @@ async function sendMessage() {
         await postConsoleChatMessageFn({ channelId: currentChannelId, text, asTask });
         input.value = '';
         el('chat-as-task').checked = false;
-        await loadMessages();
+        await loadMessages(false);
     } catch (error) {
         showToast(`${__('system.error')}: ${error.message}`, 'error');
     } finally {
@@ -248,6 +271,17 @@ function openChannelForm(mode, channel = null) {
     el('chat-form-name').value = channel?.name || '';
     el('chat-form-desc').value = channel?.description || '';
     el('chat-form-postlevel').value = channel?.postLevel || 'all';
+    const pinGroup = el('chat-pin-group');
+    const delBtn = el('chat-form-delete');
+    if (mode === 'edit') {
+        pinGroup.style.display = 'block';
+        el('chat-form-pin').checked = !!channel?.pinned;
+        delBtn.style.display = 'inline-flex';
+    } else {
+        pinGroup.style.display = 'none';
+        el('chat-form-pin').checked = false;
+        delBtn.style.display = 'none';
+    }
     renderDeptCheckboxes(channel?.departments || []);
     form.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -270,7 +304,7 @@ async function submitChannelForm() {
             await createConsoleChatChannelFn({ name, description, departments, postLevel });
             showToast(__('chat.created'), 'success');
         } else {
-            await updateConsoleChatChannelFn({ channelId: currentChannelId, name, description, departments, postLevel });
+            await updateConsoleChatChannelFn({ channelId: currentChannelId, name, description, departments, postLevel, pinned: el('chat-form-pin').checked });
             showToast(__('chat.updated'), 'success');
         }
         closeChannelForm();
@@ -278,6 +312,105 @@ async function submitChannelForm() {
     } catch (error) {
         showToast(`${__('system.error')}: ${error.message}`, 'error');
     }
+}
+
+async function deleteCurrentChannel() {
+    if (channelFormMode !== 'edit' || !currentChannelId) return;
+    if (!confirm(__('chat.delete_channel_confirm'))) return;
+    try {
+        await deleteConsoleChatChannelFn({ channelId: currentChannelId });
+        showToast(__('chat.deleted'), 'success');
+        closeChannelForm();
+        currentChannelId = null;
+        lastMessagesKey = '';
+        await loadChannels();
+    } catch (error) {
+        showToast(`${__('system.error')}: ${error.message}`, 'error');
+    }
+}
+
+// --- @ otomatik tamamlama (departman + kullanici etiketleri) ---
+
+function caretToken() {
+    const input = el('chat-input');
+    const pos = input.selectionStart ?? input.value.length;
+    const upto = input.value.slice(0, pos);
+    const m = upto.match(/(^|\s)@([^\s@]*)$/);
+    return m ? m[2].toLowerCase() : null;
+}
+
+async function ensureDirectory() {
+    if (mentionIndex) return mentionIndex;
+    try {
+        const r = await listConsoleChatDirectoryFn({});
+        mentionIndex = r.data.users || [];
+    } catch {
+        mentionIndex = [];
+    }
+    return mentionIndex;
+}
+
+function closeMentionPop() {
+    if (mentionPop) { mentionPop.remove(); mentionPop = null; }
+    mentionMatches = [];
+    mentionActive = -1;
+}
+
+function insertMention(value) {
+    const input = el('chat-input');
+    const pos = input.selectionStart ?? input.value.length;
+    const upto = input.value.slice(0, pos);
+    const m = upto.match(/(^|\s)@([^\s@]*)$/);
+    if (!m) { closeMentionPop(); return; }
+    const start = pos - m[2].length - 1;
+    input.value = input.value.slice(0, start) + '@' + value + ' ' + input.value.slice(pos);
+    closeMentionPop();
+    input.focus();
+    const np = start + value.length + 2;
+    input.setSelectionRange(np, np);
+}
+
+function renderMentionPop() {
+    const composer = el('chat-composer');
+    if (!composer) return;
+    if (!mentionMatches.length) { closeMentionPop(); return; }
+    if (!mentionPop) {
+        mentionPop = document.createElement('div');
+        mentionPop.className = 'chat-mention-pop';
+        composer.appendChild(mentionPop);
+        mentionPop.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const row = e.target.closest('[data-mention]');
+            if (row) insertMention(row.dataset.mention);
+        });
+    }
+    mentionPop.innerHTML = mentionMatches.map((it, i) =>
+        `<button type="button" data-mention="${escapeHTML(it.value)}" class="chat-mention-row ${i === mentionActive ? 'active' : ''}">` +
+        `<span class="material-symbols-rounded">${it.kind === 'dept' ? 'tag' : 'alternate_email'}</span>` +
+        `<span class="chat-mention-main">@${escapeHTML(it.value)}</span>` +
+        (it.badges && it.badges.length ? `<span class="chat-mention-badges">${it.badges.map(b => `<span class="dept-badge">${escapeHTML(b)}</span>`).join('')}</span>` : '') +
+        `</button>`).join('');
+}
+
+function updateMentionPop() {
+    const token = caretToken();
+    if (token === null) { closeMentionPop(); return; }
+    const matches = [];
+    DEPARTMENTS.forEach(d => {
+        if (matches.length < 4 && d.id.toLowerCase().startsWith(token)) {
+            matches.push({ kind: 'dept', value: d.id, badges: [] });
+        }
+    });
+    (mentionIndex || []).forEach(u => {
+        if (matches.length >= 10) return;
+        const hay = (u.email + ' ' + (u.name || '')).toLowerCase();
+        if (hay.includes(token)) {
+            matches.push({ kind: 'mail', value: u.email, badges: u.isAdmin ? ['Admin'] : (u.departments || []) });
+        }
+    });
+    mentionMatches = matches;
+    mentionActive = matches.length ? 0 : -1;
+    renderMentionPop();
 }
 
 // --- Başlatma ---
@@ -300,10 +433,24 @@ export function initConsoleChat() {
 
     // Kalici delegation: kanal listesi her yenilense bile tiklamalar asla kaybolmaz
     el('chat-channel-list').addEventListener('click', (e) => {
+        const fresh = e.target.closest('.chat-channel-new');
+        if (fresh) { openChannelForm('create'); return; }
         const btn = e.target.closest('.chat-channel-item');
         if (btn && btn.dataset.channel) selectChannel(btn.dataset.channel);
     });
     el('chat-messages').addEventListener('click', (e) => {
+        const del = e.target.closest('.chat-msg-del');
+        if (del && !del.disabled) {
+            if (!confirm(__('chat.msg_delete_confirm'))) return;
+            del.disabled = true;
+            deleteConsoleChatMessageFn({ channelId: currentChannelId, messageId: del.dataset.del })
+                .then(() => loadMessages(false))
+                .catch((error) => {
+                    showToast(`${__('system.error')}: ${error.message}`, 'error');
+                    del.disabled = false;
+                });
+            return;
+        }
         const btn = e.target.closest('.chat-task-toggle-btn');
         if (!btn || btn.disabled) return;
         btn.disabled = true;
@@ -316,10 +463,22 @@ export function initConsoleChat() {
             btn.disabled = false;
         });
     });
+    el('chat-form-delete').addEventListener('click', deleteCurrentChannel);
     el('chat-form-cancel').addEventListener('click', closeChannelForm);
     el('chat-form-save').addEventListener('click', submitChannelForm);
     el('chat-send').addEventListener('click', sendMessage);
+    el('chat-input').addEventListener('input', () => {
+        updateMentionPop();
+        if (caretToken() !== null) ensureDirectory().then(updateMentionPop);
+    });
+    el('chat-input').addEventListener('blur', () => setTimeout(closeMentionPop, 150));
     el('chat-input').addEventListener('keydown', (e) => {
+        if (mentionPop && mentionMatches.length) {
+            if (e.key === 'ArrowDown') { e.preventDefault(); mentionActive = (mentionActive + 1) % mentionMatches.length; renderMentionPop(); return; }
+            if (e.key === 'ArrowUp') { e.preventDefault(); mentionActive = (mentionActive - 1 + mentionMatches.length) % mentionMatches.length; renderMentionPop(); return; }
+            if ((e.key === 'Enter' || e.key === 'Tab') && mentionActive >= 0) { e.preventDefault(); insertMention(mentionMatches[mentionActive].value); return; }
+            if (e.key === 'Escape') { closeMentionPop(); return; }
+        }
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
@@ -331,7 +490,7 @@ export function initConsoleChat() {
     pollTimer = setInterval(() => {
         if (document.hidden || !auth || !auth.currentUser) return;
         loadChannels();
-        if (currentChannelId) loadMessages();
+        if (currentChannelId) loadMessages(false);
     }, 8000);
 
     onLangChange(() => { renderChannelList(); });
