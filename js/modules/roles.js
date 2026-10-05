@@ -505,6 +505,11 @@ function renderPanelMenuContent() {
         html += `<p class="intro-description" style="margin-top:6px;">${__('perms.hidden_hint')}</p>`;
     }
 
+    html += `<button type="button" class="perm-hidden-choice panel-order-reset" data-reset-tab="${findPanelMeta(panelKey).tabId}"><span class="material-symbols-rounded">restart_alt</span><span>${__('perms.order_reset')}</span></button>`;
+    // DOM once yazilir, listener'lar SONRA baglanir — innerHTML sonrasina tasiyarak
+    // buton ogelerini olduren eski siralama duzeltildi.
+    pop.innerHTML = html;
+
     pop.querySelectorAll('.perm-cycle[data-menu-dept]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -531,9 +536,6 @@ function renderPanelMenuContent() {
     if (select) {
         select.addEventListener('change', () => { menuContentDept = select.value; renderPanelMenuContent(); });
     }
-    html += `<button type="button" class="perm-hidden-choice panel-order-reset" data-reset-tab="${findPanelMeta(panelKey).tabId}"><span class="material-symbols-rounded">restart_alt</span><span>${__('perms.order_reset')}</span></button>`;
-    pop.innerHTML = html;
-
     pop.querySelector('.panel-order-reset')?.addEventListener('click', (e) => {
         e.stopPropagation();
         resetTabLayout(e.currentTarget.dataset.resetTab);

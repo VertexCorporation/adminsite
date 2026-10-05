@@ -260,7 +260,7 @@ async function submitChannelForm() {
     const name = el('chat-form-name').value.trim();
     const description = el('chat-form-desc').value.trim();
     const postLevel = el('chat-form-postlevel').value;
-    const departments = [...el('chat-form-depts').querySelectorAll('input:checked')].map(i => i.value);
+    const departments = [...el('chat-form-depts').querySelectorAll('input:checked')].map(i => i.value).filter(Boolean);
     if (!name) {
         showToast(__('chat.name_required'), 'error');
         return;
