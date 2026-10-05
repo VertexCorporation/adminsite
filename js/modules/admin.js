@@ -2,7 +2,7 @@
 
 import { showToast, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
-import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, setUserSubscriptionFn, bulkSetUserSubscriptionsFn } from '../core/firebase.js';
+import { auth, addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, setUserSubscriptionFn, bulkSetUserSubscriptionsFn } from '../core/firebase.js';
 import { DEPARTMENTS, getEffectivePanelLevel } from './roles.js';
 
 // --- Module state for attributions ---
@@ -373,7 +373,7 @@ async function handleRemoveAdminSubmit(e) {
 /**
  * Fetches and displays the list of active administrators.
  */
-async function loadAdminsList() {
+export async function loadAdminsList() {
     const container = document.getElementById('admin-list-container');
     if (!container) return;
     
@@ -513,6 +513,6 @@ export function initAdminModule() {
     const deptAssignForm = document.getElementById('dept-assign-form');
     if (deptAssignForm) deptAssignForm.addEventListener('submit', handleDeptAssignSubmit);
     
-    // Load admins list initially
-    loadAdminsList();
+    // Load admins list initially (giris oncesi cagrilmaz; login akisi yeniden cagirir)
+    if (auth && auth.currentUser) loadAdminsList();
 }

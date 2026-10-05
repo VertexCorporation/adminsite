@@ -15,7 +15,8 @@ import {
     updateConsoleChatChannelFn,
     postConsoleChatMessageFn,
     listConsoleChatMessagesFn,
-    updateConsoleChatTaskStatusFn
+    updateConsoleChatTaskStatusFn,
+    auth
 } from '../core/firebase.js';
 
 let channels = [];
@@ -325,10 +326,10 @@ export function initConsoleChat() {
         }
     });
 
-    loadChannels();
+    if (auth && auth.currentUser) loadChannels();
     // Yeni mesaj/kanallar için hafif yoklama
     pollTimer = setInterval(() => {
-        if (document.hidden) return;
+        if (document.hidden || !auth || !auth.currentUser) return;
         loadChannels();
         if (currentChannelId) loadMessages();
     }, 8000);

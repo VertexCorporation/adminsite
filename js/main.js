@@ -5,7 +5,7 @@ import * as dom from './utils/dom.js';
 import { showToast, __, getLang, setLang, translatePage, onLangChange } from './utils/ui.js';
 
 // Import module initializers
-import { initAdminModule, refreshDepartmentUsers } from './modules/admin.js';
+import { initAdminModule, refreshDepartmentUsers, loadAdminsList } from './modules/admin.js';
 import { initModelsModule, fetchFullModelsData } from './modules/models.js';
 import { initNewsModule, listenForArticles, stopListeningForArticles } from './modules/news.js';
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
@@ -121,6 +121,7 @@ export function startApp(firebaseConfig) {
                     listenForScheduledTasks();
                     fetchContributorsData();
                     refreshSubscriptions();
+                    loadAdminsList();
                     refreshConsoleChat();
                 } else {
                     console.log(`[AUTH] Access Level: Department (${departments.join(', ')}). Limited panel.`);

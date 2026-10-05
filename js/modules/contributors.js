@@ -1,6 +1,6 @@
 // js/modules/contributors.js
 
-import { showToast, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
+import { showToast, __, onLangChange, sanitizeHTML, escapeHTML } from '../utils/ui.js';
 import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn } from '../core/firebase.js';
 import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS } from './roles.js';
 
