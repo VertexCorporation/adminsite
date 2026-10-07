@@ -22,6 +22,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>html.icons-loading .material-symbols-rounded{opacity:0 !important;}</style>
+    <script>(function(){var d=document.documentElement;var f=function(){d.classList.remove('icons-loading');};try{d.classList.add('icons-loading');}catch(e){}if(document.fonts&&document.fonts.load){try{document.fonts.load('24px "Material Symbols Rounded"').then(f,f);}catch(e){f();}}if(document.fonts&&document.fonts.ready){document.fonts.ready.then(f);}setTimeout(f,2500);})();</script>
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/style.css">
@@ -932,6 +934,33 @@
                     
 
                     <!-- Aktif Yöneticiler Listesi -->
+                    <div class="panel-card col-span-6" id="team-log-manager" data-panel="system.teamLog">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <span class="material-symbols-rounded">diversity_3</span>
+                                <h3 data-i18n="team.title">Ekip Kaydı</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description" data-i18n="team.desc">vertexishere.com'daki Moderatörler ve Staff kayan listelerini yönetin; yaptığınız değişiklikler siteye otomatik yansır.</p>
+                        <div class="team-log-grid">
+                            <div class="team-log-col">
+                                <h4 data-i18n="team.mods">Modlar</h4>
+                                <div id="team-mod-list" class="team-entry-list"></div>
+                                <div class="team-add-row">
+                                    <input type="text" id="team-mod-input" maxlength="60" placeholder="Ad Soyad" data-i18n-placeholder="team.name_ph">
+                                    <button type="button" id="team-mod-add" class="chrome-btn-outline">+</button>
+                                </div>
+                            </div>
+                            <div class="team-log-col">
+                                <h4 data-i18n="team.staff">Staff</h4>
+                                <div id="team-staff-list" class="team-entry-list"></div>
+                                <div class="team-add-row">
+                                    <input type="text" id="team-staff-input" maxlength="60" placeholder="Ad Soyad" data-i18n-placeholder="team.name_ph">
+                                    <button type="button" id="team-staff-add" class="chrome-btn-outline">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="panel-card col-span-12" id="admin-list-manager" data-panel="system.adminList">
                         <div class="card-title-row">
                             <div class="title-details">

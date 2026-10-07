@@ -13,6 +13,7 @@ let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, 
 let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn;
 let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn;
 let getPanelPermissionsFn;
+let listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn;
 
 
 /**
@@ -117,6 +118,9 @@ function initFirebase(firebaseConfig) {
     deleteConsoleChatMessageFn = callable('deleteConsoleChatMessage');
     deleteConsoleChatChannelFn = callable('deleteConsoleChatChannel');
     listConsoleChatDirectoryFn = callable('listConsoleChatDirectory');
+    listSiteTeamFn = callable('listSiteTeam');
+    setSiteTeamEntryFn = callable('setSiteTeamEntry');
+    deleteSiteTeamEntryFn = callable('deleteSiteTeamEntry');
 }
 
 // Export the initializer function and all the service variables
@@ -166,5 +170,8 @@ export {
     deleteConsoleChatMessageFn,
     deleteConsoleChatChannelFn,
     listConsoleChatDirectoryFn,
+    listSiteTeamFn,
+    setSiteTeamEntryFn,
+    deleteSiteTeamEntryFn,
     getPanelPermissionsFn
 };

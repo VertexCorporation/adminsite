@@ -13,6 +13,7 @@ import { initContributorsModule, fetchContributorsData, applyChipVisibility } fr
 import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscriptions.js';
 import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, initPanelCollapsers, PANELS } from './modules/roles.js';
 import { initDashboardLayout } from './modules/dashboardLayout.js';
+import { initSiteTeamPanel } from './modules/siteTeam.js';
 import { initAsciiRipple } from './modules/asciiRipple.js';
 import { initBorderGlow } from './modules/borderGlow.js';
 import { initUserMenu } from './modules/userMenu.js';
@@ -48,6 +49,7 @@ export function startApp(firebaseConfig) {
     initPanelCollapsers();
     initDashboardLayout();
     initProfileMenu();
+    initSiteTeamPanel();
 
     // Icerik kaydirildikca ust bar kuculur (tek satir, kompakt mod).
     const scroller = document.getElementById('tab-scroll-container');

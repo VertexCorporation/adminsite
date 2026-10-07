@@ -14,7 +14,6 @@ const TABS = [
 ];
 
 const DEPARTMENTS = [
-    { id: 'Essence', group: 'ust', nameKey: 'dept.essence' },
     { id: 'Core', group: 'ust', nameKey: 'dept.core' },
     { id: 'Senatus', group: 'ust', nameKey: 'dept.senatus' },
     { id: 'Tensor', group: 'ust', nameKey: 'dept.tensor' },
@@ -24,9 +23,7 @@ const DEPARTMENTS = [
     { id: 'Catalyst', group: 'orta', nameKey: 'dept.catalyst' },
     { id: 'Envoy', group: 'orta', nameKey: 'dept.envoy' },
     { id: 'Aero', group: 'orta', nameKey: 'dept.aero' },
-    { id: 'Array', group: 'orta', nameKey: 'dept.array' },
-    { id: 'Scout', group: 'alt', nameKey: 'dept.scout' },
-    { id: 'Vertest', group: 'alt', nameKey: 'dept.vertest' }
+    { id: 'Array', group: 'orta', nameKey: 'dept.array' }
 ];
 
 // Panel kataloğu: her sekmenin "kanalları". Anahtar formatı `${tabId}.${panelId}`.
@@ -59,6 +56,7 @@ export const PANELS = {
         { id: 'manualVerify', key: 'panel.system.manualVerify', icon: 'verified_user' },
         { id: 'removeAdmin', key: 'panel.system.removeAdmin', icon: 'person_remove' },
         { id: 'adminList', key: 'panel.system.adminList', icon: 'admin_panel_settings' },
+        { id: 'teamLog', key: 'panel.system.teamLog', icon: 'diversity_3' },
         { id: 'serverStatus', key: 'panel.system.serverStatus', icon: 'dns' },
         { id: 'attributions', key: 'panel.system.attributions', icon: 'sync' },
         { id: 'exporter', key: 'panel.system.exporter', icon: 'download' }
