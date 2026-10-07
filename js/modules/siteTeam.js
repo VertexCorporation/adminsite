@@ -2,14 +2,16 @@
 
 /**
  * Sistem > Ekip Kaydı paneli: public site (vertexishere.com) Moderatörler
- * ve Staff kayan listelerini yönetir. Eklenen/kaldırılan kişiler siteye
- * otomatik yansır (listSiteTeam public callable'ı üzerinden).
+ * listesini yönetir (ekle / sil / yeniden adlandır). Staff listesi panelde
+ * yönetilmez — onaylı adaylar (contributors.hasVerified) otomatik olarak
+ * sitedeki Staff kaydırma listesine düşer.
  */
 
 import { showToast, __, escapeHTML } from '../utils/ui.js';
 import { listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn } from '../core/firebase.js';
 
-let entries = [];
+let mods = [];
+let editingId = null;
 
 const el = (id) => document.getElementById(id);
 
@@ -17,43 +19,55 @@ async function loadTeam() {
     if (!el('team-mod-list')) return;
     try {
         const result = await listSiteTeamFn({});
-        const data = result.data || {};
-        entries = (data.mods || []).map(m => ({ ...m, kind: 'mod' }))
-            .concat((data.staff || []).map(s => ({ ...s, kind: 'staff' })));
+        mods = (result.data && result.data.mods) || [];
         render();
     } catch (error) {
-        // Panel sessizce boş kalır; yükleme hatasında listelerde ipucu gösterilir.
-        const modList = el('team-mod-list');
-        if (modList) modList.innerHTML = `<p class="form-hint">${escapeHTML(error.message)}</p>`;
+        const list = el('team-mod-list');
+        if (list) list.innerHTML = `<p class="form-hint">${escapeHTML(error.message)}</p>`;
     }
 }
 
 function render() {
-    const modList = el('team-mod-list');
-    const staffList = el('team-staff-list');
-    if (!modList || !staffList) return;
-    const row = (it) => `
-        <div class="team-entry-row">
-            <span class="team-entry-name">${escapeHTML(it.name)}</span>
-            <button type="button" class="team-entry-del" data-id="${it.id}" title="${__('team.remove')}"><span class="material-symbols-rounded">close</span></button>
+    const list = el('team-mod-list');
+    if (!list) return;
+    if (!mods.length) {
+        list.innerHTML = `<p class="form-hint">${__('team.empty')}</p>`;
+        return;
+    }
+    list.innerHTML = mods.map(m => {
+        if (editingId === m.id) {
+            return `
+            <div class="team-entry-row team-entry-editing" data-id="${m.id}">
+                <input type="text" class="team-edit-input" value="${escapeHTML(m.name)}" maxlength="60">
+                <button type="button" class="team-entry-save" data-save="${m.id}" title="${__('team.save')}"><span class="material-symbols-rounded">check</span></button>
+                <button type="button" class="team-entry-cancel" data-cancel="1" title="${__('team.cancel')}"><span class="material-symbols-rounded">close</span></button>
+            </div>`;
+        }
+        return `
+        <div class="team-entry-row" data-id="${m.id}">
+            <span class="team-entry-name">${escapeHTML(m.name)}</span>
+            <button type="button" class="team-entry-edit" data-edit="${m.id}" title="${__('team.edit')}"><span class="material-symbols-rounded">edit</span></button>
+            <button type="button" class="team-entry-del" data-id="${m.id}" title="${__('team.remove')}"><span class="material-symbols-rounded">close</span></button>
         </div>`;
-    const mods = entries.filter(e => e.kind === 'mod');
-    const staff = entries.filter(e => e.kind === 'staff');
-    modList.innerHTML = mods.length ? mods.map(row).join('') : `<p class="form-hint">${__('team.empty')}</p>`;
-    staffList.innerHTML = staff.length ? staff.map(row).join('') : `<p class="form-hint">${__('team.empty')}</p>`;
+    }).join('');
+    const editing = list.querySelector('.team-edit-input');
+    if (editing) {
+        editing.focus();
+        editing.setSelectionRange(editing.value.length, editing.value.length);
+    }
 }
 
-async function add(kind, inputId) {
-    const input = el(inputId);
+async function add() {
+    const input = el('team-mod-input');
     const name = input.value.trim();
     if (!name) {
         showToast(__('team.name_required'), 'error');
         return;
     }
-    const btn = input.parentElement.querySelector('button');
+    const btn = el('team-mod-add');
     if (btn) btn.disabled = true;
     try {
-        await setSiteTeamEntryFn({ kind, name });
+        await setSiteTeamEntryFn({ kind: 'mod', name });
         input.value = '';
         showToast(__('team.added'), 'success');
         await loadTeam();
@@ -61,6 +75,25 @@ async function add(kind, inputId) {
         showToast(`${__('system.error')}: ${error.message}`, 'error');
     } finally {
         if (btn) btn.disabled = false;
+    }
+}
+
+async function rename(id) {
+    const list = el('team-mod-list');
+    const row = list.querySelector(`.team-entry-editing[data-id="${id}"]`);
+    const input = row && row.querySelector('.team-edit-input');
+    const name = input ? input.value.trim() : '';
+    if (!name) {
+        showToast(__('team.name_required'), 'error');
+        return;
+    }
+    try {
+        await setSiteTeamEntryFn({ kind: 'mod', name, id });
+        editingId = null;
+        showToast(__('team.updated'), 'success');
+        await loadTeam();
+    } catch (error) {
+        showToast(`${__('system.error')}: ${error.message}`, 'error');
     }
 }
 
@@ -76,22 +109,33 @@ async function remove(id) {
 
 export function initSiteTeamPanel() {
     if (!el('team-mod-list')) return;
-    el('team-mod-add').addEventListener('click', () => add('mod', 'team-mod-input'));
-    el('team-staff-add').addEventListener('click', () => add('staff', 'team-staff-input'));
-    ['team-mod-input', 'team-staff-input'].forEach(id => {
-        el(id).addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                add(id === 'team-mod-input' ? 'mod' : 'staff', id);
-            }
-        });
+    el('team-mod-add').addEventListener('click', add);
+    el('team-mod-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            add();
+        }
     });
-    const grid = document.querySelector('#team-log-manager .team-log-grid');
-    if (grid) {
-        grid.addEventListener('click', (e) => {
-            const btn = e.target.closest('.team-entry-del');
-            if (btn && btn.dataset.id) remove(btn.dataset.id);
-        });
-    }
+    const list = el('team-mod-list');
+    list.addEventListener('click', (e) => {
+        const saveBtn = e.target.closest('.team-entry-save');
+        if (saveBtn && saveBtn.dataset.save) { rename(saveBtn.dataset.save); return; }
+        if (e.target.closest('.team-entry-cancel')) { editingId = null; render(); return; }
+        const editBtn = e.target.closest('.team-entry-edit');
+        if (editBtn && editBtn.dataset.edit) { editingId = editBtn.dataset.edit; render(); return; }
+        const delBtn = e.target.closest('.team-entry-del');
+        if (delBtn && delBtn.dataset.id) remove(delBtn.dataset.id);
+    });
+    list.addEventListener('keydown', (e) => {
+        if (!e.target.classList.contains('team-edit-input')) return;
+        const row = e.target.closest('.team-entry-editing');
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (row) rename(row.dataset.id);
+        } else if (e.key === 'Escape') {
+            editingId = null;
+            render();
+        }
+    });
     loadTeam();
 }
