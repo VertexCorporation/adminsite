@@ -6,7 +6,7 @@
  * rank rozetleri), ayraç, Profil ve Çıkış öğeleri. Panelden yumuşak açılır.
  */
 
-import { showToast, __ } from '../utils/ui.js';
+import { showToast, __, escapeHTML } from '../utils/ui.js';
 import { auth } from '../core/firebase.js';
 import { isPanelAdmin } from './roles.js';
 
@@ -23,12 +23,12 @@ function renderIdentity(user, departments) {
     const rankBadges = isPanelAdmin()
         ? `<span class="user-menu-plan">${__('user_menu.admin')}</span>`
         : (departments?.length
-            ? departments.map(d => `<span class="user-menu-plan">${d}</span>`).join('')
+            ? departments.map(d => `<span class="user-menu-plan">${escapeHTML(d)}</span>`).join('')
             : '');
     root.innerHTML = `
         <button type="button" id="user-menu-trigger" class="user-menu-trigger" aria-haspopup="menu" aria-expanded="false">
-            <span class="user-menu-face">${initialsOf(user.displayName || user.email)}</span>
-            <span class="user-menu-name">${user.displayName || user.email || '—'}</span>
+            <span class="user-menu-face">${escapeHTML(initialsOf(user.displayName || user.email))}</span>
+            <span class="user-menu-name">${escapeHTML(user.displayName || user.email || '—')}</span>
             <span class="material-symbols-rounded user-menu-chevron">keyboard_arrow_down</span>
         </button>
         <div id="user-menu-pop" class="user-menu-pop" style="display:none;" role="menu">
@@ -36,10 +36,10 @@ function renderIdentity(user, departments) {
                 <span class="user-menu-face user-menu-face-lg">${initialsOf(user.displayName || user.email)}</span>
                 <div class="user-menu-identity">
                     <div class="user-menu-name-row">
-                        <span class="user-menu-name-big">${user.displayName || '—'}</span>
+                        <span class="user-menu-name-big">${escapeHTML(user.displayName || '—')}</span>
                         ${rankBadges}
                     </div>
-                    <span class="user-menu-mail" title="${user.email || ''}">${user.email || '—'}</span>
+                    <span class="user-menu-mail" title="${escapeHTML(user.email || '')}">${escapeHTML(user.email || '—')}</span>
                 </div>
             </div>
             <div class="user-menu-separator"></div>
@@ -72,17 +72,12 @@ function renderIdentity(user, departments) {
         pop.style.display = open ? 'none' : 'block';
         trigger.setAttribute('aria-expanded', String(!open));
     });
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('#user-menu-root')) {
-            pop.style.display = 'none';
-            trigger.setAttribute('aria-expanded', 'false');
-        }
-    });
 
     pop.querySelectorAll('.user-menu-item').forEach(item => {
         item.addEventListener('click', (e) => {
             e.stopPropagation();
             const action = item.dataset.action;
+            trigger.setAttribute('aria-expanded','false');
             if (action === 'profile') {
                 pop.style.display = 'none';
                 document.querySelector('.dock-btn[data-target="tab-profile"]')?.click();
@@ -102,6 +97,9 @@ function renderIdentity(user, departments) {
 
 export function initUserMenu() {
     if (!el('user-menu-root')) return;
+    const close = () => { const pop=el('user-menu-pop'); if (pop) pop.style.display='none'; el('user-menu-trigger')?.setAttribute('aria-expanded','false'); };
+    document.addEventListener('click', event => { if (!event.target.closest('#user-menu-root')) close(); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') { close(); } });
     auth.onAuthStateChanged((user) => {
         if (user) {
             renderIdentity({ displayName: user.displayName, email: user.email }, null);
@@ -110,7 +108,7 @@ export function initUserMenu() {
         }
     });
     // Departmanlar auth akışından sonra gelsin: renderProfile çağrısında güncellenir
-    window.addEventListener('vertex:departments', (e) => {
+    document.addEventListener('vertex:departments', (e) => {
         const user = auth.currentUser;
         if (user) renderIdentity({ displayName: user.displayName, email: user.email }, e.detail);
     });

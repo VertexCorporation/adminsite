@@ -17,7 +17,7 @@ import { startApp } from '../main.js';
  */
 (async () => {
     // Wait for the DOM to be fully loaded before doing anything.
-    await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+    if (document.readyState === 'loading') await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, {once:true}));
     const appLoader = document.getElementById('app-loader');
 
     const loadScript = (url) => {
@@ -34,7 +34,7 @@ import { startApp } from '../main.js';
     try {
         // --- DEBUG TOKEN SETUP (Must be before SDK load) ---
         if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-            self.FIREBASE_APPCHECK_DEBUG_TOKEN = "90187b16-44ba-4efb-a887-50c14cb24e1d";
+            self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
         }
 
         console.log('[INIT] Stage 1: Loading Core Firebase SDK...');
@@ -101,7 +101,7 @@ import { startApp } from '../main.js';
             appLoader.innerHTML = `<div style="color: #ff4d4d; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 2rem;">
                 <strong>Application Error</strong><br>
                 A critical error occurred during startup. Please check the console for details and refresh the page.<br>
-                <small style="color: #ffa5a5;">${error.message}</small>
+                <small style="color: #ffa5a5;">Please reload to try again.</small>
             </div>`;
         }
     }

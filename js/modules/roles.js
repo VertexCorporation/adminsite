@@ -1,7 +1,7 @@
 // js/modules/roles.js
 
 import { db, saveDepartmentPermissionsFn, getPanelPermissionsFn } from '../core/firebase.js';
-import { resetTabLayout } from './dashboardLayout.js';
+
 import { showToast, __, onLangChange } from '../utils/ui.js';
 
 const TABS = [
@@ -391,31 +391,6 @@ function findPanelMeta(panelKey) {
 }
 
 /** Panelleri baslik satirindan acilip kapanir yapar (durum localStorage'da). */
-export function initPanelCollapsers() {
-    const read = () => new Set(JSON.parse(localStorage.getItem('vertex-collapsed-panels') || '[]'));
-    const write = (set) => localStorage.setItem('vertex-collapsed-panels', JSON.stringify([...set]));
-    const stored = read();
-    document.querySelectorAll('[data-panel]').forEach(card => {
-        const key = card.getAttribute('data-panel');
-        const row = card.querySelector('.card-title-row');
-        if (!key || !row || row.querySelector('.panel-collapse-chevron')) return;
-        const chev = document.createElement('span');
-        chev.className = 'material-symbols-rounded panel-collapse-chevron';
-        chev.textContent = 'keyboard_arrow_up';
-        row.appendChild(chev);
-        if (stored.has(key)) card.classList.add('panel-collapsed');
-        row.addEventListener('click', (e) => {
-            if (e.target.closest('.panel-menu-btn') || e.target.closest('.panel-menu-pop')) return;
-            if (e.target.closest('button') && !e.target.closest('.panel-collapse-chevron')) return;
-            const collapsed = card.classList.toggle('panel-collapsed');
-            chev.textContent = collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up';
-            const set = read();
-            if (collapsed) set.add(key); else set.delete(key);
-            write(set);
-        });
-    });
-}
-
 export function initPanelMenus() {
     document.querySelectorAll('[data-panel]').forEach(card => {
         const key = card.getAttribute('data-panel');
@@ -503,7 +478,6 @@ function renderPanelMenuContent() {
         html += `<p class="intro-description" style="margin-top:6px;">${__('perms.hidden_hint')}</p>`;
     }
 
-    html += `<button type="button" class="perm-hidden-choice panel-order-reset" data-reset-tab="${findPanelMeta(panelKey).tabId}"><span class="material-symbols-rounded">restart_alt</span><span>${__('perms.order_reset')}</span></button>`;
     // DOM once yazilir, listener'lar SONRA baglanir — innerHTML sonrasina tasiyarak
     // buton ogelerini olduren eski siralama duzeltildi.
     pop.innerHTML = html;
@@ -534,11 +508,6 @@ function renderPanelMenuContent() {
     if (select) {
         select.addEventListener('change', () => { menuContentDept = select.value; renderPanelMenuContent(); });
     }
-    pop.querySelector('.panel-order-reset')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        resetTabLayout(e.currentTarget.dataset.resetTab);
-        closePanelMenu();
-    });
 
     pop.querySelectorAll('input[data-cfg]').forEach(input => {
         input.addEventListener('change', () => {

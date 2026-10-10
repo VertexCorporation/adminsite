@@ -1,8 +1,9 @@
+import { openCertificates } from './certificates.js';
 // js/modules/contributors.js
 
 import { showToast, __, onLangChange, sanitizeHTML, escapeHTML } from '../utils/ui.js';
 import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn } from '../core/firebase.js';
-import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS } from './roles.js';
+import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS, isPanelAdmin } from './roles.js';
 
 const emailIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:text-bottom; margin-right:5px; color:var(--primary-color)"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
 const phoneIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:text-bottom; margin-right:5px; color:var(--primary-color)"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>`;
@@ -144,6 +145,7 @@ function renderContributors(contributors) {
         }
 
         const div = document.createElement('div');
+        div.dataset.contributorId = contributor.id;
         div.style.cssText = 'padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;';
 
         // Yazma yetkisi: 'contributors.list' paneli write olanlar (veya adminler)
@@ -151,8 +153,8 @@ function renderContributors(contributors) {
         const canWrite = getEffectivePanelLevel('contributors.list') === 'write';
         
         let mediaLinks = '';
-        if (contributor.linkedin) mediaLinks += `<a href="${escapeHTML(contributor.linkedin)}" target="_blank" style="color:var(--primary-color); text-decoration:none; margin-right:15px;">${linkedInIcon} LinkedIn</a>`;
-        if (contributor.github) mediaLinks += `<a href="${escapeHTML(contributor.github)}" target="_blank" style="color:var(--primary-color); text-decoration:none;">${githubIcon} GitHub</a>`;
+        if (/^https?:\/\//i.test(contributor.linkedin || '')) mediaLinks += `<a href="${escapeHTML(contributor.linkedin)}" target="_blank" rel="noopener noreferrer" style="color:var(--primary-color); text-decoration:none; margin-right:15px;">${linkedInIcon} LinkedIn</a>`;
+        if (/^https?:\/\//i.test(contributor.github || '')) mediaLinks += `<a href="${escapeHTML(contributor.github)}" target="_blank" rel="noopener noreferrer" style="color:var(--primary-color); text-decoration:none;">${githubIcon} GitHub</a>`;
         
         let extraInfo = '';
         if (contributor.age) extraInfo += `${ageIcon} Age: ${escapeHTML(String(contributor.age ?? ''))} &nbsp;&nbsp;`;
@@ -176,18 +178,8 @@ function renderContributors(contributors) {
                     <button class="edit-contributor-btn" data-id="${contributor.id}" title="${__('contributors.edit_title')}" style="margin-top: 2px;">
                         ${editIcon}
                     </button>
-                    <button class="delete-contributor-btn" data-id="${contributor.id}" title="Delete Contributor" style="margin-top: 2px;">
-                        ${trashIcon}
-                    </button>
-                    <div style="display: flex; flex-direction: column; align-items: center; min-width: 60px;">
-                        <label class="switch verify-switch" style="transform: scale(0.8); margin: 0;">
-                            <input type="checkbox" class="verify-toggle" data-id="${contributor.id}" ${contributor.hasVerified ? 'checked' : ''}>
-                            <span class="slider round"></span>
-                        </label>
-                        <span class="verify-status-text ${contributor.hasVerified ? 'verified' : 'unverified'}" id="status-text-${contributor.id}">
-                            ${contributor.hasVerified ? 'Verified' : 'Unverified'}
-                        </span>
-                    </div>` : `
+                    ${isPanelAdmin() ? `<button class="delete-contributor-btn" data-id="${contributor.id}" aria-label="Delete contributor">${trashIcon}</button><button class="certificate-manage-btn" data-id="${contributor.id}">Certificates</button>` : ''}
+                    <span class="verify-status-text ${contributor.hasVerified ? 'verified' : 'unverified'}">${contributor.hasVerified ? 'Verified' : 'Unverified'}</span>` : `
                     <span class="verify-status-text ${contributor.hasVerified ? 'verified' : 'unverified'}" style="margin-top: 6px;" id="status-text-${contributor.id}">
                         ${contributor.hasVerified ? 'Verified' : 'Unverified'}
                     </span>`}
@@ -198,11 +190,12 @@ function renderContributors(contributors) {
                 ${contributor.phone ? `<div style="display:flex; align-items:center; margin-top:4px;">${phoneIcon} ${escapeHTML(contributor.phone)}</div>` : ''}
                 ${contributor.department ? `<div style="display:flex; align-items:center; margin-top:4px; font-weight: 500; color: var(--primary-color);">Department: ${escapeHTML(contributor.department)}</div>` : ''}
                 <div style="display:flex; align-items:center; margin-top:4px;">${extraInfo}</div>
-                <div style="display:flex; align-items:center; margin-top:4px;">${dateIcon} ${dateStr}</div>
+                <div style="display:flex; align-items:center; margin-top:4px;">${dateIcon} Applied: ${dateStr}</div>
+                <div>Joined Vertex: ${contributor.joinedAt ? escapeHTML(new Date((contributor.joinedAt._seconds ?? contributor.joinedAt.seconds) * 1000).toLocaleDateString(undefined, {timeZone:'UTC'})) : 'Not recorded'}</div>
                 ${interviewDateStr ? `
-                <div class="interview-date-row" data-date-val="${interviewDateStr}" data-uid="${contributor.interviewBookingUid || ''}" style="display:flex; align-items:center; margin-top:4px; font-weight: 600; color: #22c55e;">
+                <div class="interview-date-row" data-date-val="${escapeHTML(interviewDateStr)}" data-uid="${escapeHTML(contributor.interviewBookingUid || '')}" style="display:flex; align-items:center; margin-top:4px; font-weight: 600; color: #22c55e;">
                     ${interviewIcon} <span>${__('contributors.interview_date')}: ${interviewDateStr}</span>
-                    ${contributor.interviewBookingUid ? `<span style="font-size:0.75rem; color:var(--text-muted); margin-left:6px; font-weight:normal;">(UID: ${contributor.interviewBookingUid})</span>` : ''}
+                    ${contributor.interviewBookingUid ? `<span style="font-size:0.75rem; color:var(--text-muted); margin-left:6px; font-weight:normal;">(UID: ${escapeHTML(contributor.interviewBookingUid)})</span>` : ''}
                 </div>` : ''}
             </div>
             ${contributor.about ? `<div style="font-size: 0.9rem; padding:12px; background: rgba(128,128,128,0.05); border-left: 3px solid var(--primary-color); border-radius:4px; margin-top:10px; color: var(--text-color);">${sanitizeHTML(contributor.about)}</div>` : ''}
@@ -210,55 +203,10 @@ function renderContributors(contributors) {
         listContainer.appendChild(div);
     });
 
-    // Re-translate verify status texts and interview rows when language changes
-    onLangChange(() => {
-        document.querySelectorAll('.verify-status-text').forEach(el => {
-            const isVerif = el.classList.contains('verified');
-            el.textContent = isVerif ? __('contributors.verified_label') : __('contributors.unverified_label');
-        });
-        document.querySelectorAll('.interview-date-row').forEach(el => {
-            const dateVal = el.getAttribute('data-date-val');
-            const uid = el.getAttribute('data-uid');
-            if (dateVal) {
-                const labelText = __('contributors.interview_date');
-                const uidText = uid ? `<span style="font-size:0.75rem; color:var(--text-muted); margin-left:6px; font-weight:normal;">(UID: ${uid})</span>` : '';
-                el.innerHTML = `${interviewIcon} <span>${labelText}: ${dateVal}</span>${uidText}`;
-            }
-        });
+    listContainer.querySelectorAll('.certificate-manage-btn').forEach(button => {
+        button.onclick = () => openCertificates(contributors.find(p => p.id === button.dataset.id), fetchContributorsData);
     });
-
-    // Add event listeners to toggles
-    const toggles = listContainer.querySelectorAll('.verify-toggle');
-    toggles.forEach(toggle => {
-        toggle.addEventListener('change', async (e) => {
-            const id = e.target.getAttribute('data-id');
-            const isChecked = e.target.checked;
-            const statusText = document.getElementById(`status-text-${id}`);
-            
-            e.target.disabled = true; // disable while updating
-            
-            try {
-                await toggleContributorVerificationFn({ contributorId: id, hasVerified: isChecked });
-                showToast(__('contributors.verify_updated'), 'success');
-                
-                // Animate text update
-                if (statusText) {
-                    statusText.style.opacity = 0;
-                    setTimeout(() => {
-                        statusText.innerText = isChecked ? __('contributors.verified_label') : __('contributors.unverified_label');
-                        statusText.className = `verify-status-text ${isChecked ? 'verified' : 'unverified'}`;
-                        statusText.style.opacity = 1;
-                    }, 150);
-                }
-            } catch (err) {
-                console.error('[CONTRIBUTORS] Toggle failed:', err);
-                e.target.checked = !isChecked; // revert
-                showToast(`Update failed: ${err.message}`, 'error');
-            } finally {
-                e.target.disabled = false;
-            }
-        });
-    });
+    window.searchContributorsLocal?.();
 
     // Add event listeners to delete buttons
     const deleteBtns = listContainer.querySelectorAll('.delete-contributor-btn');
@@ -302,13 +250,14 @@ function toDatetimeLocalValue(value) {
 }
 
 function openContributorEditor(contributor) {
+    renderContributors(window.loadedContributors || []);
     const card = [...listContainer.children].find(el => el.querySelector(`.edit-contributor-btn[data-id="${contributor.id}"]`));
     if (!card) return;
 
     const deptOptions = ['', ...DEPARTMENTS.map(d => d.id)]
         .map(id => `<option value="${id}" ${contributor.department === id ? 'selected' : ''}>${id || '—'}</option>`)
         .join('');
-    const langOptions = ['tr', 'en']
+    const langOptions = [...new Set([contributor.language || 'en', 'tr', 'en'])]
         .map(code => `<option value="${code}" ${contributor.language === code ? 'selected' : ''}>${code.toUpperCase()}</option>`)
         .join('');
 

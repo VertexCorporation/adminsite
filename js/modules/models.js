@@ -317,7 +317,8 @@ async function handleModelFormSubmit(e) {
             const result = await getModelImageUploadUrlFn({ modelId, modelType: modelTypeDir, fileName: modelImageFile.name, contentType: modelImageFile.type });
             imagePath = result.data.filePath;
             showToast("Uploading model image...", 'info');
-            await fetch(result.data.signedUrl, { method: 'PUT', body: modelImageFile, headers: { 'Content-Type': modelImageFile.type } });
+            const upload = await fetch(result.data.signedUrl, { method: 'PUT', body: modelImageFile, headers: { 'Content-Type': modelImageFile.type } });
+            if (!upload.ok) throw new Error('Model image upload failed.');
         }
 
 

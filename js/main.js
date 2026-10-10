@@ -11,14 +11,10 @@ import { initNewsModule, listenForArticles, stopListeningForArticles } from './m
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
 import { initContributorsModule, fetchContributorsData, applyChipVisibility } from './modules/contributors.js';
 import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscriptions.js';
-import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, initPanelCollapsers, PANELS } from './modules/roles.js';
-import { initDashboardLayout } from './modules/dashboardLayout.js';
+import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, PANELS } from './modules/roles.js';
 import { initSiteTeamPanel } from './modules/siteTeam.js';
-import { initAsciiRipple } from './modules/asciiRipple.js';
-import { initBorderGlow } from './modules/borderGlow.js';
 import { initUserMenu } from './modules/userMenu.js';
 import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
-import { initMicroSlats } from './modules/microSlats.js';
 
 /**
  * The main application function.
@@ -39,16 +35,12 @@ export function startApp(firebaseConfig) {
     initNotificationModule();
     initContributorsModule();
     initSubscriptionsModule();
-    initAsciiRipple();
-    initBorderGlow();
     initUserMenu();
     initConsoleChat();
     // initDockNav kaldirildi: yay fiziği döngüsü nav butonlarina surekli inline
     // genislik yazip titreme/taşmaya yol açiyordu (kullanicinin istedigi kaldirim).
-    initMicroSlats();
-    initPanelCollapsers();
-    initDashboardLayout();
-    initProfileMenu();
+
+
     initSiteTeamPanel();
 
     // Icerik kaydirildikca ust bar kuculur (tek satir, kompakt mod).
@@ -104,7 +96,6 @@ export function startApp(firebaseConfig) {
                 setCurrentUser(isAdmin, departments);
                 document.body.classList.toggle('admin-mode', isAdmin);
                 document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
-                refreshConsoleChat();
                 dom.loginContainer.style.display = 'none';
                 dom.adminPanel.style.display = 'block';
                 renderProfile(user, isAdmin, departments);
@@ -129,6 +120,8 @@ export function startApp(firebaseConfig) {
                     console.log(`[AUTH] Access Level: Department (${departments.join(', ')}). Limited panel.`);
                     dom.adminManagerSection.style.display = 'none';
                     await loadDepartmentPermissions();
+                    renderProfile(user, isAdmin, departments);
+                    refreshConsoleChat();
                     const allowedTabs = getAccessibleTabs(departments);
                     console.log(`[AUTH] Allowed tabs for ${departments.join(', ')}:`, allowedTabs);
                     applyTabFilter(allowedTabs);
@@ -144,6 +137,9 @@ export function startApp(firebaseConfig) {
         } else {
             // --- User is LOGGED OUT ---
             console.log("[AUTH] No user signed in. Displaying login page.");
+            setCurrentUser(false, []);
+            window.loadedContributors = [];
+            document.getElementById('certificate-dialog')?.close();
             dom.loginContainer.style.display = 'block';
             dom.adminPanel.style.display = 'none';
 
@@ -155,12 +151,15 @@ export function startApp(firebaseConfig) {
     });
 
     // --- Step 4: Bind Login/Logout Button Listeners ---
+    document.getElementById('password').addEventListener('keydown', event => { if (event.key === 'Enter') dom.loginBtn.click(); });
     dom.loginBtn.addEventListener('click', () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         if (email && password) {
+            dom.loginBtn.disabled = true;
             auth.signInWithEmailAndPassword(email, password)
-                .catch(error => showToast(`Login Failed: ${error.message}`, 'error'));
+                .catch(error => showToast(`Login Failed: ${error.message}`, 'error'))
+                .finally(() => { dom.loginBtn.disabled = false; });
         } else {
             showToast('Please enter both email and password.', 'info');
         }
@@ -227,10 +226,10 @@ export function startApp(firebaseConfig) {
         // Toggle the 'light' theme
         if (htmlElement.hasAttribute('data-theme')) {
             htmlElement.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'dark');
+            try { localStorage.setItem('theme', 'dark'); } catch {};
         } else {
             htmlElement.setAttribute('data-theme', 'light');
-            localStorage.setItem('theme', 'light');
+            try { localStorage.setItem('theme', 'light'); } catch {};
         }
     });
 
@@ -258,6 +257,7 @@ export function startApp(firebaseConfig) {
     // The app is now fully initialized and ready.
     if (dom.appLoader) {
         dom.appLoader.classList.add('hidden');
+        setTimeout(() => dom.appLoader?.remove(), 300);
         // Remove the loader from the DOM after the transition for a cleaner structure
         dom.appLoader.addEventListener('transitionend', () => {
            dom.appLoader.remove();
@@ -366,41 +366,13 @@ function renderProfile(user, isAdmin, departments) {
 document.getElementById('copy-uid-btn')?.addEventListener('click', () => {
     const uid = document.getElementById('profile-uid').textContent;
     if (!uid || uid === '—') return;
-    navigator.clipboard?.writeText(uid).then(
+    (navigator.clipboard ? navigator.clipboard.writeText(uid) : Promise.reject(new Error('Clipboard unavailable'))).then(
         () => showToast(__('profile.uid_copied'), 'success'),
         () => showToast(__('profile.uid_copied_fail'), 'error')
     );
 });
 
 /** Profil menusu: 8 sablon ogeli (icerikler sonradan doldurulacak). */
-function initProfileMenu() {
-    const btn = document.getElementById('profile-menu-btn');
-    const pop = document.getElementById('profile-menu-pop');
-    if (!btn || !pop) return;
-    btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const open = pop.style.display !== 'none';
-        if (open) { pop.style.display = 'none'; return; }
-        let html = '';
-        for (let i = 1; i <= 8; i++) {
-            html += `<div class="profile-menu-item" data-item="${i}"><span class="profile-menu-num">${i}</span><span>${__(`profile.menu_${i}`)}</span></div>`;
-        }
-        pop.innerHTML = html;
-        pop.style.display = 'block';
-        pop.querySelectorAll('.profile-menu-item').forEach(item => {
-            item.addEventListener('click', () => {
-                showToast(__('profile.menu_soon'), 'info');
-                pop.style.display = 'none';
-            });
-        });
-    });
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('#profile-menu-pop') && !e.target.closest('#profile-menu-btn')) {
-            pop.style.display = 'none';
-        }
-    });
-}
-
 /** Profil kartinda kullanacinin sekmeler bazindaki efektif yetkileri. */
 function renderPermSummary() {
     const container = document.getElementById('profile-perms');

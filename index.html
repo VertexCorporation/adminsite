@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title data-i18n="page.title">Vertex Konsol</title>
 
     <!-- SEO & Basic Meta -->
@@ -28,13 +28,14 @@
     <!-- Styles -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/extras.css">
+    <link rel="stylesheet" href="css/workspace.css">
 
     <script>
         // Sayfa yüklenmeden önce localStorage'dan temayı ayarlayan betik
         (function () {
             try {
                 const theme = localStorage.getItem('theme');
-                if (theme === 'light') {
+                if (theme === 'light' || (!theme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
                     document.documentElement.setAttribute('data-theme', 'light');
                 }
             } catch (e) {
@@ -55,7 +56,7 @@
 <body>
 
     <!-- ASCII Ripple arkaplan -->
-    <canvas id="ascii-ripple" class="ascii-ripple"></canvas>
+
 
     <!-- Başlatıcı Yükleme Ekranı -->
     <div id="app-loader">
@@ -71,11 +72,11 @@
     </div>
 
     <!-- Hızlı Toast Bildirim Alanı -->
-    <div id="toast-container"></div>
+    <div id="toast-container" aria-live="polite"></div>
 
     <!-- GİRİŞ EKRANI -->
     <div id="login-container" class="container">
-        <div id="login-slats" class="login-slats"></div>
+
         <div class="login-box">
             <div class="login-header">
                 <div class="logo-orb">
@@ -91,22 +92,22 @@
                 <h1 data-i18n="login.title">VERTEX KONSOL</h1>
                 <h2 data-i18n="login.subtitle">Sistem Yönetim Modülü</h2>
             </div>
-            
+
             <div class="form-wrapper">
                 <div class="input-field">
                     <svg class="prefix-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                     </svg>
-                    <input type="email" id="email" data-i18n-placeholder="login.email" placeholder="E-posta Adresiniz" autocomplete="email" required>
+                    <input aria-label="Email" type="email" id="email" data-i18n-placeholder="login.email" placeholder="E-posta Adresiniz" autocomplete="email" required>
                 </div>
-                
+
                 <div class="input-field">
                     <svg class="prefix-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
                     </svg>
-                    <input type="password" id="password" data-i18n-placeholder="login.password" placeholder="Şifreniz" required>
+                    <input aria-label="Password" autocomplete="current-password" type="password" id="password" data-i18n-placeholder="login.password" placeholder="Şifreniz" required>
                 </div>
-                
+
                 <button id="login-btn" class="chrome-btn-primary">
                     <span data-i18n="login.btn">Oturum Aç</span>
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="margin-left: 8px;">
@@ -114,11 +115,11 @@
                     </svg>
                 </button>
             </div>
-            
+
             <div class="divider">
                 <span data-i18n="login.or">veya</span>
             </div>
-            
+
             <div class="social-login-grid">
                 <button id="google-login-btn" class="chrome-social-btn google" type="button">
                     <svg viewBox="0 0 24 24" width="16" height="16">
@@ -235,7 +236,7 @@
                                 <span data-i18n="contributors.refresh">Yenile</span>
                             </button>
                         </div>
-                        
+
                         <!-- Kategori Çipleri -->
                         <div class="scroll-chips-row">
                             <button class="filter-chip active" data-filter="all" onclick="filterContributors('all')" data-i18n="contributors.filter.all">Tümü</button>
@@ -246,6 +247,7 @@
                             <button class="filter-chip" data-filter="age-18" onclick="filterContributors('age-18')" data-i18n="contributors.filter.age18">18+ Yaş</button>
                             <button class="filter-chip" data-filter="linkedin" onclick="filterContributors('linkedin')" data-i18n="contributors.filter.linkedin">LinkedIn</button>
                             <button class="filter-chip" data-filter="github" onclick="filterContributors('github')" data-i18n="contributors.filter.github">GitHub</button>
+                            <button class="filter-chip" data-filter="eligible" onclick="filterContributors('eligible')">Certificate eligible</button>
                             <button class="filter-chip" data-filter="interview" onclick="filterContributors('interview')" data-i18n="contributors.filter.interview">Mülakatlılar</button>
                         </div>
 
@@ -269,7 +271,7 @@
                             </div>
                         </div>
                         <p class="intro-description">Kullanıcının UID'sini girerek Vertex Corporation iç erişim yetkisini açıp kapatabilirsiniz.</p>
-                        
+
                         <form id="vertex-status-form" class="form-stack">
                             <div class="form-group-field">
                                 <label for="vertex-target-uid">Kullanıcı UID</label>
@@ -304,7 +306,7 @@
                                 <h3 data-i18n="models.form_title">Model Ekleme ve Düzenleme</h3>
                             </div>
                         </div>
-                        
+
                         <form id="model-form" class="form-scrollable-container">
                             <!-- Model Tipi Seçimi -->
                             <div class="form-block-group">
@@ -365,7 +367,7 @@
                                     <label for="model-url" data-i18n="models.gguf_url">GGUF HuggingFace İndirme Adresi</label>
                                     <input type="url" id="model-url" data-i18n-placeholder="models.gguf_ph" placeholder="https://huggingface.co/.../*.gguf">
                                 </div>
-                                
+
                                 <div class="flex-row">
                                     <div class="form-group-field flex-grow">
                                         <label for="model-size" data-i18n="models.file_size">Dosya Boyutu (MB)</label>
@@ -439,7 +441,7 @@
                                             <option value="phi-3_glm">Phi-3 / GLM</option>
                                         </select>
                                     </div>
-                                    
+
                                     <div class="token-inputs-grid">
                                         <div class="form-group-field">
                                             <label for="model-token-system-start" data-i18n="models.token_system_start">Sistem Başlangıç</label>
@@ -516,7 +518,7 @@
                                 <h3 data-i18n="models.all_models">Tüm Modeller Ağacı</h3>
                             </div>
                         </div>
-                        
+
                         <div id="all-models-explorer" class="database-tree-box">
                             <div id="all-models-list-container">
                                 <p class="form-hint" data-i18n="models.loading">Yükleniyor...</p>
@@ -694,7 +696,7 @@
                                         </optgroup>
                                     </select>
                                 </div>
-                                
+
                                 <div class="flex-row">
                                     <div class="form-group-field flex-grow">
                                         <label for="notification-title-key" data-i18n="notif.title_key">Başlık Anahtarı (Title Key)</label>
@@ -808,7 +810,7 @@
                                 <h3 data-i18n="system.gcs_backup">Google Cloud Storage (GCS) Yedekleme</h3>
                             </div>
                         </div>
-                        <p class="intro-description" data-i18n="system.gcs_desc">Otomatik GCS organizasyon yedekleme mekanizması (GitHub Actions üzerinden) şu anda <strong style="color: var(--accent-sage);">AKTİF</strong> ve çalışır durumda.</p>
+                        <p class="intro-description">Backup status is not monitored by this panel. <a href="https://console.cloud.google.com/storage/browser?project=vertex-ai-1618" target="_blank" rel="noopener">Open backup storage ↗</a></p>
                     </div>
 
                     <!-- Departman İzinleri Yönetimi -->
@@ -914,7 +916,7 @@
                             </div>
                         </div>
                         <p class="intro-description" data-i18n="admin.desc">Doğrulanmış bir Vertex üyesinin e-posta adresini girerek yönetici kontrol yetkisi tanımlayın.</p>
-                        
+
                         <form id="admin-form" class="form-stack">
                             <div class="form-group-field">
                                 <label for="new-admin-email" data-i18n="admin.email_label">Kullanıcı E-postası</label>
@@ -931,7 +933,7 @@
                         </form>
                     </div>
 
-                    
+
 
                     <!-- Aktif Yöneticiler Listesi -->
                     <div class="panel-card col-span-6" id="team-log-manager" data-panel="system.teamLog">
@@ -977,7 +979,7 @@
                             </div>
                         </div>
                         <p class="intro-description" data-i18n="system.maintenance_desc">Sunucu bakım modunu açmak yeni giriş işlemlerini durdurur. Giriş yapmış kullanıcılar yerel modda devam edebilir.</p>
-                        
+
                         <div class="status-action-box">
                             <div id="maintenance-status-indicator" class="indicator-group">
                                 <span class="status-dot"></span>
@@ -996,7 +998,7 @@
                             </div>
                         </div>
                         <p class="intro-description" data-i18n="system.attributions_desc">Model veya lisans güncellemelerinin ardından atıflar sayfasını tekrar derleyip yayınlamak için bu tetikleyiciyi kullanın.</p>
-                        
+
                         <div class="status-action-box">
                             <div id="attributions-status-indicator" class="indicator-group">
                                 <span class="status-dot status-synced"></span>
@@ -1015,7 +1017,7 @@
                             </div>
                         </div>
                         <p class="intro-description" data-i18n="system.export_desc">Sistemde yüklü olan katılımcı listelerini, AI modellerini veya haber makalelerini seçtiğiniz formatta yerel olarak bilgisayarınıza indirebilirsiniz.</p>
-                        
+
                         <div class="form-stack">
                             <div class="flex-row">
                                 <div class="form-group-field flex-grow">
@@ -1027,7 +1029,7 @@
                                         <option value="articles" data-i18n="system.export_articles">Yayınlanan Haberler</option>
                                     </select>
                                 </div>
-                                
+
                                 <div class="form-group-field flex-grow">
                                     <label for="export-format" data-i18n="system.export_format">Dosya Formatı</label>
                                     <select id="export-format">
@@ -1036,7 +1038,7 @@
                                     </select>
                                 </div>
                             </div>
-                            
+
                             <button type="button" onclick="exportDataLocal()" class="chrome-btn-accent" style="margin-top: 10px;">
                                 <span class="material-symbols-rounded">download_for_offline</span>
                                 <span data-i18n="system.export_btn">Veriyi Derle ve İndir</span>
@@ -1294,17 +1296,35 @@
 
             if (dockButtons.length === 0 || panels.length === 0) return;
 
+            document.getElementById('navigation-tabs-dock').setAttribute('role','tablist');
             dockButtons.forEach(btn => {
+                const target = btn.getAttribute('data-target');
+                btn.id = 'nav-' + target;
+                btn.setAttribute('role','tab');
+                btn.setAttribute('aria-controls',target);
+                btn.setAttribute('aria-selected',String(btn.classList.contains('active')));
+                document.getElementById(target)?.setAttribute('role','tabpanel');
+                document.getElementById(target)?.setAttribute('aria-labelledby',btn.id);
+                btn.addEventListener('keydown', event => {
+                    if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+                    event.preventDefault();
+                    const visible = [...dockButtons].filter(b => b.style.display !== 'none');
+                    let index = visible.indexOf(btn);
+                    index = event.key === 'Home' ? 0 : event.key === 'End' ? visible.length-1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + visible.length) % visible.length;
+                    visible[index].focus(); visible[index].click();
+                });
                 btn.addEventListener('click', () => {
                     const targetId = btn.getAttribute('data-target');
                     const targetPanel = document.getElementById(targetId);
-                    
+
                     if (targetPanel) {
                         panels.forEach(p => p.classList.remove('active'));
                         targetPanel.classList.add('active');
 
                         dockButtons.forEach(b => b.classList.remove('active'));
                         btn.classList.add('active');
+                        dockButtons.forEach(b => b.setAttribute('aria-selected',String(b === btn)));
+                        window.scrollTo({top:0});
                     }
                 });
             });
@@ -1320,113 +1340,46 @@
             }
         });
 
-        // Hızlı filtreleme
-        window.filterContributors = function(filterType) {
-            const listContainer = document.getElementById('contributors-list-container');
-            if (!listContainer) return;
-            const items = listContainer.children;
-            
-            document.querySelectorAll('.filter-chip').forEach(btn => {
-                if (btn.getAttribute('data-filter') === filterType) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-
-            let matchCount = 0;
-            for (let item of items) {
-                if (item.tagName === 'P') continue;
-
-                const toggleInput = item.querySelector('.verify-toggle');
-                const isVerified = toggleInput ? toggleInput.checked : false;
-                const innerText = item.innerHTML || "";
-                const textContent = item.textContent || "";
-                
-                const ageMatch = textContent.match(/(?:Age|Yaş):\s*(\d+)/i);
-                const age = ageMatch ? parseInt(ageMatch[1], 10) : 0;
-                
-                const hasLinkedIn = innerText.includes('LinkedIn');
-                const hasGitHub = innerText.includes('GitHub');
-                const hasInterview = innerText.includes('Interview:');
-
-                let visible = true;
-                if (filterType === 'verified' && !isVerified) visible = false;
-                else if (filterType === 'unverified' && isVerified) visible = false;
-                else if (filterType === 'age-14-15' && (age < 14 || age > 15)) visible = false;
-                else if (filterType === 'age-16-17' && (age < 16 || age > 17)) visible = false;
-                else if (filterType === 'age-18' && age < 18) visible = false;
-                else if (filterType === 'linkedin' && !hasLinkedIn) visible = false;
-                else if (filterType === 'github' && !hasGitHub) visible = false;
-                else if (filterType === 'interview' && !hasInterview) visible = false;
-
+        // Filter authoritative record fields; search and category filters compose.
+        function applyContributorFilters() {
+            const list = document.getElementById('contributors-list-container');
+            if (!list) return;
+            const query = (document.getElementById('contributor-search')?.value || '').toLowerCase().trim();
+            const filter = document.querySelector('.filter-chip.active')?.dataset.filter || 'all';
+            const records = new Map((window.loadedContributors || []).map(person => [person.id,person]));
+            let count = 0;
+            for (const item of list.querySelectorAll('[data-contributor-id]')) {
+                const p = records.get(item.dataset.contributorId) || {};
+                const age = Number(p.age);
+                const filters = {
+                    all:true, verified:p.hasVerified === true, unverified:p.hasVerified !== true,
+                    'age-14-15':age >= 14 && age <= 15, 'age-16-17':age >= 16 && age <= 17, 'age-18':age >= 18,
+                    linkedin:Boolean(p.linkedin), github:Boolean(p.github), interview:Boolean(p.interviewDate),
+                    eligible:Boolean(p.certificateEligibility?.eligibleTypes?.length)
+                };
+                const matchesQuery = [p.name,p.email,p.about,p.department].some(value => String(value || '').toLowerCase().includes(query));
+                const visible = Boolean(filters[filter]) && matchesQuery;
                 item.style.display = visible ? 'flex' : 'none';
-                if (visible) matchCount++;
+                if (visible) count++;
             }
-
-            const noMatchId = 'contributor-no-match-alert';
-            let noMatchAlert = document.getElementById(noMatchId);
-            if (matchCount === 0 && items.length > 0) {
-                if (!noMatchAlert) {
-                    noMatchAlert = document.createElement('p');
-                    noMatchAlert.id = noMatchId;
-                    noMatchAlert.className = 'form-hint';
-                    noMatchAlert.style.cssText = 'text-align:center; padding:2rem; color: var(--accent-clay); font-weight:600; width:100%;';
-                    noMatchAlert.textContent = window.__('contributors.no_match');
-                    listContainer.appendChild(noMatchAlert);
-                }
-            } else {
-                if (noMatchAlert) noMatchAlert.remove();
+            document.getElementById('contributor-no-match-alert')?.remove();
+            if (!count && records.size) {
+                const message = document.createElement('p'); message.id='contributor-no-match-alert'; message.className='form-hint';
+                message.textContent = filter === 'eligible' ? 'No eligible participants. An approved tenure policy and actual joining dates are required.' : window.__('contributors.no_match');
+                list.append(message);
             }
+        }
+        window.filterContributors = function(filter) {
+            document.querySelectorAll('.filter-chip').forEach(button => button.classList.toggle('active',button.dataset.filter === filter));
+            applyContributorFilters();
         };
-
-        // İstemci tarafı hızlı arama
-        window.searchContributorsLocal = function() {
-            const searchInput = document.getElementById('contributor-search');
-            if (!searchInput) return;
-            const query = searchInput.value.toLowerCase().trim();
-            const listContainer = document.getElementById('contributors-list-container');
-            if (!listContainer) return;
-            const items = listContainer.children;
-            
-            if (query.length > 0) {
-                document.querySelectorAll('.filter-chip').forEach(btn => {
-                    if (btn.getAttribute('data-filter') === 'all') btn.classList.add('active');
-                    else btn.classList.remove('active');
-                });
-            }
-
-            let matchCount = 0;
-            for (let item of items) {
-                if (item.tagName === 'P' || item.id === 'contributor-no-match-alert') continue;
-                
-                const text = item.textContent.toLowerCase();
-                const visible = text.includes(query);
-                item.style.display = visible ? 'flex' : 'none';
-                if (visible) matchCount++;
-            }
-
-            const noMatchId = 'contributor-no-match-alert';
-            let noMatchAlert = document.getElementById(noMatchId);
-            if (matchCount === 0 && items.length > 0) {
-                if (!noMatchAlert) {
-                    noMatchAlert = document.createElement('p');
-                    noMatchAlert.id = noMatchId;
-                    noMatchAlert.className = 'form-hint';
-                    noMatchAlert.style.cssText = 'text-align:center; padding:2rem; color: var(--accent-clay); font-weight:600; width:100%;';
-                    noMatchAlert.textContent = window.__('contributors.search_no_match');
-                    listContainer.appendChild(noMatchAlert);
-                }
-            } else {
-                if (noMatchAlert) noMatchAlert.remove();
-            }
-        };
+        window.searchContributorsLocal = applyContributorFilters;
 
         // Verileri CSV/JSON Formatında Yerel Olarak Derleme ve İndirme Betiği
         window.exportDataLocal = function() {
             const dataType = document.getElementById('export-data-type').value;
             const format = document.getElementById('export-format').value;
-            
+
             let rawData = null;
             let fileNamePrefix = '';
 
@@ -1514,6 +1467,7 @@
                         } else {
                             val = String(val);
                         }
+                        if (/^[=+@\-\t\r]/.test(val)) val = "'" + val;
                         return `"${val.replace(/"/g, '""')}"`;
                     });
                     csvRows.push(values.join(';'));
@@ -1534,7 +1488,8 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
+            URL.revokeObjectURL(url);
+
             // Try triggering showToast
             if (window.showToast) {
                 window.showToast(window.__('system.export_success'), 'success');

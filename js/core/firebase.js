@@ -35,7 +35,8 @@ async function callCallable(name, data) {
             'Content-Type': 'application/json',
             ...(idToken ? { Authorization: 'Bearer ' + idToken } : {})
         },
-        body: JSON.stringify({ data: data ?? {} })
+        body: JSON.stringify({ data: data ?? {} }),
+        signal: AbortSignal.timeout(30000)
     });
     let json = {};
     try { json = await res.json(); } catch { /* bos govde */ }
@@ -175,3 +176,9 @@ export {
     deleteSiteTeamEntryFn,
     getPanelPermissionsFn
 };
+
+export const issueVertexCertificateFn = callable('issueVertexCertificate');
+export const getVertexCertificateDetailsFn = callable('getVertexCertificateDetails');
+export const revokeVertexCertificateFn = callable('revokeVertexCertificate');
+
+export const setVertexContributorJoiningDateFn = callable('setVertexContributorJoiningDate');

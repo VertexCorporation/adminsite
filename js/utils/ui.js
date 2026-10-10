@@ -1,3 +1,4 @@
+import { __ } from '../lang.js';
 // js/utils/ui.js
 
 // Re-export translation functions from lang.js
@@ -40,6 +41,7 @@ export function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.textContent = message;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
     toast.title = __('toast.dismiss_hint');
     toast.addEventListener('click', () => {
         toast.classList.remove('show');
@@ -53,6 +55,7 @@ export function showToast(message, type = 'info') {
     // Set timeout to hide and then remove the toast
     setTimeout(() => {
         toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
         toast.addEventListener('transitionend', () => {
             if (toast.parentElement) {
                 container.removeChild(toast);
