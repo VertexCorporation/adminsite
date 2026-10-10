@@ -1,0 +1,233 @@
+/* ==========================================================================
+   VERTEX KONSOL - MOBİL DÜZEN VE RESPONSIVE CSS
+   ========================================================================== */
+
+/* 1. YEREL TEST VE KATMAN BİNDİRMELERİ (OVERLAYS & STACKING CONTEXT)
+   -------------------------------------------------------------------------- */
+/* Yükleme ekranı ve arka plan efektlerinin tıklamayı yutmasını engelleme */
+#app-loader,
+#ascii-ripple, 
+.ascii-ripple,
+#login-slats,
+.login-slats {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -9999 !important;
+}
+
+/* 2. GİRİŞ EKRANI (LOGIN CONTAINER) DÜZENLEMELERİ
+   -------------------------------------------------------------------------- */
+#login-container {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 100 !important;
+  min-height: 100vh !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #090909 !important;
+  padding: 15px !important;
+  box-sizing: border-box !important;
+}
+
+/* Giriş Kutusu (Card) Yapısı */
+#login-container .login-box {
+  width: 100 !important;
+  max-width: 400px !important;
+  background: #141414 !important;
+  border: 1px solid #2a2a2a !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 101 !important;
+  pointer-events: auto !important;
+}
+
+/* Başlık ve Logolar */
+#login-container .login-header h1 {
+  font-size: 1.4rem !important;
+  color: #ffffff !important;
+  text-align: center !important;
+  margin-top: 10px !important;
+  letter-spacing: 0.5px !important;
+}
+
+#login-container .login-header h2 {
+  font-size: 0.9rem !important;
+  color: #888888 !important;
+  text-align: center !important;
+  margin-bottom: 20px !important;
+  font-weight: 400 !important;
+}
+
+/* Input Kutuları */
+#login-container .input-field {
+  position: relative !important;
+  margin-bottom: 14px !important;
+  width: 100 !important;
+}
+
+#login-container .input-field input {
+  width: 100 !important;
+  padding: 12px 14px 12px 42px !important;
+  background-color: #1f1f1f !important;
+  border: 1px solid #333333 !important;
+  border-radius: 8px !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 102 !important;
+  pointer-events: auto !important;
+  outline: none !important;
+  transition: border-color 0.2s ease !important;
+}
+
+#login-container .input-field input:focus {
+  border-color: #0066ff !important;
+}
+
+#login-container .input-field .prefix-icon {
+  position: absolute !important;
+  left: 12px !important;
+  top: 50 !important;
+  transform: translateY(-50%) !important;
+  color: #777777 !important;
+  pointer-events: none !important;
+  z-index: 103 !important;
+}
+
+/* Ana Buton (Oturum Aç) */
+#login-btn, 
+#login-container button.chrome-btn-primary {
+  width: 100 !important;
+  padding: 12px !important;
+  background: #0066ff !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-top: 10px !important;
+  position: relative !important;
+  z-index: 102 !important;
+  pointer-events: auto !important;
+  transition: background-color 0.2s ease !important;
+}
+
+#login-btn:hover, 
+#login-container button.chrome-btn-primary:hover {
+  background: #0052cc !important;
+}
+
+/* Sosyal Giriş Grid (Google / Apple) */
+#login-container .social-login-grid {
+  display: flex !important;
+  gap: 10px !important;
+  margin-top: 15px !important;
+}
+
+#login-container .chrome-social-btn {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px !important;
+  background: #1f1f1f !important;
+  border: 1px solid #333333 !important;
+  border-radius: 8px !important;
+  color: #dddddd !important;
+  font-size: 13px !important;
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 102 !important;
+  pointer-events: auto !important;
+  transition: background-color 0.2s ease !important;
+}
+
+#login-container .chrome-social-btn:hover {
+  background: #2a2a2a !important;
+}
+
+/* Bölücü (Veya) Metni */
+#login-container .divider {
+  text-align: center !important;
+  margin: 15px 0 !important;
+  color: #666666 !important;
+  font-size: 12px !important;
+  position: relative !important;
+}
+
+/* 3. ANA PANEL & MOBİL RESPONSIVE MEDYA SORGULARI (@media)
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Ekran Taşmalarını Engelleyin */
+  html, body {
+    overflow-x: hidden !important;
+    font-size: 14px !important;
+  }
+
+  /* Ana Panel Layout Dikey Esnetme */
+  .app-layout {
+    flex-direction: column !important;
+    padding: 10px !important;
+  }
+
+  /* Alt Gezinme Barı (Dock Navigation) Mobil Görünümü */
+  .app-navigation {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100 !important;
+    background: #141414 !important;
+    border-top: 1px solid #2a2a2a !important;
+    display: flex !important;
+    justify-content: space-around !important;
+    padding: 8px 0 !important;
+    z-index: 1000 !important;
+    box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  .dock-btn {
+    flex-direction: column !important;
+    padding: 6px !important;
+    font-size: 11px !important;
+  }
+
+  .dock-btn .material-symbols-rounded {
+    font-size: 20px !important;
+  }
+
+  /* Grid Kartlarını Tek Sütuna Düşürme */
+  .grid-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .col-span-8, 
+  .col-span-7, 
+  .col-span-4 {
+    width: 100 !important;
+  }
+
+  /* Mobil Tablo Kaydırma Desteği */
+  .scrollable-list-box, 
+  table {
+    display: block !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    width: 100 !important;
+  }
+}

@@ -3,11 +3,13 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title data-i18n="page.title">Vertex Konsol</title>
 
     <!-- SEO & Basic Meta -->
-    <meta name="description" data-i18n="page.desc" content="Vertex içerikleri, kullanıcı yönetimi ve sistem yönetimi için merkezi kontrol paneli.">
+    <meta name="description" data-i18n="page.desc"
+        content="Vertex içerikleri, kullanıcı yönetimi ve sistem yönetimi için merkezi kontrol paneli.">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#090909">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,14 +22,22 @@
     <!-- Google Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <style>html.icons-loading .material-symbols-rounded{opacity:0 !important;}</style>
-    <script>(function(){var d=document.documentElement;var f=function(){d.classList.remove('icons-loading');};try{d.classList.add('icons-loading');}catch(e){}if(document.fonts&&document.fonts.load){try{document.fonts.load('24px "Material Symbols Rounded"').then(f,f);}catch(e){f();}}if(document.fonts&&document.fonts.ready){document.fonts.ready.then(f);}setTimeout(f,2500);})();</script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        html.icons-loading .material-symbols-rounded {
+            opacity: 0 !important;
+        }
+    </style>
+    <script>(function () { var d = document.documentElement; var f = function () { d.classList.remove('icons-loading'); }; try { d.classList.add('icons-loading'); } catch (e) { } if (document.fonts && document.fonts.load) { try { document.fonts.load('24px "Material Symbols Rounded"').then(f, f); } catch (e) { f(); } } if (document.fonts && document.fonts.ready) { document.fonts.ready.then(f); } setTimeout(f, 2500); })();</script>
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/extras.css">
+    <link rel="stylesheet" href="css/mobile.css">
 
     <script>
         // Sayfa yüklenmeden önce localStorage'dan temayı ayarlayan betik
@@ -91,47 +101,57 @@
                 <h1 data-i18n="login.title">VERTEX KONSOL</h1>
                 <h2 data-i18n="login.subtitle">Sistem Yönetim Modülü</h2>
             </div>
-            
+
             <div class="form-wrapper">
                 <div class="input-field">
                     <svg class="prefix-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                        <path
+                            d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
                     </svg>
-                    <input type="email" id="email" data-i18n-placeholder="login.email" placeholder="E-posta Adresiniz" autocomplete="email" required>
+                    <input type="email" id="email" data-i18n-placeholder="login.email" placeholder="E-posta Adresiniz"
+                        autocomplete="email" required>
                 </div>
-                
+
                 <div class="input-field">
                     <svg class="prefix-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                        <path
+                            d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
                     </svg>
-                    <input type="password" id="password" data-i18n-placeholder="login.password" placeholder="Şifreniz" required>
+                    <input type="password" id="password" data-i18n-placeholder="login.password" placeholder="Şifreniz"
+                        required>
                 </div>
-                
+
                 <button id="login-btn" class="chrome-btn-primary">
                     <span data-i18n="login.btn">Oturum Aç</span>
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="margin-left: 8px;">
-                        <path d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"/>
+                        <path
+                            d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z" />
                     </svg>
                 </button>
             </div>
-            
+
             <div class="divider">
                 <span data-i18n="login.or">veya</span>
             </div>
-            
+
             <div class="social-login-grid">
                 <button id="google-login-btn" class="chrome-social-btn google" type="button">
                     <svg viewBox="0 0 24 24" width="16" height="16">
-                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        <path fill="currentColor"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="currentColor"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="currentColor"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="currentColor"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
                     <span>Google</span>
                 </button>
                 <button id="apple-login-btn" class="chrome-social-btn apple" type="button">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                        <path
+                            d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
                     </svg>
                     <span>Apple</span>
                 </button>
@@ -197,10 +217,12 @@
             </nav>
             <div id="user-menu-root" class="user-menu-root"></div>
             <div class="header-control-buttons">
-                <button id="lang-toggle-btn" class="icon-circle-btn" data-i18n-title="header.theme" title="Temayı Değiştir">
+                <button id="lang-toggle-btn" class="icon-circle-btn" data-i18n-title="header.theme"
+                    title="Temayı Değiştir">
                     <span id="lang-indicator">TR</span>
                 </button>
-                <button id="theme-toggle-btn" class="icon-circle-btn" data-i18n-title="header.theme" title="Temayı Değiştir">
+                <button id="theme-toggle-btn" class="icon-circle-btn" data-i18n-title="header.theme"
+                    title="Temayı Değiştir">
                     <span class="material-symbols-rounded sun-icon">light_mode</span>
                     <span class="material-symbols-rounded moon-icon">dark_mode</span>
                 </button>
@@ -215,1027 +237,1310 @@
         <main class="app-viewport">
             <div class="tab-scroll-container" id="tab-scroll-container">
 
-            <!-- SEKME 1: KATILIMCILAR & YETKİLER -->
-            <div class="tab-panel active" id="tab-contributors">
-                <div class="panel-section-title">
-                    <h2 data-i18n="contributors.title">Katılımcı Yönetimi & Yetkiler</h2>
-                    <p data-i18n="contributors.desc">Vertex topluluk üyelerini inceleyin, onaylayın ve yönetici yetkilerini yönetin.</p>
-                </div>
-
-                <div class="grid-layout">
-                    <!-- Başvurular Listesi -->
-                    <div class="panel-card col-span-8" data-panel="contributors.list">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">group_work</span>
-                                <h3 data-i18n="contributors.section">Başvuran Adaylar</h3>
-                            </div>
-                            <button id="refresh-contributors-btn" class="btn-refresh">
-                                <span class="material-symbols-rounded">refresh</span>
-                                <span data-i18n="contributors.refresh">Yenile</span>
-                            </button>
-                        </div>
-                        
-                        <!-- Kategori Çipleri -->
-                        <div class="scroll-chips-row">
-                            <button class="filter-chip active" data-filter="all" onclick="filterContributors('all')" data-i18n="contributors.filter.all">Tümü</button>
-                            <button class="filter-chip" data-filter="verified" onclick="filterContributors('verified')" data-i18n="contributors.filter.verified">Onaylılar</button>
-                            <button class="filter-chip" data-filter="unverified" onclick="filterContributors('unverified')" data-i18n="contributors.filter.unverified">Onay Bekleyenler</button>
-                            <button class="filter-chip" data-filter="age-14-15" onclick="filterContributors('age-14-15')" data-i18n="contributors.filter.age14">14-15 Yaş</button>
-                            <button class="filter-chip" data-filter="age-16-17" onclick="filterContributors('age-16-17')" data-i18n="contributors.filter.age16">16-17 Yaş</button>
-                            <button class="filter-chip" data-filter="age-18" onclick="filterContributors('age-18')" data-i18n="contributors.filter.age18">18+ Yaş</button>
-                            <button class="filter-chip" data-filter="linkedin" onclick="filterContributors('linkedin')" data-i18n="contributors.filter.linkedin">LinkedIn</button>
-                            <button class="filter-chip" data-filter="github" onclick="filterContributors('github')" data-i18n="contributors.filter.github">GitHub</button>
-                            <button class="filter-chip" data-filter="interview" onclick="filterContributors('interview')" data-i18n="contributors.filter.interview">Mülakatlılar</button>
-                        </div>
-
-                        <!-- Arama Kutusu -->
-                        <div class="search-input-field">
-                            <span class="material-symbols-rounded search-icon">search</span>
-                            <input type="text" id="contributor-search" data-i18n-placeholder="contributors.search" placeholder="Listede isim, e-posta veya biyografi ara..." oninput="searchContributorsLocal()">
-                        </div>
-
-                        <div id="contributors-list-container" class="scrollable-list-box">
-                            <p class="form-hint" style="text-align:center; padding: 2rem; color: var(--text-secondary);" data-i18n="contributors.load_hint">Listeyi yüklemek için Yenile butonuna basın.</p>
-                        </div>
+                <!-- SEKME 1: KATILIMCILAR & YETKİLER -->
+                <div class="tab-panel active" id="tab-contributors">
+                    <div class="panel-section-title">
+                        <h2 data-i18n="contributors.title">Katılımcı Yönetimi & Yetkiler</h2>
+                        <p data-i18n="contributors.desc">Vertex topluluk üyelerini inceleyin, onaylayın ve yönetici
+                            yetkilerini yönetin.</p>
                     </div>
 
-<!-- Vertex Status Toggle -->
-                    <div class="panel-card col-span-4" id="vertex-status-manager" data-panel="contributors.vertexStatus">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">verified_user</span>
-                                <h3>Vertex Durumu Değiştir</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description">Kullanıcının UID'sini girerek Vertex Corporation iç erişim yetkisini açıp kapatabilirsiniz.</p>
-                        
-                        <form id="vertex-status-form" class="form-stack">
-                            <div class="form-group-field">
-                                <label for="vertex-target-uid">Kullanıcı UID</label>
-                                <div class="form-input-wrapper">
-                                    <span class="material-symbols-rounded">badge</span>
-                                    <input type="text" id="vertex-target-uid" placeholder="Hedef Kullanıcı UID'si" required>
+                    <div class="grid-layout">
+                        <!-- Başvurular Listesi -->
+                        <div class="panel-card col-span-8" data-panel="contributors.list">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">group_work</span>
+                                    <h3 data-i18n="contributors.section">Başvuran Adaylar</h3>
                                 </div>
-                                <span class="form-field-info">UID Firebase Console'da bulunabilir.</span>
+                                <button id="refresh-contributors-btn" class="btn-refresh">
+                                    <span class="material-symbols-rounded">refresh</span>
+                                    <span data-i18n="contributors.refresh">Yenile</span>
+                                </button>
                             </div>
-                            <button type="submit" id="toggle-vertex-btn" class="chrome-btn-outline">
-                                <span class="material-symbols-rounded">swap_vert</span>
-                                <span>isVertex Durumunu Değiştir</span>
-                            </button>
-                        </form>
+
+                            <!-- Kategori Çipleri -->
+                            <div class="scroll-chips-row">
+                                <button class="filter-chip active" data-filter="all" onclick="filterContributors('all')"
+                                    data-i18n="contributors.filter.all">Tümü</button>
+                                <button class="filter-chip" data-filter="verified"
+                                    onclick="filterContributors('verified')"
+                                    data-i18n="contributors.filter.verified">Onaylılar</button>
+                                <button class="filter-chip" data-filter="unverified"
+                                    onclick="filterContributors('unverified')"
+                                    data-i18n="contributors.filter.unverified">Onay Bekleyenler</button>
+                                <button class="filter-chip" data-filter="age-14-15"
+                                    onclick="filterContributors('age-14-15')"
+                                    data-i18n="contributors.filter.age14">14-15 Yaş</button>
+                                <button class="filter-chip" data-filter="age-16-17"
+                                    onclick="filterContributors('age-16-17')"
+                                    data-i18n="contributors.filter.age16">16-17 Yaş</button>
+                                <button class="filter-chip" data-filter="age-18" onclick="filterContributors('age-18')"
+                                    data-i18n="contributors.filter.age18">18+ Yaş</button>
+                                <button class="filter-chip" data-filter="linkedin"
+                                    onclick="filterContributors('linkedin')"
+                                    data-i18n="contributors.filter.linkedin">LinkedIn</button>
+                                <button class="filter-chip" data-filter="github" onclick="filterContributors('github')"
+                                    data-i18n="contributors.filter.github">GitHub</button>
+                                <button class="filter-chip" data-filter="interview"
+                                    onclick="filterContributors('interview')"
+                                    data-i18n="contributors.filter.interview">Mülakatlılar</button>
+                            </div>
+
+                            <!-- Arama Kutusu -->
+                            <div class="search-input-field">
+                                <span class="material-symbols-rounded search-icon">search</span>
+                                <input type="text" id="contributor-search" data-i18n-placeholder="contributors.search"
+                                    placeholder="Listede isim, e-posta veya biyografi ara..."
+                                    oninput="searchContributorsLocal()">
+                            </div>
+
+                            <div id="contributors-list-container" class="scrollable-list-box">
+                                <p class="form-hint"
+                                    style="text-align:center; padding: 2rem; color: var(--text-secondary);"
+                                    data-i18n="contributors.load_hint">Listeyi yüklemek için Yenile butonuna basın.</p>
+                            </div>
+                        </div>
+
+                        <!-- Vertex Status Toggle -->
+                        <div class="panel-card col-span-4" id="vertex-status-manager"
+                            data-panel="contributors.vertexStatus">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">verified_user</span>
+                                    <h3>Vertex Durumu Değiştir</h3>
+                                </div>
+                            </div>
+                            <p class="intro-description">Kullanıcının UID'sini girerek Vertex Corporation iç erişim
+                                yetkisini açıp kapatabilirsiniz.</p>
+
+                            <form id="vertex-status-form" class="form-stack">
+                                <div class="form-group-field">
+                                    <label for="vertex-target-uid">Kullanıcı UID</label>
+                                    <div class="form-input-wrapper">
+                                        <span class="material-symbols-rounded">badge</span>
+                                        <input type="text" id="vertex-target-uid" placeholder="Hedef Kullanıcı UID'si"
+                                            required>
+                                    </div>
+                                    <span class="form-field-info">UID Firebase Console'da bulunabilir.</span>
+                                </div>
+                                <button type="submit" id="toggle-vertex-btn" class="chrome-btn-outline">
+                                    <span class="material-symbols-rounded">swap_vert</span>
+                                    <span>isVertex Durumunu Değiştir</span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- SEKME 2: MODEL KÜTÜPHANESİ -->
-            <div class="tab-panel" id="tab-models">
-                <div class="panel-section-title">
-                    <h2 data-i18n="models.title">Yapay Zeka Modelleri</h2>
-                    <p data-i18n="models.desc">Uygulamada yayında olan çevrimdışı (On-Device) ve rol yapma yapay zeka modellerini yönetin.</p>
+                <!-- SEKME 2: MODEL KÜTÜPHANESİ -->
+                <div class="tab-panel" id="tab-models">
+                    <div class="panel-section-title">
+                        <h2 data-i18n="models.title">Yapay Zeka Modelleri</h2>
+                        <p data-i18n="models.desc">Uygulamada yayında olan çevrimdışı (On-Device) ve rol yapma yapay
+                            zeka modellerini yönetin.</p>
+                    </div>
+
+                    <div class="grid-layout">
+                        <!-- Model Kayıt Formu -->
+                        <div id="model-manager" class="panel-card col-span-7" data-panel="models.manage">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">add_circle</span>
+                                    <h3 data-i18n="models.form_title">Model Ekleme ve Düzenleme</h3>
+                                </div>
+                            </div>
+
+                            <form id="model-form" class="form-scrollable-container">
+                                <!-- Model Tipi Seçimi -->
+                                <div class="form-block-group">
+                                    <div class="type-selector-header">
+                                        <span class="block-title" data-i18n="models.classification">Model
+                                            Sınıflandırması</span>
+                                        <div class="chrome-switch-row">
+                                            <span class="switch-label-text" data-i18n="models.roleplay">Rol Yapma</span>
+                                            <label class="chrome-switch">
+                                                <input type="checkbox" id="model-type-switch">
+                                                <span class="slider"></span>
+                                            </label>
+                                            <span class="switch-label-text" data-i18n="models.offline">Çevrimdışı</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex-row">
+                                        <div class="form-group-field flex-grow">
+                                            <label for="model-producer" data-i18n="models.producer">Geliştirici
+                                                Firma</label>
+                                            <input type="text" id="model-producer"
+                                                data-i18n-placeholder="models.producer_ph"
+                                                placeholder="Ör. Google, Meta" required>
+                                        </div>
+                                        <div class="form-group-field flex-grow">
+                                            <label for="model-id" data-i18n="models.id">Model Kimliği (ID)</label>
+                                            <input type="text" id="model-id" data-i18n-placeholder="models.id_ph"
+                                                placeholder="Ör. gemma-2b-it" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- İngilizce Kart Detayları -->
+                                <div class="form-block-group">
+                                    <span class="block-title" data-i18n="models.card_info">Arayüz Kart Bilgileri
+                                        (İngilizce)</span>
+                                    <div class="form-group-field">
+                                        <label for="model-title" data-i18n="models.title_field">Model Adı
+                                            (Title)</label>
+                                        <input type="text" id="model-title" data-i18n-placeholder="models.title_ph"
+                                            placeholder="Görüntülenecek başlık" required>
+                                    </div>
+                                    <div class="form-group-field">
+                                        <label for="model-summary" data-i18n="models.summary">Özet (Summary)</label>
+                                        <textarea id="model-summary" data-i18n-placeholder="models.summary_ph"
+                                            placeholder="Karttaki kısa özet açıklaması" rows="2" required></textarea>
+                                    </div>
+                                    <div class="form-group-field">
+                                        <label for="model-description" data-i18n="models.description">Tam Detaylı
+                                            Açıklama (Description)</label>
+                                        <textarea id="model-description" data-i18n-placeholder="models.description_ph"
+                                            placeholder="Model yetenekleri hakkında detaylı metin" rows="3"
+                                            required></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Rol Yapma Modeli Yönergesi -->
+                                <div id="roleplay-fields" class="form-block-group conditional-block">
+                                    <span class="block-title" data-i18n="models.roleplay_config">Rol Yapma
+                                        Konfigürasyonu</span>
+                                    <div class="form-group-field">
+                                        <label for="model-role" data-i18n="models.system_prompt">Sistem Promptu (System
+                                            Role)</label>
+                                        <textarea id="model-role" data-i18n-placeholder="models.system_prompt_ph"
+                                            placeholder="Karakterin uyacağı yönerge promptu" rows="2"></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Çevrimdışı Model Özellikleri -->
+                                <div id="offline-fields" class="form-block-group conditional-block"
+                                    style="display:none;">
+                                    <span class="block-title" data-i18n="models.offline_config">Çevrimdışı Bağlantılar &
+                                        Donanım</span>
+                                    <div class="form-group-field">
+                                        <label for="model-url" data-i18n="models.gguf_url">GGUF HuggingFace İndirme
+                                            Adresi</label>
+                                        <input type="url" id="model-url" data-i18n-placeholder="models.gguf_ph"
+                                            placeholder="https://huggingface.co/.../*.gguf">
+                                    </div>
+
+                                    <div class="flex-row">
+                                        <div class="form-group-field flex-grow">
+                                            <label for="model-size" data-i18n="models.file_size">Dosya Boyutu
+                                                (MB)</label>
+                                            <input type="number" id="model-size"
+                                                data-i18n-placeholder="models.file_size_ph" placeholder="MB cinsinden">
+                                        </div>
+                                        <div class="form-group-field flex-grow">
+                                            <label for="model-ram" data-i18n="models.ram">Gereken RAM (MB)</label>
+                                            <input type="number" id="model-ram" data-i18n-placeholder="models.ram_ph"
+                                                placeholder="MB cinsinden">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-sub-section">
+                                        <span class="sub-block-title" data-i18n="models.io_types">Girdi ve Çıktı
+                                            Tipleri</span>
+                                        <div class="flex-column">
+                                            <div id="modalities-inputs" class="form-group-field">
+                                                <span class="sub-block-title"
+                                                    style="font-size:0.7rem; color:var(--text-muted);"
+                                                    data-i18n="models.input_types">Girdi Tipleri</span>
+                                                <div class="chips-checkbox-grid">
+                                                    <label class="chip-checkbox"><input type="checkbox"
+                                                            data-modality-type="modalities"
+                                                            data-modality-key="image"><span
+                                                            data-i18n="models.image">Görsel</span></label>
+                                                    <label class="chip-checkbox"><input type="checkbox"
+                                                            data-modality-type="modalities"
+                                                            data-modality-key="video"><span
+                                                            data-i18n="models.video">Video</span></label>
+                                                    <label class="chip-checkbox"><input type="checkbox"
+                                                            data-modality-type="modalities"
+                                                            data-modality-key="audio"><span
+                                                            data-i18n="models.audio">Ses</span></label>
+                                                    <label class="chip-checkbox"><input type="checkbox"
+                                                            data-modality-type="modalities"
+                                                            data-modality-key="file"><span
+                                                            data-i18n="models.file">Dosya</span></label>
+                                                </div>
+                                            </div>
+                                            <div id="modalities-outputs" class="form-group-field">
+                                                <span class="sub-block-title"
+                                                    style="font-size:0.7rem; color:var(--text-muted);"
+                                                    data-i18n="models.output_types">Çıktı Tipleri</span>
+                                                <div class="chips-checkbox-grid">
+                                                    <label class="chip-checkbox disabled"><input type="checkbox"
+                                                            data-modality-type="outputs" data-modality-key="text"
+                                                            checked disabled><span
+                                                            data-i18n="models.text">Metin</span></label>
+                                                    <label class="chip-checkbox"><input type="checkbox"
+                                                            data-modality-type="outputs" data-modality-key="image"><span
+                                                            data-i18n="models.image">Görsel</span></label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-sub-section">
+                                        <span class="sub-block-title" data-i18n="models.license_section">Lisans &
+                                            Kaynak</span>
+                                        <div class="flex-row">
+                                            <div class="form-group-field flex-grow">
+                                                <label for="model-creator"
+                                                    data-i18n="models.creator">Geliştirici</label>
+                                                <input type="text" id="model-creator" placeholder="Yaratıcı ekip">
+                                            </div>
+                                            <div class="form-group-field flex-grow">
+                                                <label for="model-license-name" data-i18n="models.license_type">Lisans
+                                                    Türü</label>
+                                                <input type="text" id="model-license-name"
+                                                    data-i18n-placeholder="models.license_type_ph"
+                                                    placeholder="Lisans ismi">
+                                            </div>
+                                        </div>
+                                        <div class="flex-row">
+                                            <div class="form-group-field flex-grow">
+                                                <label for="model-source-name" data-i18n="models.source">Kaynak</label>
+                                                <input type="text" id="model-source-name" value="Hugging Face">
+                                            </div>
+                                            <div class="form-group-field flex-grow">
+                                                <label for="model-license-url" data-i18n="models.license_url">Lisans
+                                                    Linki</label>
+                                                <input type="url" id="model-license-url"
+                                                    data-i18n-placeholder="models.license_url_ph"
+                                                    placeholder="Lisans URL adresi">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-sub-section">
+                                        <span class="sub-block-title" data-i18n="models.template_section">Şablon
+                                            Kuralları (Prompter)</span>
+                                        <div class="form-group-field">
+                                            <label for="model-format-template" data-i18n="models.template_select">Hazır
+                                                Şablon Formatı</label>
+                                            <select id="model-format-template">
+                                                <option value="" data-i18n="models.template_none">-- Şablon Seçilmedi --
+                                                </option>
+                                                <option value="chatml">ChatML (Qwen, Llama 3 vb.)</option>
+                                                <option value="llama2">Llama-2 / Mistral</option>
+                                                <option value="alpaca">Alpaca</option>
+                                                <option value="llama3">Llama-3</option>
+                                                <option value="gemma2">Gemma-2</option>
+                                                <option value="anthropic-style">Anthropic (Human/Assistant)</option>
+                                                <option value="plain_dialogue">Plain Dialogue</option>
+                                                <option value="phi-3_glm">Phi-3 / GLM</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="token-inputs-grid">
+                                            <div class="form-group-field">
+                                                <label for="model-token-system-start"
+                                                    data-i18n="models.token_system_start">Sistem Başlangıç</label>
+                                                <textarea id="model-token-system-start" rows="1"
+                                                    placeholder="<|im_start|>system"></textarea>
+                                            </div>
+                                            <div class="form-group-field">
+                                                <label for="model-token-system-end"
+                                                    data-i18n="models.token_system_end">Sistem Bitiş</label>
+                                                <textarea id="model-token-system-end" rows="1"
+                                                    placeholder="<|im_end|>"></textarea>
+                                            </div>
+                                            <div class="form-group-field">
+                                                <label for="model-token-user-start"
+                                                    data-i18n="models.token_user_start">Kullanıcı Başlangıç</label>
+                                                <textarea id="model-token-user-start" rows="1"
+                                                    placeholder="<|im_start|>user"></textarea>
+                                            </div>
+                                            <div class="form-group-field">
+                                                <label for="model-token-user-end"
+                                                    data-i18n="models.token_user_end">Kullanıcı Bitiş</label>
+                                                <textarea id="model-token-user-end" rows="1"
+                                                    placeholder="<|im_end|>"></textarea>
+                                            </div>
+                                            <div class="form-group-field">
+                                                <label for="model-token-assistant-start"
+                                                    data-i18n="models.token_assistant_start">Asistan Başlangıç</label>
+                                                <textarea id="model-token-assistant-start" rows="1"
+                                                    placeholder="<|im_start|>assistant"></textarea>
+                                            </div>
+                                            <div class="form-group-field">
+                                                <label for="model-token-assistant-end"
+                                                    data-i18n="models.token_assistant_end">Asistan Bitiş</label>
+                                                <textarea id="model-token-assistant-end" rows="1"
+                                                    placeholder="<|im_end|>"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group-field">
+                                            <label for="model-token-stop-generation"
+                                                data-i18n="models.token_stop">Durdurma Belirteçleri</label>
+                                            <input type="text" id="model-token-stop-generation"
+                                                data-i18n-placeholder="models.token_stop_ph"
+                                                placeholder="<|im_end|>, </s>">
+                                        </div>
+                                        <div class="form-group-field">
+                                            <label for="model-token-ignore-regex" data-i18n="models.token_ignore">Yok
+                                                Sayılacak Regex</label>
+                                            <input type="text" id="model-token-ignore-regex"
+                                                data-i18n-placeholder="models.token_ignore_ph"
+                                                placeholder="^\[Düşünme Adımları\]\.\.\.$">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-block-group">
+                                    <span class="block-title" data-i18n="models.image_section">Resim Dosyası</span>
+                                    <div class="form-group-field">
+                                        <label for="model-image" data-i18n="models.image_label">Model Temsili
+                                            Resmi</label>
+                                        <input type="file" id="model-image" accept="image/*">
+                                    </div>
+                                </div>
+
+                                <div class="form-submit-row">
+                                    <button type="submit" id="model-submit-btn" class="chrome-btn-accent"><span
+                                            data-i18n="models.save_btn">Değişiklikleri Kaydet</span></button>
+                                    <button type="button" id="model-cancel-btn" class="chrome-btn-outline"
+                                        style="display:none;"><span data-i18n="models.cancel_btn">İptal
+                                            Et</span></button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Model Listeleri -->
+                        <div class="panel-card col-span-5" data-panel="models.library">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">list_alt</span>
+                                    <h3 data-i18n="models.active_models">Aktif Modeller</h3>
+                                </div>
+                                <div class="count-chips-container">
+                                    <span id="offline-model-count-badge" class="count-badge-indicator offline"><span
+                                            data-i18n="models.offline_count">Çevrimdışı:</span> 0</span>
+                                    <span id="roleplay-model-count-badge" class="count-badge-indicator roleplay"><span
+                                            data-i18n="models.roleplay_count">Rol Yapma:</span> 0</span>
+                                </div>
+                            </div>
+
+                            <div id="manual-models-list-container" class="scrollable-list-box-small">
+                                <p class="form-hint" style="text-align:center; padding: 2rem;"
+                                    data-i18n="models.no_models">Kayıtlı model bulunamadı.</p>
+                            </div>
+
+                            <div class="card-title-row" style="margin-top: 1.5rem;">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">database</span>
+                                    <h3 data-i18n="models.all_models">Tüm Modeller Ağacı</h3>
+                                </div>
+                            </div>
+
+                            <div id="all-models-explorer" class="database-tree-box">
+                                <div id="all-models-list-container">
+                                    <p class="form-hint" data-i18n="models.loading">Yükleniyor...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="grid-layout">
-                    <!-- Model Kayıt Formu -->
-                    <div id="model-manager" class="panel-card col-span-7" data-panel="models.manage">
+                <!-- SEKME 3: HABERLER VE DUYURULAR -->
+                <div class="tab-panel" id="tab-news">
+                    <div class="panel-section-title">
+                        <h2 data-i18n="news.title">Haberler & Duyurular</h2>
+                        <p data-i18n="news.desc">Mobil uygulama ana sayfasındaki haber akışında görünecek makaleleri
+                            yayınlayın.</p>
+                    </div>
+
+                    <div class="grid-layout">
+                        <!-- Haber Editörü -->
+                        <div id="news-creator" class="panel-card col-span-7" data-panel="news.editor">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">post_add</span>
+                                    <h3 data-i18n="news.form_title">Haber Duyurusu Yaz</h3>
+                                </div>
+                            </div>
+
+                            <form id="news-form" class="form-scrollable-container">
+                                <!-- Türkçe İçerik -->
+                                <div class="form-block-group">
+                                    <span class="block-title" data-i18n="news.tr_section">Türkçe Yayın İçeriği</span>
+                                    <div class="form-group-field">
+                                        <label for="title-tr" data-i18n="news.tr_title">Başlık (TR)</label>
+                                        <input type="text" id="title-tr" data-i18n-placeholder="news.tr_title_ph"
+                                            placeholder="Haber başlığı" required>
+                                    </div>
+                                    <div class="form-group-field">
+                                        <label for="summary-tr" data-i18n="news.tr_summary">Özet (TR)</label>
+                                        <textarea id="summary-tr" data-i18n-placeholder="news.tr_summary_ph"
+                                            placeholder="Haber akış kartındaki özet" rows="2" required></textarea>
+                                    </div>
+                                    <div class="form-group-field">
+                                        <label for="content-tr" data-i18n="news.tr_content">Detay (TR)</label>
+                                        <textarea id="content-tr" data-i18n-placeholder="news.tr_content_ph"
+                                            placeholder="Makale detaylı içeriği (Markdown destekler)" rows="5"
+                                            required></textarea>
+                                    </div>
+                                    <div class="form-group-field">
+                                        <label for="cover-image-tr" data-i18n="news.tr_cover">Kapak Fotoğrafı
+                                            (TR)</label>
+                                        <input type="file" id="cover-image-tr" accept="image/*" required>
+                                    </div>
+                                </div>
+
+                                <!-- İngilizce İçerik -->
+                                <div class="form-block-group">
+                                    <span class="block-title" data-i18n="news.en_section">English Content
+                                        (İngilizce)</span>
+                                    <div class="form-group-field">
+                                        <label for="title-en" data-i18n="news.en_title">Title (EN)</label>
+                                        <input type="text" id="title-en" data-i18n-placeholder="news.en_title_ph"
+                                            placeholder="Article Title" required>
+                                    </div>
+                                    <div class="form-group-field">
+                                        <label for="summary-en" data-i18n="news.en_summary">Summary (EN)</label>
+                                        <textarea id="summary-en" data-i18n-placeholder="news.en_summary_ph"
+                                            placeholder="Short description summary" rows="2" required></textarea>
+                                    </div>
+                                    <div class="form-group-field">
+                                        <label for="content-en" data-i18n="news.en_content">Body (EN)</label>
+                                        <textarea id="content-en" data-i18n-placeholder="news.en_content_ph"
+                                            placeholder="Detailed content details" rows="5" required></textarea>
+                                    </div>
+                                    <div class="form-group-field">
+                                        <label for="cover-image-en" data-i18n="news.en_cover">Cover Image (EN)</label>
+                                        <input type="file" id="cover-image-en" accept="image/*" required>
+                                    </div>
+                                </div>
+
+                                <!-- Etiketler -->
+                                <div class="form-block-group">
+                                    <span class="block-title" data-i18n="news.meta_section">Meta Veri &
+                                        Referanslar</span>
+                                    <div class="form-group-field">
+                                        <label for="tags" data-i18n="news.tags">Etiketler</label>
+                                        <input type="text" id="tags" data-i18n-placeholder="news.tags_ph"
+                                            placeholder="Ör. guncelleme, topluluk (virgülle ayırın)">
+                                    </div>
+                                    <div class="form-group-field">
+                                        <label for="references" data-i18n="news.references">Kaynak Bağlantıları
+                                            (URL)</label>
+                                        <textarea id="references" data-i18n-placeholder="news.references_ph"
+                                            placeholder="Her satıra bir adet bağlantı gelecek şekilde"
+                                            rows="2"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-submit-row">
+                                    <button type="submit" id="submit-btn" class="chrome-btn-accent"><span
+                                            data-i18n="news.publish_btn">Haber Makalesini Yayınla</span></button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Yayınlanmış Makaleler -->
+                        <div id="news-manager" class="panel-card col-span-5" data-panel="news.published">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">article</span>
+                                    <h3 data-i18n="news.active_articles">Aktif Yayındaki Haberler</h3>
+                                </div>
+                            </div>
+                            <div id="articles-list-container" class="scrollable-list-box">
+                                <p class="form-hint" style="text-align:center; padding: 2rem;"
+                                    data-i18n="news.no_articles">Yayınlanmış haber makalesi bulunamadı.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEKME 4: BİLDİRİM YÖNETİMİ -->
+                <div class="tab-panel" id="tab-notifications">
+                    <div class="panel-section-title">
+                        <h2 data-i18n="notif.title">Anlık Bildirimler</h2>
+                        <p data-i18n="notif.desc">Vertex kullanıcılarına hedeflenmiş veya zamanlanmış anlık push
+                            bildirimleri gönderin.</p>
+                    </div>
+
+                    <div class="grid-layout">
+                        <!-- Bildirim Gönderici Form -->
+                        <div id="notification-sender" class="panel-card col-span-7" data-panel="notifications.sender">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">campaign</span>
+                                    <h3 data-i18n="notif.form_title">Push Bildirim Gönder / Ayarla</h3>
+                                </div>
+                            </div>
+
+                            <form id="notification-form" class="form-scrollable-container">
+                                <div class="form-block-group">
+                                    <span class="block-title" data-i18n="notif.template_section">Hazır Şablon &
+                                        Anahtarlar</span>
+                                    <div class="form-group-field">
+                                        <label for="notification-template-selector"
+                                            data-i18n="notif.template_label">Hazır Şablonlar</label>
+                                        <select id="notification-template-selector" data-i18n-options="true">
+                                            <option value="" data-i18n="notif.template_none">-- Şablon Kullanma --
+                                            </option>
+                                            <optgroup data-i18n="template.group.system" label="Sistem & Teklifler">
+                                                <option value="newModel" data-i18n="template.newModel">Yeni Model
+                                                    Eklendi</option>
+                                                <option value="newFeature" data-i18n="template.newFeature">Yeni Özellik
+                                                    Eklendi</option>
+                                                <option value="upsellFeature" data-i18n="template.upsellFeature">
+                                                    Abonelik Kampanyası</option>
+                                                <option value="appUpdate" data-i18n="template.appUpdate">Uygulama
+                                                    Güncelleme Uyarısı</option>
+                                                <option value="rateApp" data-i18n="template.rateApp">Uygulamayı Puanla
+                                                </option>
+                                                <option value="referral" data-i18n="template.referral">Arkadaşına Öner
+                                                </option>
+                                                <option value="socialMedia" data-i18n="template.socialMedia">Sosyal
+                                                    Medya Katılımı</option>
+                                            </optgroup>
+                                            <optgroup data-i18n="template.group.engagement"
+                                                label="Kullanıcı Etkileşimi">
+                                                <option value="comeback" data-i18n="template.comeback">Geri Dönüş
+                                                    Çağrısı (Genel)</option>
+                                                <option value="longTimeNoSee" data-i18n="template.longTimeNoSee">Uzun
+                                                    Süre Giriş Yapmayanlar</option>
+                                                <option value="howAreYou" data-i18n="template.howAreYou">Hal Hatır Sorma
+                                                </option>
+                                                <option value="goodMorning" data-i18n="template.goodMorning">Günaydın
+                                                    Mesajı</option>
+                                                <option value="goodNight" data-i18n="template.goodNight">İyi Geceler
+                                                    Mesajı</option>
+                                            </optgroup>
+                                            <optgroup data-i18n="template.group.fun" label="Eğlenceli & Şakalar">
+                                                <option value="randomFact" data-i18n="template.randomFact">İlginç Bilgi
+                                                </option>
+                                                <option value="showerThought" data-i18n="template.showerThought">Duş
+                                                    Düşünceleri</option>
+                                                <option value="fortuneCookie" data-i18n="template.fortuneCookie">Şans
+                                                    Kurabiyesi</option>
+                                                <option value="hackerJoke" data-i18n="template.hackerJoke">Yazılımcı
+                                                    Şakaları</option>
+                                                <option value="pirate" data-i18n="template.pirate">Korsan Modu</option>
+                                                <option value="trollAnime" data-i18n="template.trollAnime">Troll (Anime)
+                                                </option>
+                                                <option value="trollAiRebellion" data-i18n="template.trollAiRebellion">
+                                                    Troll (Yapay Zeka İsyanı)</option>
+                                                <option value="singularity" data-i18n="template.singularity">Singularity
+                                                </option>
+                                                <option value="detectiveCase" data-i18n="template.detectiveCase">
+                                                    Dedektif Hikayesi</option>
+                                                <option value="originStory" data-i18n="template.originStory">Hikaye
+                                                    Başlangıcı</option>
+                                                <option value="rejectionStory" data-i18n="template.rejectionStory">
+                                                    Reddedilme Anısı</option>
+                                                <option value="cooking" data-i18n="template.cooking">Şefin Tarifi
+                                                </option>
+                                                <option value="existential" data-i18n="template.existential">Varoluşsal
+                                                    Kriz</option>
+                                                <option value="openSource" data-i18n="template.openSource">Açık Kaynak
+                                                    Sevgisi</option>
+                                            </optgroup>
+                                            <optgroup data-i18n="template.group.tech" label="Teknik Detaylar">
+                                                <option value="offlineReady" data-i18n="template.offlineReady">
+                                                    Çevrimdışı Çalışma Hazır</option>
+                                                <option value="customModel" data-i18n="template.customModel">Kendi
+                                                    Modelini Kur</option>
+                                                <option value="dynamicChat" data-i18n="template.dynamicChat">Dinamik
+                                                    Sohbet Odaları</option>
+                                                <option value="ggufSupport" data-i18n="template.ggufSupport">GGUF
+                                                    Desteği Aktif</option>
+                                                <option value="themeCustomization"
+                                                    data-i18n="template.themeCustomization">Tema Özelleştirme</option>
+                                                <option value="homeworkHelper" data-i18n="template.homeworkHelper">Ödev
+                                                    Asistanı Tanıtımı</option>
+                                                <option value="lowBattery" data-i18n="template.lowBattery">Düşük Batarya
+                                                    Tasarruf Modu</option>
+                                            </optgroup>
+                                            <optgroup data-i18n="template.group.special" label="Özel Günler">
+                                                <option value="newYear" data-i18n="template.newYear">Yılbaşı Tebriği
+                                                </option>
+                                                <option value="valentinesDay" data-i18n="template.valentinesDay">
+                                                    Sevgililer Günü</option>
+                                                <option value="ataturkRemembrance"
+                                                    data-i18n="template.ataturkRemembrance">10 Kasım Atatürk'ü Anma
+                                                </option>
+                                                <option value="mothersDay" data-i18n="template.mothersDay">Anneler Günü
+                                                </option>
+                                                <option value="fathersDay" data-i18n="template.fathersDay">Babalar Günü
+                                                </option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+
+                                    <div class="flex-row">
+                                        <div class="form-group-field flex-grow">
+                                            <label for="notification-title-key" data-i18n="notif.title_key">Başlık
+                                                Anahtarı (Title Key)</label>
+                                            <input type="text" id="notification-title-key"
+                                                data-i18n-placeholder="notif.title_key_ph"
+                                                placeholder="Ör. notificationTitleKey">
+                                        </div>
+                                        <div class="form-group-field flex-grow">
+                                            <label for="notification-body-key" data-i18n="notif.body_key">Gövde Anahtarı
+                                                (Body Key)</label>
+                                            <input type="text" id="notification-body-key"
+                                                data-i18n-placeholder="notif.body_key_ph"
+                                                placeholder="Ör. notificationBodyKey">
+                                        </div>
+                                    </div>
+                                    <div class="form-group-field">
+                                        <label for="notification-data-payload" data-i18n="notif.data_payload">İsteğe
+                                            Bağlı Veri Yükü (JSON)</label>
+                                        <textarea id="notification-data-payload"
+                                            data-i18n-placeholder="notif.data_payload_ph"
+                                            placeholder='Ör. {"modelId": "llama-8b"}' rows="1"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-block-group">
+                                    <span class="block-title" data-i18n="notif.fallback_section">Yedek Bildirim
+                                        İçeriği</span>
+                                    <div class="form-group-field">
+                                        <label for="notification-title" data-i18n="notif.fallback_title">Genel
+                                            Başlık</label>
+                                        <input type="text" id="notification-title"
+                                            data-i18n-placeholder="notif.fallback_title_ph"
+                                            placeholder="Yedek bildirim başlığı">
+                                    </div>
+                                    <div class="form-group-field">
+                                        <label for="notification-body" data-i18n="notif.fallback_body">Genel Mesaj
+                                            Gövdesi</label>
+                                        <textarea id="notification-body" data-i18n-placeholder="notif.fallback_body_ph"
+                                            placeholder="Gönderilecek genel mesaj metni" rows="2"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-block-group">
+                                    <span class="block-title" data-i18n="notif.targeting">Kullanıcı Hedefleme</span>
+                                    <div class="form-group-field">
+                                        <label for="notification-target-type" data-i18n="notif.target_label">Alıcı
+                                            Grubu</label>
+                                        <select id="notification-target-type" required>
+                                            <option value="" disabled selected data-i18n="notif.target_placeholder">Bir
+                                                grup seçin...</option>
+                                            <option value="ALL_USERS" data-i18n="notif.target_all">Tüm Kullanıcılar
+                                            </option>
+                                            <option value="SINGLE_USER" data-i18n="notif.target_single">Tek Bir
+                                                Kullanıcı (UID ile)</option>
+                                            <option value="SUBSCRIPTION_LEVEL" data-i18n="notif.target_level">Abonelik
+                                                Seviyesine Göre</option>
+                                        </select>
+                                    </div>
+
+                                    <div id="target-specific-inputs" class="conditional-block">
+                                        <div id="target-uid-input" class="form-group-field" style="display:none;">
+                                            <label for="notification-target-uid" data-i18n="notif.uid_label">Kullanıcı
+                                                UID</label>
+                                            <input type="text" id="notification-target-uid"
+                                                data-i18n-placeholder="notif.uid_ph" placeholder="Firebase UID adresi">
+                                        </div>
+                                        <div id="target-level-input" class="form-group-field" style="display:none;">
+                                            <label for="notification-target-level" data-i18n="notif.level_label">Minimum
+                                                Abonelik Düzeyi</label>
+                                            <select id="notification-target-level">
+                                                <option value="0" data-i18n="notif.level0">Ücretsiz Üyeler (Level 0)
+                                                </option>
+                                                <option value="1" data-i18n="notif.level1">Plus Üyeler (Level 1)
+                                                </option>
+                                                <option value="2" data-i18n="notif.level2">Pro Üyeler (Level 2)</option>
+                                                <option value="3" data-i18n="notif.level3">Ultra Üyeler (Level 3)
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-block-group">
+                                    <span class="block-title" data-i18n="notif.mode">Gönderim Modu</span>
+                                    <div class="chrome-switch-row" style="justify-content: flex-start; gap: 10px;">
+                                        <span class="switch-label-text" data-i18n="notif.send_now">Hemen Gönder</span>
+                                        <label class="chrome-switch">
+                                            <input type="checkbox" id="notification-schedule-switch">
+                                            <span class="slider"></span>
+                                        </label>
+                                        <span class="switch-label-text" data-i18n="notif.schedule">Zamanla</span>
+                                    </div>
+
+                                    <div id="schedule-datetime-picker" class="conditional-block"
+                                        style="display:none; margin-top: 10px;">
+                                        <div class="form-group-field">
+                                            <label for="notification-schedule-time" data-i18n="notif.datetime">Tarih ve
+                                                Saat</label>
+                                            <input type="datetime-local" id="notification-schedule-time">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-submit-row">
+                                    <button type="submit" id="submit-notification-btn" class="chrome-btn-accent"><span
+                                            data-i18n="notif.submit_btn">Bildirimi Gönder</span></button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Zamanlanmış Görevler Listesi -->
+                        <div id="scheduled-tasks-manager" class="panel-card col-span-5"
+                            data-panel="notifications.scheduled">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">calendar_month</span>
+                                    <h3 data-i18n="notif.scheduled_title">Zamanlanmış Bildirimler</h3>
+                                </div>
+                            </div>
+                            <div id="scheduled-tasks-list-container" class="scrollable-list-box">
+                                <p class="form-hint" style="text-align:center; padding: 2rem;"
+                                    data-i18n="notif.no_scheduled">Kuyrukta bekleyen bildirim bulunamadı.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEKME 5: SİSTEM VE SUNUCU -->
+                <div class="tab-panel" id="tab-system">
+                    <div class="panel-section-title">
+                        <h2 data-i18n="system.title">Sunucu & Sistem Ayarları</h2>
+                        <p data-i18n="system.desc">Sistem altyapısını kontrol edin, bakım modunu açıp kapatın veya
+                            atıflar sayfasını yayınlayın.</p>
+                    </div>
+
+                    <div class="grid-layout">
+                        <!-- GCS Backup Status -->
+                        <div class="panel-card col-span-12" id="gcs-backup-status"
+                            style="border: 1px solid var(--accent-sage);">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded"
+                                        style="color: var(--accent-sage);">cloud_done</span>
+                                    <h3 data-i18n="system.gcs_backup">Google Cloud Storage (GCS) Yedekleme</h3>
+                                </div>
+                            </div>
+                            <p class="intro-description" data-i18n="system.gcs_desc">Otomatik GCS organizasyon yedekleme
+                                mekanizması (GitHub Actions üzerinden) şu anda <strong
+                                    style="color: var(--accent-sage);">AKTİF</strong> ve çalışır durumda.</p>
+                        </div>
+
+                        <!-- Departman İzinleri Yönetimi -->
+                        <div class="panel-card col-span-12" id="dept-perms-manager" data-panel="system.deptPerms">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">admin_panel_settings</span>
+                                    <h3 data-i18n="dept.title">Departman Erişim Yetkileri</h3>
+                                </div>
+                            </div>
+                            <p class="intro-description" data-i18n="perms.desc">Her departmanın hangi bölümleri
+                                göreceğini ve düzenleyebileceğini belirleyin. Hücreler Yok / Gör / Düzenle arasında
+                                geçer; kanal ikonuyla panelleri tek tek ayarlayabilirsiniz. Değişiklikler otomatik
+                                kaydedilir.</p>
+                            <div id="dept-permissions-container" class="scrollable-list-box"
+                                style="max-height: none; overflow-x: auto;">
+                                <p class="form-hint" style="text-align:center; padding: 1rem;" data-i18n="dept.loading">
+                                    Yükleniyor...</p>
+                            </div>
+                        </div>
+
+                        <!-- Departman Atama -->
+                        <div class="panel-card col-span-6" id="dept-assign-manager" data-panel="system.deptAssign">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">person_add</span>
+                                    <h3 data-i18n="dept.assign_title">Kullanıcıya Departman Ata</h3>
+                                </div>
+                            </div>
+                            <p class="intro-description" data-i18n="dept.assign_desc">Kullanıcının erişeceği
+                                departmanları seçin. Kaydetme mevcut departman listesinin yerini alır.</p>
+                            <form id="dept-assign-form" class="form-stack" style="margin-top:10px;">
+                                <div class="form-group-field">
+                                    <label for="dept-user-email" data-i18n="dept.assign_email">Kullanıcı
+                                        E-postası</label>
+                                    <input type="email" id="dept-user-email"
+                                        data-i18n-placeholder="admin.email_placeholder"
+                                        placeholder="kullanici@vertexishere.com" required>
+                                </div>
+                                <div class="form-group-field">
+                                    <span class="field-label" id="dept-options-label"
+                                        data-i18n="dept.assign_dept">Departmanlar</span>
+                                    <div id="dept-options" class="dept-options" role="group"
+                                        aria-labelledby="dept-options-label"></div>
+                                    <span class="form-field-info" data-i18n="dept.select_hint">En az bir departman
+                                        seçin.</span>
+                                </div>
+                                <button type="submit" class="chrome-btn-accent">
+                                    <span class="material-symbols-rounded">assignment_ind</span>
+                                    <span data-i18n="dept.assign_btn">Departman Ata</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="panel-card col-span-6" id="dept-users-manager" data-panel="system.deptUsers">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">groups</span>
+                                    <h3 data-i18n="dept.users_title">Departman Kullanıcıları</h3>
+                                </div>
+                                <button type="button" id="refresh-dept-users-btn" class="btn-refresh"
+                                    data-i18n-title="dept.refresh" title="Yenile">
+                                    <span class="material-symbols-rounded">refresh</span>
+                                    <span data-i18n="dept.refresh">Yenile</span>
+                                </button>
+                            </div>
+                            <div class="search-input-field">
+                                <span class="material-symbols-rounded search-icon">search</span>
+                                <input type="search" id="dept-users-search" data-i18n-placeholder="dept.search"
+                                    placeholder="İsim, e-posta veya departman ara..."
+                                    aria-label="Departman kullanıcılarını ara">
+                            </div>
+                            <div id="dept-users-list" class="dept-users-list" aria-live="polite"></div>
+                        </div>
+
+                        <!-- Katılımcı Doğrulama (Manuel) -->
+                        <div class="panel-card col-span-6" id="manual-verify-manager" data-panel="system.manualVerify">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">verified_user</span>
+                                    <h3 data-i18n="system.verify_user">Katılımcı Doğrula (Manuel)</h3>
+                                </div>
+                            </div>
+                            <p class="intro-description" data-i18n="system.verify_desc">Bir katılımcıyı (Contributor)
+                                ID'si üzerinden anında doğrulanmış duruma getirin.</p>
+                            <form id="verify-user-form" class="form-stack" style="margin-top:10px;">
+                                <div class="form-group-field">
+                                    <label for="verify-user-id" data-i18n="system.verify_id">Kullanıcı UID veya
+                                        E-posta</label>
+                                    <input type="text" id="verify-user-id" placeholder="örn: user@example.com" required>
+                                </div>
+                                <button type="submit" class="chrome-btn-outline"><span
+                                        data-i18n="system.verify_btn">Doğrula & Bildir</span></button>
+                            </form>
+                        </div>
+
+                        <!-- Yetki Alma -->
+                        <div class="panel-card col-span-6" id="remove-admin-manager" data-panel="system.removeAdmin">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">person_remove</span>
+                                    <h3 data-i18n="system.remove_admin">Yönetici Yetkisi Al</h3>
+                                </div>
+                            </div>
+                            <p class="intro-description" data-i18n="system.remove_admin_desc">Bir sistem yöneticisinin
+                                (Admin) yetkilerini e-posta adresi üzerinden iptal edin.</p>
+                            <form id="remove-admin-form" class="form-stack" style="margin-top:10px;">
+                                <div class="form-group-field">
+                                    <label for="remove-admin-email" data-i18n="system.remove_email">E-posta
+                                        Adresi</label>
+                                    <input type="email" id="remove-admin-email" placeholder="admin@example.com"
+                                        required>
+                                </div>
+                                <button type="submit" class="chrome-btn-outline"
+                                    style="color: var(--accent-clay); border-color: var(--accent-clay);"><span
+                                        data-i18n="system.remove_btn">Yetkiyi İptal Et</span></button>
+                            </form>
+                        </div>
+
+                        <!-- Yönetici Ekleme -->
+                        <div class="panel-card col-span-6" id="admin-manager" data-panel="system.adminRole">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">shield_person</span>
+                                    <h3 data-i18n="admin.title">Yönetici Rolü Tanımla</h3>
+                                </div>
+                            </div>
+                            <p class="intro-description" data-i18n="admin.desc">Doğrulanmış bir Vertex üyesinin e-posta
+                                adresini girerek yönetici kontrol yetkisi tanımlayın.</p>
+
+                            <form id="admin-form" class="form-stack">
+                                <div class="form-group-field">
+                                    <label for="new-admin-email" data-i18n="admin.email_label">Kullanıcı
+                                        E-postası</label>
+                                    <div class="form-input-wrapper">
+                                        <span class="material-symbols-rounded">mail</span>
+                                        <input type="email" id="new-admin-email"
+                                            data-i18n-placeholder="admin.email_placeholder"
+                                            placeholder="kullanici@vertexishere.com" required>
+                                    </div>
+                                    <span class="form-field-info" data-i18n="admin.email_hint">Kullanıcı sisteme kayıtlı
+                                        olmalıdır.</span>
+                                </div>
+                                <button type="submit" id="grant-admin-btn" class="chrome-btn-accent">
+                                    <span class="material-symbols-rounded">admin_panel_settings</span>
+                                    <span data-i18n="admin.grant_btn">Yönetici Yetkisi Ver</span>
+                                </button>
+                            </form>
+                        </div>
+
+
+
+                        <!-- Aktif Yöneticiler Listesi -->
+                        <div class="panel-card col-span-6" id="team-log-manager" data-panel="system.teamLog">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">diversity_3</span>
+                                    <h3 data-i18n="team.title">Ekip Kaydı</h3>
+                                </div>
+                            </div>
+                            <p class="intro-description" data-i18n="team.desc">vertexishere.com'daki Moderatörler
+                                listesini yönetin; Staff listesi onayladığınız adaylardan otomatik oluşur.</p>
+                            <div class="team-log-grid">
+                                <div class="team-log-col">
+                                    <h4 data-i18n="team.mods">Modlar</h4>
+                                    <div id="team-mod-list" class="team-entry-list"></div>
+                                    <div class="team-add-row">
+                                        <input type="text" id="team-mod-input" maxlength="60" placeholder="Ad Soyad"
+                                            data-i18n-placeholder="team.name_ph">
+                                        <button type="button" id="team-mod-add" class="chrome-btn-outline">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel-card col-span-12" id="admin-list-manager" data-panel="system.adminList">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">admin_panel_settings</span>
+                                    <h3 data-i18n="system.admin_list">Aktif Sistem Yöneticileri</h3>
+                                </div>
+                                <button class="icon-action-btn" id="refresh-admins-btn" title="Yenile">
+                                    <span class="material-symbols-rounded">refresh</span>
+                                </button>
+                            </div>
+                            <div id="admin-list-container" class="scrollable-list-box-small"
+                                style="max-height: none; overflow-y: visible;">
+                                <p class="form-hint" style="text-align:center; padding: 1rem;"
+                                    data-i18n="system.loading_admins">Yükleniyor...</p>
+                            </div>
+                        </div>
+
+                        <!-- Sunucu Durumu -->
+                        <div class="panel-card col-span-6" id="server-status-manager" data-panel="system.serverStatus">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">dns</span>
+                                    <h3 data-i18n="system.maintenance">Sunucu Bakım Modu</h3>
+                                </div>
+                            </div>
+                            <p class="intro-description" data-i18n="system.maintenance_desc">Sunucu bakım modunu açmak
+                                yeni giriş işlemlerini durdurur. Giriş yapmış kullanıcılar yerel modda devam edebilir.
+                            </p>
+
+                            <div class="status-action-box">
+                                <div id="maintenance-status-indicator" class="indicator-group">
+                                    <span class="status-dot"></span>
+                                    <span class="status-text" data-i18n="system.checking">Durum Kontrol
+                                        Ediliyor...</span>
+                                </div>
+                                <button id="maintenance-action-btn" class="chrome-btn-outline"><span
+                                        data-i18n="system.loading_btn">Yükleniyor...</span></button>
+                            </div>
+                        </div>
+
+                        <!-- Atıflar Sayfası Güncelleme -->
+                        <div class="panel-card col-span-6" id="attributions-manager" data-panel="system.attributions">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">sync</span>
+                                    <h3 data-i18n="system.attributions">Atıflar Sayfasını Yayınla</h3>
+                                </div>
+                            </div>
+                            <p class="intro-description" data-i18n="system.attributions_desc">Model veya lisans
+                                güncellemelerinin ardından atıflar sayfasını tekrar derleyip yayınlamak için bu
+                                tetikleyiciyi kullanın.</p>
+
+                            <div class="status-action-box">
+                                <div id="attributions-status-indicator" class="indicator-group">
+                                    <span class="status-dot status-synced"></span>
+                                    <span class="status-text" data-i18n="system.attributions_synced">Durum:
+                                        Güncel</span>
+                                </div>
+                                <button id="attributions-action-btn" class="chrome-btn-outline" disabled><span
+                                        data-i18n="system.attributions_btn">Atıf Sayfasını Güncelle</span></button>
+                            </div>
+                        </div>
+
+                        <!-- Veri Dışa Aktar -->
+                        <div class="panel-card col-span-12" id="data-exporter-manager" data-panel="system.exporter">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">download</span>
+                                    <h3 data-i18n="system.export">Verileri Dışa Aktar / İndir</h3>
+                                </div>
+                            </div>
+                            <p class="intro-description" data-i18n="system.export_desc">Sistemde yüklü olan katılımcı
+                                listelerini, AI modellerini veya haber makalelerini seçtiğiniz formatta yerel olarak
+                                bilgisayarınıza indirebilirsiniz.</p>
+
+                            <div class="form-stack">
+                                <div class="flex-row">
+                                    <div class="form-group-field flex-grow">
+                                        <label for="export-data-type" data-i18n="system.export_type">Dışa Aktarılacak
+                                            Veri</label>
+                                        <select id="export-data-type">
+                                            <option value="contributors" data-i18n="system.export_contributors">
+                                                Katılımcı Başvuruları</option>
+                                            <option value="manualModels" data-i18n="system.export_manual_models">Eklenen
+                                                AI Modelleri (Küratörlü)</option>
+                                            <option value="allModels" data-i18n="system.export_all_models">Tüm Modeller
+                                                Veritabanı</option>
+                                            <option value="articles" data-i18n="system.export_articles">Yayınlanan
+                                                Haberler</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group-field flex-grow">
+                                        <label for="export-format" data-i18n="system.export_format">Dosya
+                                            Formatı</label>
+                                        <select id="export-format">
+                                            <option value="json" data-i18n="system.export_json">JSON Formatı (.json)
+                                            </option>
+                                            <option value="csv" data-i18n="system.export_csv">CSV Formatı (Excel uyumlu
+                                                .csv)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button type="button" onclick="exportDataLocal()" class="chrome-btn-accent"
+                                    style="margin-top: 10px;">
+                                    <span class="material-symbols-rounded">download_for_offline</span>
+                                    <span data-i18n="system.export_btn">Veriyi Derle ve İndir</span>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- SEKME: SOHBET -->
+                <div class="tab-panel" id="tab-chat">
+                    <div class="panel-section-title">
+                        <h2 data-i18n="chat.title">Sohbet</h2>
+                        <p data-i18n="chat.desc">Departman kanalları, görev takibi ve @etiket bildirimleri.</p>
+                    </div>
+
+                    <div class="chat-layout">
+                        <div class="panel-card chat-sidebar">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">forum</span>
+                                    <h3 data-i18n="chat.channels">Kanallar</h3>
+                                </div>
+                                <button type="button" id="chat-create-btn" class="icon-action-btn" title="Kanal Oluştur"
+                                    style="display:none;">
+                                    <span class="material-symbols-rounded">add</span>
+                                </button>
+                            </div>
+                            <div id="chat-channel-list" class="chat-channel-list"></div>
+                        </div>
+
+                        <div class="panel-card chat-main">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded" id="chat-channel-icon">tag</span>
+                                    <h3 id="chat-channel-title">—</h3>
+                                </div>
+                                <div id="chat-channel-badges" class="dept-badges"></div>
+                                <button type="button" id="chat-channel-edit" class="icon-action-btn"
+                                    title="Kanalı Düzenle" style="display:none;">
+                                    <span class="material-symbols-rounded">settings</span>
+                                </button>
+                            </div>
+                            <div id="chat-channel-desc" class="intro-description"></div>
+                            <div id="chat-messages" class="chat-messages">
+                                <p class="form-hint chat-hint" data-i18n="chat.select_hint">Bir kanal seçin.</p>
+                            </div>
+                            <div id="chat-composer" class="chat-composer" style="display:none;">
+                                <textarea id="chat-input" rows="2" data-i18n-placeholder="chat.placeholder"
+                                    placeholder="Mesaj yazın — @Departman veya @mail ile etiketleyin"></textarea>
+                                <div class="chat-composer-actions">
+                                    <label class="chat-task-toggle"><input type="checkbox" id="chat-as-task"><span
+                                            data-i18n="chat.as_task">Görev/Sorun</span></label>
+                                    <button type="button" id="chat-send" class="chrome-btn-accent"><span
+                                            class="material-symbols-rounded">send</span></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="chat-channel-form" class="panel-card chat-channel-form" style="display:none;">
                         <div class="card-title-row">
                             <div class="title-details">
                                 <span class="material-symbols-rounded">add_circle</span>
-                                <h3 data-i18n="models.form_title">Model Ekleme ve Düzenleme</h3>
+                                <h3 id="chat-form-title">Kanal Oluştur</h3>
                             </div>
                         </div>
-                        
-                        <form id="model-form" class="form-scrollable-container">
-                            <!-- Model Tipi Seçimi -->
-                            <div class="form-block-group">
-                                <div class="type-selector-header">
-                                    <span class="block-title" data-i18n="models.classification">Model Sınıflandırması</span>
-                                    <div class="chrome-switch-row">
-                                        <span class="switch-label-text" data-i18n="models.roleplay">Rol Yapma</span>
-                                        <label class="chrome-switch">
-                                            <input type="checkbox" id="model-type-switch">
-                                            <span class="slider"></span>
-                                        </label>
-                                        <span class="switch-label-text" data-i18n="models.offline">Çevrimdışı</span>
-                                    </div>
-                                </div>
-
-                                <div class="flex-row">
-                                    <div class="form-group-field flex-grow">
-                                        <label for="model-producer" data-i18n="models.producer">Geliştirici Firma</label>
-                                        <input type="text" id="model-producer" data-i18n-placeholder="models.producer_ph" placeholder="Ör. Google, Meta" required>
-                                    </div>
-                                    <div class="form-group-field flex-grow">
-                                        <label for="model-id" data-i18n="models.id">Model Kimliği (ID)</label>
-                                        <input type="text" id="model-id" data-i18n-placeholder="models.id_ph" placeholder="Ör. gemma-2b-it" required>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- İngilizce Kart Detayları -->
-                            <div class="form-block-group">
-                                <span class="block-title" data-i18n="models.card_info">Arayüz Kart Bilgileri (İngilizce)</span>
-                                <div class="form-group-field">
-                                    <label for="model-title" data-i18n="models.title_field">Model Adı (Title)</label>
-                                    <input type="text" id="model-title" data-i18n-placeholder="models.title_ph" placeholder="Görüntülenecek başlık" required>
-                                </div>
-                                <div class="form-group-field">
-                                    <label for="model-summary" data-i18n="models.summary">Özet (Summary)</label>
-                                    <textarea id="model-summary" data-i18n-placeholder="models.summary_ph" placeholder="Karttaki kısa özet açıklaması" rows="2" required></textarea>
-                                </div>
-                                <div class="form-group-field">
-                                    <label for="model-description" data-i18n="models.description">Tam Detaylı Açıklama (Description)</label>
-                                    <textarea id="model-description" data-i18n-placeholder="models.description_ph" placeholder="Model yetenekleri hakkında detaylı metin" rows="3" required></textarea>
-                                </div>
-                            </div>
-
-                            <!-- Rol Yapma Modeli Yönergesi -->
-                            <div id="roleplay-fields" class="form-block-group conditional-block">
-                                <span class="block-title" data-i18n="models.roleplay_config">Rol Yapma Konfigürasyonu</span>
-                                <div class="form-group-field">
-                                    <label for="model-role" data-i18n="models.system_prompt">Sistem Promptu (System Role)</label>
-                                    <textarea id="model-role" data-i18n-placeholder="models.system_prompt_ph" placeholder="Karakterin uyacağı yönerge promptu" rows="2"></textarea>
-                                </div>
-                            </div>
-
-                            <!-- Çevrimdışı Model Özellikleri -->
-                            <div id="offline-fields" class="form-block-group conditional-block" style="display:none;">
-                                <span class="block-title" data-i18n="models.offline_config">Çevrimdışı Bağlantılar & Donanım</span>
-                                <div class="form-group-field">
-                                    <label for="model-url" data-i18n="models.gguf_url">GGUF HuggingFace İndirme Adresi</label>
-                                    <input type="url" id="model-url" data-i18n-placeholder="models.gguf_ph" placeholder="https://huggingface.co/.../*.gguf">
-                                </div>
-                                
-                                <div class="flex-row">
-                                    <div class="form-group-field flex-grow">
-                                        <label for="model-size" data-i18n="models.file_size">Dosya Boyutu (MB)</label>
-                                        <input type="number" id="model-size" data-i18n-placeholder="models.file_size_ph" placeholder="MB cinsinden">
-                                    </div>
-                                    <div class="form-group-field flex-grow">
-                                        <label for="model-ram" data-i18n="models.ram">Gereken RAM (MB)</label>
-                                        <input type="number" id="model-ram" data-i18n-placeholder="models.ram_ph" placeholder="MB cinsinden">
-                                    </div>
-                                </div>
-
-                                <div class="form-sub-section">
-                                    <span class="sub-block-title" data-i18n="models.io_types">Girdi ve Çıktı Tipleri</span>
-                                    <div class="flex-column">
-                                        <div id="modalities-inputs" class="form-group-field">
-                                            <span class="sub-block-title" style="font-size:0.7rem; color:var(--text-muted);" data-i18n="models.input_types">Girdi Tipleri</span>
-                                            <div class="chips-checkbox-grid">
-                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="image"><span data-i18n="models.image">Görsel</span></label>
-                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="video"><span data-i18n="models.video">Video</span></label>
-                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="audio"><span data-i18n="models.audio">Ses</span></label>
-                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="modalities" data-modality-key="file"><span data-i18n="models.file">Dosya</span></label>
-                                            </div>
-                                        </div>
-                                        <div id="modalities-outputs" class="form-group-field">
-                                            <span class="sub-block-title" style="font-size:0.7rem; color:var(--text-muted);" data-i18n="models.output_types">Çıktı Tipleri</span>
-                                            <div class="chips-checkbox-grid">
-                                                <label class="chip-checkbox disabled"><input type="checkbox" data-modality-type="outputs" data-modality-key="text" checked disabled><span data-i18n="models.text">Metin</span></label>
-                                                <label class="chip-checkbox"><input type="checkbox" data-modality-type="outputs" data-modality-key="image"><span data-i18n="models.image">Görsel</span></label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-sub-section">
-                                    <span class="sub-block-title" data-i18n="models.license_section">Lisans & Kaynak</span>
-                                    <div class="flex-row">
-                                        <div class="form-group-field flex-grow">
-                                            <label for="model-creator" data-i18n="models.creator">Geliştirici</label>
-                                            <input type="text" id="model-creator" placeholder="Yaratıcı ekip">
-                                        </div>
-                                        <div class="form-group-field flex-grow">
-                                            <label for="model-license-name" data-i18n="models.license_type">Lisans Türü</label>
-                                            <input type="text" id="model-license-name" data-i18n-placeholder="models.license_type_ph" placeholder="Lisans ismi">
-                                        </div>
-                                    </div>
-                                    <div class="flex-row">
-                                        <div class="form-group-field flex-grow">
-                                            <label for="model-source-name" data-i18n="models.source">Kaynak</label>
-                                            <input type="text" id="model-source-name" value="Hugging Face">
-                                        </div>
-                                        <div class="form-group-field flex-grow">
-                                            <label for="model-license-url" data-i18n="models.license_url">Lisans Linki</label>
-                                            <input type="url" id="model-license-url" data-i18n-placeholder="models.license_url_ph" placeholder="Lisans URL adresi">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-sub-section">
-                                    <span class="sub-block-title" data-i18n="models.template_section">Şablon Kuralları (Prompter)</span>
-                                    <div class="form-group-field">
-                                        <label for="model-format-template" data-i18n="models.template_select">Hazır Şablon Formatı</label>
-                                        <select id="model-format-template">
-                                            <option value="" data-i18n="models.template_none">-- Şablon Seçilmedi --</option>
-                                            <option value="chatml">ChatML (Qwen, Llama 3 vb.)</option>
-                                            <option value="llama2">Llama-2 / Mistral</option>
-                                            <option value="alpaca">Alpaca</option>
-                                            <option value="llama3">Llama-3</option>
-                                            <option value="gemma2">Gemma-2</option>
-                                            <option value="anthropic-style">Anthropic (Human/Assistant)</option>
-                                            <option value="plain_dialogue">Plain Dialogue</option>
-                                            <option value="phi-3_glm">Phi-3 / GLM</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div class="token-inputs-grid">
-                                        <div class="form-group-field">
-                                            <label for="model-token-system-start" data-i18n="models.token_system_start">Sistem Başlangıç</label>
-                                            <textarea id="model-token-system-start" rows="1" placeholder="<|im_start|>system"></textarea>
-                                        </div>
-                                        <div class="form-group-field">
-                                            <label for="model-token-system-end" data-i18n="models.token_system_end">Sistem Bitiş</label>
-                                            <textarea id="model-token-system-end" rows="1" placeholder="<|im_end|>"></textarea>
-                                        </div>
-                                        <div class="form-group-field">
-                                            <label for="model-token-user-start" data-i18n="models.token_user_start">Kullanıcı Başlangıç</label>
-                                            <textarea id="model-token-user-start" rows="1" placeholder="<|im_start|>user"></textarea>
-                                        </div>
-                                        <div class="form-group-field">
-                                            <label for="model-token-user-end" data-i18n="models.token_user_end">Kullanıcı Bitiş</label>
-                                            <textarea id="model-token-user-end" rows="1" placeholder="<|im_end|>"></textarea>
-                                        </div>
-                                        <div class="form-group-field">
-                                            <label for="model-token-assistant-start" data-i18n="models.token_assistant_start">Asistan Başlangıç</label>
-                                            <textarea id="model-token-assistant-start" rows="1" placeholder="<|im_start|>assistant"></textarea>
-                                        </div>
-                                        <div class="form-group-field">
-                                            <label for="model-token-assistant-end" data-i18n="models.token_assistant_end">Asistan Bitiş</label>
-                                            <textarea id="model-token-assistant-end" rows="1" placeholder="<|im_end|>"></textarea>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group-field">
-                                        <label for="model-token-stop-generation" data-i18n="models.token_stop">Durdurma Belirteçleri</label>
-                                        <input type="text" id="model-token-stop-generation" data-i18n-placeholder="models.token_stop_ph" placeholder="<|im_end|>, </s>">
-                                    </div>
-                                    <div class="form-group-field">
-                                        <label for="model-token-ignore-regex" data-i18n="models.token_ignore">Yok Sayılacak Regex</label>
-                                        <input type="text" id="model-token-ignore-regex" data-i18n-placeholder="models.token_ignore_ph" placeholder="^\[Düşünme Adımları\]\.\.\.$">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-block-group">
-                                <span class="block-title" data-i18n="models.image_section">Resim Dosyası</span>
-                                <div class="form-group-field">
-                                    <label for="model-image" data-i18n="models.image_label">Model Temsili Resmi</label>
-                                    <input type="file" id="model-image" accept="image/*">
-                                </div>
-                            </div>
-
-                            <div class="form-submit-row">
-                                <button type="submit" id="model-submit-btn" class="chrome-btn-accent"><span data-i18n="models.save_btn">Değişiklikleri Kaydet</span></button>
-                                <button type="button" id="model-cancel-btn" class="chrome-btn-outline" style="display:none;"><span data-i18n="models.cancel_btn">İptal Et</span></button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Model Listeleri -->
-                    <div class="panel-card col-span-5" data-panel="models.library">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">list_alt</span>
-                                <h3 data-i18n="models.active_models">Aktif Modeller</h3>
-                            </div>
-                            <div class="count-chips-container">
-                                <span id="offline-model-count-badge" class="count-badge-indicator offline"><span data-i18n="models.offline_count">Çevrimdışı:</span> 0</span>
-                                <span id="roleplay-model-count-badge" class="count-badge-indicator roleplay"><span data-i18n="models.roleplay_count">Rol Yapma:</span> 0</span>
-                            </div>
-                        </div>
-
-                        <div id="manual-models-list-container" class="scrollable-list-box-small">
-                            <p class="form-hint" style="text-align:center; padding: 2rem;" data-i18n="models.no_models">Kayıtlı model bulunamadı.</p>
-                        </div>
-
-                        <div class="card-title-row" style="margin-top: 1.5rem;">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">database</span>
-                                <h3 data-i18n="models.all_models">Tüm Modeller Ağacı</h3>
-                            </div>
-                        </div>
-                        
-                        <div id="all-models-explorer" class="database-tree-box">
-                            <div id="all-models-list-container">
-                                <p class="form-hint" data-i18n="models.loading">Yükleniyor...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SEKME 3: HABERLER VE DUYURULAR -->
-            <div class="tab-panel" id="tab-news">
-                <div class="panel-section-title">
-                    <h2 data-i18n="news.title">Haberler & Duyurular</h2>
-                    <p data-i18n="news.desc">Mobil uygulama ana sayfasındaki haber akışında görünecek makaleleri yayınlayın.</p>
-                </div>
-
-                <div class="grid-layout">
-                    <!-- Haber Editörü -->
-                    <div id="news-creator" class="panel-card col-span-7" data-panel="news.editor">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">post_add</span>
-                                <h3 data-i18n="news.form_title">Haber Duyurusu Yaz</h3>
-                            </div>
-                        </div>
-
-                        <form id="news-form" class="form-scrollable-container">
-                            <!-- Türkçe İçerik -->
-                            <div class="form-block-group">
-                                <span class="block-title" data-i18n="news.tr_section">Türkçe Yayın İçeriği</span>
-                                <div class="form-group-field">
-                                    <label for="title-tr" data-i18n="news.tr_title">Başlık (TR)</label>
-                                    <input type="text" id="title-tr" data-i18n-placeholder="news.tr_title_ph" placeholder="Haber başlığı" required>
-                                </div>
-                                <div class="form-group-field">
-                                    <label for="summary-tr" data-i18n="news.tr_summary">Özet (TR)</label>
-                                    <textarea id="summary-tr" data-i18n-placeholder="news.tr_summary_ph" placeholder="Haber akış kartındaki özet" rows="2" required></textarea>
-                                </div>
-                                <div class="form-group-field">
-                                    <label for="content-tr" data-i18n="news.tr_content">Detay (TR)</label>
-                                    <textarea id="content-tr" data-i18n-placeholder="news.tr_content_ph" placeholder="Makale detaylı içeriği (Markdown destekler)" rows="5" required></textarea>
-                                </div>
-                                <div class="form-group-field">
-                                    <label for="cover-image-tr" data-i18n="news.tr_cover">Kapak Fotoğrafı (TR)</label>
-                                    <input type="file" id="cover-image-tr" accept="image/*" required>
-                                </div>
-                            </div>
-
-                            <!-- İngilizce İçerik -->
-                            <div class="form-block-group">
-                                <span class="block-title" data-i18n="news.en_section">English Content (İngilizce)</span>
-                                <div class="form-group-field">
-                                    <label for="title-en" data-i18n="news.en_title">Title (EN)</label>
-                                    <input type="text" id="title-en" data-i18n-placeholder="news.en_title_ph" placeholder="Article Title" required>
-                                </div>
-                                <div class="form-group-field">
-                                    <label for="summary-en" data-i18n="news.en_summary">Summary (EN)</label>
-                                    <textarea id="summary-en" data-i18n-placeholder="news.en_summary_ph" placeholder="Short description summary" rows="2" required></textarea>
-                                </div>
-                                <div class="form-group-field">
-                                    <label for="content-en" data-i18n="news.en_content">Body (EN)</label>
-                                    <textarea id="content-en" data-i18n-placeholder="news.en_content_ph" placeholder="Detailed content details" rows="5" required></textarea>
-                                </div>
-                                <div class="form-group-field">
-                                    <label for="cover-image-en" data-i18n="news.en_cover">Cover Image (EN)</label>
-                                    <input type="file" id="cover-image-en" accept="image/*" required>
-                                </div>
-                            </div>
-
-                            <!-- Etiketler -->
-                            <div class="form-block-group">
-                                <span class="block-title" data-i18n="news.meta_section">Meta Veri & Referanslar</span>
-                                <div class="form-group-field">
-                                    <label for="tags" data-i18n="news.tags">Etiketler</label>
-                                    <input type="text" id="tags" data-i18n-placeholder="news.tags_ph" placeholder="Ör. guncelleme, topluluk (virgülle ayırın)">
-                                </div>
-                                <div class="form-group-field">
-                                    <label for="references" data-i18n="news.references">Kaynak Bağlantıları (URL)</label>
-                                    <textarea id="references" data-i18n-placeholder="news.references_ph" placeholder="Her satıra bir adet bağlantı gelecek şekilde" rows="2"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="form-submit-row">
-                                <button type="submit" id="submit-btn" class="chrome-btn-accent"><span data-i18n="news.publish_btn">Haber Makalesini Yayınla</span></button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Yayınlanmış Makaleler -->
-                    <div id="news-manager" class="panel-card col-span-5" data-panel="news.published">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">article</span>
-                                <h3 data-i18n="news.active_articles">Aktif Yayındaki Haberler</h3>
-                            </div>
-                        </div>
-                        <div id="articles-list-container" class="scrollable-list-box">
-                            <p class="form-hint" style="text-align:center; padding: 2rem;" data-i18n="news.no_articles">Yayınlanmış haber makalesi bulunamadı.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SEKME 4: BİLDİRİM YÖNETİMİ -->
-            <div class="tab-panel" id="tab-notifications">
-                <div class="panel-section-title">
-                    <h2 data-i18n="notif.title">Anlık Bildirimler</h2>
-                    <p data-i18n="notif.desc">Vertex kullanıcılarına hedeflenmiş veya zamanlanmış anlık push bildirimleri gönderin.</p>
-                </div>
-
-                <div class="grid-layout">
-                    <!-- Bildirim Gönderici Form -->
-                    <div id="notification-sender" class="panel-card col-span-7" data-panel="notifications.sender">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">campaign</span>
-                                <h3 data-i18n="notif.form_title">Push Bildirim Gönder / Ayarla</h3>
-                            </div>
-                        </div>
-
-                        <form id="notification-form" class="form-scrollable-container">
-                            <div class="form-block-group">
-                                <span class="block-title" data-i18n="notif.template_section">Hazır Şablon & Anahtarlar</span>
-                                <div class="form-group-field">
-                                    <label for="notification-template-selector" data-i18n="notif.template_label">Hazır Şablonlar</label>
-                                    <select id="notification-template-selector" data-i18n-options="true">
-                                        <option value="" data-i18n="notif.template_none">-- Şablon Kullanma --</option>
-                                        <optgroup data-i18n="template.group.system" label="Sistem & Teklifler">
-                                            <option value="newModel" data-i18n="template.newModel">Yeni Model Eklendi</option>
-                                            <option value="newFeature" data-i18n="template.newFeature">Yeni Özellik Eklendi</option>
-                                            <option value="upsellFeature" data-i18n="template.upsellFeature">Abonelik Kampanyası</option>
-                                            <option value="appUpdate" data-i18n="template.appUpdate">Uygulama Güncelleme Uyarısı</option>
-                                            <option value="rateApp" data-i18n="template.rateApp">Uygulamayı Puanla</option>
-                                            <option value="referral" data-i18n="template.referral">Arkadaşına Öner</option>
-                                            <option value="socialMedia" data-i18n="template.socialMedia">Sosyal Medya Katılımı</option>
-                                        </optgroup>
-                                        <optgroup data-i18n="template.group.engagement" label="Kullanıcı Etkileşimi">
-                                            <option value="comeback" data-i18n="template.comeback">Geri Dönüş Çağrısı (Genel)</option>
-                                            <option value="longTimeNoSee" data-i18n="template.longTimeNoSee">Uzun Süre Giriş Yapmayanlar</option>
-                                            <option value="howAreYou" data-i18n="template.howAreYou">Hal Hatır Sorma</option>
-                                            <option value="goodMorning" data-i18n="template.goodMorning">Günaydın Mesajı</option>
-                                            <option value="goodNight" data-i18n="template.goodNight">İyi Geceler Mesajı</option>
-                                        </optgroup>
-                                        <optgroup data-i18n="template.group.fun" label="Eğlenceli & Şakalar">
-                                            <option value="randomFact" data-i18n="template.randomFact">İlginç Bilgi</option>
-                                            <option value="showerThought" data-i18n="template.showerThought">Duş Düşünceleri</option>
-                                            <option value="fortuneCookie" data-i18n="template.fortuneCookie">Şans Kurabiyesi</option>
-                                            <option value="hackerJoke" data-i18n="template.hackerJoke">Yazılımcı Şakaları</option>
-                                            <option value="pirate" data-i18n="template.pirate">Korsan Modu</option>
-                                            <option value="trollAnime" data-i18n="template.trollAnime">Troll (Anime)</option>
-                                            <option value="trollAiRebellion" data-i18n="template.trollAiRebellion">Troll (Yapay Zeka İsyanı)</option>
-                                            <option value="singularity" data-i18n="template.singularity">Singularity</option>
-                                            <option value="detectiveCase" data-i18n="template.detectiveCase">Dedektif Hikayesi</option>
-                                            <option value="originStory" data-i18n="template.originStory">Hikaye Başlangıcı</option>
-                                            <option value="rejectionStory" data-i18n="template.rejectionStory">Reddedilme Anısı</option>
-                                            <option value="cooking" data-i18n="template.cooking">Şefin Tarifi</option>
-                                            <option value="existential" data-i18n="template.existential">Varoluşsal Kriz</option>
-                                            <option value="openSource" data-i18n="template.openSource">Açık Kaynak Sevgisi</option>
-                                        </optgroup>
-                                        <optgroup data-i18n="template.group.tech" label="Teknik Detaylar">
-                                            <option value="offlineReady" data-i18n="template.offlineReady">Çevrimdışı Çalışma Hazır</option>
-                                            <option value="customModel" data-i18n="template.customModel">Kendi Modelini Kur</option>
-                                            <option value="dynamicChat" data-i18n="template.dynamicChat">Dinamik Sohbet Odaları</option>
-                                            <option value="ggufSupport" data-i18n="template.ggufSupport">GGUF Desteği Aktif</option>
-                                            <option value="themeCustomization" data-i18n="template.themeCustomization">Tema Özelleştirme</option>
-                                            <option value="homeworkHelper" data-i18n="template.homeworkHelper">Ödev Asistanı Tanıtımı</option>
-                                            <option value="lowBattery" data-i18n="template.lowBattery">Düşük Batarya Tasarruf Modu</option>
-                                        </optgroup>
-                                        <optgroup data-i18n="template.group.special" label="Özel Günler">
-                                            <option value="newYear" data-i18n="template.newYear">Yılbaşı Tebriği</option>
-                                            <option value="valentinesDay" data-i18n="template.valentinesDay">Sevgililer Günü</option>
-                                            <option value="ataturkRemembrance" data-i18n="template.ataturkRemembrance">10 Kasım Atatürk'ü Anma</option>
-                                            <option value="mothersDay" data-i18n="template.mothersDay">Anneler Günü</option>
-                                            <option value="fathersDay" data-i18n="template.fathersDay">Babalar Günü</option>
-                                        </optgroup>
-                                    </select>
-                                </div>
-                                
-                                <div class="flex-row">
-                                    <div class="form-group-field flex-grow">
-                                        <label for="notification-title-key" data-i18n="notif.title_key">Başlık Anahtarı (Title Key)</label>
-                                        <input type="text" id="notification-title-key" data-i18n-placeholder="notif.title_key_ph" placeholder="Ör. notificationTitleKey">
-                                    </div>
-                                    <div class="form-group-field flex-grow">
-                                        <label for="notification-body-key" data-i18n="notif.body_key">Gövde Anahtarı (Body Key)</label>
-                                        <input type="text" id="notification-body-key" data-i18n-placeholder="notif.body_key_ph" placeholder="Ör. notificationBodyKey">
-                                    </div>
-                                </div>
-                                <div class="form-group-field">
-                                    <label for="notification-data-payload" data-i18n="notif.data_payload">İsteğe Bağlı Veri Yükü (JSON)</label>
-                                    <textarea id="notification-data-payload" data-i18n-placeholder="notif.data_payload_ph" placeholder='Ör. {"modelId": "llama-8b"}' rows="1"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="form-block-group">
-                                <span class="block-title" data-i18n="notif.fallback_section">Yedek Bildirim İçeriği</span>
-                                <div class="form-group-field">
-                                    <label for="notification-title" data-i18n="notif.fallback_title">Genel Başlık</label>
-                                    <input type="text" id="notification-title" data-i18n-placeholder="notif.fallback_title_ph" placeholder="Yedek bildirim başlığı">
-                                </div>
-                                <div class="form-group-field">
-                                    <label for="notification-body" data-i18n="notif.fallback_body">Genel Mesaj Gövdesi</label>
-                                    <textarea id="notification-body" data-i18n-placeholder="notif.fallback_body_ph" placeholder="Gönderilecek genel mesaj metni" rows="2"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="form-block-group">
-                                <span class="block-title" data-i18n="notif.targeting">Kullanıcı Hedefleme</span>
-                                <div class="form-group-field">
-                                    <label for="notification-target-type" data-i18n="notif.target_label">Alıcı Grubu</label>
-                                    <select id="notification-target-type" required>
-                                        <option value="" disabled selected data-i18n="notif.target_placeholder">Bir grup seçin...</option>
-                                        <option value="ALL_USERS" data-i18n="notif.target_all">Tüm Kullanıcılar</option>
-                                        <option value="SINGLE_USER" data-i18n="notif.target_single">Tek Bir Kullanıcı (UID ile)</option>
-                                        <option value="SUBSCRIPTION_LEVEL" data-i18n="notif.target_level">Abonelik Seviyesine Göre</option>
-                                    </select>
-                                </div>
-
-                                <div id="target-specific-inputs" class="conditional-block">
-                                    <div id="target-uid-input" class="form-group-field" style="display:none;">
-                                        <label for="notification-target-uid" data-i18n="notif.uid_label">Kullanıcı UID</label>
-                                        <input type="text" id="notification-target-uid" data-i18n-placeholder="notif.uid_ph" placeholder="Firebase UID adresi">
-                                    </div>
-                                    <div id="target-level-input" class="form-group-field" style="display:none;">
-                                        <label for="notification-target-level" data-i18n="notif.level_label">Minimum Abonelik Düzeyi</label>
-                                        <select id="notification-target-level">
-                                            <option value="0" data-i18n="notif.level0">Ücretsiz Üyeler (Level 0)</option>
-                                            <option value="1" data-i18n="notif.level1">Plus Üyeler (Level 1)</option>
-                                            <option value="2" data-i18n="notif.level2">Pro Üyeler (Level 2)</option>
-                                            <option value="3" data-i18n="notif.level3">Ultra Üyeler (Level 3)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-block-group">
-                                <span class="block-title" data-i18n="notif.mode">Gönderim Modu</span>
-                                <div class="chrome-switch-row" style="justify-content: flex-start; gap: 10px;">
-                                    <span class="switch-label-text" data-i18n="notif.send_now">Hemen Gönder</span>
-                                    <label class="chrome-switch">
-                                        <input type="checkbox" id="notification-schedule-switch">
-                                        <span class="slider"></span>
-                                    </label>
-                                    <span class="switch-label-text" data-i18n="notif.schedule">Zamanla</span>
-                                </div>
-
-                                <div id="schedule-datetime-picker" class="conditional-block" style="display:none; margin-top: 10px;">
-                                    <div class="form-group-field">
-                                        <label for="notification-schedule-time" data-i18n="notif.datetime">Tarih ve Saat</label>
-                                        <input type="datetime-local" id="notification-schedule-time">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-submit-row">
-                                <button type="submit" id="submit-notification-btn" class="chrome-btn-accent"><span data-i18n="notif.submit_btn">Bildirimi Gönder</span></button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Zamanlanmış Görevler Listesi -->
-                    <div id="scheduled-tasks-manager" class="panel-card col-span-5" data-panel="notifications.scheduled">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">calendar_month</span>
-                                <h3 data-i18n="notif.scheduled_title">Zamanlanmış Bildirimler</h3>
-                            </div>
-                        </div>
-                        <div id="scheduled-tasks-list-container" class="scrollable-list-box">
-                            <p class="form-hint" style="text-align:center; padding: 2rem;" data-i18n="notif.no_scheduled">Kuyrukta bekleyen bildirim bulunamadı.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SEKME 5: SİSTEM VE SUNUCU -->
-            <div class="tab-panel" id="tab-system">
-                <div class="panel-section-title">
-                    <h2 data-i18n="system.title">Sunucu & Sistem Ayarları</h2>
-                    <p data-i18n="system.desc">Sistem altyapısını kontrol edin, bakım modunu açıp kapatın veya atıflar sayfasını yayınlayın.</p>
-                </div>
-
-                <div class="grid-layout">
-                    <!-- GCS Backup Status -->
-                    <div class="panel-card col-span-12" id="gcs-backup-status" style="border: 1px solid var(--accent-sage);">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded" style="color: var(--accent-sage);">cloud_done</span>
-                                <h3 data-i18n="system.gcs_backup">Google Cloud Storage (GCS) Yedekleme</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="system.gcs_desc">Otomatik GCS organizasyon yedekleme mekanizması (GitHub Actions üzerinden) şu anda <strong style="color: var(--accent-sage);">AKTİF</strong> ve çalışır durumda.</p>
-                    </div>
-
-                    <!-- Departman İzinleri Yönetimi -->
-                    <div class="panel-card col-span-12" id="dept-perms-manager" data-panel="system.deptPerms">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">admin_panel_settings</span>
-                                <h3 data-i18n="dept.title">Departman Erişim Yetkileri</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="perms.desc">Her departmanın hangi bölümleri göreceğini ve düzenleyebileceğini belirleyin. Hücreler Yok / Gör / Düzenle arasında geçer; kanal ikonuyla panelleri tek tek ayarlayabilirsiniz. Değişiklikler otomatik kaydedilir.</p>
-                        <div id="dept-permissions-container" class="scrollable-list-box" style="max-height: none; overflow-x: auto;">
-                            <p class="form-hint" style="text-align:center; padding: 1rem;" data-i18n="dept.loading">Yükleniyor...</p>
-                        </div>
-                    </div>
-
-                    <!-- Departman Atama -->
-                    <div class="panel-card col-span-6" id="dept-assign-manager" data-panel="system.deptAssign">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">person_add</span>
-                                <h3 data-i18n="dept.assign_title">Kullanıcıya Departman Ata</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="dept.assign_desc">Kullanıcının erişeceği departmanları seçin. Kaydetme mevcut departman listesinin yerini alır.</p>
-                        <form id="dept-assign-form" class="form-stack" style="margin-top:10px;">
-                            <div class="form-group-field">
-                                <label for="dept-user-email" data-i18n="dept.assign_email">Kullanıcı E-postası</label>
-                                <input type="email" id="dept-user-email" data-i18n-placeholder="admin.email_placeholder" placeholder="kullanici@vertexishere.com" required>
-                            </div>
-                            <div class="form-group-field">
-                                <span class="field-label" id="dept-options-label" data-i18n="dept.assign_dept">Departmanlar</span>
-                                <div id="dept-options" class="dept-options" role="group" aria-labelledby="dept-options-label"></div>
-                                <span class="form-field-info" data-i18n="dept.select_hint">En az bir departman seçin.</span>
-                            </div>
-                            <button type="submit" class="chrome-btn-accent">
-                                <span class="material-symbols-rounded">assignment_ind</span>
-                                <span data-i18n="dept.assign_btn">Departman Ata</span>
-                            </button>
-                        </form>
-                    </div>
-
-                    <div class="panel-card col-span-6" id="dept-users-manager" data-panel="system.deptUsers">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">groups</span>
-                                <h3 data-i18n="dept.users_title">Departman Kullanıcıları</h3>
-                            </div>
-                            <button type="button" id="refresh-dept-users-btn" class="btn-refresh" data-i18n-title="dept.refresh" title="Yenile">
-                                <span class="material-symbols-rounded">refresh</span>
-                                <span data-i18n="dept.refresh">Yenile</span>
-                            </button>
-                        </div>
-                        <div class="search-input-field">
-                            <span class="material-symbols-rounded search-icon">search</span>
-                            <input type="search" id="dept-users-search" data-i18n-placeholder="dept.search" placeholder="İsim, e-posta veya departman ara..." aria-label="Departman kullanıcılarını ara">
-                        </div>
-                        <div id="dept-users-list" class="dept-users-list" aria-live="polite"></div>
-                    </div>
-
-                    <!-- Katılımcı Doğrulama (Manuel) -->
-                    <div class="panel-card col-span-6" id="manual-verify-manager" data-panel="system.manualVerify">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">verified_user</span>
-                                <h3 data-i18n="system.verify_user">Katılımcı Doğrula (Manuel)</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="system.verify_desc">Bir katılımcıyı (Contributor) ID'si üzerinden anında doğrulanmış duruma getirin.</p>
-                        <form id="verify-user-form" class="form-stack" style="margin-top:10px;">
-                            <div class="form-group-field">
-                                <label for="verify-user-id" data-i18n="system.verify_id">Kullanıcı UID veya E-posta</label>
-                                <input type="text" id="verify-user-id" placeholder="örn: user@example.com" required>
-                            </div>
-                            <button type="submit" class="chrome-btn-outline"><span data-i18n="system.verify_btn">Doğrula & Bildir</span></button>
-                        </form>
-                    </div>
-
-                    <!-- Yetki Alma -->
-                    <div class="panel-card col-span-6" id="remove-admin-manager" data-panel="system.removeAdmin">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">person_remove</span>
-                                <h3 data-i18n="system.remove_admin">Yönetici Yetkisi Al</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="system.remove_admin_desc">Bir sistem yöneticisinin (Admin) yetkilerini e-posta adresi üzerinden iptal edin.</p>
-                        <form id="remove-admin-form" class="form-stack" style="margin-top:10px;">
-                            <div class="form-group-field">
-                                <label for="remove-admin-email" data-i18n="system.remove_email">E-posta Adresi</label>
-                                <input type="email" id="remove-admin-email" placeholder="admin@example.com" required>
-                            </div>
-                            <button type="submit" class="chrome-btn-outline" style="color: var(--accent-clay); border-color: var(--accent-clay);"><span data-i18n="system.remove_btn">Yetkiyi İptal Et</span></button>
-                        </form>
-                    </div>
-
-                    <!-- Yönetici Ekleme -->
-                    <div class="panel-card col-span-6" id="admin-manager" data-panel="system.adminRole">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">shield_person</span>
-                                <h3 data-i18n="admin.title">Yönetici Rolü Tanımla</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="admin.desc">Doğrulanmış bir Vertex üyesinin e-posta adresini girerek yönetici kontrol yetkisi tanımlayın.</p>
-                        
-                        <form id="admin-form" class="form-stack">
-                            <div class="form-group-field">
-                                <label for="new-admin-email" data-i18n="admin.email_label">Kullanıcı E-postası</label>
-                                <div class="form-input-wrapper">
-                                    <span class="material-symbols-rounded">mail</span>
-                                    <input type="email" id="new-admin-email" data-i18n-placeholder="admin.email_placeholder" placeholder="kullanici@vertexishere.com" required>
-                                </div>
-                                <span class="form-field-info" data-i18n="admin.email_hint">Kullanıcı sisteme kayıtlı olmalıdır.</span>
-                            </div>
-                            <button type="submit" id="grant-admin-btn" class="chrome-btn-accent">
-                                <span class="material-symbols-rounded">admin_panel_settings</span>
-                                <span data-i18n="admin.grant_btn">Yönetici Yetkisi Ver</span>
-                            </button>
-                        </form>
-                    </div>
-
-                    
-
-                    <!-- Aktif Yöneticiler Listesi -->
-                    <div class="panel-card col-span-6" id="team-log-manager" data-panel="system.teamLog">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">diversity_3</span>
-                                <h3 data-i18n="team.title">Ekip Kaydı</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="team.desc">vertexishere.com'daki Moderatörler listesini yönetin; Staff listesi onayladığınız adaylardan otomatik oluşur.</p>
-                        <div class="team-log-grid">
-                            <div class="team-log-col">
-                                <h4 data-i18n="team.mods">Modlar</h4>
-                                <div id="team-mod-list" class="team-entry-list"></div>
-                                <div class="team-add-row">
-                                    <input type="text" id="team-mod-input" maxlength="60" placeholder="Ad Soyad" data-i18n-placeholder="team.name_ph">
-                                    <button type="button" id="team-mod-add" class="chrome-btn-outline">+</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="panel-card col-span-12" id="admin-list-manager" data-panel="system.adminList">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">admin_panel_settings</span>
-                                <h3 data-i18n="system.admin_list">Aktif Sistem Yöneticileri</h3>
-                            </div>
-                            <button class="icon-action-btn" id="refresh-admins-btn" title="Yenile">
-                                <span class="material-symbols-rounded">refresh</span>
-                            </button>
-                        </div>
-                        <div id="admin-list-container" class="scrollable-list-box-small" style="max-height: none; overflow-y: visible;">
-                            <p class="form-hint" style="text-align:center; padding: 1rem;" data-i18n="system.loading_admins">Yükleniyor...</p>
-                        </div>
-                    </div>
-
-                    <!-- Sunucu Durumu -->
-                    <div class="panel-card col-span-6" id="server-status-manager" data-panel="system.serverStatus">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">dns</span>
-                                <h3 data-i18n="system.maintenance">Sunucu Bakım Modu</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="system.maintenance_desc">Sunucu bakım modunu açmak yeni giriş işlemlerini durdurur. Giriş yapmış kullanıcılar yerel modda devam edebilir.</p>
-                        
-                        <div class="status-action-box">
-                            <div id="maintenance-status-indicator" class="indicator-group">
-                                <span class="status-dot"></span>
-                                <span class="status-text" data-i18n="system.checking">Durum Kontrol Ediliyor...</span>
-                            </div>
-                            <button id="maintenance-action-btn" class="chrome-btn-outline"><span data-i18n="system.loading_btn">Yükleniyor...</span></button>
-                        </div>
-                    </div>
-
-                    <!-- Atıflar Sayfası Güncelleme -->
-                    <div class="panel-card col-span-6" id="attributions-manager" data-panel="system.attributions">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">sync</span>
-                                <h3 data-i18n="system.attributions">Atıflar Sayfasını Yayınla</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="system.attributions_desc">Model veya lisans güncellemelerinin ardından atıflar sayfasını tekrar derleyip yayınlamak için bu tetikleyiciyi kullanın.</p>
-                        
-                        <div class="status-action-box">
-                            <div id="attributions-status-indicator" class="indicator-group">
-                                <span class="status-dot status-synced"></span>
-                                <span class="status-text" data-i18n="system.attributions_synced">Durum: Güncel</span>
-                            </div>
-                            <button id="attributions-action-btn" class="chrome-btn-outline" disabled><span data-i18n="system.attributions_btn">Atıf Sayfasını Güncelle</span></button>
-                        </div>
-                    </div>
-
-                    <!-- Veri Dışa Aktar -->
-                    <div class="panel-card col-span-12" id="data-exporter-manager" data-panel="system.exporter">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">download</span>
-                                <h3 data-i18n="system.export">Verileri Dışa Aktar / İndir</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="system.export_desc">Sistemde yüklü olan katılımcı listelerini, AI modellerini veya haber makalelerini seçtiğiniz formatta yerel olarak bilgisayarınıza indirebilirsiniz.</p>
-                        
                         <div class="form-stack">
-                            <div class="flex-row">
-                                <div class="form-group-field flex-grow">
-                                    <label for="export-data-type" data-i18n="system.export_type">Dışa Aktarılacak Veri</label>
-                                    <select id="export-data-type">
-                                        <option value="contributors" data-i18n="system.export_contributors">Katılımcı Başvuruları</option>
-                                        <option value="manualModels" data-i18n="system.export_manual_models">Eklenen AI Modelleri (Küratörlü)</option>
-                                        <option value="allModels" data-i18n="system.export_all_models">Tüm Modeller Veritabanı</option>
-                                        <option value="articles" data-i18n="system.export_articles">Yayınlanan Haberler</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="form-group-field flex-grow">
-                                    <label for="export-format" data-i18n="system.export_format">Dosya Formatı</label>
-                                    <select id="export-format">
-                                        <option value="json" data-i18n="system.export_json">JSON Formatı (.json)</option>
-                                        <option value="csv" data-i18n="system.export_csv">CSV Formatı (Excel uyumlu .csv)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <button type="button" onclick="exportDataLocal()" class="chrome-btn-accent" style="margin-top: 10px;">
-                                <span class="material-symbols-rounded">download_for_offline</span>
-                                <span data-i18n="system.export_btn">Veriyi Derle ve İndir</span>
-                            </button>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- SEKME: SOHBET -->
-            <div class="tab-panel" id="tab-chat">
-                <div class="panel-section-title">
-                    <h2 data-i18n="chat.title">Sohbet</h2>
-                    <p data-i18n="chat.desc">Departman kanalları, görev takibi ve @etiket bildirimleri.</p>
-                </div>
-
-                <div class="chat-layout">
-                    <div class="panel-card chat-sidebar">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">forum</span>
-                                <h3 data-i18n="chat.channels">Kanallar</h3>
-                            </div>
-                            <button type="button" id="chat-create-btn" class="icon-action-btn" title="Kanal Oluştur" style="display:none;">
-                                <span class="material-symbols-rounded">add</span>
-                            </button>
-                        </div>
-                        <div id="chat-channel-list" class="chat-channel-list"></div>
-                    </div>
-
-                    <div class="panel-card chat-main">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded" id="chat-channel-icon">tag</span>
-                                <h3 id="chat-channel-title">—</h3>
-                            </div>
-                            <div id="chat-channel-badges" class="dept-badges"></div>
-                            <button type="button" id="chat-channel-edit" class="icon-action-btn" title="Kanalı Düzenle" style="display:none;">
-                                <span class="material-symbols-rounded">settings</span>
-                            </button>
-                        </div>
-                        <div id="chat-channel-desc" class="intro-description"></div>
-                        <div id="chat-messages" class="chat-messages">
-                            <p class="form-hint chat-hint" data-i18n="chat.select_hint">Bir kanal seçin.</p>
-                        </div>
-                        <div id="chat-composer" class="chat-composer" style="display:none;">
-                            <textarea id="chat-input" rows="2" data-i18n-placeholder="chat.placeholder" placeholder="Mesaj yazın — @Departman veya @mail ile etiketleyin"></textarea>
-                            <div class="chat-composer-actions">
-                                <label class="chat-task-toggle"><input type="checkbox" id="chat-as-task"><span data-i18n="chat.as_task">Görev/Sorun</span></label>
-                                <button type="button" id="chat-send" class="chrome-btn-accent"><span class="material-symbols-rounded">send</span></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="chat-channel-form" class="panel-card chat-channel-form" style="display:none;">
-                    <div class="card-title-row">
-                        <div class="title-details">
-                            <span class="material-symbols-rounded">add_circle</span>
-                            <h3 id="chat-form-title">Kanal Oluştur</h3>
-                        </div>
-                    </div>
-                    <div class="form-stack">
-                        <div class="form-group-field">
-                            <label for="chat-form-name">Kanal Adı</label>
-                            <input type="text" id="chat-form-name" maxlength="60" placeholder="örn. Genel, Array Görev Kanalı">
-                        </div>
-                        <div class="form-group-field">
-                            <label for="chat-form-desc">Açıklama</label>
-                            <input type="text" id="chat-form-desc" maxlength="300" placeholder="Kanalın amacı">
-                        </div>
-                        <div class="form-group-field">
-                            <label>Hangi departmanlara açık?</label>
-                            <div id="chat-form-depts" class="chat-form-depts"></div>
-                        </div>
-                        <div class="form-group-field">
-                            <label for="chat-form-postlevel">Kimler yazabilir?</label>
-                            <select id="chat-form-postlevel">
-                                <option value="all">Herkes</option>
-                                <option value="admins">Yalnızca Yöneticiler</option>
-                            </select>
-                        </div>
-                        <div class="form-group-field" id="chat-pin-group" style="display:none;">
-                            <label class="chat-task-toggle"><input type="checkbox" id="chat-form-pin"><span data-i18n="chat.pin">Sabitle</span></label>
-                        </div>
-                        <div class="form-submit-row">
-                            <button type="button" id="chat-form-delete" class="chat-form-delete-btn" style="display:none;"><span class="material-symbols-rounded">delete</span><span data-i18n="chat.delete_channel">Kanalı Sil</span></button>
-                            <button type="button" id="chat-form-save" class="chrome-btn-accent">Kaydet</button>
-                            <button type="button" id="chat-form-cancel" class="chrome-btn-outline">İptal</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SEKME 6: ABONELİK YÖNETİMİ -->
-            <div class="tab-panel" id="tab-subscriptions">
-                <div class="panel-section-title">
-                    <h2 data-i18n="subs.title">Abonelik Yönetimi</h2>
-                    <p data-i18n="subs.desc">Kullanıcı hesaplarına manuel Plus, Pro veya Ultra abonelik tanımlayın, aktif atamaları takip edin.</p>
-                </div>
-
-                <div class="grid-layout">
-                    <!-- Abonelik Atama Formu -->
-                    <div class="panel-card col-span-7" id="subscription-manager" data-panel="subscriptions.assign">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">workspace_premium</span>
-                                <h3 data-i18n="subs.form_title">Kullanıcıya Abonelik Tanımla</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="subs.form_desc">Kullanıcının hesap e-postasını girerek seçtiğiniz aboneliği anında otomatik olarak atayın; süre en fazla 1 yıl olabilir.</p>
-
-                        <form id="subscription-form" class="form-stack" style="margin-top:10px;">
-                            <div class="flex-row">
-                                <div class="form-group-field flex-grow">
-                                    <label for="sub-username" data-i18n="subs.username_label">Kullanıcı İsmi</label>
-                                    <div class="form-input-wrapper">
-                                        <span class="material-symbols-rounded">person</span>
-                                        <input type="text" id="sub-username" data-i18n-placeholder="subs.username_ph" placeholder="Uygulamadaki kullanıcı adı" autocomplete="off">
-                                    </div>
-                                    <span class="form-field-info" data-i18n="subs.username_hint">Listede görüntülemek için; atama e-posta ile eşleştirilir.</span>
-                                </div>
-                                <div class="form-group-field flex-grow">
-                                    <label for="sub-user-email" data-i18n="subs.email_label">Hesap Gmaili (E-posta)</label>
-                                    <div class="form-input-wrapper">
-                                        <span class="material-symbols-rounded">mail</span>
-                                        <input type="email" id="sub-user-email" data-i18n-placeholder="admin.email_placeholder" placeholder="kullanici@gmail.com" autocomplete="off" required>
-                                    </div>
-                                    <span class="form-field-info" data-i18n="subs.email_hint">Kullanıcı sisteme bu e-posta ile kayıtlı olmalıdır.</span>
-                                </div>
-                            </div>
-
-                            <div class="flex-row">
-                                <div class="form-group-field flex-grow">
-                                    <label for="sub-plan" data-i18n="subs.plan_label">Abonelik Seviyesi</label>
-                                    <select id="sub-plan" required></select>
-                                </div>
-                            </div>
-
                             <div class="form-group-field">
-                                <label for="sub-end" data-i18n="subs.end_label">Bitiş Zamanı (En Fazla 1 Yıl)</label>
-                                <input type="datetime-local" id="sub-end" required>
-                                <span class="form-field-info" data-i18n="subs.duration_hint">Abonelik anında başlar; en fazla 1 yıl ileri tarih ayarlanabilir.</span>
+                                <label for="chat-form-name">Kanal Adı</label>
+                                <input type="text" id="chat-form-name" maxlength="60"
+                                    placeholder="örn. Genel, Array Görev Kanalı">
                             </div>
-
+                            <div class="form-group-field">
+                                <label for="chat-form-desc">Açıklama</label>
+                                <input type="text" id="chat-form-desc" maxlength="300" placeholder="Kanalın amacı">
+                            </div>
+                            <div class="form-group-field">
+                                <label>Hangi departmanlara açık?</label>
+                                <div id="chat-form-depts" class="chat-form-depts"></div>
+                            </div>
+                            <div class="form-group-field">
+                                <label for="chat-form-postlevel">Kimler yazabilir?</label>
+                                <select id="chat-form-postlevel">
+                                    <option value="all">Herkes</option>
+                                    <option value="admins">Yalnızca Yöneticiler</option>
+                                </select>
+                            </div>
+                            <div class="form-group-field" id="chat-pin-group" style="display:none;">
+                                <label class="chat-task-toggle"><input type="checkbox" id="chat-form-pin"><span
+                                        data-i18n="chat.pin">Sabitle</span></label>
+                            </div>
                             <div class="form-submit-row">
-                                <button type="submit" id="assign-subscription-btn" class="chrome-btn-accent">
-                                    <span class="material-symbols-rounded">workspace_premium</span>
-                                    <span data-i18n="subs.assign_btn">Aboneliği Tanımla</span>
-                                </button>
+                                <button type="button" id="chat-form-delete" class="chat-form-delete-btn"
+                                    style="display:none;"><span class="material-symbols-rounded">delete</span><span
+                                        data-i18n="chat.delete_channel">Kanalı Sil</span></button>
+                                <button type="button" id="chat-form-save" class="chrome-btn-accent">Kaydet</button>
+                                <button type="button" id="chat-form-cancel" class="chrome-btn-outline">İptal</button>
                             </div>
-                        </form>
+                        </div>
+                    </div>
+                </div>
 
-                        <!-- Toplu Tanımlama (basınca açılır; ham girdi sunucuda ayrıştırılır) -->
-                        <div id="sub-bulk-section" style="margin-top: 14px;">
-                            <button type="button" id="sub-bulk-toggle" class="chrome-btn-outline sub-bulk-toggle" aria-expanded="false" aria-controls="sub-bulk-panel">
-                                <span class="material-symbols-rounded sub-chevron">expand_more</span>
-                                <span data-i18n="subs.bulk_toggle">Toplu Tanımlama</span>
-                            </button>
-                            <div id="sub-bulk-panel" class="form-stack" style="display: none; margin-top: 10px;">
-                                <p class="intro-description" data-i18n="subs.bulk_hint">Posta listesini yapıştır: virgül, noktalı virgül, boşluk veya alt alta ayırabilirsin — ayırma işini sunucu yapar ve listeyi 50'lik gruplara bölerek aralıklarla tanımlar. Abonelik seviyesi ve bitiş zamanı yukarıdaki alanlardan alınır.</p>
-                                <div class="form-group-field">
-                                    <label for="sub-bulk-input" data-i18n="subs.bulk_label">Posta Listesi</label>
-                                    <textarea id="sub-bulk-input" rows="6" data-i18n-placeholder="subs.bulk_placeholder" placeholder="posta1@gmail.com, posta2@gmail.com, posta3@gmail.com ..."></textarea>
+                <!-- SEKME 6: ABONELİK YÖNETİMİ -->
+                <div class="tab-panel" id="tab-subscriptions">
+                    <div class="panel-section-title">
+                        <h2 data-i18n="subs.title">Abonelik Yönetimi</h2>
+                        <p data-i18n="subs.desc">Kullanıcı hesaplarına manuel Plus, Pro veya Ultra abonelik tanımlayın,
+                            aktif atamaları takip edin.</p>
+                    </div>
+
+                    <div class="grid-layout">
+                        <!-- Abonelik Atama Formu -->
+                        <div class="panel-card col-span-7" id="subscription-manager" data-panel="subscriptions.assign">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">workspace_premium</span>
+                                    <h3 data-i18n="subs.form_title">Kullanıcıya Abonelik Tanımla</h3>
                                 </div>
+                            </div>
+                            <p class="intro-description" data-i18n="subs.form_desc">Kullanıcının hesap e-postasını
+                                girerek seçtiğiniz aboneliği anında otomatik olarak atayın; süre en fazla 1 yıl
+                                olabilir.</p>
+
+                            <form id="subscription-form" class="form-stack" style="margin-top:10px;">
+                                <div class="flex-row">
+                                    <div class="form-group-field flex-grow">
+                                        <label for="sub-username" data-i18n="subs.username_label">Kullanıcı İsmi</label>
+                                        <div class="form-input-wrapper">
+                                            <span class="material-symbols-rounded">person</span>
+                                            <input type="text" id="sub-username"
+                                                data-i18n-placeholder="subs.username_ph"
+                                                placeholder="Uygulamadaki kullanıcı adı" autocomplete="off">
+                                        </div>
+                                        <span class="form-field-info" data-i18n="subs.username_hint">Listede
+                                            görüntülemek için; atama e-posta ile eşleştirilir.</span>
+                                    </div>
+                                    <div class="form-group-field flex-grow">
+                                        <label for="sub-user-email" data-i18n="subs.email_label">Hesap Gmaili
+                                            (E-posta)</label>
+                                        <div class="form-input-wrapper">
+                                            <span class="material-symbols-rounded">mail</span>
+                                            <input type="email" id="sub-user-email"
+                                                data-i18n-placeholder="admin.email_placeholder"
+                                                placeholder="kullanici@gmail.com" autocomplete="off" required>
+                                        </div>
+                                        <span class="form-field-info" data-i18n="subs.email_hint">Kullanıcı sisteme bu
+                                            e-posta ile kayıtlı olmalıdır.</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex-row">
+                                    <div class="form-group-field flex-grow">
+                                        <label for="sub-plan" data-i18n="subs.plan_label">Abonelik Seviyesi</label>
+                                        <select id="sub-plan" required></select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-field">
+                                    <label for="sub-end" data-i18n="subs.end_label">Bitiş Zamanı (En Fazla 1
+                                        Yıl)</label>
+                                    <input type="datetime-local" id="sub-end" required>
+                                    <span class="form-field-info" data-i18n="subs.duration_hint">Abonelik anında başlar;
+                                        en fazla 1 yıl ileri tarih ayarlanabilir.</span>
+                                </div>
+
                                 <div class="form-submit-row">
-                                    <button type="button" id="sub-bulk-submit" class="chrome-btn-accent">
-                                        <span class="material-symbols-rounded">playlist_add</span>
-                                        <span data-i18n="subs.bulk_btn">Toplu Tanımla</span>
+                                    <button type="submit" id="assign-subscription-btn" class="chrome-btn-accent">
+                                        <span class="material-symbols-rounded">workspace_premium</span>
+                                        <span data-i18n="subs.assign_btn">Aboneliği Tanımla</span>
                                     </button>
                                 </div>
-                                <div id="sub-bulk-result" class="scrollable-list-box-small" style="display: none;"></div>
-                            </div>
-                        </div>
-                    </div>
+                            </form>
 
-                    <!-- Aktif Abonelik Listesi -->
-                    <div class="panel-card col-span-5" id="subscription-list-manager" data-panel="subscriptions.list">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <span class="material-symbols-rounded">history</span>
-                                <h3 data-i18n="subs.list_title">Tanımlı Abonelikler</h3>
+                            <!-- Toplu Tanımlama (basınca açılır; ham girdi sunucuda ayrıştırılır) -->
+                            <div id="sub-bulk-section" style="margin-top: 14px;">
+                                <button type="button" id="sub-bulk-toggle" class="chrome-btn-outline sub-bulk-toggle"
+                                    aria-expanded="false" aria-controls="sub-bulk-panel">
+                                    <span class="material-symbols-rounded sub-chevron">expand_more</span>
+                                    <span data-i18n="subs.bulk_toggle">Toplu Tanımlama</span>
+                                </button>
+                                <div id="sub-bulk-panel" class="form-stack" style="display: none; margin-top: 10px;">
+                                    <p class="intro-description" data-i18n="subs.bulk_hint">Posta listesini yapıştır:
+                                        virgül, noktalı virgül, boşluk veya alt alta ayırabilirsin — ayırma işini sunucu
+                                        yapar ve listeyi 50'lik gruplara bölerek aralıklarla tanımlar. Abonelik seviyesi
+                                        ve bitiş zamanı yukarıdaki alanlardan alınır.</p>
+                                    <div class="form-group-field">
+                                        <label for="sub-bulk-input" data-i18n="subs.bulk_label">Posta Listesi</label>
+                                        <textarea id="sub-bulk-input" rows="6"
+                                            data-i18n-placeholder="subs.bulk_placeholder"
+                                            placeholder="posta1@gmail.com, posta2@gmail.com, posta3@gmail.com ..."></textarea>
+                                    </div>
+                                    <div class="form-submit-row">
+                                        <button type="button" id="sub-bulk-submit" class="chrome-btn-accent">
+                                            <span class="material-symbols-rounded">playlist_add</span>
+                                            <span data-i18n="subs.bulk_btn">Toplu Tanımla</span>
+                                        </button>
+                                    </div>
+                                    <div id="sub-bulk-result" class="scrollable-list-box-small" style="display: none;">
+                                    </div>
+                                </div>
                             </div>
-                            <button type="button" id="refresh-subscriptions-btn" class="btn-refresh" data-i18n-title="subs.refresh" title="Yenile">
-                                <span class="material-symbols-rounded">refresh</span>
-                                <span data-i18n="subs.refresh">Yenile</span>
-                            </button>
                         </div>
-                        <div class="search-input-field">
-                            <span class="material-symbols-rounded search-icon">search</span>
-                            <input type="search" id="subscriptions-search" data-i18n-placeholder="subs.search" placeholder="İsim, e-posta veya seviye ara..." aria-label="Abonelikleri ara">
-                        </div>
-                        <div id="subscriptions-list" class="dept-users-list" aria-live="polite">
-                            <p class="form-hint dept-list-message" data-i18n="subs.load_hint">Listeyi yüklemek için Yenile butonuna basın.</p>
+
+                        <!-- Aktif Abonelik Listesi -->
+                        <div class="panel-card col-span-5" id="subscription-list-manager"
+                            data-panel="subscriptions.list">
+                            <div class="card-title-row">
+                                <div class="title-details">
+                                    <span class="material-symbols-rounded">history</span>
+                                    <h3 data-i18n="subs.list_title">Tanımlı Abonelikler</h3>
+                                </div>
+                                <button type="button" id="refresh-subscriptions-btn" class="btn-refresh"
+                                    data-i18n-title="subs.refresh" title="Yenile">
+                                    <span class="material-symbols-rounded">refresh</span>
+                                    <span data-i18n="subs.refresh">Yenile</span>
+                                </button>
+                            </div>
+                            <div class="search-input-field">
+                                <span class="material-symbols-rounded search-icon">search</span>
+                                <input type="search" id="subscriptions-search" data-i18n-placeholder="subs.search"
+                                    placeholder="İsim, e-posta veya seviye ara..." aria-label="Abonelikleri ara">
+                            </div>
+                            <div id="subscriptions-list" class="dept-users-list" aria-live="polite">
+                                <p class="form-hint dept-list-message" data-i18n="subs.load_hint">Listeyi yüklemek için
+                                    Yenile butonuna basın.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
             </div>
 
@@ -1254,27 +1559,47 @@
                                 <h3 id="profile-name">—</h3>
                                 <p id="profile-email">—</p>
                             </div>
-                            <button type="button" id="profile-menu-btn" class="panel-menu-btn" style="display:inline-flex;" title="Menü">
+                            <button type="button" id="profile-menu-btn" class="panel-menu-btn"
+                                style="display:inline-flex;" title="Menü">
                                 <span class="material-symbols-rounded">apps</span>
                             </button>
-                            <div id="profile-menu-pop" class="panel-menu-pop profile-menu-pop" style="display:none;"></div>
+                            <div id="profile-menu-pop" class="panel-menu-pop profile-menu-pop" style="display:none;">
+                            </div>
                         </div>
                         <form id="profile-form" class="form-stack">
                             <div class="form-group-field">
                                 <label for="profile-display-name" data-i18n="profile.display_name">Görünen ad</label>
                                 <input id="profile-display-name" type="text" maxlength="80" autocomplete="name">
                             </div>
-                            <button type="submit" class="chrome-btn-accent"><span class="material-symbols-rounded">save</span><span data-i18n="profile.save">Profili Kaydet</span></button>
+                            <button type="submit" class="chrome-btn-accent"><span
+                                    class="material-symbols-rounded">save</span><span data-i18n="profile.save">Profili
+                                    Kaydet</span></button>
                         </form>
                     </div>
                     <div class="panel-card col-span-6 profile-card">
-                        <div class="card-title-row"><div class="title-details"><span class="material-symbols-rounded">verified_user</span><h3 data-i18n="profile.access">Erişim Bilgileri</h3></div></div>
+                        <div class="card-title-row">
+                            <div class="title-details"><span class="material-symbols-rounded">verified_user</span>
+                                <h3 data-i18n="profile.access">Erişim Bilgileri</h3>
+                            </div>
+                        </div>
                         <dl class="profile-details">
-                            <div><dt data-i18n="profile.role">Rol</dt><dd id="profile-role">—</dd></div>
-                            <div><dt data-i18n="profile.departments">Departmanlar</dt><dd id="profile-departments">—</dd></div>
-                            <div><dt data-i18n="profile.uid">Kullanıcı kimliği</dt><dd><span id="profile-uid">—</span><button type="button" id="copy-uid-btn" class="profile-copy-btn" title="Kopyala"><span class="material-symbols-rounded">content_copy</span></button></dd></div>
+                            <div>
+                                <dt data-i18n="profile.role">Rol</dt>
+                                <dd id="profile-role">—</dd>
+                            </div>
+                            <div>
+                                <dt data-i18n="profile.departments">Departmanlar</dt>
+                                <dd id="profile-departments">—</dd>
+                            </div>
+                            <div>
+                                <dt data-i18n="profile.uid">Kullanıcı kimliği</dt>
+                                <dd><span id="profile-uid">—</span><button type="button" id="copy-uid-btn"
+                                        class="profile-copy-btn" title="Kopyala"><span
+                                            class="material-symbols-rounded">content_copy</span></button></dd>
+                            </div>
                         </dl>
-                        <div class="panel-menu-section-title" style="margin-top:16px;" data-i18n="perms.menu_access">Erişim</div>
+                        <div class="panel-menu-section-title" style="margin-top:16px;" data-i18n="perms.menu_access">
+                            Erişim</div>
                         <div id="profile-perms" class="profile-perms"></div>
                     </div>
                 </div>
@@ -1298,7 +1623,7 @@
                 btn.addEventListener('click', () => {
                     const targetId = btn.getAttribute('data-target');
                     const targetPanel = document.getElementById(targetId);
-                    
+
                     if (targetPanel) {
                         panels.forEach(p => p.classList.remove('active'));
                         targetPanel.classList.add('active');
@@ -1321,11 +1646,11 @@
         });
 
         // Hızlı filtreleme
-        window.filterContributors = function(filterType) {
+        window.filterContributors = function (filterType) {
             const listContainer = document.getElementById('contributors-list-container');
             if (!listContainer) return;
             const items = listContainer.children;
-            
+
             document.querySelectorAll('.filter-chip').forEach(btn => {
                 if (btn.getAttribute('data-filter') === filterType) {
                     btn.classList.add('active');
@@ -1342,10 +1667,10 @@
                 const isVerified = toggleInput ? toggleInput.checked : false;
                 const innerText = item.innerHTML || "";
                 const textContent = item.textContent || "";
-                
+
                 const ageMatch = textContent.match(/(?:Age|Yaş):\s*(\d+)/i);
                 const age = ageMatch ? parseInt(ageMatch[1], 10) : 0;
-                
+
                 const hasLinkedIn = innerText.includes('LinkedIn');
                 const hasGitHub = innerText.includes('GitHub');
                 const hasInterview = innerText.includes('Interview:');
@@ -1381,14 +1706,14 @@
         };
 
         // İstemci tarafı hızlı arama
-        window.searchContributorsLocal = function() {
+        window.searchContributorsLocal = function () {
             const searchInput = document.getElementById('contributor-search');
             if (!searchInput) return;
             const query = searchInput.value.toLowerCase().trim();
             const listContainer = document.getElementById('contributors-list-container');
             if (!listContainer) return;
             const items = listContainer.children;
-            
+
             if (query.length > 0) {
                 document.querySelectorAll('.filter-chip').forEach(btn => {
                     if (btn.getAttribute('data-filter') === 'all') btn.classList.add('active');
@@ -1399,7 +1724,7 @@
             let matchCount = 0;
             for (let item of items) {
                 if (item.tagName === 'P' || item.id === 'contributor-no-match-alert') continue;
-                
+
                 const text = item.textContent.toLowerCase();
                 const visible = text.includes(query);
                 item.style.display = visible ? 'flex' : 'none';
@@ -1423,10 +1748,10 @@
         };
 
         // Verileri CSV/JSON Formatında Yerel Olarak Derleme ve İndirme Betiği
-        window.exportDataLocal = function() {
+        window.exportDataLocal = function () {
             const dataType = document.getElementById('export-data-type').value;
             const format = document.getElementById('export-format').value;
-            
+
             let rawData = null;
             let fileNamePrefix = '';
 
@@ -1534,7 +1859,7 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
+
             // Try triggering showToast
             if (window.showToast) {
                 window.showToast(window.__('system.export_success'), 'success');
