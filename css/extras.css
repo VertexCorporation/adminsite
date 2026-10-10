@@ -621,3 +621,9 @@ html[data-theme="light"] .panel-card::before { mix-blend-mode: normal; }
 .team-entry-edit { border: none; background: transparent; color: var(--text-muted, #777777); cursor: pointer; border-radius: 8px; padding: 2px; line-height: 1; transition: color .15s ease; }
 .team-entry-edit:hover { color: var(--text-color, #F2F2F2); }
 .team-entry-edit .material-symbols-rounded { font-size: 16px; }
+
+/* ============================================================
+   IKONLU INPUTLAR: metin ikonla ustuste binmesin (guclendirilmis)
+   ============================================================ */
+.form-input-wrapper input,
+.form-input-wrapper textarea { padding-left: 38px !important; }
