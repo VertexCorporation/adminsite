@@ -2,7 +2,7 @@
 
 import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
-import { escapeHTML, showToast } from '../utils/ui.js';
+import { showToast } from '../utils/ui.js';
 
 let unsubscribeFromScheduledTasks = null;
 
@@ -228,11 +228,11 @@ export function listenForScheduledTasks() {
                 item.className = 'task-item';
                 item.innerHTML = `
                 <div class="task-details">
-                    <span class="task-title" title="${escapeHTML(title)}">${escapeHTML(title)}</span>
+                    <span class="task-title" title="${title}">${title}</span>
                     <span class="task-time">Scheduled for: ${formattedTime}</span>
-                    <span class="task-target">Target: ${escapeHTML(task.target?.type || "Unknown")}</span>
+                    <span class="task-target">Target: ${task.target.type}</span>
                 </div>
-                <div class="task-actions"><button class="cancel-task-btn" data-task-id="${escapeHTML(doc.id)}">Cancel</button></div>`;
+                <div class="task-actions"><button class="cancel-task-btn" data-task-id="${doc.id}">Cancel</button></div>`;
                 dom.scheduledTasksListContainer.appendChild(item);
             });
         }, error => {

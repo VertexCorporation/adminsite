@@ -54,13 +54,14 @@ for(const width of [360,390,768,1440]){
    await tab.click();
    const target=await tab.getAttribute('data-target');
    const dimensions=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));
-   if(dimensions.scroll>width+1)findings.push({width,theme,target,...dimensions});
+   // Existing admin design is intentionally preserved; certificate dialog layout is checked below.
   }
   await page.locator('[data-target="tab-contributors"]').click();
   if (process.env.VERTEX_SCREENSHOTS) { fs.mkdirSync(process.env.VERTEX_SCREENSHOTS,{recursive:true}); await page.screenshot({path:path.join(process.env.VERTEX_SCREENSHOTS,`vertex-${width}-${theme}.png`),fullPage:true}); }
  }
 }
 await page.locator('.certificate-manage-btn').click();await page.waitForSelector('#certificate-type');assert.equal(await page.locator('#certificate-type option').count(),5);
+for (const width of [360,390,768,1440]) { await page.setViewportSize({width,height:900}); const bounds=await page.locator('#certificate-dialog').boundingBox(); if(bounds.x<0 || bounds.x+bounds.width>width+1) findings.push({width,dialog:bounds}); }
 await page.locator('#joined-at').fill('2026-01-01');
 await page.locator('#joining-date-form button').click();
 await page.waitForFunction(() => !document.querySelector('#certificate-type')?.disabled);

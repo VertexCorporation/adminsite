@@ -35,8 +35,7 @@ async function callCallable(name, data) {
             'Content-Type': 'application/json',
             ...(idToken ? { Authorization: 'Bearer ' + idToken } : {})
         },
-        body: JSON.stringify({ data: data ?? {} }),
-        signal: AbortSignal.timeout(30000)
+        body: JSON.stringify({ data: data ?? {} })
     });
     let json = {};
     try { json = await res.json(); } catch { /* bos govde */ }

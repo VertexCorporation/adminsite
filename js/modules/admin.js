@@ -1,6 +1,6 @@
 // js/modules/admin.js
 
-import { showToast, __, onLangChange, sanitizeHTML, escapeHTML } from '../utils/ui.js';
+import { showToast, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
 import { auth, addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, setUserSubscriptionFn, bulkSetUserSubscriptionsFn } from '../core/firebase.js';
 import { DEPARTMENTS, getEffectivePanelLevel } from './roles.js';
@@ -390,7 +390,7 @@ export async function loadAdminsList() {
             if (debug) {
                 debugInfo = `<br><small style="color: var(--text-muted);">Scanned: ${debug.totalScanned} users | Users with claims: ${debug.usersWithClaims}</small>`;
                 if (debug.claimsLog && debug.claimsLog.length > 0) {
-                    debugInfo += `<br><small style="color: var(--text-muted);">Claims found: ${escapeHTML(JSON.stringify(debug.claimsLog))}</small>`;
+                    debugInfo += `<br><small style="color: var(--text-muted);">Claims found: ${JSON.stringify(debug.claimsLog)}</small>`;
                 }
             }
             container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem;">Sistem yöneticisi bulunamadı.${debugInfo}</p>`;
@@ -402,8 +402,8 @@ export async function loadAdminsList() {
             html += `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color);">
                     <div>
-                        <strong style="color: var(--text-primary);">${escapeHTML(admin.email)}</strong>
-                        <div style="color: var(--text-secondary); font-size: 0.85rem;">UID: ${escapeHTML(admin.uid)}</div>
+                        <strong style="color: var(--text-primary);">${admin.email}</strong>
+                        <div style="color: var(--text-secondary); font-size: 0.85rem;">UID: ${admin.uid}</div>
                     </div>
                 </div>
             `;
@@ -412,7 +412,7 @@ export async function loadAdminsList() {
     } catch (error) {
         console.error("[CLIENT] Error loading admins list:", error);
         const details = error.code ? `${error.code}: ${error.message}` : error.message;
-        container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem; color: var(--accent-clay);">Hata: ${escapeHTML(details)}</p>`;
+        container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem; color: var(--accent-clay);">Hata: ${details}</p>`;
     }
 }
 

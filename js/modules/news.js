@@ -2,7 +2,7 @@
 
 import { db, createNewsArticleFn, deleteNewsArticleFn, getCoverUploadUrlFn } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
-import { escapeHTML, showToast } from '../utils/ui.js';
+import { showToast } from '../utils/ui.js';
 
 let unsubscribeFromArticles = null;
 
@@ -30,8 +30,7 @@ async function handleNewsFormSubmit(e) {
         const file = document.getElementById(fileInputId).files[0];
         if (!file) throw new Error(`${lang.toUpperCase()} cover image is required.`);
         const result = await getCoverUploadUrlFn({ slug: cleanSlug, fileName: `${lang}-${file.name}`, contentType: file.type });
-        const upload = await fetch(result.data.signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
-        if (!upload.ok) throw new Error('Image upload failed. Please try again.');
+        await fetch(result.data.signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
         return result.data.filePath;
     };
 
@@ -101,10 +100,10 @@ export function listenForArticles() {
             item.className = 'article-item';
             item.innerHTML = `
                 <div class="item-details">
-                    <span class="item-title">${escapeHTML(doc.data().translations?.en?.title || 'Untitled')}</span>
+                    <span class="item-title">${doc.data().translations.en.title || 'Untitled'}</span>
                 </div>
                 <div class="item-actions">
-                    <button class="delete-btn" data-slug="${escapeHTML(doc.id)}">Delete</button>
+                    <button class="delete-btn" data-slug="${doc.id}">Delete</button>
                 </div>`;
             dom.articlesListContainer.appendChild(item);
         });
