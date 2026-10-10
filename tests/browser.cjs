@@ -60,16 +60,16 @@ for(const width of [360,390,768,1440]){
   if (process.env.VERTEX_SCREENSHOTS) { fs.mkdirSync(process.env.VERTEX_SCREENSHOTS,{recursive:true}); await page.screenshot({path:path.join(process.env.VERTEX_SCREENSHOTS,`vertex-${width}-${theme}.png`),fullPage:true}); }
  }
 }
-await page.locator('.certificate-manage-btn').click();await page.waitForSelector('#certificate-type');assert.equal(await page.locator('#certificate-type option').count(),5);
+await page.locator('.certificate-manage-btn').click();await page.waitForSelector('[data-award]');assert.deepEqual(await page.locator('[data-award]').evaluateAll(es=>es.map(e=>e.dataset.award)),['tenacity','constancy','majesty','nobility']);
 for (const width of [360,390,768,1440]) { await page.setViewportSize({width,height:900}); const bounds=await page.locator('#certificate-dialog').boundingBox(); if(bounds.x<0 || bounds.x+bounds.width>width+1) findings.push({width,dialog:bounds}); }
 await page.locator('#joined-at').fill('2026-01-01');
 await page.locator('#joining-date-form button').click();
-await page.waitForFunction(() => !document.querySelector('#certificate-type')?.disabled);
+await page.waitForFunction(() => !document.querySelector('[data-award]')?.disabled);
 assert(calls.includes('setvertexcontributorjoiningdate'));
-await page.selectOption('#certificate-type','tenacity');assert.match(await page.locator('#certificate-preview').innerText(),/Tenacity/);
+
 page.once('dialog',dialog=>dialog.accept());
-await page.locator('#certificate-form button').click();
-await page.waitForFunction(() => !document.querySelector('#certificate-type')?.disabled);
+await page.locator('[data-award=tenacity]').click();
+await page.waitForFunction(() => !document.querySelector('[data-award]')?.disabled);
 assert(calls.includes('issuevertexcertificate'));
 await page.keyboard.press('Escape');await page.waitForSelector('#certificate-dialog',{state:'detached'});assert.equal(await page.locator('#certificate-dialog').count(),0);
 await page.locator('#theme-toggle-btn').click();assert(await page.evaluate(()=>['dark','light'].includes(localStorage.getItem('theme'))));

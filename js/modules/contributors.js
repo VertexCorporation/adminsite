@@ -13,6 +13,7 @@ const linkedInIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height=
 const githubIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:text-bottom; margin-right:5px; color:var(--primary-color)"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>`;
 const interviewIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:text-bottom; margin-right:5px; color:#22c55e;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="m9 16 2 2 4-4"></path></svg>`;
 const trashIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+const awardIcon = '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="m8.2 13-1.2 9 5-3 5 3-1.2-9"/></svg>';
 const editIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
 
 let listContainer;
@@ -25,7 +26,7 @@ export function initContributorsModule() {
     if (refreshBtn) {
         refreshBtn.addEventListener('click', fetchContributorsData);
     }
-    
+
     // Inject Custom CSS for verification toggle and text
     const style = document.createElement('style');
     style.innerHTML = `
@@ -42,9 +43,9 @@ export function initContributorsModule() {
             font-weight: bold;
         }
         .verify-status-text {
-            font-size: 0.75rem; 
-            margin-top: 4px; 
-            font-weight: 600; 
+            font-size: 0.75rem;
+            margin-top: 4px;
+            font-weight: 600;
             transition: all 0.3s ease;
         }
         .verify-status-text.unverified {
@@ -110,7 +111,7 @@ export function applyChipVisibility() {
 
 export async function fetchContributorsData() {
     if (!listContainer) return;
-    
+
     listContainer.innerHTML = '<p class="form-hint" style="text-align:center;">Loading contributors...</p>';
     if (refreshBtn) refreshBtn.disabled = true;
 
@@ -151,11 +152,11 @@ function renderContributors(contributors) {
         // Yazma yetkisi: 'contributors.list' paneli write olanlar (veya adminler)
         // kalem/toggle/silme görür; read-only kullanıcılar yalnızca rozet görür.
         const canWrite = getEffectivePanelLevel('contributors.list') === 'write';
-        
+
         let mediaLinks = '';
         if (/^https?:\/\//i.test(contributor.linkedin || '')) mediaLinks += `<a href="${escapeHTML(contributor.linkedin)}" target="_blank" rel="noopener noreferrer" style="color:var(--primary-color); text-decoration:none; margin-right:15px;">${linkedInIcon} LinkedIn</a>`;
         if (/^https?:\/\//i.test(contributor.github || '')) mediaLinks += `<a href="${escapeHTML(contributor.github)}" target="_blank" rel="noopener noreferrer" style="color:var(--primary-color); text-decoration:none;">${githubIcon} GitHub</a>`;
-        
+
         let extraInfo = '';
         if (contributor.age) extraInfo += `${ageIcon} Age: ${escapeHTML(String(contributor.age ?? ''))} &nbsp;&nbsp;`;
         if (mediaLinks) extraInfo += mediaLinks;
@@ -178,8 +179,8 @@ function renderContributors(contributors) {
                     <button class="edit-contributor-btn" data-id="${contributor.id}" title="${__('contributors.edit_title')}" style="margin-top: 2px;">
                         ${editIcon}
                     </button>
-                    ${isPanelAdmin() ? `<button class="delete-contributor-btn" data-id="${contributor.id}" aria-label="Delete contributor">${trashIcon}</button><button class="certificate-manage-btn" data-id="${contributor.id}">Certificates</button>` : ''}
-                    <span class="verify-status-text ${contributor.hasVerified ? 'verified' : 'unverified'}">${contributor.hasVerified ? 'Verified' : 'Unverified'}</span>` : `
+                    ${isPanelAdmin() ? `<button class="certificate-manage-btn edit-contributor-btn" data-id="${contributor.id}" aria-label="Award certificate" title="Belge ver / Award certificate">${awardIcon}</button><button class="delete-contributor-btn" data-id="${contributor.id}" aria-label="Delete contributor">${trashIcon}</button>` : ''}
+                    ${isPanelAdmin() ? `<label class="switch verify-switch"><input type="checkbox" class="verify-toggle" data-id="${contributor.id}" aria-label="Approve contributor" ${contributor.hasVerified ? 'checked' : ''}><span class="slider round"></span></label>` : ''}<span id="status-text-${contributor.id}" class="verify-status-text ${contributor.hasVerified ? 'verified' : 'unverified'}">${contributor.hasVerified ? 'Verified' : 'Unverified'}</span>` : `
                     <span class="verify-status-text ${contributor.hasVerified ? 'verified' : 'unverified'}" style="margin-top: 6px;" id="status-text-${contributor.id}">
                         ${contributor.hasVerified ? 'Verified' : 'Unverified'}
                     </span>`}
@@ -208,6 +209,39 @@ function renderContributors(contributors) {
     });
     window.searchContributorsLocal?.();
 
+    // Add event listeners to toggles
+    const toggles = listContainer.querySelectorAll('.verify-toggle');
+    toggles.forEach(toggle => {
+        toggle.addEventListener('change', async (e) => {
+            const id = e.target.getAttribute('data-id');
+            const isChecked = e.target.checked;
+            const statusText = document.getElementById(`status-text-${id}`);
+
+            e.target.disabled = true; // disable while updating
+
+            try {
+                await toggleContributorVerificationFn({ contributorId: id, hasVerified: isChecked });
+                showToast(__('contributors.verify_updated'), 'success');
+
+                // Animate text update
+                if (statusText) {
+                    statusText.style.opacity = 0;
+                    setTimeout(() => {
+                        statusText.innerText = isChecked ? __('contributors.verified_label') : __('contributors.unverified_label');
+                        statusText.className = `verify-status-text ${isChecked ? 'verified' : 'unverified'}`;
+                        statusText.style.opacity = 1;
+                    }, 150);
+                }
+            } catch (err) {
+                console.error('[CONTRIBUTORS] Toggle failed:', err);
+                e.target.checked = !isChecked; // revert
+                showToast(`Update failed: ${err.message}`, 'error');
+            } finally {
+                e.target.disabled = false;
+            }
+        });
+    });
+
     // Add event listeners to delete buttons
     const deleteBtns = listContainer.querySelectorAll('.delete-contributor-btn');
     deleteBtns.forEach(btn => {
@@ -229,7 +263,7 @@ function renderContributors(contributors) {
     });
 
     // Add event listeners to edit (pencil) buttons
-    const editBtns = listContainer.querySelectorAll('.edit-contributor-btn');
+    const editBtns = listContainer.querySelectorAll('.edit-contributor-btn:not(.certificate-manage-btn)');
     editBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const id = btn.getAttribute('data-id');

@@ -6,3 +6,5 @@
 .certificate-manage-btn{padding:8px 12px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--bg-input);color:var(--text-primary);cursor:pointer}
 .certificate-dialog input,.certificate-dialog select{width:100%;min-height:44px}
 @media(max-width:600px){.certificate-dialog{padding:16px}.certificate-facts{grid-template-columns:1fr}}
+
+.certificate-awards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}.certificate-awards button{display:flex;flex-direction:column;gap:6px;padding:14px;white-space:normal}.certificate-awards span{font-size:.85rem}@media(max-width:420px){.certificate-awards{grid-template-columns:1fr}}
