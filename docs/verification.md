@@ -35,3 +35,9 @@ Deployments use `--only functions:<individual-name>` against verified project `v
 28 browser check groups passed with no unexpected console or module errors. The complete backend certificate/notification/permission suite passed 41 tests, and the local department adapter passed 4 tests. JavaScript syntax, CSS structure and clean dependency installation were verified.
 
 The five individually deployed functions are sendTargetedNotification, scheduleNotification, cancelScheduledNotification, processScheduledNotification and setVertexContributorJoiningDate. No real notification or certificate was sent during verification. Production authentication and delivery are checked through safe denial probes; successful authenticated mutations are covered by mocks.
+
+## live results and remaining blocker
+
+Commit `69854e8` was pushed normally and deployed through the verified Cloudflare Pages `adminsite` project to https://admin.vertexishere.com/. Real Firebase startup and the login screen passed desktop/mobile browser checks with no failed requests, uncaught errors or overflow. Successful authenticated write operations remain mock tested; no real notifications or certificates were sent.
+
+Four notification services are verified live. The joining-date service was recreated, but its invocation access remains blocked by platform 403. Subsequent configuration deployments failed because of regional CPU quota. Automatic approval review rejected granting public invocation without explicit human authorization. That IAM change was not executed; approval is pending. Joining-date production editing is therefore incomplete despite its passing frontend/backend mock tests. Other user privileges, secrets, schemas and unrelated services were not changed.

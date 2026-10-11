@@ -1,0 +1,14 @@
+{
+  "url": "https://admin.vertexishere.com/",
+  "newStyles": 1,
+  "loginVisible": true,
+  "loaderHidden": true,
+  "overflow": false,
+  "errors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "screenshots": [
+    "/Users/baba/Documents/adminsite/tests/results/screenshots/live-login-390.png",
+    "/Users/baba/Documents/adminsite/tests/results/screenshots/live-login-1440.png"
+  ]
+}
