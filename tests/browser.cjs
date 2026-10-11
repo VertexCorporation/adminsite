@@ -1,15 +1,15 @@
-const {chromium} = require('playwright');
+const {chromium,webkit} = require('playwright');
 const fs=require('fs'),path=require('path'),http=require('http'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
-const server=http.createServer((req,res)=>{const p=path.join(root,decodeURIComponent(req.url.split('?')[0])==='/'?'index.html':req.url.split('?')[0]);if(!p.startsWith(root))return res.end();fs.readFile(p,(err,data)=>{if(err){res.statusCode=404;return res.end();}res.setHeader('Content-Type',p.endsWith('.js')?'text/javascript':p.endsWith('.css')?'text/css':p.endsWith('.png')?'image/png':'text/html');res.end(data);});});
+const server=http.createServer((req,res)=>{const p=path.join(root,decodeURIComponent(req.url.split('?')[0])==='/'?'index.html':req.url.split('?')[0]);if(!p.startsWith(root))return res.end();fs.readFile(p,(err,data)=>{if(err){res.statusCode=404;return res.end();}res.setHeader('Content-Type',p.endsWith('.js')?'text/javascript':p.endsWith('.css')?'text/css':p.endsWith('.png')?'image/png':p.endsWith('.svg')?'image/svg+xml':'text/html');res.end(data);});});
 (async()=>{
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
-const browser=await chromium.launch({...(process.env.CHROME_PATH ? {executablePath:process.env.CHROME_PATH} : {}),headless:true});
-const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=true,history=[],people=null,contributorDelay=0,failContributors=false,failNotification=false; let joiningDate=null,failPermissionSave=false;
+const browser=await (process.env.VERTEX_BROWSER==='webkit'?webkit:chromium).launch({...(process.env.VERTEX_BROWSER!=='webkit'&&process.env.CHROME_PATH ? {executablePath:process.env.CHROME_PATH} : {}),headless:true});
+const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=true,history=[],people=null,contributorDelay=0,failContributors=false,failNotification=false; let joiningDate=null,failPermissionSave=false,failMaintenance=false,maintenanceState=false,failVerify=false;
 
 const person={id:'person',name:'Example Participant',email:'person@example.invalid',language:'en',hasVerified:false,createdAt:{_seconds:1767272400},department:'Core',interviewDate:'2026-10-10',about:'Local test fixture'};
 const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet'},constancy:{en:'Constancy',tr:'Metanet'},nobility:{en:'Nobility',tr:'Asalet'},majesty:{en:'Majesty',tr:'Azamet'}};
-const page=await browser.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|Fixture unavailable|Mock delivery outcome uncertain|Fixture permission rejection/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
+const page=await browser.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|Fixture unavailable|Mock delivery outcome uncertain|Fixture permission rejection|Fixture verification unavailable|Fixture maintenance unavailable/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
 if(process.env.VERTEX_TRACE)await page.context().tracing.start({screenshots:true,snapshots:true,sources:true});
 await page.addInitScript(()=>{
  localStorage.setItem('siteLang','en');
@@ -30,7 +30,12 @@ await page.route('**/*',async route=>{
  if(url.hostname.endsWith('run.app')){
   const name=url.hostname.split('-')[0];calls.push(name);payloads.push({name,data:route.request().postDataJSON()?.data});
   if(name==='sendtargetednotification' && failNotification)return route.fulfill({status:500,contentType:'application/json',body:JSON.stringify({error:{status:'INTERNAL',message:'Mock delivery outcome uncertain'}})});
+  if(name==='getserverstatus'&&failMaintenance)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture maintenance unavailable'}})});
+  if(name==='togglecontributorverification'&&failVerify)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture verification unavailable'}})});
   let result={};
+  if(name==='getserverstatus')result={isUnderMaintenance:maintenanceState};
+  if(name==='setserverstatus'){maintenanceState=route.request().postDataJSON().data.maintenanceEnabled;result={success:true};}
+  if(name==='togglevertexstatus')result={isVertex:true};
   if(name==='savedepartmentpermissions' && failPermissionSave)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture permission rejection'}})});
   if(name==='getvertexcontributors'){const fixture=people || [person];if(contributorDelay)await new Promise(r=>setTimeout(r,contributorDelay));if(failContributors)return route.fulfill({contentType:'application/json',status:503,body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});result={contributors:fixture};}
   else if(name==='getvertexcertificatedetails')result={types,eligibility:{status:'joining-date-required',eligibleTypes:[],joinedAt:joiningDate},history};
@@ -48,7 +53,7 @@ await page.route('**/*',async route=>{
   return route.fulfill({contentType:'application/json',body:JSON.stringify({result})});
  }
  if(url.pathname.endsWith('.json') || url.pathname === '/models')return route.fulfill({contentType:'application/json',body:JSON.stringify({producers:{Vertex:{Fixture:{Example:{id:'fixture-model',source:'manual',type:'offline',details:{en:{title:'Fixture Model'},tr:{title:'Örnek Model'}}}}}},models:[]})});
- return route.fulfill({status:200,body:'',contentType:url.pathname.endsWith('.css')?'text/css':'text/plain'});
+ return route.fulfill({status:200,body:'',contentType:url.hostname==='fonts.googleapis.com'||url.pathname.endsWith('.css')?'text/css':'text/plain'});
 });
 
 console.log("Starting page");await page.goto(`http://127.0.0.1:${server.address().port}`,{waitUntil:"domcontentloaded",timeout:15000});console.log("Page loaded");
@@ -58,7 +63,8 @@ const checks=[];
 const note=x=>{checks.push(x);console.log('PASS',x);};
 const issueCount=()=>calls.filter(n=>n==='issuevertexcertificate').length;
 const openCert=async()=>{await page.waitForSelector('.vx-popover.is-closing',{state:'detached'});await page.waitForSelector('.vx-modal[aria-hidden=true]',{state:'detached'});await page.locator('.certificate-manage-btn').first().click();await page.waitForSelector('[data-award]');};
-const selectTab=async id=>{if(await page.locator('#nav-toggle').isVisible())await page.locator('#nav-toggle').click();await page.locator(`[data-target="tab-${id}"]`).click();if(await page.locator('#nav-toggle').isVisible()&&await page.locator('.app-sidebar.open').count())await page.keyboard.press('Escape');};
+const selectTab=async id=>{if(await page.locator('#nav-toggle').isVisible())await page.locator('#nav-toggle').click();await page.locator(`[data-target="tab-${id}"]`).click();if(await page.locator('#nav-toggle').isVisible()&&await page.locator('.app-sidebar.open').count())await page.keyboard.press('Escape');if(await page.locator('#nav-toggle').isVisible())await page.waitForTimeout(240);};
+if(!process.env.VERTEX_POLISH_ONLY){
 for(const width of [360,390,768,1024,1440,1920]){
  await page.setViewportSize({width,height:900});
  for(const theme of ['light','dark']){console.log('VIEW',width,theme);
@@ -108,10 +114,12 @@ await selectTab('subscriptions');await page.locator('#sub-user-email').fill('fix
 await selectTab('chat');await page.locator('#chat-input').fill('Mock message');await page.locator('#chat-send').click();await page.waitForTimeout(150);assert(calls.includes('postconsolechatmessage'));note('Chat channels, messages and posting (mock)');
 await selectTab('system');assert.equal(await page.locator('[data-section]').count(),7);await page.locator('[data-section=export]').click();assert(await page.locator('#data-exporter-manager').isVisible());note('7 functional System sections');
 await selectTab('contributors');
+}
+await require('./final-polish.cjs')({page,selectTab,note,calls,payloads,setPeople:value=>{people=value;},person,failMaintenance:value=>{failMaintenance=value;},failVerify:value=>{failVerify=value;}});
 await require('./precision.cjs')({page,selectTab,note,payloads,calls,failPermissions:value=>{failPermissionSave=value;}});
 await selectTab('contributors');
 // Authorization is tested against the same UI, with backend calls still mocked.
-await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.setCurrentUser(false,['Senatus']);await roles.loadDepartmentPermissions();const permissions=roles.getDepartmentPermissions();permissions.Senatus.hiddenFields={'contributors.list':['contact','age','links','interview']};permissions.Senatus.hiddenChips={'contributors.list':['github']};roles.getAccessibleTabs(['Senatus']);await (await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.certificate-manage-btn').count(),0);assert.equal(await page.locator('.edit-contributor-btn').count(),0);assert.equal(await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');return roles.getEffectivePanelLevel('contributors.list');}),'read');assert.equal(await page.locator('.contributor-cell-age').innerText(),'—');await page.locator('[data-details]').click();assert.equal(await page.locator('.vx-drawer-body').innerText().then(s=>s.includes('person@example.invalid')),false);await page.keyboard.press('Escape');note('Department read-only actions and hidden field policies');
+await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.setCurrentUser(false,['Senatus']);await roles.loadDepartmentPermissions();const permissions=roles.getDepartmentPermissions();permissions.Senatus.hiddenFields={'contributors.list':['contact','age','links','interview']};permissions.Senatus.hiddenChips={'contributors.list':['github']};roles.getAccessibleTabs(['Senatus']);await (await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.certificate-manage-btn').count(),0);assert.equal(await page.locator('.edit-contributor-btn').count(),0);assert.equal(await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');return roles.getEffectivePanelLevel('contributors.list');}),'read');assert.equal(await page.locator('.contributor-cell-age').innerText(),'—');await page.locator('#contributor-search').fill('person@example.invalid');assert.equal(await page.locator('.contributor-row').count(),0);await page.locator('#contributor-search').fill('Local test fixture');assert.equal(await page.locator('.contributor-row').count(),1);await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.getDepartmentPermissions().Senatus.hiddenFields['contributors.list'].push('about');await(await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.contributor-row').count(),0);await page.locator('#contributor-search').fill('');await page.locator('[data-details]').click();assert.equal(await page.locator('.vx-drawer-body').innerText().then(s=>s.includes('person@example.invalid')),false);await page.keyboard.press('Escape');note('Department read-only actions and hidden field policies');
 await page.locator('[data-details]').click();await page.waitForSelector('.vx-drawer');await page.evaluate(()=>document.getElementById('logout-btn').click());await page.waitForSelector('.vx-drawer',{state:'detached'});await page.waitForSelector('#login-container',{state:'visible'});assert.equal(await page.locator('#admin-panel').isVisible(),false);await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('.certificate-manage-btn');note('Logout and admin login auth state');
 for(const claims of [{admin:false,departments:['Senatus']},{admin:false,departments:['Aero']}]) {
  const before=calls.filter(name=>name==='savedepartmentpermissions').length;
@@ -129,5 +137,5 @@ await page.evaluate(async()=>{window.__testClaims={admin:true};await window.fire
 await page.waitForSelector('#login-container',{state:'visible'});await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('.certificate-manage-btn');
 note('Real auth flow hides inaccessible submenus for read-only and contributor-only departments without saving defaults');
 await page.emulateMedia({reducedMotion:'reduce'});assert(await page.locator('.tab-panel.active').evaluate(el=>parseFloat(getComputedStyle(el).animationDuration)<0.001));note('Reduced motion removes transitions and animations');assert.equal(await page.locator('.material-symbols-rounded').count(),0);assert.equal(errors.length,0,errors.join('\n'));assert.deepEqual(consoleErrors,[]);
-const report={checks,uncaughtErrors:errors,unexpectedConsoleErrors:consoleErrors,viewportWidths:[360,390,768,1024,1440,1920],themes:['light','dark','system'],mockCalls:calls.length};fs.mkdirSync(path.join(root,'tests/results'),{recursive:true});fs.writeFileSync(path.join(root,'tests/results/browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));if(process.env.VERTEX_TRACE)await page.context().tracing.stop({path:path.join(root,'tests/results/precision-trace.zip')});await browser.close();server.close();
+const report={browser:process.env.VERTEX_BROWSER||'chromium',checks,uncaughtErrors:errors,unexpectedConsoleErrors:consoleErrors,viewportWidths:[320,360,390,768,1024,1440,1920],themes:['light','dark','system'],mockCalls:calls.length};fs.mkdirSync(path.join(root,'tests/results'),{recursive:true});fs.writeFileSync(path.join(root,'tests/results/'+(process.env.VERTEX_BROWSER||'chromium')+'-browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));if(process.env.VERTEX_TRACE)await page.context().tracing.stop({path:path.join(root,'tests/results/precision-trace.zip')});await browser.close();server.close();
 })().catch(e=>{console.error(e);server.close();process.exit(1);});

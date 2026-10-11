@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title data-i18n="page.title">Vertex Kontrol - Yönetici Paneli</title>
+    <title data-i18n="page.title">VERTEX KONSOL</title>
 
     <!-- SEO & Basic Meta -->
     <meta name="description" data-i18n="page.desc" content="Vertex içerikleri, kullanıcı yönetimi ve sistem yönetimi için merkezi kontrol paneli.">
@@ -58,13 +58,7 @@
 <body>
 
     <!-- Başlatıcı Yükleme Ekranı -->
-    <div id="app-loader">
-        <svg class="loader-logo" viewBox="0 0 100 100" width="80">
-            <polygon class="logo-bg" points="50,15 95,85 5,85"></polygon>
-            <polygon class="logo-line" points="50,15 95,85 5,85"></polygon>
-        </svg>
-        <p data-i18n="loader.text">Vertex Kontrol Başlatılıyor</p>
-    </div>
+    <div id="app-loader" class="vx-app-loader" role="status" aria-label="Vertex Konsol yükleniyor"><div class="vx-loader-mark" aria-hidden="true"><img class="vx-loader-logo vx-loader-base" src="assets/vertex-logo.svg" alt=""><img class="vx-loader-logo vx-loader-sweep" src="assets/vertex-logo.svg" alt=""></div><span class="sr-only" data-i18n="common.loading">Yükleniyor</span></div>
 
     <!-- Hızlı Toast Bildirim Alanı -->
     <div id="toast-container"></div>
@@ -74,14 +68,12 @@
         <div class="login-box">
             <div class="login-header">
                 <div class="logo-orb">
-                    <svg viewBox="0 0 100 100" width="32" class="logo-svg">
-                        <polygon points="50,15 95,85 5,85" fill="none" stroke="currentColor" stroke-width="7"></polygon>
-                    </svg>
+                    <img src="assets/vertex-logo.svg" class="vertex-brand-logo" width="32" height="32" alt="">
                 </div>
-                <h1 data-i18n="login.title">VERTEX CONTROL</h1>
+                <h1 data-i18n="login.title">VERTEX KONSOL</h1>
                 <h2 data-i18n="login.subtitle">Sistem Yönetim Modülü</h2>
             </div>
-            
+
             <div class="form-wrapper">
                 <div class="input-field">
                     <svg class="prefix-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -89,14 +81,14 @@
                     </svg>
                     <input type="email" id="email" data-i18n-placeholder="login.email" placeholder="E-posta Adresiniz" autocomplete="email" required>
                 </div>
-                
+
                 <div class="input-field">
                     <svg class="prefix-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
                     </svg>
                     <input type="password" id="password" data-i18n-placeholder="login.password" placeholder="Şifreniz" required>
                 </div>
-                
+
                 <button id="login-btn" class="chrome-btn-primary">
                     <span data-i18n="login.btn">Oturum Aç</span>
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="margin-left: 8px;">
@@ -104,11 +96,11 @@
                     </svg>
                 </button>
             </div>
-            
+
             <div class="divider">
                 <span data-i18n="login.or">veya</span>
             </div>
-            
+
             <div class="social-login-grid">
                 <button id="google-login-btn" class="chrome-social-btn google" type="button">
                     <svg viewBox="0 0 24 24" width="16" height="16">
@@ -133,11 +125,11 @@
     <div id="admin-panel" class="app-layout" style="display:none;">
 
         <!-- ÜST BAŞLIK (SABİT HEADER) -->
-        <header class="app-header"><button id="nav-toggle" type="button" class="icon-action-btn" aria-label="Navigation" aria-controls="navigation-tabs-dock" aria-expanded="false"><i data-icon="menu"></i></button><span class="topbar-page-title"></span>
+        <header class="app-header"><button id="nav-toggle" type="button" class="icon-action-btn" aria-label="Ana navigasyon" data-i18n-aria-label="navigation.main" aria-controls="navigation-tabs-dock" aria-expanded="false"><i data-icon="menu"></i></button><span class="topbar-page-title"></span>
             <div class="header-control-buttons topbar-actions"><div id="user-menu-root"></div>
-                <button id="lang-toggle-btn" class="topbar-select-btn" aria-haspopup="dialog" data-i18n-title="language.select" aria-label="Language">
+                <button id="lang-toggle-btn" class="topbar-select-btn" aria-haspopup="dialog" data-i18n-title="language.select" aria-label="Dil" data-i18n-aria-label="language.select">
                     <i data-icon="language"></i>
-                    <span id="lang-indicator">TR</span>
+                    <span id="lang-indicator">Türkçe</span>
                 </button>
                 <button id="theme-menu-btn" class="topbar-select-btn" aria-haspopup="dialog" data-i18n-title="header.theme" title="Theme">
                     <i data-icon="sun"></i><span class="topbar-select-label"></span>
@@ -152,16 +144,14 @@
         <!-- ORTAK HİBRİT NAVİGASYON (MOBİLDE ALT BAR, DESKTOPTA SOL SIDEBAR) -->
         <aside class="app-sidebar">            <div class="brand-container">
                 <div class="brand-symbol">
-                    <svg viewBox="0 0 100 100" width="22">
-                        <polygon points="50,15 95,85 5,85" fill="none" stroke="currentColor" stroke-width="8"></polygon>
-                    </svg>
+                    <img src="assets/vertex-logo.svg" class="vertex-brand-logo" width="32" height="32" alt="">
                 </div>
                 <div class="brand-info">
-                    <h1>VERTEX CONTROL</h1>
-                    <span class="system-tag">System Portal</span>
+                    <h1>VERTEX KONSOL</h1>
+
                 </div>
-            <button type="button" class="icon-action-btn sidebar-close" aria-label="Close navigation"><i data-icon="close"></i></button></div>
-<nav class="sidebar-nav sidebar-scroll" id="navigation-tabs-dock" aria-label="Main navigation">
+            <button type="button" class="icon-action-btn sidebar-close" aria-label="Navigasyonu kapat" data-i18n-aria-label="navigation.close"><i data-icon="close"></i></button></div>
+<nav class="sidebar-nav sidebar-scroll" id="navigation-tabs-dock" aria-label="Ana navigasyon" data-i18n-aria-label="navigation.main">
 <section class="sidebar-group" data-nav-group="workspace">
 <h2 class="sidebar-group-label" data-i18n="navgroup.workspace">
 </h2>
@@ -334,7 +324,7 @@
                                 <span data-i18n="contributors.refresh">Yenile</span>
                             </button>
                         </div>
-                        
+
                         <!-- Kategori Çipleri -->
                         <div class="scroll-chips-row">
                             <button class="filter-chip active" data-filter="all" onclick="filterContributors('all')" data-i18n="contributors.filter.all">Tümü</button>
@@ -368,7 +358,7 @@
                             </div>
                         </div>
                         <p class="intro-description" data-i18n="admin.desc">Doğrulanmış bir Vertex üyesinin e-posta adresini girerek yönetici kontrol yetkisi tanımlayın.</p>
-                        
+
                         <form id="admin-form" class="form-stack">
                             <div class="form-group-field">
                                 <label for="new-admin-email" data-i18n="admin.email_label">Kullanıcı E-postası</label>
@@ -390,23 +380,23 @@
                         <div class="card-title-row">
                             <div class="title-details">
                                 <i class="" data-icon="verified_user"></i>
-                                <h3>Toggle Vertex Status</h3>
+                                <h3 data-i18n="panel.contributors.vertexStatus">Vertex Durumu Değiştir</h3>
                             </div>
                         </div>
-                        <p class="intro-description">Enter the UID of a user to grant or revoke internal Vertex Corporation access privileges.</p>
-                        
+                        <p class="intro-description" data-i18n="vertex.desc">Kullanıcı kimliğini gir.</p>
+
                         <form id="vertex-status-form" class="form-stack">
                             <div class="form-group-field">
-                                <label for="vertex-target-uid">User UID</label>
+                                <label for="vertex-target-uid" data-i18n="vertex.uid_label">Kullanıcı kimliği</label>
                                 <div class="form-input-wrapper">
                                     <i class="" data-icon="badge"></i>
-                                    <input type="text" id="vertex-target-uid" placeholder="Enter target User ID" required>
+                                    <input type="text" id="vertex-target-uid" placeholder="Hedef kullanıcı kimliği" data-i18n-placeholder="vertex.uid_ph" required>
                                 </div>
-                                <span class="form-field-info">UID can be found in Firebase Console.</span>
+                                <span class="form-field-info" data-i18n="vertex.uid_hint">Kullanıcı kimliğini Firebase Console üzerinden bulabilirsin.</span>
                             </div>
                             <button type="submit" id="toggle-vertex-btn" class="chrome-btn-outline">
                                 <i class="" data-icon="swap_vert"></i>
-                                <span>Toggle isVertex Status</span>
+                                <span data-i18n="panel.contributors.vertexStatus">Vertex Durumu Değiştir</span>
                             </button>
                         </form>
                     </div>
@@ -429,7 +419,7 @@
                                 <h3 data-i18n="models.form_title">Model Ekleme ve Düzenleme</h3>
                             </div>
                         </div>
-                        
+
                         <form id="model-form" class="form-scrollable-container">
                             <!-- Model Tipi Seçimi -->
                             <div class="form-block-group">
@@ -490,7 +480,7 @@
                                     <label for="model-url" data-i18n="models.gguf_url">GGUF HuggingFace İndirme Adresi</label>
                                     <input type="url" id="model-url" data-i18n-placeholder="models.gguf_ph" placeholder="https://huggingface.co/.../*.gguf">
                                 </div>
-                                
+
                                 <div class="flex-row">
                                     <div class="form-group-field flex-grow">
                                         <label for="model-size" data-i18n="models.file_size">Dosya Boyutu (MB)</label>
@@ -529,7 +519,7 @@
                                     <div class="flex-row">
                                         <div class="form-group-field flex-grow">
                                             <label for="model-creator" data-i18n="models.creator">Geliştirici</label>
-                                            <input type="text" id="model-creator" placeholder="Yaratıcı ekip">
+                                            <input type="text" id="model-creator" placeholder="Yaratıcı ekip" data-i18n-placeholder="models.creator_ph">
                                         </div>
                                         <div class="form-group-field flex-grow">
                                             <label for="model-license-name" data-i18n="models.license_type">Lisans Türü</label>
@@ -564,7 +554,7 @@
                                             <option value="phi-3_glm">Phi-3 / GLM</option>
                                         </select>
                                     </div>
-                                    
+
                                     <div class="token-inputs-grid">
                                         <div class="form-group-field">
                                             <label for="model-token-system-start" data-i18n="models.token_system_start">Sistem Başlangıç</label>
@@ -641,10 +631,10 @@
                                 <h3 data-i18n="models.all_models">Tüm Modeller Ağacı</h3>
                             </div>
                         </div>
-                        
+
                         <div id="all-models-explorer" class="database-tree-box">
                             <div id="all-models-list-container">
-                                
+
                             </div>
                         </div>
                     </div>
@@ -819,7 +809,7 @@
                                         </optgroup>
                                     </select>
                                 </div>
-                                
+
                                 <div class="flex-row">
                                     <div class="form-group-field flex-grow">
                                         <label for="notification-title-key" data-i18n="notif.title_key">Başlık Anahtarı (Title Key)</label>
@@ -990,7 +980,7 @@
                         </div>
                         <p class="intro-description" data-i18n="perms.desc">Her departmanın hangi bölümleri göreceğini ve düzenleyebileceğini belirleyin. Hücreler Yok / Gör / Düzenle arasında geçer; kanal ikonuyla panelleri tek tek ayarlayabilirsiniz. Değişiklikler otomatik kaydedilir.</p>
                         <div id="dept-permissions-container" class="scrollable-list-box" style="max-height: none; overflow-x: auto;">
-                            
+
                         </div>
                     </div>
                     <!-- GCS Backup Status -->
@@ -1052,7 +1042,7 @@
                             </button>
                         </div>
                         <div id="admin-list-container" class="scrollable-list-box-small" style="max-height: none; overflow-y: visible;">
-                            
+
                         </div>
                     </div>
 
@@ -1065,7 +1055,7 @@
                             </div>
                         </div>
                         <p class="intro-description" data-i18n="system.maintenance_desc">Sunucu bakım modunu açmak yeni giriş işlemlerini durdurur. Giriş yapmış kullanıcılar yerel modda devam edebilir.</p>
-                        
+
                         <div class="status-action-box">
                             <div id="maintenance-status-indicator" class="indicator-group">
                                 <span class="status-dot"></span>
@@ -1084,7 +1074,7 @@
                             </div>
                         </div>
                         <p class="intro-description" data-i18n="system.attributions_desc">Model veya lisans güncellemelerinin ardından atıflar sayfasını tekrar derleyip yayınlamak için bu tetikleyiciyi kullanın.</p>
-                        
+
                         <div class="status-action-box">
                             <div id="attributions-status-indicator" class="indicator-group">
                                 <span class="status-dot status-synced"></span>
@@ -1104,7 +1094,7 @@
                             </div>
                         </div>
                         <p class="intro-description" data-i18n="system.export_desc">Sistemde yüklü olan katılımcı listelerini, AI modellerini veya haber makalelerini seçtiğiniz formatta yerel olarak bilgisayarınıza indirebilirsiniz.</p>
-                        
+
                         <div class="form-stack">
                             <div class="flex-row">
                                 <div class="form-group-field flex-grow">
@@ -1116,7 +1106,7 @@
                                         <option value="articles" data-i18n="system.export_articles">Yayınlanan Haberler</option>
                                     </select>
                                 </div>
-                                
+
                                 <div class="form-group-field flex-grow">
                                     <label for="export-format" data-i18n="system.export_format">Dosya Formatı</label>
                                     <select id="export-format">
@@ -1125,7 +1115,7 @@
                                     </select>
                                 </div>
                             </div>
-                            
+
                             <button type="button" onclick="exportDataLocal()" class="chrome-btn-accent" style="margin-top: 10px;">
                                 <i class="" data-icon="download_for_offline"></i>
                                 <span data-i18n="system.export_btn">Veriyi Derle ve İndir</span>
@@ -1185,27 +1175,27 @@
                     <div class="card-title-row">
                         <div class="title-details">
                             <i class="" data-icon="add_circle"></i>
-                            <h3 id="chat-form-title">Kanal Oluştur</h3>
+                            <h3 id="chat-form-title" data-i18n="chat.form_create">Kanal Oluştur</h3>
                         </div>
                     </div>
                     <div class="form-stack">
                         <div class="form-group-field">
-                            <label for="chat-form-name">Kanal Adı</label>
-                            <input type="text" id="chat-form-name" maxlength="60" placeholder="örn. Genel, Array Görev Kanalı">
+                            <label for="chat-form-name" data-i18n="chat.name_label">Kanal Adı</label>
+                            <input type="text" id="chat-form-name" maxlength="60" placeholder="örn. Genel, Array Görev Kanalı" data-i18n-placeholder="chat.name_ph">
                         </div>
                         <div class="form-group-field">
-                            <label for="chat-form-desc">Açıklama</label>
-                            <input type="text" id="chat-form-desc" maxlength="300" placeholder="Kanalın amacı">
+                            <label for="chat-form-desc" data-i18n="chat.description_label">Açıklama</label>
+                            <input type="text" id="chat-form-desc" maxlength="300" placeholder="Kanalın amacı" data-i18n-placeholder="chat.desc_ph">
                         </div>
                         <div class="form-group-field">
-                            <label>Hangi departmanlara açık?</label>
+                            <label data-i18n="chat.departments_label">Hangi departmanlara açık?</label>
                             <div id="chat-form-depts" class="chat-form-depts"></div>
                         </div>
                         <div class="form-group-field">
-                            <label for="chat-form-postlevel">Kimler yazabilir?</label>
+                            <label for="chat-form-postlevel" data-i18n="chat.writers_label">Kimler yazabilir?</label>
                             <select id="chat-form-postlevel">
-                                <option value="all">Herkes</option>
-                                <option value="admins">Yalnızca Yöneticiler</option>
+                                <option value="all" data-i18n="chat.everyone">Herkes</option>
+                                <option value="admins" data-i18n="chat.admins_only">Yalnızca Yöneticiler</option>
                             </select>
                         </div>
                         <div class="form-group-field" id="chat-pin-group" style="display:none;">
@@ -1213,8 +1203,8 @@
                         </div>
                         <div class="form-submit-row">
                             <button type="button" id="chat-form-delete" class="chat-form-delete-btn" style="display:none;"><i class="" data-icon="delete"></i><span data-i18n="chat.delete_channel">Kanalı Sil</span></button>
-                            <button type="button" id="chat-form-save" class="chrome-btn-accent">Kaydet</button>
-                            <button type="button" id="chat-form-cancel" class="chrome-btn-outline">İptal</button>
+                            <button type="button" id="chat-form-save" class="chrome-btn-accent" data-i18n="common.save">Kaydet</button>
+                            <button type="button" id="chat-form-cancel" class="chrome-btn-outline" data-i18n="common.cancel">İptal</button>
                         </div>
                     </div>
                 </div>
@@ -1375,7 +1365,7 @@
         window.exportDataLocal = function() {
             const dataType = document.getElementById('export-data-type').value;
             const format = document.getElementById('export-format').value;
-            
+
             let rawData = null;
             let fileNamePrefix = '';
 
@@ -1483,7 +1473,7 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
+
             // Try triggering showToast
             if (window.showToast) {
                 window.showToast(window.__('system.export_success'), 'success');

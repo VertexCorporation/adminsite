@@ -67,7 +67,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   await page.locator('[data-i18n="subnav.vertex_status"]').click();
   assert(await page.locator('#vertex-status-manager').isVisible());
   await page.locator('[data-nav-action=certificates]').click();
-  await page.waitForSelector('.cert-popover.is-open');await page.keyboard.press('Escape');
+  await page.waitForSelector('#certificate-person-search');assert.equal(await page.locator('.cert-popover.is-open').count(),0);await page.locator('[data-person=person]').click();await page.waitForSelector('.cert-popover.is-open');await page.keyboard.press('Escape');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
   await selectTab('models');await page.locator('[data-nav-action=model-editor]').click();
   await page.waitForSelector('.vx-drawer.is-open #model-form');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
   await selectTab('news');await page.locator('[data-i18n="subnav.editor"]').click();assert(await page.locator('#news-creator').isVisible());
@@ -75,7 +75,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   await page.locator('#lang-toggle-btn').click();
   assert.equal(await page.locator('.language-popover.is-open [data-language=en]').getAttribute('aria-checked'),'true');
   await capture('language-1440-dark');
-  await page.locator('.language-popover.is-open [data-language=tr]').click();assert.equal(await page.locator('.file-select-btn').first().innerText(),'Dosya seç');assert.equal(await page.locator('#lang-indicator').innerText(),'TR');
+  await page.locator('.language-popover.is-open [data-language=tr]').click();assert.equal(await page.locator('.file-select-btn').first().innerText(),'Dosya seç');assert.equal(await page.locator('#lang-indicator').innerText(),'Türkçe');
   await page.locator('#lang-toggle-btn').click();await page.locator('.language-popover.is-open [data-language=en]').click();
   await page.locator('#theme-menu-btn').click();await capture('theme-1440-dark');
   await page.locator('[data-theme-mode=light]').click();assert.equal(await page.evaluate(()=>document.documentElement.dataset.theme),'light');

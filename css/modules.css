@@ -9,7 +9,7 @@
 
 .contributor-table-head {
     display: grid;
-    grid-template-columns:minmax(130px,2fr) minmax(80px,1fr) 40px 100px minmax(90px,1fr) 88px;
+    grid-template-columns:minmax(130px,2fr) minmax(80px,1fr) 40px 136px minmax(90px,1fr) 88px;
     gap: var(--space-3);
     padding: var(--space-2) var(--space-2);
     border-bottom: 1px solid var(--border-strong);
@@ -25,7 +25,7 @@
 
 .contributor-row {
     display: grid;
-    grid-template-columns:minmax(130px,2fr) minmax(80px,1fr) 40px 100px minmax(90px,1fr) 88px;
+    grid-template-columns:minmax(130px,2fr) minmax(80px,1fr) 40px 136px minmax(90px,1fr) 88px;
     gap: var(--space-3);
     align-items: center;
     min-height: 52px;
@@ -493,3 +493,15 @@
 
 .visibility-controls fieldset{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}.visibility-controls legend{grid-column:1/-1}
 @media(max-width:460px){.visibility-controls fieldset{grid-template-columns:1fr}}
+
+.contributor-cell-status{display:inline-flex;align-items:center;justify-content:center;justify-self:center;text-align:center;white-space:nowrap;padding:4px 10px;box-sizing:border-box;line-height:20px}
+.contributor-table-head>span:nth-child(4){text-align:center}
+.contributor-cell-dept{font-size:13px;font-weight:450}
+.detail-row dt,.detail-row dd{overflow-wrap:anywhere;min-width:0}.detail-row dd{text-align:right}
+.vx-drawer-footer:has([data-more]){display:flex;flex-wrap:wrap;gap:8px}.vx-drawer-footer button{min-height:44px}.vx-drawer-footer .icon{width:17px;height:17px}
+.contributor-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.certificate-person-list{margin-top:16px}.certificate-person-list small{display:block;color:var(--text-secondary);overflow-wrap:anywhere}
+#maintenance-action-btn{min-width:180px}.is-pending{opacity:.65}
+.contributor-table-head{padding:8px 0}
+
+#contributors-list-container{padding-right:0;scrollbar-gutter:stable}.contributor-table-head{margin-right:0;position:sticky;top:0;background:var(--bg-surface);z-index:1}
+.vx-drawer-footer:has([data-more]){display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:8px}.vx-drawer-footer [data-edit]{grid-column:1/-1}.vx-drawer-footer [data-certificate]{min-width:0}.vx-drawer-footer [data-more]{padding:0;justify-content:center}

@@ -1,3 +1,4 @@
+import { displayDepartmentName } from './utils/departments.js';
 import { initSystemSections } from './modules/system.js';
 import { initIcons } from './utils/icons.js';
 import { initShell, refreshNavigation, closePopover, closeDrawer, closeModal } from './modules/shell.js';
@@ -8,7 +9,7 @@ import * as dom from './utils/dom.js';
 import { showToast, __, getLang, setLang, translatePage, onLangChange } from './utils/ui.js';
 
 // Import module initializers
-import { initAdminModule, refreshDepartmentUsers, loadAdminsList } from './modules/admin.js';
+import { initAdminModule, initializeMaintenanceStatus, refreshDepartmentUsers, loadAdminsList } from './modules/admin.js';
 import { initModelsModule, fetchFullModelsData } from './modules/models.js';
 import { initNewsModule, listenForArticles, stopListeningForArticles } from './modules/news.js';
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
@@ -63,7 +64,7 @@ export function startApp(firebaseConfig) {
                 const departments = Array.isArray(token.claims.departments)
                     ? token.claims.departments
                     : (token.claims.department ? [token.claims.department] : []);
-                renderProfile(auth.currentUser, !!token.claims.admin, departments);
+                renderProfile(auth.currentUser, !!token.claims.admin, departments, true);
             }).catch(console.error);
         }
     });
@@ -119,6 +120,7 @@ export function startApp(firebaseConfig) {
                     initRolesModule();
                     initPanelMenus();
                     applyChipVisibility();
+                    initializeMaintenanceStatus();
                     refreshDepartmentUsers();
                     fetchFullModelsData();
                     listenForArticles();
@@ -137,12 +139,13 @@ export function startApp(firebaseConfig) {
                     applyTabFilter(allowedTabs);
                     applyPanelGate(false);
                     applyChipVisibility();
+                    if(getEffectivePanelLevel('system.serverStatus')!=='none')initializeMaintenanceStatus();
                     document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
                 }
 
             } catch (error) {
                 console.error("[AUTH] Access check failed:", error.message);
-                showToast("You are not authorized to access this panel.", "error");
+                showToast(__('auth.denied'), "error");
                 auth.signOut();
             }
         } else {
@@ -158,6 +161,7 @@ export function startApp(firebaseConfig) {
             stopListeningForArticles();
             stopListeningForScheduledTasks();
         }
+        hideBootstrapLoader();
     });
 
     // --- Step 4: Bind Login/Logout Button Listeners ---
@@ -166,7 +170,7 @@ export function startApp(firebaseConfig) {
         const password = document.getElementById('password').value;
         if (email && password) {
             auth.signInWithEmailAndPassword(email, password)
-                .catch(error => showToast(`Login Failed: ${error.message}`, 'error'));
+                .catch(error => showToast(__('auth.login_failed'), 'error'));
         } else {
             showToast('Please enter both email and password.', 'info');
         }
@@ -227,17 +231,9 @@ export function startApp(firebaseConfig) {
     dom.logoutBtn.addEventListener('click', () => auth.signOut());
 
     translatePage();
-    document.getElementById('lang-indicator').textContent = __('lang.flag');
-    onLangChange(() => { document.getElementById('lang-indicator').textContent = __('lang.flag'); });
-    // --- Step 7: Hide Loader and Show App ---
-    // The app is now fully initialized and ready.
-    if (dom.appLoader) {
-        dom.appLoader.classList.add('hidden');
-        // Remove the loader from the DOM after the transition for a cleaner structure
-        dom.appLoader.addEventListener('transitionend', () => {
-           dom.appLoader.remove();
-        }, { once: true });
-    }
+    document.getElementById('lang-indicator').textContent = (getLang() === 'tr' ? 'Türkçe' : 'English');
+    onLangChange(() => { document.getElementById('lang-indicator').textContent = (getLang() === 'tr' ? 'Türkçe' : 'English'); });
+
 }
 
 function resetTabFilter() {
@@ -330,12 +326,12 @@ function applyPanelGate(isAdmin) {
     refreshNavigation();
 }
 
-function renderProfile(user, isAdmin, departments) {
+function renderProfile(user, isAdmin, departments, preserveForm = false) {
     document.getElementById('profile-name').textContent = user.displayName || user.email || '—';
     document.getElementById('profile-email').textContent = user.email || '—';
-    document.getElementById('profile-display-name').value = user.displayName || '';
+    if(!preserveForm)document.getElementById('profile-display-name').value = user.displayName || '';
     document.getElementById('profile-role').textContent = isAdmin ? __('profile.admin') : __('profile.member');
-    document.getElementById('profile-departments').textContent = departments.join(', ') || __('profile.none');
+    document.getElementById('profile-departments').textContent = departments.map(displayDepartmentName).join(', ') || __('profile.none');
     document.getElementById('profile-uid').textContent = user.uid;
     renderPermSummary();
 }
@@ -391,4 +387,12 @@ function disableReadOnlyControls(panel) {
         if(!control.disabled)control.dataset.roleDisabled='true';
         control.disabled=true;
     });
+}
+
+function hideBootstrapLoader() {
+    const loader=dom.appLoader;
+    if(!loader?.isConnected||loader.classList.contains('is-leaving'))return;
+    loader.classList.add('is-leaving');
+    loader.addEventListener('transitionend',()=>loader.remove(),{once:true});
+    setTimeout(()=>loader.remove(),window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:220);
 }

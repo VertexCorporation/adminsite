@@ -1,3 +1,4 @@
+import { __ } from '../lang.js';
 // js/core/initializer.js
 
 import { startApp } from '../main.js';
@@ -98,11 +99,8 @@ import { startApp } from '../main.js';
     } catch (error) {
         console.error("CRITICAL [INIT]: Application failed to initialize.", error);
         if (appLoader) {
-            appLoader.innerHTML = `<div style="color: #ff4d4d; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 2rem;">
-                <strong>Application Error</strong><br>
-                A critical error occurred during startup. Please check the console for details and refresh the page.<br>
-                <small style="color: #ffa5a5;">${error.message}</small>
-            </div>`;
+            appLoader.innerHTML = `<div class="state-block"><strong>${__('init.error')}</strong><p>${__('init.retry')}</p><button class="chrome-btn-outline" data-startup-retry>${__('common.retry')}</button></div>`;
+            appLoader.querySelector('[data-startup-retry]').onclick=()=>location.reload();
         }
     }
 })();

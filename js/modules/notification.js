@@ -4,11 +4,12 @@ import { beginPanelLoading } from '../utils/loading.js';
 
 import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
-import { showToast, __ } from '../utils/ui.js';
+import { showToast, userErrorMessage, __, getLang, onLangChange, escapeHTML } from '../utils/ui.js';
 
 let unsubscribeFromScheduledTasks = null;
 let submissionPending = false;
 let deliveryUncertain = false;
+const cancellingTasks=new Set();
 
 /**
  * Handles changes in the notification schedule switch.
@@ -17,7 +18,7 @@ function handleScheduleSwitchChange() {
     const isScheduled = dom.notificationScheduleSwitch.checked;
     dom.scheduleDateTimePicker.style.display = isScheduled ? 'block' : 'none';
     document.getElementById('notification-schedule-time').required = isScheduled;
-    document.getElementById('submit-notification-btn').textContent = isScheduled ? __('notif.schedule') : __('notif.send_now');
+    document.getElementById('submit-notification-btn').textContent = submissionPending?__('notif.submitting'):deliveryUncertain?__('notif.uncertain_short'):isScheduled?__('notif.schedule'):__('notif.send_now');
 }
 
 /**
@@ -127,7 +128,7 @@ async function handleNotificationFormSubmit(e) {
     submissionPending = true;
     const submitBtn = document.getElementById('submit-notification-btn');
     submitBtn.disabled = true;
-    submitBtn.textContent = 'SUBMITTING';
+    submitBtn.textContent = __('notif.submitting');
 
     try {
         const titleKey = document.getElementById('notification-title-key').value.trim();
@@ -140,7 +141,7 @@ async function handleNotificationFormSubmit(e) {
         let payload, dataPayload = {};
         if (dataPayloadStr) {
             try { dataPayload = JSON.parse(dataPayloadStr); } 
-            catch { throw new Error("Data Payload is not valid JSON."); }
+            catch { throw new Error(__('notif.json_error')); }
         }
 
         if (titleKey && bodyKey) {
@@ -148,27 +149,27 @@ async function handleNotificationFormSubmit(e) {
         } else if (fallbackTitle && fallbackBody) {
             payload = { notification: { title: fallbackTitle, body: fallbackBody }, data: dataPayload };
         } else {
-            throw new Error("Provide either Notification Keys or Fallback Title/Body.");
+            throw new Error(__('notif.content_required'));
         }
 
         const target = { type: targetType };
         if (targetType === 'SINGLE_USER') {
             target.uid = document.getElementById('notification-target-uid').value.trim();
-            if (!target.uid) throw new Error("User ID (UID) is required.");
+            if (!target.uid) throw new Error(__('notif.uid_required'));
         } else if (targetType === 'SUBSCRIPTION_LEVEL') {
             const tiers = ['free', 'plus', 'pro', 'ultra'];
             target.type = 'SUBSCRIPTION_TIER';
             target.tier = tiers[Number(document.getElementById('notification-target-level').value)];
-            if (!target.tier) throw new Error('Select a valid subscription tier.');
+            if (!target.tier) throw new Error(__('notif.tier_required'));
         }
 
         const isScheduled = dom.notificationScheduleSwitch.checked;
         let scheduleTimeISO = null;
         if (isScheduled) {
             const localTimeValue = document.getElementById('notification-schedule-time').value;
-            if (!localTimeValue) throw new Error("Please select a date and time for scheduling.");
+            if (!localTimeValue) throw new Error(__('notif.time_required'));
             const scheduledDate = new Date(localTimeValue);
-            if (scheduledDate <= new Date()) throw new Error("Scheduled time must be in the future.");
+            if (scheduledDate <= new Date()) throw new Error(__('notif.time_future'));
             scheduleTimeISO = scheduledDate.toISOString();
         }
 
@@ -176,7 +177,7 @@ async function handleNotificationFormSubmit(e) {
         const apiFunction = isScheduled ? scheduleNotificationFn : sendTargetedNotificationFn;
         if (!isScheduled) delete apiPayload.scheduleTime;
 
-        showToast(isScheduled ? 'Scheduling notification' : 'Sending notification', 'info');
+        showToast(isScheduled ? __('notif.scheduling') : __('notif.sending'), 'info');
         let result;
         try { result = await apiFunction(apiPayload); }
         catch (error) {
@@ -184,14 +185,14 @@ async function handleNotificationFormSubmit(e) {
             if (!isScheduled && !['functions/invalid-argument','functions/permission-denied','functions/unauthenticated'].includes(error.code)) deliveryUncertain = true;
             throw error;
         }
-        showToast(result.data.message, 'success');
+        showToast(__('notif.success'), 'success');
 
         dom.notificationForm.reset();
         handleTargetTypeChange();
         handleScheduleSwitchChange();
     } catch (error) {
         console.error("[CLIENT] Error submitting notification:", error);
-        showToast(deliveryUncertain ? __('notif.uncertain') : error.message, 'error');
+        showToast(deliveryUncertain ? __('notif.uncertain') : error.code ? userErrorMessage(error) : error.message, 'error');
     } finally {
         submissionPending = false;
         submitBtn.disabled = deliveryUncertain;
@@ -205,15 +206,16 @@ async function handleNotificationFormSubmit(e) {
  * @param {string} taskId - The ID of the task to cancel.
  */
 async function handleCancelTask(taskId) {
-    if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('notif.cancel_confirm')}))) return;
-    showToast(`Cancelling task ${taskId}`, 'info');
+    if(cancellingTasks.has(taskId))return; cancellingTasks.add(taskId);
+    if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('notif.cancel_confirm')}))) {cancellingTasks.delete(taskId);return;}
+    showToast(__('notif.cancelling'), 'info');
     try {
         const result = await cancelScheduledNotificationFn({ taskId });
-        showToast(result.data.message, 'success');
+        showToast(__('notif.cancelled'), 'success');
     } catch (error) {
         console.error(`[CLIENT] Error cancelling task ${taskId}:`, error);
-        showToast(`Error: ${error.message}`, 'error');
-    }
+        showToast(userErrorMessage(error), 'error');
+    } finally {cancellingTasks.delete(taskId);}
 }
 
 // js/modules/notification.js
@@ -237,27 +239,28 @@ export function listenForScheduledTasks() {
             snapshot.forEach(doc => {
                 const task = doc.data();
                 const scheduleDate = task.scheduleTime.toDate();
-                const formattedTime = scheduleDate.toLocaleString(undefined, {
+                const formattedTime = scheduleDate.toLocaleString(getLang()==='tr'?'tr-TR':'en-US', {
                     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
 
-                const title = task.payload?.notification?.title || task.notification?.title || task.payload?.notification_title_key || 'Data-only Notification';
+                const title = task.payload?.notification?.title || task.notification?.title || task.payload?.notification_title_key || __('notif.data_only');
 
                 const item = document.createElement('div');
                 item.className = 'task-item';
                 item.innerHTML = `
                 <div class="task-details">
-                    <span class="task-title" title="${title}">${title}</span>
-                    <span class="task-time">Scheduled for: ${formattedTime}</span>
-                    <span class="task-target">Target: ${task.target.type}</span>
+                    <span class="task-title" title="${escapeHTML(title)}">${escapeHTML(title)}</span>
+                    <span class="task-time">${__('notif.scheduled_for')}: ${formattedTime}</span>
+                    <span class="task-target">${__('notif.target_label')}: ${__(({ALL_USERS:'notif.target_all',SINGLE_USER:'notif.target_single',SUBSCRIPTION_TIER:'notif.target_level',SUBSCRIPTION_LEVEL:'notif.target_level'})[task.target?.type]||'notif.target_label')}</span>
                 </div>
-                <div class="task-actions"><button class="cancel-task-btn" data-task-id="${doc.id}">Cancel</button></div>`;
+                <div class="task-actions"><button class="cancel-task-btn chrome-btn-outline" data-task-id="${escapeHTML(doc.id)}">${__('common.cancel')}</button></div>`;
                 dom.scheduledTasksListContainer.appendChild(item);
             });
         }, error => {
         finishLoading();
             console.error("[CLIENT] Error listening for scheduled tasks:", error);
-            dom.scheduledTasksListContainer.innerHTML = '<p class="form-hint" style="color:var(--error-color);">Error loading tasks.</p>';
+            dom.scheduledTasksListContainer.insertAdjacentHTML('beforeend',`<div class="task-error"><p>${__('notif.tasks_error')}</p><button class="chrome-btn-outline" data-tasks-retry>${__('common.retry')}</button></div>`);
+            dom.scheduledTasksListContainer.querySelector('[data-tasks-retry]').onclick=listenForScheduledTasks;
         });
 }
 
@@ -287,6 +290,7 @@ export function initNotificationModule() {
         }
     });
 
+    onLangChange(() => {handleScheduleSwitchChange(); if(unsubscribeFromScheduledTasks)listenForScheduledTasks();});
     // Initial UI setup
     handleScheduleSwitchChange();
     handleTargetTypeChange();

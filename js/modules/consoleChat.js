@@ -1,3 +1,4 @@
+import { displayDepartmentName } from '../utils/departments.js';
 import { confirmDialog } from './shell.js';
 import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../utils/loading.js';
 // js/modules/consoleChat.js
@@ -9,7 +10,7 @@ import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../uti
  * gönderilir (consoleChat* fonksiyonları).
  */
 
-import { showToast, __, onLangChange } from '../utils/ui.js';
+import { showToast, __, getLang, onLangChange } from '../utils/ui.js';
 import { getEffectivePanelLevel, isPanelAdmin, DEPARTMENTS } from './roles.js';
 import {
     listConsoleChatChannelsFn,
@@ -31,6 +32,7 @@ let pollTimer = null;
 let channelFormMode = 'create'; // 'create' | 'edit'
 let lastChannelsKey = '';
 let lastMessagesKey = '';
+let cachedMessages=[],cachedChannelId=null;
 let myUid = null;
 let mentionIndex = null;
 let mentionPop = null;
@@ -53,24 +55,17 @@ function linkify(text) {
 
 function relativeTime(ms) {
     if (!ms) return '';
-    const minutes = Math.max(0, Math.floor((Date.now() - ms) / 60000));
-    if (minutes < 1) return 'şimdi';
-    if (minutes < 60) return `${minutes}dk`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}sa`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}g`;
-    return new Date(ms).toLocaleDateString();
+    const seconds=Math.floor((new Date(ms).getTime()-Date.now())/1000);
+    if(!Number.isFinite(seconds))return '';
+    const formatter=new Intl.RelativeTimeFormat(getLang(),{numeric:'auto',style:'short'});
+    const [unit,value]=Math.abs(seconds)<60?['second',0]:Math.abs(seconds)<3600?['minute',Math.ceil(seconds/60)]:Math.abs(seconds)<86400?['hour',Math.ceil(seconds/3600)]:['day',Math.ceil(seconds/86400)];
+    return formatter.format(value,unit);
 }
-
 function dayLabel(ms) {
-    const d = new Date(ms);
-    const today = new Date();
-    const yesterday = new Date(today.getTime() - 86400000);
-    const same = (a, b) => a.toDateString() === b.toDateString();
-    if (same(d, today)) return 'Bugün';
-    if (same(d, yesterday)) return 'Dün';
-    return d.toLocaleDateString('tr-TR', { weekday: 'long', month: 'long', day: 'numeric' });
+    const date=new Date(ms),today=new Date();
+    const offset=Math.round((new Date(date.getFullYear(),date.getMonth(),date.getDate())-new Date(today.getFullYear(),today.getMonth(),today.getDate()))/86400000);
+    if(offset===0||offset===-1)return new Intl.RelativeTimeFormat(getLang(),{numeric:'auto'}).format(offset,'day');
+    return date.toLocaleDateString(getLang(),{weekday:'long',month:'long',day:'numeric'});
 }
 
 function initialsOf(name) {
@@ -123,7 +118,7 @@ function renderChannelList() {
             <i class="" data-icon="${ch.departments?.length ? 'lock' : 'tag'}"></i>
             <span class="chat-channel-name">${escapeHTML(ch.name)}</span>
             ${ch.pinned ? `<i class=" chat-pin-flag" title="${__('chat.pin')}" data-icon="push_pin"></i>` : ''}
-            ${ch.postLevel === 'admins' ? '<i class=" chat-channel-lock" title="Yönetici kanalı" data-icon="shield"></i>' : ''}
+            ${ch.postLevel === 'admins' ? `<i class=" chat-channel-lock" title="${__('chat.admin_channel')}" data-icon="shield"></i>` : ''}
         </button>
     `).join('') + (isAdmin ? `
         <button type="button" class="chat-channel-new"><i class="" data-icon="add"></i><span>${__('chat.new_channel')}</span></button>` : '');
@@ -145,6 +140,7 @@ async function loadMessages(animate = true) {
         const result = await listConsoleChatMessagesFn({ channelId: currentChannelId });
         if (currentChannelId !== channel.id) { finishLoading(); return; }
         const messages = result.data.messages || [];
+        cachedMessages=messages;cachedChannelId=channel.id;
         const key = messages.map(m => `${m.id}:${m.taskStatus || ''}`).join('|');
         if (!animate && key === lastMessagesKey) { finishLoading(); return; } // degisiklik yoksa DOM'a dokunma
         lastMessagesKey = key;
@@ -170,7 +166,7 @@ function renderChatHeader(channel) {
     const badges = el('chat-channel-badges');
     badges.innerHTML = channel
         ? (channel.departments?.length
-            ? channel.departments.map(d => `<span class="dept-badge">${escapeHTML(d)}</span>`).join('')
+            ? channel.departments.map(d => `<span class="dept-badge">${escapeHTML(displayDepartmentName(d))}</span>`).join('')
             : `<span class="dept-badge">${__('chat.open_all')}</span>`)
         : '';
 }
@@ -205,8 +201,8 @@ function renderMessages(messages, channel, animate = true) {
                     <div class="chat-msg-head">
                         <strong>${escapeHTML(m.authorName || m.authorEmail)}</strong>
                         <span class="chat-msg-mail">${escapeHTML(m.authorEmail)}</span>
-                        ${m.authorDepartments?.map(d => `<span class="dept-badge">${escapeHTML(d)}</span>`).join('') || ''}
-                        <span class="chat-msg-time" title="${m.createdAt ? new Date(m.createdAt).toLocaleString() : ''}">${relativeTime(m.createdAt)}</span>
+                        ${m.authorDepartments?.map(d => `<span class="dept-badge">${escapeHTML(displayDepartmentName(d))}</span>`).join('') || ''}
+                        <span class="chat-msg-time" title="${m.createdAt ? new Date(m.createdAt).toLocaleString(getLang()) : ''}">${relativeTime(m.createdAt)}</span>
                         ${(isAdmin || (m.authorUid && m.authorUid === myUid)) ? `<button type="button" class="chat-msg-del" data-del="${m.id}" title="${__('chat.msg_delete')}"><i class="" data-icon="delete"></i></button>` : ''}
                     </div>
                     <div class="chat-msg-text ${done ? 'chat-task-done' : ''}">${linkify(m.text)}</div>
@@ -273,6 +269,7 @@ function openChannelForm(mode, channel = null) {
     channelFormMode = mode;
     const form = el('chat-channel-form');
     form.style.display = 'block';
+    el('chat-form-title').dataset.i18n=mode==='create'?'chat.form_create':'chat.form_edit';
     el('chat-form-title').textContent = mode === 'create' ? __('chat.form_create') : __('chat.form_edit');
     el('chat-form-name').value = channel?.name || '';
     el('chat-form-desc').value = channel?.description || '';
@@ -499,5 +496,5 @@ export function initConsoleChat() {
         if (currentChannelId) loadMessages(false);
     }, 8000);
 
-    onLangChange(() => { renderChannelList(); });
+    onLangChange(() => {renderChannelList();const channel=channels.find(c=>c.id===currentChannelId);renderChatHeader(channel);if(channel&&cachedChannelId===channel.id)renderMessages(cachedMessages,channel,false);});
 }

@@ -724,3 +724,4 @@ input[type="checkbox"]:focus-visible{box-shadow:var(--focus-ring)}
 .file-select-btn{height:28px;padding:0 10px;font-size:12px;flex-shrink:0}
 .file-control-name{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted)}
 input.file-control-input{position:absolute;width:1px;height:1px;min-height:0;padding:0;border:0;opacity:0;clip-path:inset(50%);pointer-events:none}
+.vx-popover.drawer-popover{z-index:135}

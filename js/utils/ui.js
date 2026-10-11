@@ -102,3 +102,8 @@ export async function getAuthToken(auth) {
         throw new Error("Failed to get a valid auth token.");
     }
 }
+/** Keep remote diagnostics out of user-facing errors. */
+export function userErrorMessage(error) {
+    const code=String(error?.code||'').replace('functions/','');
+    return __(({ 'permission-denied':'errors.permission', 'unauthenticated':'errors.auth', 'resource-exhausted':'errors.capacity', 'invalid-argument':'errors.validation' })[code]||'errors.service');
+}

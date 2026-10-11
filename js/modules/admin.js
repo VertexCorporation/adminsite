@@ -1,7 +1,9 @@
+import { confirmDialog } from './shell.js';
+import { displayDepartmentName } from '../utils/departments.js';
 import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../utils/loading.js';
 // js/modules/admin.js
 
-import { showToast, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
+import { showToast, userErrorMessage, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
 import { auth, addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, setUserSubscriptionFn, bulkSetUserSubscriptionsFn } from '../core/firebase.js';
 import { DEPARTMENTS, getEffectivePanelLevel } from './roles.js';
@@ -27,16 +29,16 @@ const MAX_GRANT_TOLERANCE_MS = 60 * 1000;
  */
 export async function grantPremium({ email, displayName = '', tier, expiresAt }) {
     if (!email || !tier || !expiresAt) {
-        throw new Error('grantPremium: email, tier ve expiresAt zorunludur.');
+        throw new Error(__('subs.required'));
     }
     const expiryDate = new Date(expiresAt);
     if (isNaN(expiryDate.getTime())) {
-        throw new Error('grantPremium: expiresAt geçerli bir tarih olmalıdır.');
+        throw new Error(__('subs.invalid_date'));
     }
     const maxExpiry = new Date();
     maxExpiry.setFullYear(maxExpiry.getFullYear() + 1);
     if (expiryDate.getTime() - maxExpiry.getTime() > MAX_GRANT_TOLERANCE_MS) {
-        throw new Error('Abonelik süresi en fazla 1 yıl olabilir.');
+        throw new Error(__('subs.max_one_year'));
     }
 
     const result = await setUserSubscriptionFn({
@@ -60,16 +62,16 @@ export async function grantPremium({ email, displayName = '', tier, expiresAt })
  */
 export async function grantPremiumBulk({ raw, tier, expiresAt }) {
     if (!raw || !tier || !expiresAt) {
-        throw new Error('grantPremiumBulk: raw, tier ve expiresAt zorunludur.');
+        throw new Error(__('subs.required'));
     }
     const expiryDate = new Date(expiresAt);
     if (isNaN(expiryDate.getTime())) {
-        throw new Error('grantPremiumBulk: expiresAt geçerli bir tarih olmalıdır.');
+        throw new Error(__('subs.invalid_date'));
     }
     const maxExpiry = new Date();
     maxExpiry.setFullYear(maxExpiry.getFullYear() + 1);
     if (expiryDate.getTime() - maxExpiry.getTime() > MAX_GRANT_TOLERANCE_MS) {
-        throw new Error('Abonelik süresi en fazla 1 yıl olabilir.');
+        throw new Error(__('subs.max_one_year'));
     }
 
     const result = await bulkSetUserSubscriptionsFn({
@@ -116,7 +118,7 @@ function renderDepartmentUsers() {
             <div class="dept-user-main">
                 <strong>${sanitizeHTML(user.displayName || user.email || user.uid)}</strong>
                 ${user.displayName ? `<span>${sanitizeHTML(user.email || '')}</span>` : ''}
-                <div class="dept-badges">${user.departments.map(id => `<span class="dept-badge">${sanitizeHTML(id)}</span>`).join('')}</div>
+                <div class="dept-badges">${user.departments.map(id => `<span class="dept-badge">${sanitizeHTML(displayDepartmentName(id))}</span>`).join('')}</div>
             </div>
             ${getEffectivePanelLevel('system.deptUsers') === 'write' ? `<button type="button" class="dept-user-edit chrome-btn-outline" data-uid="${sanitizeHTML(user.uid)}">${__('dept.edit')}</button>` : ''}
         </div>
@@ -158,64 +160,34 @@ async function loadDepartmentUsers() {
  * Updates the maintenance mode UI based on the server's status.
  * @param {boolean} isEnabled - True if maintenance mode is active.
  */
-function updateMaintenanceUI(isEnabled) {
-    const statusDot = dom.maintenanceStatusIndicator.querySelector('.status-dot');
-    const statusText = dom.maintenanceStatusIndicator.querySelector('.status-text');
-
-    if (!statusDot || !statusText || !dom.maintenanceActionBtn) return;
-
-    statusDot.className = 'status-dot'; // Reset classes
-    statusDot.classList.add(isEnabled ? 'status-on' : 'status-off');
-    statusText.textContent = isEnabled ? __('system.maintenance_on') : __('system.live');
-
-    dom.maintenanceActionBtn.innerHTML = `<span>${isEnabled ? __('system.disable_maint') : __('system.enable_maint')}</span>`;
-    dom.maintenanceActionBtn.className = 'secondary-btn'; // Reset classes
-    if (isEnabled) {
-        dom.maintenanceActionBtn.classList.add('btn-disable');
-    }
+let maintenanceState = null;
+let maintenancePending = false;
+function updateMaintenanceUI(isEnabled = maintenanceState) {
+    maintenanceState=isEnabled;
+    const button=dom.maintenanceActionBtn;
+    dom.maintenanceStatusIndicator.querySelector('.status-dot').className='status-dot '+(isEnabled===null?'status-pending':isEnabled?'status-on':'status-off');
+    dom.maintenanceStatusIndicator.querySelector('.status-text').textContent=__(isEnabled===null?'system.status_unavailable':isEnabled?'system.maintenance_on':'system.live');
+    button.classList.add('chrome-btn-outline');button.classList.remove('secondary-btn');
+    button.classList.toggle('is-maintenance-active',isEnabled===true);button.classList.toggle('is-pending',maintenancePending);
+    button.classList.toggle('retry-btn',isEnabled===null);
+    button.disabled=maintenancePending||(isEnabled!==null&&getEffectivePanelLevel('system.serverStatus')!=='write');button.textContent=__(maintenancePending?'system.saving':isEnabled===null?'common.retry':isEnabled?'system.disable_maint':'system.enable_maint');
 }
-
-/**
- * Fetches the current maintenance status and sets up the interactive UI.
- */
-async function initializeMaintenanceStatus() {
-    const statusText = dom.maintenanceStatusIndicator.querySelector('.status-text');
-    try {
-        const result = await getServerStatusFn();
-        const isEnabled = result.data.isUnderMaintenance;
-        updateMaintenanceUI(isEnabled);
-        dom.maintenanceActionBtn.disabled = false;
-    } catch (error) {
-        console.error('[CLIENT] Could not fetch server status:', error);
-        if (statusText) statusText.textContent = __('system.checking');
-        dom.maintenanceActionBtn.innerHTML = `<span>${__('system.retry')}</span>`;
-        dom.maintenanceActionBtn.disabled = true;
-        showToast(`Could not load server status: ${error.message}`, 'error');
-    }
+export async function initializeMaintenanceStatus() {
+    if(maintenancePending)return;maintenancePending=true;updateMaintenanceUI();
+    try {const result=await getServerStatusFn();maintenanceState=typeof result.data.isUnderMaintenance==='boolean'?result.data.isUnderMaintenance:null;}
+    catch {maintenanceState=null;showToast(__('system.status_unavailable'),'error');}
+    finally{maintenancePending=false;updateMaintenanceUI();}
 }
-
-/**
- * Handles the click event on the maintenance action button to toggle the mode.
- */
 async function handleMaintenanceToggle() {
-    const statusDot = dom.maintenanceStatusIndicator.querySelector('.status-dot');
-    const currentState = statusDot.classList.contains('status-on');
-    const newState = !currentState;
-
-    dom.maintenanceActionBtn.disabled = true;
-    dom.maintenanceActionBtn.innerHTML = `<span>${__('system.saving')}</span>`;
-
-    try {
-        await setServerStatusFn({ maintenanceEnabled: newState });
-        updateMaintenanceUI(newState);
-        showToast(__('system.maint_updated'), 'success');
-    } catch (error) {
-        console.error('[CLIENT] Failed to set maintenance mode:', error);
-        showToast(`Error: ${error.message}`, 'error');
-        updateMaintenanceUI(currentState); // Revert UI to the last known state
-    } finally {
-        dom.maintenanceActionBtn.disabled = false;
-    }
+    if(maintenancePending)return;
+    if(maintenanceState===null)return initializeMaintenanceStatus();
+    if(getEffectivePanelLevel('system.serverStatus')!=='write')return;
+    if(!await confirmDialog(()=>({title:__('system.maintenance'),body:__('system.maintenance_confirm')})))return;
+    if(maintenancePending)return;
+    const next=!maintenanceState;maintenancePending=true;updateMaintenanceUI();
+    try{await setServerStatusFn({maintenanceEnabled:next});maintenanceState=next;showToast(__('system.maint_updated'),'success');}
+    catch{maintenanceState=null;showToast(__('system.error'),'error');}
+    finally{maintenancePending=false;updateMaintenanceUI();}
 }
 
 /**
@@ -227,18 +199,18 @@ async function handleAdminFormSubmit(e) {
     const newAdminEmail = document.getElementById('new-admin-email').value;
     const grantBtn = document.getElementById('grant-admin-btn');
     grantBtn.disabled = true;
-    grantBtn.innerHTML = `<span>${__('admin.granting')}</span>`;
+    grantBtn.innerHTML = `<span data-i18n="admin.granting">${__('admin.granting')}</span>`;
 
     try {
         const result = await addAdminRoleFn({ email: newAdminEmail });
-        showToast(result.data.message, 'success');
+        showToast(__('admin.grant_success'), 'success');
         dom.adminForm.reset();
     } catch (error) {
         console.error("[CLIENT] Error granting admin role:", error);
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(userErrorMessage(error), 'error');
     } finally {
         grantBtn.disabled = false;
-        grantBtn.textContent = 'Grant Admin Role';
+        grantBtn.textContent = __('admin.grant_btn');
     }
 }
 
@@ -256,14 +228,14 @@ function updateAttributionsUI() {
         statusDot.className = 'status-dot status-pending';
         statusText.textContent = __('system.attributions_pending');
         actionBtn.disabled = false;
-        actionBtn.className = 'secondary-btn btn-update';
-        actionBtn.innerHTML = `<span>${__('system.attributions_publish')}</span>`;
+        actionBtn.classList.add('chrome-btn-outline','btn-update');
+        actionBtn.innerHTML = `<span data-i18n="system.attributions_publish">${__('system.attributions_publish')}</span>`;
     } else {
         statusDot.className = 'status-dot status-synced';
         statusText.textContent = __('system.attributions_synced');
         actionBtn.disabled = true;
-        actionBtn.className = 'secondary-btn';
-        actionBtn.innerHTML = `<span>${__('system.attributions_uptodate')}</span>`;
+        actionBtn.classList.add('chrome-btn-outline');actionBtn.classList.remove('secondary-btn','btn-update');
+        actionBtn.innerHTML = `<span data-i18n="system.attributions_uptodate">${__('system.attributions_uptodate')}</span>`;
     }
 }
 
@@ -274,7 +246,7 @@ export function setAttributionsOutOfSync() {
     if (attributionsOutOfSync === false) {
         attributionsOutOfSync = true;
         updateAttributionsUI();
-        showToast("Attributions page needs an update. Click 'Publish Changes' when ready.", 'info');
+        showToast(__('system.attributions_hint'), 'info');
     }
 }
 
@@ -284,20 +256,20 @@ export function setAttributionsOutOfSync() {
 async function handleAttributionsUpdate() {
     const actionBtn = document.getElementById('attributions-action-btn');
     actionBtn.disabled = true;
-    actionBtn.innerHTML = `<span>${__('system.attributions_trigger')}</span>`;
+    actionBtn.innerHTML = `<span data-i18n="system.attributions_trigger">${__('system.attributions_trigger')}</span>`;
     
     try {
         const result = await triggerAttributionsUpdateFn();
-        showToast(result.data.message, 'success');
+        showToast(__('system.attributions_synced'), 'success');
         // On success, reset the state
         attributionsOutOfSync = false;
         updateAttributionsUI();
     } catch (error) {
         console.error("[CLIENT] Error triggering attributions update:", error);
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(userErrorMessage(error), 'error');
         // Re-enable the button on failure so the user can try again
         actionBtn.disabled = false;
-        actionBtn.textContent = 'Retry Publish';
+        actionBtn.textContent = __('common.retry');
     }
 }
 
@@ -306,24 +278,21 @@ async function handleAttributionsUpdate() {
  * Handles the submission of the form to toggle a user's isVertex status.
  * @param {Event} e - The form submission event.
  */
+let vertexPending=false;
+function updateVertexResult(){const output=document.getElementById('vertex-operation-result');if(output)output.textContent=output.dataset.uid+' · '+__(output.dataset.state==='true'?'system.vertex_enabled':output.dataset.state==='false'?'system.vertex_disabled':'system.vertex_result_unknown');}
 async function handleVertexStatusToggle(e) {
     e.preventDefault();
-    const targetUid = document.getElementById('vertex-target-uid').value;
-    const toggleBtn = document.getElementById('toggle-vertex-btn');
-    toggleBtn.disabled = true;
-    toggleBtn.innerHTML = `<span>Updating...</span>`;
-
-    try {
-        const result = await toggleVertexStatusFn({ targetUid });
-        showToast(result.data.message, 'success');
-        document.getElementById('vertex-status-form').reset();
-    } catch (error) {
-        console.error("[CLIENT] Error toggling vertex status:", error);
-        showToast(`Error: ${error.message}`, 'error');
-    } finally {
-        toggleBtn.disabled = false;
-        toggleBtn.innerHTML = `<i class="" data-icon="swap_vert"></i><span>Toggle isVertex Status</span>`;
-    }
+    const targetUid=document.getElementById('vertex-target-uid').value.trim();
+    const button=document.getElementById('toggle-vertex-btn');
+    if(button.disabled||getEffectivePanelLevel('contributors.vertexStatus')!=='write')return;
+    if(!targetUid||targetUid.length>128||/\s/.test(targetUid)){showToast(__('system.uid_invalid'),'error');return;}
+    if(!await confirmDialog(()=>({title:__('panel.contributors.vertexStatus'),body:__('system.vertex_confirm'),rows:[{label:'UID',value:targetUid}]})))return;
+    vertexPending=true;button.disabled=true;button.textContent=__('system.saving');
+    try{const result=await toggleVertexStatusFn({targetUid});
+        let output=document.getElementById('vertex-operation-result');if(!output){output=document.createElement('p');output.id='vertex-operation-result';output.className='form-hint';output.setAttribute('role','status');button.after(output);}
+        output.dataset.uid=targetUid;output.dataset.state=String(result.data.isVertex);updateVertexResult();
+    }catch{showToast(__('system.error'),'error');}
+    finally{vertexPending=false;button.disabled=false;button.textContent=__('panel.contributors.vertexStatus');}
 }
 
 /**
@@ -334,7 +303,7 @@ async function handleManualVerifySubmit(e) {
     const identifier = document.getElementById('verify-user-id').value;
     const btn = document.querySelector('#verify-user-form button[type="submit"]');
     btn.disabled = true;
-    btn.innerHTML = `<span>${__('system.saving')}</span>`;
+    btn.innerHTML = `<span data-i18n="system.saving">${__('system.saving')}</span>`;
 
     try {
         const result = await verifyUserEmailFn({ identifier });
@@ -342,10 +311,10 @@ async function handleManualVerifySubmit(e) {
         document.getElementById('verify-user-form').reset();
     } catch (error) {
         console.error("[CLIENT] Error verifying email:", error);
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(userErrorMessage(error), 'error');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = `<span>${__('system.verify_btn')}</span>`;
+        btn.innerHTML = `<span data-i18n="system.verify_btn">${__('system.verify_btn')}</span>`;
     }
 }
 
@@ -357,7 +326,7 @@ async function handleRemoveAdminSubmit(e) {
     const email = document.getElementById('remove-admin-email').value;
     const btn = document.querySelector('#remove-admin-form button[type="submit"]');
     btn.disabled = true;
-    btn.innerHTML = `<span>${__('system.saving')}</span>`;
+    btn.innerHTML = `<span data-i18n="system.saving">${__('system.saving')}</span>`;
 
     try {
         const result = await removeAdminRoleFn({ email });
@@ -366,10 +335,10 @@ async function handleRemoveAdminSubmit(e) {
         loadAdminsList(); // Refresh the list
     } catch (error) {
         console.error("[CLIENT] Error removing admin role:", error);
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(userErrorMessage(error), 'error');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = `<span>${__('system.remove_btn')}</span>`;
+        btn.innerHTML = `<span data-i18n="system.remove_btn">${__('system.remove_btn')}</span>`;
     }
 }
 
@@ -389,14 +358,7 @@ export async function loadAdminsList() {
         const debug = result.data.debug;
         
         if (!admins || admins.length === 0) {
-            let debugInfo = '';
-            if (debug) {
-                debugInfo = `<br><small style="color: var(--text-muted);">Scanned: ${debug.totalScanned} users | Users with claims: ${debug.usersWithClaims}</small>`;
-                if (debug.claimsLog && debug.claimsLog.length > 0) {
-                    debugInfo += `<br><small style="color: var(--text-muted);">Claims found: ${JSON.stringify(debug.claimsLog)}</small>`;
-                }
-            }
-            container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem;">${__('system.admins_empty')}${debugInfo}</p>`;
+            container.innerHTML = `<p class="form-hint dept-list-message">${__('system.admins_empty')}</p>`;
             return;
         }
 
@@ -405,8 +367,8 @@ export async function loadAdminsList() {
             html += `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color);">
                     <div>
-                        <strong style="color: var(--text-primary);">${admin.email}</strong>
-                        <div style="color: var(--text-secondary); font-size: 0.85rem;">UID: ${admin.uid}</div>
+                        <strong style="color: var(--text-primary);">${sanitizeHTML(admin.email)}</strong>
+                        <div style="color: var(--text-secondary); font-size: 0.85rem;">UID: ${sanitizeHTML(admin.uid)}</div>
                     </div>
                 </div>
             `;
@@ -434,7 +396,7 @@ async function handleDeptAssignSubmit(e) {
     }
     const btn = document.querySelector('#dept-assign-form button[type="submit"]');
     btn.disabled = true;
-    btn.innerHTML = `<span>${__('system.saving')}</span>`;
+    btn.innerHTML = `<span data-i18n="system.saving">${__('system.saving')}</span>`;
 
     try {
         let result;
@@ -447,15 +409,15 @@ async function handleDeptAssignSubmit(e) {
             }
             result = await setUserDepartmentFn({ email, department: departments[0] });
         }
-        showToast(result.data.message || __('dept.assign_success'), 'success');
+        showToast(__('dept.assign_success'), 'success');
         document.getElementById('dept-assign-form').reset();
         await loadDepartmentUsers();
     } catch (error) {
         console.error("[CLIENT] Error assigning department:", error);
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(userErrorMessage(error), 'error');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i class="" data-icon="assignment_ind"></i><span>${__('dept.assign_btn')}</span>`;
+        btn.innerHTML = `<i class="" data-icon="assignment_ind"></i><span data-i18n="dept.assign_btn">${__('dept.assign_btn')}</span>`;
     }
 }
 
@@ -470,6 +432,10 @@ export function initAdminModule() {
     renderDepartmentOptions();
     onLangChange(() => {
         renderDepartmentOptions();
+        updateMaintenanceUI();updateAttributionsUI();
+        const grant=document.getElementById('grant-admin-btn');grant.textContent=__(grant.disabled?'admin.granting':'admin.grant_btn');
+        const vertex=document.getElementById('toggle-vertex-btn');vertex.textContent=__(vertexPending?'system.saving':'panel.contributors.vertexStatus');
+        updateVertexResult();
         if (departmentUsers.length) renderDepartmentUsers();
     });
     document.getElementById('refresh-dept-users-btn').addEventListener('click', loadDepartmentUsers);
@@ -488,7 +454,7 @@ export function initAdminModule() {
     });
     dom.adminForm.addEventListener('submit', handleAdminFormSubmit);
     dom.maintenanceActionBtn.addEventListener('click', handleMaintenanceToggle);
-    initializeMaintenanceStatus();
+
 
     // Add listener for the new button and initialize its UI
     const attributionsBtn = document.getElementById('attributions-action-btn');

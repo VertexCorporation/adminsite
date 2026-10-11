@@ -255,7 +255,7 @@ async function readDepartmentPermissions() {
         } catch (fallbackError) {
             console.error('[ROLES] Panel permissions yüklenemedi:', fallbackError);
             departmentPermissions = {};
-            showToast(`Departman yetkileri yüklenemedi: ${fallbackError.message}`, 'error');
+            showToast(`${__('system.error')}: ${fallbackError.message}`, 'error');
         }
     }
 }
@@ -266,7 +266,7 @@ export async function saveDepartmentPermissions(permissions) {
         // Acknowledging this snapshot must not overwrite a newer local draft.
     } catch (error) {
         console.error('[ROLES] Failed to save permissions:', error);
-        let message = `Yetkiler kaydedilemedi: ${error.message}`;
+        let message = `${__('perms.failed')}: ${error.message}`;
         if (error.code === 'internal' || error.code === 'not-found' || error.code === 'unknown' ||
             /must be an array/i.test(String(error.message))) {
             message = `${message} — ${__('perms.save_hint')}`;

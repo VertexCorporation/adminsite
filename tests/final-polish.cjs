@@ -1,0 +1,58 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+module.exports=async({page,selectTab,note,calls,payloads,setPeople,person,failMaintenance,failVerify})=>{
+ const count=name=>calls.filter(n=>n===name).length;
+ const locale=async lang=>page.evaluate(async lang=>(await import('/js/lang.js')).setLang(lang),lang);
+ const closeDrawer=async()=>{await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});};
+ await page.setViewportSize({width:1440,height:900});await selectTab('contributors');
+ assert.equal(await page.title(),'VERTEX KONSOL');assert.equal(await page.locator('.brand-info').innerText(),'VERTEX KONSOL');
+ assert(await page.locator('.vertex-brand-logo').first().evaluate(img=>img.complete&&img.naturalWidth>0));
+ const loaderCSS=await page.evaluate(async()=>{const css=await(await fetch('/css/layout.css')).text();return /2100ms linear infinite/.test(css)&&/opacity 180ms ease/.test(css);});assert(loaderCSS);await page.waitForSelector('#app-loader',{state:'detached'});assert.equal(await page.locator('#app-loader').count(),0);
+ note('Official brand asset, exact Soft Sweep timing and bootstrap removal');
+ await page.locator('#contributor-search').fill('local test fixture');assert.equal(await page.locator('.contributor-row').count(),1);await page.locator('#contributor-search').fill('');
+ for(const lang of ['tr','en']){await locale(lang);const alignment=await page.evaluate(()=>{const pill=document.querySelector('.contributor-cell-status');const range=document.createRange();range.selectNodeContents(pill);const text=range.getBoundingClientRect(),box=pill.getBoundingClientRect(),head=document.querySelector('.contributor-table-head>span:nth-child(4)').getBoundingClientRect();return {textOffset:Math.abs(text.x+text.width/2-box.x-box.width/2),axisOffset:Math.abs(box.x+box.width/2-head.x-head.width/2)};});assert(alignment.textOffset<1,JSON.stringify(alignment));assert(alignment.axisOffset<1,JSON.stringify(alignment));}
+ note('Biography search and measured status text/header centering in TR/EN');
+ await locale('tr');await page.locator('#lang-toggle-btn').click();assert.equal(await page.locator('.language-popover.is-open [data-language=en]').innerText(),'İngilizce');await page.locator('.language-popover.is-open [data-language=en]').click();assert.equal(await page.locator('#lang-indicator').innerText(),'English');await page.locator('#lang-toggle-btn').click();assert.equal(await page.locator('.language-popover.is-open [data-language=tr]').innerText(),'Turkish');await page.keyboard.press('Escape');
+ await page.locator('[data-details]').click();assert.equal(await page.locator('.vx-drawer details,.vx-drawer input[type=checkbox]').count(),0);
+ await page.locator('[data-more]').click();await page.locator('[data-verify]').click();await page.waitForTimeout(200);assert.equal(count('togglecontributorverification'),1);assert.equal(payloads.find(p=>p.name==='togglecontributorverification').data.hasVerified,true);assert((await page.locator('.detail-list').innerText()).includes('Verified'));
+ failVerify(true);await page.locator('[data-more]').click();await page.locator('[data-verify]').click();await page.waitForTimeout(200);assert((await page.locator('.detail-list').innerText()).includes('Verified'));failVerify(false);
+ const beforeDelete=count('deletevertexcontributor');await page.locator('[data-more]').click();await page.locator('[data-delete]').click();assert.equal(count('deletevertexcontributor'),beforeDelete);await page.locator('.confirm-cancel').click();await page.waitForTimeout(210);
+ await page.locator('[data-more]').click();await page.locator('[data-delete]').click();await page.locator('.confirm-ok').click();await page.waitForTimeout(300);assert.equal(count('deletevertexcontributor'),beforeDelete+1);
+ note('Drawer toolbar, verified server result, failed verification rollback and explicit deletion (mock)');
+ setPeople([{...person,department:'aero'},{...person,id:'second',name:'Second Participant',email:'second@example.invalid',department:'scout'}]);await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});
+ assert.deepEqual(await page.locator('.contributor-cell-dept').allTextContents(),['Aero','Scout']);
+ if(await page.locator('.dock-btn[data-target=tab-contributors]').getAttribute('aria-expanded')==='false')await page.locator('.dock-btn[data-target=tab-contributors]').click();await page.locator('[data-nav-action=certificates]').click();assert.equal(await page.locator('.cert-popover.is-open').count(),0);await page.locator('#certificate-person-search').fill('second');assert.equal(await page.locator('[data-person]').count(),1);await page.locator('[data-person=second]').click();await page.waitForSelector('.cert-popover.is-open');assert.equal(payloads.filter(p=>p.name==='getvertexcertificatedetails').at(-1).data.contributorId,'second');await page.keyboard.press('Escape');await closeDrawer();
+ setPeople(null);await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});
+ note('Certificates require explicit participant selection and preserve the selected recipient');
+ await selectTab('system');await page.locator('[data-section=server]').click();const maintenance=page.locator('#maintenance-action-btn');assert(await maintenance.evaluate(el=>el.classList.contains('chrome-btn-outline')));
+ const writes=count('setserverstatus');await maintenance.click();assert.equal(count('setserverstatus'),writes);await page.locator('.confirm-cancel').click();await page.waitForTimeout(210);
+ await maintenance.click();await page.locator('.confirm-ok').click();await page.waitForTimeout(200);assert((await maintenance.innerText()).includes('Disable'));assert(await maintenance.evaluate(el=>el.classList.contains('chrome-btn-outline')));
+ await maintenance.click();await page.locator('.confirm-ok').click();await page.waitForTimeout(200);assert((await maintenance.innerText()).includes('Enable'));
+ failMaintenance(true);await page.evaluate(async()=>{await (await import('/js/core/firebase.js')).auth.signOut();await (await import('/js/core/firebase.js')).auth.signInWithEmailAndPassword('admin@example.invalid','test-only');});
+ // Status refresh must be callable after a request failure, without changing production.
+ await page.reload();await page.waitForSelector('.certificate-manage-btn');await selectTab('system');await page.locator('[data-section=server]').click();assert.equal(await maintenance.innerText(),'Retry');assert(!await maintenance.isDisabled());failMaintenance(false);await maintenance.click();await page.waitForTimeout(200);assert((await maintenance.innerText()).includes('Enable'));
+ note('Maintenance off/on/error, confirmation, working retry and preserved shared button style (mock)');
+ await selectTab('contributors');await page.locator('#vertex-target-uid').fill('uid with spaces');await page.locator('#vertex-status-form').evaluate(f=>f.requestSubmit());assert.equal(count('togglevertexstatus'),0);await page.locator('#vertex-target-uid').fill('fixture-uid');await page.locator('#toggle-vertex-btn').click();assert.equal(count('togglevertexstatus'),0);await page.locator('.confirm-ok').click();await page.waitForTimeout(200);assert((await page.locator('#vertex-operation-result').innerText()).includes('fixture-uid'));assert((await page.locator('#vertex-operation-result').innerText()).includes('enabled'));
+ note('Vertex UID validation, explicit confirmation and actual returned status (mock)');
+ await selectTab('news');await page.locator('#title-en').fill('Retained title');await locale('tr');assert.equal(await page.locator('#title-en').inputValue(),'Retained title');await locale('en');assert.equal(await page.locator('#title-en').inputValue(),'Retained title');
+ await selectTab('profile');await page.locator('#profile-display-name').fill('Unsaved profile name');await locale('tr');await page.waitForTimeout(50);assert.equal(await page.locator('#profile-display-name').inputValue(),'Unsaved profile name');await locale('en');await page.waitForTimeout(50);assert.equal(await page.locator('#profile-display-name').inputValue(),'Unsaved profile name');
+ await selectTab('contributors');await page.locator('.edit-contributor-btn').first().click();await page.locator('#ce-name').fill('Unsaved application');await locale('tr');assert.equal(await page.locator('#ce-name').inputValue(),'Unsaved application');assert.equal(await page.locator('label[for=ce-name]').innerText(),'Ad Soyad');await locale('en');assert.equal(await page.locator('#ce-name').inputValue(),'Unsaved application');await closeDrawer();
+ const spacing=await page.evaluate(()=>{const module=document.querySelector('[data-target=tab-contributors]').closest('.nav-module');module.classList.add('expanded');const children=module.querySelectorAll('.sidebar-sub-btn');return parseFloat(getComputedStyle(module.querySelector('.sidebar-submenu-inner')).gap);});assert(spacing>=4&&spacing<=6);
+ note('Locale changes preserve unsaved profile/application forms and update restored action labels');
+ const dir=process.env.VERTEX_SCREENSHOTS;if(dir)fs.mkdirSync(dir,{recursive:true});
+ for(const [width,height] of (process.env.VERTEX_QUICK?[[320,700],[1440,900]]:[[320,700],[360,800],[390,844],[768,1024],[1024,768],[1440,900],[1920,1080]])){
+  await page.setViewportSize({width,height});
+  for(const lang of ['tr','en']){await locale(lang);for(const theme of ['dark','light']){
+   await page.evaluate(async theme=>(await import('/js/modules/shell.js')).applyTheme(theme),theme);
+   for(const tab of ['contributors','models','news','notifications','subscriptions','chat','system','profile']){
+    await selectTab(tab);await page.waitForTimeout(60);
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${width}/${height}/${lang}/${theme}/${tab} overflow`);
+    assert(!(await page.locator('#admin-panel').innerText()).includes('[missing:'),`${lang}/${tab} missing key`);
+    if(dir)await page.screenshot({path:path.join(dir,`polish-${width}-${height}-${lang}-${theme}-${tab}.png`)});
+   }
+   await selectTab('contributors');await page.locator('[data-details]').first().click();await page.waitForTimeout(240);const box=await page.locator('.vx-drawer').boundingBox();assert(box.x>=0&&box.x+box.width<=width+1&&box.y>=0&&box.height<=height+1);if(dir)await page.screenshot({path:path.join(dir,`polish-${width}-${lang}-${theme}-drawer.png`)});await closeDrawer();
+  }}
+  if(width<1024){assert.equal(await page.locator('.mobile-bottom-dock button:visible').count(),5);const dock=await page.locator('.mobile-bottom-dock').boundingBox();assert(dock.x>=0&&dock.x+dock.width<=width);await page.locator('[data-mobile-tab=tab-models]').click();assert(await page.locator('#tab-models').isVisible());await page.locator('[data-mobile-more]').click();assert(await page.locator('.app-sidebar.open').isVisible());await page.keyboard.press('Escape');}
+ }
+ await page.setViewportSize({width:1440,height:900});await locale('en');await selectTab('contributors');
+ note((process.env.VERTEX_QUICK?'2 final responsive spot checks':'7 exact viewport sizes')+' × TR/EN × Dark/Light: all modules, drawer bounds, forms retained and floating dock');
+};

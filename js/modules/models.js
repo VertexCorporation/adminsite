@@ -13,7 +13,7 @@ import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../uti
 
 import { storage, getModelImageUploadUrlFn, blockOnlineModelFn, updateModelsListFn, auth } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
-import { showToast, __, onLangChange, getAuthToken, sanitizeHTML, simpleHash } from '../utils/ui.js';
+import { showToast, userErrorMessage, __, getLang, onLangChange, getAuthToken, sanitizeHTML, simpleHash } from '../utils/ui.js';
 import { icon } from '../utils/icons.js';
 import { openDrawer, openModal, closeModal, openPopover, closePopover, confirmDialog } from './shell.js';
 import { isPanelAdmin, getEffectivePanelLevel } from './roles.js';
@@ -210,7 +210,7 @@ function resetModelForm() {
 
     currentEditingModelId = null;
     dom.modelIdInput.disabled = false;
-    dom.modelSubmitBtn.textContent = 'Save Model';
+    dom.modelSubmitBtn.textContent = __('models.save_btn');
     dom.modelCancelBtn.style.display = 'none';
     handleModelTypeChange(); // This is important to hide/show the correct fields
     console.log('[MODELS] Model form has been reset.');
@@ -285,8 +285,8 @@ function populateModelFormForEdit(modelData) {
 
     // --- Final UI Setup ---
     document.getElementById('model-image').value = '';
-    showToast(`Editing: ${modelData.details.en.title}. Re-upload image to change it.`, 'info');
-    dom.modelSubmitBtn.textContent = 'Update Model';
+    showToast(__('models.edit_hint'), 'info');
+    dom.modelSubmitBtn.textContent = __('models.update_btn');
     dom.modelCancelBtn.style.display = 'inline-block';
     dom.modelForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -299,14 +299,15 @@ function populateModelFormForEdit(modelData) {
 async function handleModelFormSubmit(e) {
     if (!canEditModels("models.manage")) return;
     e.preventDefault();
+    if(dom.modelSubmitBtn.disabled)return;
     dom.modelSubmitBtn.disabled = true;
-    dom.modelSubmitBtn.textContent = currentEditingModelId ? 'UPDATING...' : 'SAVING...';
+    dom.modelSubmitBtn.textContent = __('system.saving');
 
     const modelId = dom.modelIdInput.value.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
     if (!modelId) {
-        showToast("Model ID is required and must be a valid slug.", 'error');
+        showToast(__('models.slug_error'), 'error');
         dom.modelSubmitBtn.disabled = false;
-        dom.modelSubmitBtn.textContent = currentEditingModelId ? 'Update Model' : 'Save Model';
+        dom.modelSubmitBtn.textContent = currentEditingModelId ? __('models.update_btn') : __('models.save_btn');
         return;
     }
 
@@ -317,11 +318,11 @@ async function handleModelFormSubmit(e) {
         let imagePath = originalModel ? originalModel.imagePath : null;
 
         if (modelImageFile) {
-            showToast("Requesting secure upload link...", 'info');
+            showToast(__('models.upload_link'), 'info');
             const modelTypeDir = dom.modelTypeSwitch.checked ? MODEL_TYPE.OFFLINE : MODEL_TYPE.ROLEPLAY;
             const result = await getModelImageUploadUrlFn({ modelId, modelType: modelTypeDir, fileName: modelImageFile.name, contentType: modelImageFile.type });
             imagePath = result.data.filePath;
-            showToast("Uploading model image...", 'info');
+            showToast(__('models.upload_image'), 'info');
             await fetch(result.data.signedUrl, { method: 'PUT', body: modelImageFile, headers: { 'Content-Type': modelImageFile.type } });
         }
 
@@ -421,10 +422,10 @@ async function handleModelFormSubmit(e) {
 
     } catch (error) {
         console.error("[MODELS] Error saving model:", error);
-        showToast(`Error: ${error.message || "An unknown error occurred."}`, 'error');
+        showToast(__('system.error'), 'error');
     } finally {
         dom.modelSubmitBtn.disabled = false;
-        // Button text is reset by resetModelForm()
+        dom.modelSubmitBtn.textContent=__(currentEditingModelId?'models.update_btn':'models.save_btn');
     }
 }
 
@@ -483,8 +484,8 @@ function renderManualModelsList() {
     }
 
     if (offlineCountBadge && roleplayCountBadge) {
-        offlineCountBadge.textContent = `Offline: ${offlineCount}`;
-        roleplayCountBadge.textContent = `Roleplay: ${roleplayCount}`;
+        offlineCountBadge.textContent = `${__('models.offline_count')} ${offlineCount}`;
+        roleplayCountBadge.textContent = `${__('models.roleplay_count')} ${roleplayCount}`;
     }
 
     dom.manualModelsListContainer.innerHTML = '';
@@ -521,7 +522,7 @@ function renderManualModelsList() {
  */
 function renderAllModelsExplorer() {
     if (!modelsData || !modelsData.producers) {
-        dom.allModelsListContainer.innerHTML = '<p class="form-hint">Model database is empty or invalid.</p>';
+        dom.allModelsListContainer.innerHTML = `<p class="form-hint">${__('models.empty_database')}</p>`;
         return;
     }
     let explorerHTML = '';
@@ -533,7 +534,7 @@ function renderAllModelsExplorer() {
             const isHidden = seriesObj.hidden === true;
             explorerHTML += `<details class="series-group ${isHidden ? 'hidden-series' : ''}">
                 <summary>
-                    <span class="series-name">${sanitizeHTML(sName)} ${isHidden ? '(Hidden)' : ''}</span>
+                    <span class="series-name">${sanitizeHTML(sName)} ${isHidden ? __('common.hide') : ''}</span>
                     <div class="series-actions">
                         <button class="edit-series-desc-btn" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}">${__('models.edit_desc')}</button>
                         <button class="${isHidden ? 'unhide-series-btn' : 'hide-series-btn'}" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}">${isHidden ? __('common.unhide') : __('common.hide')}</button>
@@ -634,12 +635,12 @@ export async function fetchFullModelsData() {
     } catch (error) {
         if(request!==modelRequest)return;
         console.error('[MODELS] Critical error fetching models data:', error);
-        showToast("Could not load the main models database. Editing is disabled.", "error");
+        showToast(__('models.load_error'), "error");
         if (modelsData) return;
         modelsData = null;
         allManualModels = [];
 
-        const errorHTML = `<p class="form-hint" style="color:var(--error-color);">Failed to load data. Please refresh.</p>`;
+        const errorHTML = `<p class="form-hint" style="color:var(--error-color);">${__('models.load_error')}</p>`;
         dom.manualModelsListContainer.innerHTML = errorHTML;
         dom.allModelsListContainer.innerHTML = errorHTML;
         [dom.manualModelsListContainer,dom.allModelsListContainer].forEach(container=>{const retry=document.createElement('button');retry.className='chrome-btn-outline';retry.textContent=__('common.retry');retry.onclick=fetchFullModelsData;container.append(retry);});
@@ -661,7 +662,7 @@ async function handleSaveSeriesDescription(seriesPath, formElement) {
     if (!canEditModels("models.library")) return;
     const saveButton = formElement.querySelector('button[type="submit"]');
     saveButton.disabled = true;
-    saveButton.textContent = 'SAVING';
+    saveButton.textContent = __('system.saving');
 
     const { pName, sName } = seriesPath;
     console.log(`[MODELS_DEBUG] [SeriesDesc] Starting save for ${pName}/${sName}`);
@@ -686,9 +687,9 @@ async function handleSaveSeriesDescription(seriesPath, formElement) {
     });
 
     if (updates.length === 0) {
-        showToast("No changes detected.", "info");
+        showToast(__('models.no_changes'), "info");
         saveButton.disabled = false;
-        saveButton.textContent = 'Save Series Descriptions';
+        saveButton.textContent = __('models.save_series');
         return;
     }
 
@@ -724,15 +725,15 @@ async function handleSaveSeriesDescription(seriesPath, formElement) {
             currentRef[parts[parts.length - 1]] = value;
         });
 
-        showToast('Series descriptions updated successfully (Local & Remote)!', 'success');
+        showToast(__('models.saved_series'), 'success');
         closeModal();
         
     } catch (error) {
         console.error('[MODELS_DEBUG] Error:', error);
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(userErrorMessage(error), 'error');
     } finally {
         saveButton.disabled = false;
-        saveButton.textContent = 'Save Series Descriptions';
+        saveButton.textContent = __('models.save_series');
     }
 }
 
@@ -744,14 +745,14 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
     if (!canEditModels("models.library")) return;
     const saveButton = formElement.querySelector('button[type="submit"]');
     saveButton.disabled = true;
-    saveButton.textContent = 'SAVING...';
+    saveButton.textContent = __('system.saving');
 
     const { pName, sName, vName } = modelPath;
     console.log(`[MODELS_DEBUG] [Translations] Starting save for ${pName}/${sName}/${vName}`);
 
     const modelVariant = modelsData?.producers?.[pName]?.[sName]?.[vName];
     if (!modelVariant) {
-        showToast("Error: Model not found locally.", 'error');
+        showToast(__('models.not_found'), 'error');
         saveButton.disabled = false;
         return;
     }
@@ -799,9 +800,9 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
     }
 
     if (updates.length === 0) {
-        showToast("No changes detected.", "info");
+        showToast(__('models.no_changes'), "info");
         saveButton.disabled = false;
-        saveButton.textContent = 'Save Translations';
+        saveButton.textContent = __('models.save_translations');
         return;
     }
 
@@ -852,14 +853,14 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
         closeModal();
         
         const count = Math.round(updates.length / 3);
-        showToast(`Success! ${count} translations updated locally & remotely.`, 'success');
+        showToast(__('models.saved_translations'), 'success');
 
     } catch (error) {
         console.error('[MODELS_DEBUG] Error:', error);
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(userErrorMessage(error), 'error');
     } finally {
         saveButton.disabled = false;
-        saveButton.textContent = 'Save Translations';
+        saveButton.textContent = __('models.save_translations');
     }
 }
 
@@ -870,28 +871,28 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
 function openDescriptionEditor(seriesPath) {
     const { pName, sName } = seriesPath;
     const seriesObj = modelsData?.producers?.[pName]?.[sName];
-    if (!seriesObj) return showToast(`Could not find series: ${pName}/${sName}`, "error");
+    if (!seriesObj) return showToast(__('models.not_found'), "error");
 
     const descObj = seriesObj.series_description || {};
     let modalOverlay;
 
-    let formHTML = `<div class="modal-content"><button class="modal-close-btn">×</button><h2>Edit Series Description for "${sanitizeHTML(sName)}"</h2><form id="series-desc-form">`;
-    formHTML += `<div class="translation-field-group"><h4>Description Texts</h4>`;
+    let formHTML = `<div class="modal-content"><button class="modal-close-btn">×</button><h2>${__('models.edit_desc')} · ${sanitizeHTML(sName)}</h2><form id="series-desc-form">`;
+    formHTML += `<div class="translation-field-group"><h4 data-i18n="models.description_texts">${__('models.description_texts')}</h4>`;
 
     const englishValue = descObj.en || '';
-    formHTML += `<label for="trans-en-description">English (Source)</label><textarea id="trans-en-description" name="trans-en-description" rows="3">${sanitizeHTML(englishValue)}</textarea>`;
+    formHTML += `<label for="trans-en-description" data-i18n="models.source_en">${__('models.source_en')}</label><textarea id="trans-en-description" name="trans-en-description" rows="3">${sanitizeHTML(englishValue)}</textarea>`;
 
     TARGET_LANGUAGES.forEach(lang => {
-        const langName = new Intl.DisplayNames(['en'], { type: 'language' }).of(lang);
+        const langName = new Intl.DisplayNames([getLang()], { type: 'language' }).of(lang);
         const currentValue = descObj[lang] || '';
-        formHTML += `<label for="trans-${lang}-description">${sanitizeHTML(langName)}</label><textarea id="trans-${lang}-description" name="trans-${lang}-description" rows="3">${sanitizeHTML(currentValue)}</textarea>`;
+        formHTML += `<label for="trans-${lang}-description" data-language-name="${lang}">${sanitizeHTML(langName)}</label><textarea id="trans-${lang}-description" name="trans-${lang}-description" rows="3">${sanitizeHTML(currentValue)}</textarea>`;
     });
 
-    formHTML += `</div><button type="submit">Save Series Descriptions</button></form></div>`;
+    formHTML += `</div><button type="submit" data-i18n="models.save_series">${__('models.save_series')}</button></form></div>`;
     const content=document.createElement('div');content.innerHTML=formHTML;
     const title=content.querySelector('h2').textContent;
     content.querySelector('h2').remove();content.querySelector('.modal-close-btn').remove();
-    modalOverlay=openModal({title,render:body=>{body.append(content.querySelector('.modal-content'));}});
+    modalOverlay=openModal({title,titleKey:'models.edit_desc',titleSuffix:sName,render:body=>{body.append(content.querySelector('.modal-content'));}});
     modalOverlay.id='translation-modal-overlay';
     modalOverlay.querySelector('form').addEventListener('submit', e => {
         e.preventDefault();
@@ -909,7 +910,7 @@ async function handleDeleteModel(id) {
     const modelToDelete = allManualModels.find(m => m.id === id);
     if (!modelToDelete || !await confirmDialog(()=>({title:__('common.delete'),body:__('models.delete_confirm')}))) return;
 
-    showToast(`Deleting model: ${id}`, 'info');
+    showToast(__('models.deleting'), 'info');
     try {
         const token = await getAuthToken(auth);
         const response = await fetch(`${CURATOR_API_URL}/${id}`, {
@@ -928,11 +929,11 @@ async function handleDeleteModel(id) {
         }
 
         if (currentEditingModelId === id) resetModelForm();
-        showToast(`Model "${id}" was successfully deleted.`, 'success');
+        showToast(__('models.deleted'), 'success');
         await fetchFullModelsData();
     } catch (error) {
         console.error(`[MODELS] Error deleting model ${id}:`, error);
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(userErrorMessage(error), 'error');
     }
 }
 
@@ -943,14 +944,14 @@ async function handleDeleteModel(id) {
 async function handleBlockOnlineModel(modelId) {
     if (!canEditModels("models.library")) return;
     if (!await confirmDialog(()=>({title:__('models.block'),body:__('models.block_confirm')}))) return;
-    showToast(`Blocking model: ${modelId}`, 'info');
+    showToast(__('models.blocking'), 'info');
     try {
         const result = await blockOnlineModelFn({ modelId });
         showToast(result.data.message, 'success');
         await fetchFullModelsData();
     } catch (error) {
         console.error(`[MODELS] Error blocking model ${modelId}:`, error);
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(userErrorMessage(error), 'error');
     }
 }
 
@@ -964,7 +965,7 @@ async function updateSeriesProperty(seriesPath, property, value) {
     if (!canEditModels("models.library")) return;
     const { pName, sName } = seriesPath;
     const action = property === 'hidden' ? (value ? 'Hiding' : 'Unhiding') : 'Updating';
-    showToast(`${action} series: ${sName}`, 'info');
+    showToast(__('models.series_updating'), 'info');
 
     try {
         const token = await getAuthToken(auth);
@@ -976,11 +977,11 @@ async function updateSeriesProperty(seriesPath, property, value) {
         });
         if (!response.ok) throw new Error((await response.json()).error || 'Failed to update series property.');
 
-        showToast(`Series '${sName}' updated.`, 'success');
+        showToast(__('models.series_updated'), 'success');
         await fetchFullModelsData();
     } catch (error) {
         console.error(`[MODELS] Error ${action.toLowerCase()} series ${sName}:`, error);
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(userErrorMessage(error), 'error');
     }
 }
 
@@ -991,7 +992,7 @@ async function updateSeriesProperty(seriesPath, property, value) {
 function openTranslationEditor(modelPath) {
     const { pName, sName, vName } = modelPath;
     const modelObj = modelsData?.producers?.[pName]?.[sName]?.[vName];
-    if (!modelObj) return showToast(`Could not find model: ${pName}/${sName}/${vName}`, "error");
+    if (!modelObj) return showToast(__('models.not_found'), "error");
 
     let englishDetails, detailsObject, translatableFields;
     if (modelObj.source === 'manual' && modelObj.details) {
@@ -1003,28 +1004,28 @@ function openTranslationEditor(modelPath) {
         englishDetails = { description: modelObj.description.en };
         translatableFields = [{ k: 'description', t: 'textarea' }];
     } else {
-        return showToast("This model has no translatable text.", "info");
+        return showToast(__('models.no_translations'), "info");
     }
 
     let modalOverlay;
-    let formHTML = `<div class="modal-content"><button class="modal-close-btn">×</button><h2>Translations for "${sanitizeHTML(vName)}"</h2><form>`;
+    let formHTML = `<div class="modal-content"><button class="modal-close-btn">×</button><h2>${__('models.translations_for')} · ${sanitizeHTML(vName)}</h2><form>`;
     translatableFields.forEach(field => {
         if (!englishDetails[field.k]) return;
-        formHTML += `<div class="translation-field-group"><h4>${sanitizeHTML(field.k.charAt(0).toUpperCase() + field.k.slice(1))} (EN)</h4><p class="source-text">${sanitizeHTML(englishDetails[field.k])}</p>`;
+        formHTML += `<div class="translation-field-group"><h4><span data-i18n="models.field_${field.k}">${__('models.field_'+field.k)}</span> · <span data-i18n="models.source_en">${__('models.source_en')}</span></h4><p class="source-text">${sanitizeHTML(englishDetails[field.k])}</p>`;
         TARGET_LANGUAGES.forEach(lang => {
             const val = (typeof detailsObject[lang] === 'object' ? detailsObject[lang][field.k] : detailsObject[lang]) || '';
             const id = `trans-${lang}-${field.k}`;
-            const langName = new Intl.DisplayNames(['en'], { type: 'language' }).of(lang);
-            formHTML += `<label for="${id}">${sanitizeHTML(langName)}</label>`;
+            const langName = new Intl.DisplayNames([getLang()], { type: 'language' }).of(lang);
+            formHTML += `<label for="${id}" data-language-name="${lang}">${sanitizeHTML(langName)}</label>`;
             formHTML += field.t === 'textarea' ? `<textarea id="${id}" name="${id}">${sanitizeHTML(val)}</textarea>` : `<input type="text" id="${id}" name="${id}" value="${sanitizeHTML(val)}">`;
         });
         formHTML += `</div>`;
     });
-    formHTML += `<button type="submit">Save Translations</button></form></div>`;
+    formHTML += `<button type="submit" data-i18n="models.save_translations">${__('models.save_translations')}</button></form></div>`;
     const content=document.createElement('div');content.innerHTML=formHTML;
     const title=content.querySelector('h2').textContent;
     content.querySelector('h2').remove();content.querySelector('.modal-close-btn').remove();
-    modalOverlay=openModal({title,render:body=>{body.append(content.querySelector('.modal-content'));}});
+    modalOverlay=openModal({title,titleKey:'models.translations_for',titleSuffix:vName,render:body=>{body.append(content.querySelector('.modal-content'));}});
     modalOverlay.id='translation-modal-overlay';
     modalOverlay.querySelector('form').addEventListener('submit', e => {
         e.preventDefault();
@@ -1050,7 +1051,7 @@ export function initModelsModule() {
         .addEventListener('change', (e) => {
             const key = e.target.value;
             applyChatTemplateToForm(key);
-            showToast(key ? `Applied template: ${key}` : 'Template cleared.', key ? 'success' : 'info');
+            showToast(key ? __('models.template_applied') : __('models.template_cleared'), key ? 'success' : 'info');
         });
 
     dom.manualModelsListContainer.addEventListener('click', (e) => {
@@ -1066,7 +1067,7 @@ export function initModelsModule() {
             handleDeleteModel(id);
         } else if (target.classList.contains('translations-btn')) {
             if (!modelsData?.producers) {
-                showToast('Models not loaded yet. Please refresh.', 'error');
+                showToast(__('models.load_error'), 'error');
                 return;
             }
             let opened = false;
@@ -1080,7 +1081,7 @@ export function initModelsModule() {
                     }
                 }
             }
-            if (!opened) showToast('No translatable manual entry found for this model.', 'info');
+            if (!opened) showToast(__('models.no_translations'), 'info');
         }
     });
 
@@ -1129,7 +1130,7 @@ function openModelEditor(){
     const card=document.getElementById('model-manager');
     if(!modelHome)modelHome={parent:card.parentElement,next:card.nextSibling};
     card.hidden=false;
-    openDrawer({title:__('models.form_title'),render:body=>body.append(card),onAfterClose:()=>{if(card.closest('.vx-drawer')?.getAttribute('aria-hidden')!=='true')return;card.hidden=true;modelHome.parent.insertBefore(card,modelHome.next);}});
+    openDrawer({title:__('models.form_title'),titleKey:'models.form_title',render:body=>body.append(card),onAfterClose:()=>{if(card.closest('.vx-drawer')?.getAttribute('aria-hidden')!=='true')return;card.hidden=true;modelHome.parent.insertBefore(card,modelHome.next);}});
 }
 function compactModelActions(root){
     root.querySelectorAll('.item-actions,.series-actions').forEach(actions=>{
@@ -1150,5 +1151,5 @@ function initModelWorkspace(){
         const create=toolbar.querySelector('[data-model-create]');if(create)create.onclick=()=>{resetModelForm();openModelEditor();};
         const publish=toolbar.querySelector('[data-model-publish]');if(publish)publish.onclick=async()=>{if(!isPanelAdmin()||publish.disabled)return;const approved=await confirmDialog(()=>({title:__('models.publish'),body:__('models.publish_confirm')}));if(!approved)return;publish.disabled=true;try{await updateModelsListFn({});await fetchFullModelsData();showToast(__('models.published'),'success');}catch(error){showToast(error.message,'error');}finally{publish.disabled=false;}};
     }
-    onLangChange(()=>{paint();if(modelsData){renderManualModelsList();renderAllModelsExplorer();}});document.addEventListener('vertex:departments',paint);paint();
+    onLangChange(()=>{dom.modelSubmitBtn.textContent=__(dom.modelSubmitBtn.disabled?'system.saving':currentEditingModelId?'models.update_btn':'models.save_btn');document.querySelectorAll('[data-language-name]').forEach(label=>{label.textContent=new Intl.DisplayNames([getLang()],{type:'language'}).of(label.dataset.languageName);});paint();if(modelsData){renderManualModelsList();renderAllModelsExplorer();}});document.addEventListener('vertex:departments',paint);paint();
 }

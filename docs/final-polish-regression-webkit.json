@@ -1,0 +1,40 @@
+{
+  "browser": "webkit",
+  "checks": [
+    "Official brand asset, exact Soft Sweep timing and bootstrap removal",
+    "Biography search and measured status text/header centering in TR/EN",
+    "Drawer toolbar, verified server result, failed verification rollback and explicit deletion (mock)",
+    "Certificates require explicit participant selection and preserve the selected recipient",
+    "Maintenance off/on/error, confirmation, working retry and preserved shared button style (mock)",
+    "Vertex UID validation, explicit confirmation and actual returned status (mock)",
+    "Locale changes preserve unsaved profile/application forms and update restored action labels",
+    "7 exact viewport sizes × TR/EN × Dark/Light: all modules, drawer bounds, forms retained and floating dock",
+    "Permission grid alignment, readable levels, acknowledged save and failed draft rollback",
+    "Panel overrides, inherited reset, hidden fields and contextual bulk permission presets",
+    "Grouped sidebar routes reach actual certificate, status, model editor, news and System functions",
+    "Language, theme and account shared popovers with real navigation and selected states",
+    "Subscription removal requires readable confirmation and cancellation never mutates",
+    "Precision visual QA: six target configurations, permission workspace, menus and mobile drawer",
+    "Department read-only actions and hidden field policies",
+    "Logout and admin login auth state",
+    "Real auth flow hides inaccessible submenus for read-only and contributor-only departments without saving defaults",
+    "Reduced motion removes transitions and animations"
+  ],
+  "uncaughtErrors": [],
+  "unexpectedConsoleErrors": [],
+  "viewportWidths": [
+    320,
+    360,
+    390,
+    768,
+    1024,
+    1440,
+    1920
+  ],
+  "themes": [
+    "light",
+    "dark",
+    "system"
+  ],
+  "mockCalls": 122
+}

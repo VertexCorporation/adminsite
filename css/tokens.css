@@ -237,3 +237,7 @@ html.theme-anim .panel-card {
     transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
 }
 
+
+:root{--bg-nav-parent:#202020;--bg-nav-child:#292929}
+[data-theme="light"]{--bg-nav-parent:#eaeaea;--bg-nav-child:#dedede}
+@media(prefers-color-scheme:light){[data-theme="system"]{--bg-nav-parent:#eaeaea;--bg-nav-child:#dedede}}

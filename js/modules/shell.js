@@ -94,10 +94,10 @@ export function closePopover({ restoreFocus = true } = {}) {
 export function openPopover(anchor, opts = {}) {
     if (activePopover?.anchor === anchor) { closePopover(); return null; }
     if (activePopover) closePopover({ restoreFocus: false });
-    closeDrawer(false);
+    if (!activeDrawer?.root.contains(anchor)) closeDrawer(false);
 
     const el = document.createElement('div');
-    el.className = `vx-popover ${opts.className || ''}`;
+    el.className = `vx-popover ${activeDrawer?.root.contains(anchor)?'drawer-popover':''} ${opts.className || ''}`;
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-label', anchor.getAttribute('aria-label') || anchor.textContent.trim());
 
@@ -237,8 +237,10 @@ export function openDrawer(opts = {}) {
     registerSurface('drawer');
 
     const unbind = [];
+    const updateLabels=()=>{if(opts.titleKey){const title=__(opts.titleKey)+(opts.titleSuffix?' · '+opts.titleSuffix:'');root.querySelector('.vx-drawer-title,.vx-modal-title').textContent=title;root.setAttribute('aria-label',title);}root.querySelector('.drawer-close,.modal-close')?.setAttribute('aria-label',__('common.close'));};
+    unbind.push(onLangChange(updateLabels));
     const onKey = (e) => {
-        if (activeModal) return;
+        if (activeModal || activePopover) return;
         if (e.key === 'Escape') { e.stopPropagation(); closeDrawer(); }
         if (e.key === 'Tab') {
             const items=[...root.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled])')];
@@ -338,6 +340,7 @@ export function openModal(opts = {}) {
         () => document.removeEventListener('keydown', trapFocus),
         () => document.removeEventListener('keydown', onKey)
     ];
+    unbind.push(onLangChange(()=>{if(opts.titleKey){const title=__(opts.titleKey)+(opts.titleSuffix?' · '+opts.titleSuffix:'');root.querySelector('.vx-modal-title').textContent=title;root.setAttribute('aria-label',title);}root.querySelector('.modal-close').setAttribute('aria-label',__('common.close'));}));
     activeModal = { root, overlay, unbind, onAfterClose: opts.onAfterClose, previouslyFocused };
 
     const focusable = root.querySelector(FOCUSABLE);
@@ -413,8 +416,22 @@ export function refreshNavigation() {
         button.querySelector('.nav-chevron')?.toggleAttribute('hidden', ![...module.querySelectorAll('[data-nav-panel]')].some(child => !child.hidden));
         expandModule(module, available && button.classList.contains('active'));
     });
+    document.querySelectorAll('.sidebar-sub-btn').forEach(child=>child.removeAttribute('aria-current'));
+    const activeModule=document.querySelector('.nav-module .dock-btn.active')?.closest('.nav-module');
+    const selected=activeModule?.querySelector('[data-nav-selected]:not([hidden])')||activeModule?.querySelector('.sidebar-sub-btn:not([hidden])');
+    selected?.setAttribute('aria-current','page');
     document.querySelectorAll('.sidebar-group').forEach(group => { group.hidden = ![...group.querySelectorAll('.nav-module')].some(module => !module.hidden); });
     syncTopbarTitle();
+    syncMobileDock();
+}
+
+function syncMobileDock() {
+    document.querySelectorAll('[data-mobile-tab]').forEach(button=>{
+        const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);
+        button.hidden=!source||source.style.display==='none';
+        button.setAttribute('aria-current',source?.classList.contains('active')?'page':'false');
+        button.setAttribute('aria-label',source?.textContent.trim()||'');
+    });
 }
 
 function initNavigation() {
@@ -426,7 +443,7 @@ function initNavigation() {
     const mobile = () => window.innerWidth < 1024;
     const closeSidebarDrawer = (restore = false) => {
         sidebar?.classList.remove('open'); scrim.classList.remove('is-open');
-        document.querySelectorAll('.app-main,.app-header').forEach(el => {el.inert=false;});
+        document.querySelectorAll('.app-main,.app-header,.mobile-bottom-dock').forEach(el => {el.inert=false;});
         toggle?.setAttribute('aria-expanded', 'false');
         if (sidebar) sidebar.inert = mobile();
         sidebar?.removeAttribute('aria-modal'); sidebar?.removeAttribute('role');
@@ -438,10 +455,15 @@ function initNavigation() {
         const changed = !target.classList.contains('active');
         document.querySelectorAll('.tab-panel,.dock-btn').forEach(el => el.classList.remove('active'));
         target.classList.add('active'); button.classList.add('active');
-        document.querySelectorAll('.sidebar-sub-btn').forEach(el => el.removeAttribute('aria-current'));
+
         refreshNavigation();
         if (changed) window.scrollTo({top:0,behavior:'instant'});
     };
+    const dock=document.createElement('nav');dock.className='mobile-bottom-dock';dock.setAttribute('aria-label',__('navigation.main'));
+    dock.innerHTML=['contributors','models','news','notifications'].map((id,i)=>`<button type="button" data-mobile-tab="tab-${id}">${icon(['users-group','robot','news','bell'][i])}</button>`).join('')+`<button type="button" data-mobile-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`;
+    document.querySelector('.app-layout').append(dock);
+    dock.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.hasAttribute('data-mobile-more')){toggle.click();return;}const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);if(source){activateTab(source);closeSidebarDrawer(false);}});
+    onLangChange(()=>{dock.setAttribute('aria-label',__('navigation.main'));dock.querySelector('[data-mobile-more]').setAttribute('aria-label',__('contributors.more'));syncMobileDock();});
     nav?.addEventListener('click', event => {
         const button = event.target.closest('.dock-btn');
         if (button) {
@@ -457,7 +479,7 @@ function initNavigation() {
         const child = event.target.closest('[data-nav-panel]');
         if (!child || child.hidden) return;
         const parent = child.closest('.nav-module').querySelector('.dock-btn');
-        activateTab(parent); child.setAttribute('aria-current', 'page');
+        activateTab(parent); child.closest('.nav-module').querySelectorAll('.sidebar-sub-btn').forEach(el=>{el.removeAttribute('aria-current');el.removeAttribute('data-nav-selected');});child.setAttribute('data-nav-selected','');child.setAttribute('aria-current','page');
         const action = child.dataset.navAction;
         if (parent.dataset.target === 'tab-system') document.dispatchEvent(new CustomEvent('vertex:system-section',{detail:action}));
         const keys = child.dataset.navPanel.split(',');
@@ -466,7 +488,7 @@ function initNavigation() {
         if (action === 'model-editor') document.querySelector('[data-model-create]')?.click();
         else {
             card?.scrollIntoView({behavior:'auto',block:'start'});
-            if (action === 'certificates') card?.querySelector('.certificate-manage-btn')?.click();
+            if (action === 'certificates') document.dispatchEvent(new CustomEvent('vertex:certificate-selector'));
             else if (card) { card.tabIndex = -1; card.focus({preventScroll:true}); }
         }
     });
@@ -475,7 +497,7 @@ function initNavigation() {
         if (sidebar.classList.contains('open')) { closeSidebarDrawer(true); return; }
         mobileTrigger = document.activeElement;
         sidebar.inert = false; sidebar.classList.add('open'); scrim.classList.add('is-open');
-        document.querySelectorAll('.app-main,.app-header').forEach(el => {el.inert=true;});
+        document.querySelectorAll('.app-main,.app-header,.mobile-bottom-dock').forEach(el => {el.inert=true;});
         sidebar.setAttribute('role','dialog'); sidebar.setAttribute('aria-modal','true'); sidebar.setAttribute('aria-label',__('navgroup.workspace'));
         toggle.setAttribute('aria-expanded','true');
         (sidebar.querySelector('.dock-btn.active') || sidebar.querySelector('.dock-btn'))?.focus();
@@ -509,7 +531,7 @@ function initTopbarMenus() {
                 const modes = ['light', 'dark', 'system'];
                 const current = getThemeMode();
                 el.innerHTML = `<div class="vx-popover-header"><span class="vx-popover-title">${__('theme.select')}</span>
-                        <button type="button" class="icon-action-btn small popover-x">${icon('x', { size: 16 })}</button></div>
+                        </div>
                     <div class="menu-list" role="menu">
                         ${modes.map(m => `<button type="button" class="menu-item ${m === current ? 'is-selected' : ''}" data-theme-mode="${m}" role="menuitemradio" aria-checked="${m === current}">
                             ${icon(m === 'light' ? 'sun' : m === 'dark' ? 'moon' : 'device-desktop', { size: 16 })}
@@ -517,7 +539,6 @@ function initTopbarMenus() {
                             <span class="menu-item-check">${icon('check', { size: 16 })}</span>
                         </button>`).join('')}
                     </div>`;
-                el.querySelector('.popover-x').addEventListener('click', () => closePopover());
                 el.querySelectorAll('[data-theme-mode]').forEach(item => {
                     item.addEventListener('click', () => {
                         applyTheme(item.dataset.themeMode);
@@ -531,7 +552,7 @@ function initTopbarMenus() {
     const langBtn = document.getElementById('lang-toggle-btn');
     langBtn?.addEventListener('click', () => {
         openPopover(langBtn, {className:'language-popover', render(el) {
-            el.innerHTML = `<div class="menu-list" role="menu">${[['tr','Türkçe'],['en','English']].map(([lang,label]) => `<button type="button" class="menu-item ${getLang() === lang ? 'is-selected' : ''}" role="menuitemradio" aria-checked="${getLang() === lang}" data-language="${lang}"><span>${label}</span><span class="menu-item-check">${icon('check')}</span></button>`).join('')}</div>`;
+            el.innerHTML = `<div class="menu-list" role="menu">${[['tr',__('language.tr')],['en',__('language.en')]].map(([lang,label]) => `<button type="button" class="menu-item ${getLang() === lang ? 'is-selected' : ''}" role="menuitemradio" aria-checked="${getLang() === lang}" data-language="${lang}"><span>${label}</span><span class="menu-item-check">${icon('check')}</span></button>`).join('')}</div>`;
             el.querySelectorAll('[data-language]').forEach(button => button.onclick = () => {setLang(button.dataset.language);closePopover();});
         }});
     });
