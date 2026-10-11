@@ -39,3 +39,11 @@ The current ElevenLabs application was not accessed; its live motion was not cla
 35 browser check groups passed, covering six widths (360, 390, 768, 1024, 1440 and 1920), dark/light/system, eight modules, authenticated mock role transitions, permission failure rollback, certificates, notifications, uploads, subscriptions, chat, loading and reduced motion. No uncaught or unexpected console errors occurred. 72 screenshots and a Playwright trace are saved under tests/results; generated artifacts are ignored by Git. The department adapter passed 4 tests. All application JavaScript syntax checks and git diff whitespace checks passed.
 
 All mutations were intercepted by mock services. No real notification or certificate was sent, and no production permission policy or backend schema was changed for this refinement.
+
+## production verification and remaining limitation
+
+Commit 43eda12 was pushed normally to main, preserving both histories. Cloudflare Pages production deployment 95fac5cb-74da-4791-bbd7-028dd76db2d3 became active. Live index.html, tokens.css and shell.js hashes match the tested checkout. Real Firebase startup, the login screen, dark/light themes and viewport bounds passed at 390px and 1440px; four additional screenshots are retained.
+
+The strict live smoke command did not fully pass: the automated browser received HTTP 403 PERMISSION_DENIED with App attestation failed from Firebase's reCAPTCHA App Check exchange. There were no uncaught application errors. The App Check activation is unchanged from bb2e359; its security configuration was not altered or bypassed. The generic attestation response does not prove whether bot scoring or account configuration caused the rejection. Successful authenticated production actions are therefore not claimed as verified. The mocked role, write, confirmation and retry tests passed independently.
+
+Run the explicit read-only live check with CHROME_PATH pointing to Chrome: node tests/live-smoke.cjs. It preserves strict failure reporting for any failed request.

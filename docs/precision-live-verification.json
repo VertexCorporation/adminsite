@@ -1,0 +1,54 @@
+{
+  "url": "https://admin.vertexishere.com/",
+  "verifiedAt": "2026-10-11T11:37:07.189Z",
+  "sourceMatches": [
+    {
+      "file": "index.html",
+      "matches": true
+    },
+    {
+      "file": "css/tokens.css",
+      "matches": true
+    },
+    {
+      "file": "js/modules/shell.js",
+      "matches": true
+    }
+  ],
+  "loginVisible": true,
+  "loaderHidden": true,
+  "viewportWidths": [
+    390,
+    1440
+  ],
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "errors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 403 ()"
+  ],
+  "failedRequests": [
+    {
+      "url": "https://content-firebaseappcheck.googleapis.com/v1/projects/vertex-ai-1618/apps/1:561391430514:web:5f06c6a84539ecffb10beb:exchangeRecaptchaV3Token",
+      "status": 403,
+      "errorCode": "PERMISSION_DENIED",
+      "reason": "App attestation failed."
+    }
+  ],
+  "screenshots": [
+    "/Users/baba/Documents/adminsite/tests/results/precision-screenshots/live-login-390-dark.png",
+    "/Users/baba/Documents/adminsite/tests/results/precision-screenshots/live-login-390-light.png",
+    "/Users/baba/Documents/adminsite/tests/results/precision-screenshots/live-login-1440-dark.png",
+    "/Users/baba/Documents/adminsite/tests/results/precision-screenshots/live-login-1440-light.png"
+  ],
+  "authenticatedWritesTested": false,
+  "deployment": {
+    "id": "95fac5cb-74da-4791-bbd7-028dd76db2d3",
+    "source": "43eda12",
+    "environment": "Production"
+  },
+  "strictLiveSmokePassed": false,
+  "remainingLimitation": "The automated production browser received PERMISSION_DENIED: App attestation failed from the unchanged reCAPTCHA App Check integration. Startup, source identity, both themes and viewport bounds passed. Successful production authentication and mutations remain unverified."
+}
