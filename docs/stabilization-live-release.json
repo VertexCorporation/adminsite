@@ -1,0 +1,44 @@
+{
+  "release": "7189f9b53e36",
+  "commit": "2fd1d98",
+  "canonical": "https://admin.vertexishere.com",
+  "indexCache": "no-store",
+  "files": [
+    {
+      "file": "index.html",
+      "status": 200,
+      "matchesLocal": true,
+      "cache": "no-store",
+      "contentType": "text/html; charset=utf-8"
+    },
+    {
+      "file": "assets/releases/7189f9b53e36/js/core/firebase.js",
+      "status": 200,
+      "matchesLocal": true,
+      "cache": "public, max-age=31536000, immutable",
+      "contentType": "application/javascript"
+    },
+    {
+      "file": "assets/releases/7189f9b53e36/js/modules/certificates.js",
+      "status": 200,
+      "matchesLocal": true,
+      "cache": "public, max-age=31536000, immutable",
+      "contentType": "application/javascript"
+    },
+    {
+      "file": "assets/releases/7189f9b53e36/css/stabilization.css",
+      "status": 200,
+      "matchesLocal": true,
+      "cache": "public, max-age=31536000, immutable",
+      "contentType": "text/css; charset=utf-8"
+    },
+    {
+      "file": "assets/vertex-konsol-og.png",
+      "status": 200,
+      "matchesLocal": true,
+      "cache": "public, max-age=14400",
+      "contentType": "image/png"
+    }
+  ],
+  "publicOG": true
+}

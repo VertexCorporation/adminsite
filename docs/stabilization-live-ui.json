@@ -1,0 +1,31 @@
+{
+  "release": "7189f9b53e36",
+  "commit": "2fd1d98",
+  "method": "existing authenticated Chrome session, UI navigation only",
+  "productionWrites": 0,
+  "contributors": 237,
+  "matchedMembershipAccounts": 12,
+  "unknownMembershipAccounts": 225,
+  "certificate": {
+    "awards": 4,
+    "retry": false,
+    "skeleton": false,
+    "issued": false
+  },
+  "permissions": {
+    "detailRows": 10,
+    "detailHeight": 1074
+  },
+  "admins": 8,
+  "departmentUsers": 9,
+  "serverStatus": "running",
+  "models": {
+    "items": 767,
+    "series": 93,
+    "retry": false,
+    "loading": false
+  },
+  "visibleTechnicalKeys": [],
+  "consoleErrors": [],
+  "observedAt": "2026-10-11T19:00:35.072Z"
+}
