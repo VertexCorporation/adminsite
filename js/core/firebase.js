@@ -26,28 +26,35 @@ let listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn;
  * cloudfunctions.net alias'i kota/revizyon sorunlarinda kiriliyor;
  * run.app URL'leri bagimsiz calisir ve CORS basliklariyla doner.
  */
+let attestationPending, attestationRetryAt=0;
+async function getAttestationToken() {
+    if(!appCheck?.getToken || Date.now()<attestationRetryAt)return;
+    if(attestationPending)return attestationPending;
+    attestationPending=(async()=>{
+        let timer;
+        try{return (await Promise.race([appCheck.getToken(false),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Attestation timeout')),2500);})]))?.token;}
+        catch(error){attestationRetryAt=Date.now()+60000;console.warn('[APP_CHECK] Attestation unavailable',{code:error.code||'app-check/unavailable'});}
+        finally{clearTimeout(timer);}
+    })();
+    try{return await attestationPending;}finally{attestationPending=null;}
+}
 async function callCallable(name, data) {
-    const user = auth ? auth.currentUser : null;
-    const idToken = user ? await user.getIdToken() : null;
-    const res = await fetch(`https://${name.toLowerCase()}-o5h7dmtija-ew.a.run.app`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            ...(idToken ? { Authorization: 'Bearer ' + idToken } : {})
-        },
-        body: JSON.stringify({ data: data ?? {} })
-    });
-    let json = {};
-    try { json = await res.json(); } catch { /* bos govde */ }
-    if (!res.ok || json.error) {
-        const err = json.error || {};
-        const status=err.status || (res.status===401?'UNAUTHENTICATED':res.status===403?'PERMISSION_DENIED':res.status===429?'RESOURCE_EXHAUSTED':'INTERNAL');
-        const e = new Error(err.message || (res.status===429?'Service capacity is temporarily unavailable. Try again later.':'The request could not be completed.'));
-        e.code='functions/'+status.toLowerCase().replaceAll('_','-');
-        e.httpStatus=res.status;
-        throw e;
+    const user=auth?.currentUser;
+    const idToken=user?await user.getIdToken():null;
+    const appToken=user?await getAttestationToken():undefined;
+    let res;try{res=await fetch(`https://${name.toLowerCase()}-o5h7dmtija-ew.a.run.app`,{
+        method:'POST',headers:{'Content-Type':'application/json',...(idToken?{Authorization:'Bearer '+idToken}:{}),...(appToken?{'X-Firebase-AppCheck':appToken}:{})},body:JSON.stringify({data:data??{}}),signal:AbortSignal.timeout(20000)
+    });}catch(error){const e=new Error('Callable transport failed');e.code=error.name==='TimeoutError'?'functions/deadline-exceeded':'functions/unavailable';throw e;}
+    let json;try{json=await res.json();}catch{json=null;}
+    if(!res.ok||json?.error||!json||!Object.hasOwn(json,'result')){
+        const err=json?.error||{};
+        const status=err.status||(res.status===401?'UNAUTHENTICATED':res.status===403?'PERMISSION_DENIED':res.status===404?'NOT_FOUND':res.status===429?'RESOURCE_EXHAUSTED':res.status===503?'UNAVAILABLE':'INTERNAL');
+        const e=new Error(err.message||'Callable response failed');e.code='functions/'+status.toLowerCase().replaceAll('_','-');e.httpStatus=res.status;e.details=err.details;
+        // Compatibility with the exact pre-code response of the deployed certificate service.
+        if(name==='issueVertexCertificate'&&status==='FAILED_PRECONDITION'&&err.message==='Expanded issuance awaits certificate assets and verified Zapier configuration.')e.details={reason:'certificate-delivery-not-ready'};
+        console.error(`[CALLABLE] ${name}: HTTP ${res.status} ${e.code}`);throw e;
     }
-    return { data: json.result !== undefined ? json.result : null };
+    return {data:json.result};
 }
 
 // httpsCallable yerine gecen sarmalayici: cagrilinca callCallable'i isletir

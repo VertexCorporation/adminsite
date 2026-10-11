@@ -228,18 +228,19 @@ function seedDefaults() {
     };
 }
 
-let permissionLoad = null;
+let permissionLoad = null;let permissionError=null;
 export function loadDepartmentPermissions() {
     if (!permissionLoad) permissionLoad = readDepartmentPermissions().finally(() => {permissionLoad=null;});
     return permissionLoad;
 }
 async function readDepartmentPermissions() {
+    permissionError=null;
     try {
         const doc = await db.collection('config').doc('departmentPermissions').get();
         departmentPermissions = doc.exists ? normalizeDoc(doc.data()) : {};
         if (!doc.exists || !Object.keys(departmentPermissions).length) {
             departmentPermissions = seedDefaults();
-            if (currentUser.isAdmin) await saveDepartmentPermissionsFn({ departments: departmentPermissions });
+            // Defaults stay local until an explicit user edit; opening this page never writes permissions.
         }
         console.log('[ROLES] Panel permissions loaded:', departmentPermissions);
     } catch (directError) {
@@ -254,7 +255,7 @@ async function readDepartmentPermissions() {
             console.log('[ROLES] Panel permissions loaded via fallback:', departmentPermissions);
         } catch (fallbackError) {
             console.error('[ROLES] Panel permissions yüklenemedi:', fallbackError);
-            departmentPermissions = {};
+            departmentPermissions = {};permissionError=fallbackError;
             showToast(() => userErrorMessage(fallbackError), 'error');
         }
     }
@@ -310,7 +311,7 @@ function renderMatrixTable() {
         TABS.forEach(tab => {
             const level = levelFor(dept.id, wildcardKey(tab.id));
             const overridden = Object.keys(departmentPermissions[dept.id]?.panels || {}).some(key=>key.startsWith(tab.id+'.') && key!==wildcardKey(tab.id));
-            html += `<span class="perm-cell" role="cell"><button type="button" class="perm-cycle ${LEVEL_CLASS[level]}" data-dept="${dept.id}" data-tab="${tab.id}" data-level="${level}" aria-label="${__(dept.nameKey)} · ${__(tab.key)}: ${levelLabel(level)}" title="${__('perms.cycle_hint')}">${cycleIcon(level)}</button>${overridden?`<span class="perm-override-dot" title="${__('perms.override_hint')}"></span>`:''}</span>`;
+            html += `<span class="perm-cell" role="cell" data-module-label="${__(tab.key)}"><button type="button" class="perm-cycle ${LEVEL_CLASS[level]}" data-dept="${dept.id}" data-tab="${tab.id}" data-level="${level}" aria-label="${__(dept.nameKey)} · ${__(tab.key)}: ${levelLabel(level)}" title="${__('perms.cycle_hint')}">${cycleIcon(level)}</button>${overridden?`<span class="perm-override-dot" title="${__('perms.override_hint')}"></span>`:''}</span>`;
         });
         html+=`<span role="cell"><button type="button" class="icon-action-btn perm-presets-trigger" data-preset-dept="${dept.id}" aria-haspopup="dialog" aria-label="${__(dept.nameKey)} · ${__('common.actions')}">${icon('dots')}</button></span></div>`;
     });
@@ -383,7 +384,7 @@ function findPanelMeta(panelKey) {
 }
 export function initPanelMenus() {
     const host=document.getElementById('dept-perms-manager');
-    if(!host || host.querySelector('.permission-workspace'))return;
+    if(!host)return;if(host.querySelector('.permission-workspace')){paintPanelSelector();renderPanelMenuContent();return;}
     const workspace=document.createElement('div');workspace.className='permission-workspace';
     workspace.innerHTML=`<div class="permission-panel-nav" aria-label="${__('perms.panels')}"></div><div class="panel-menu-pop"></div>`;
     host.append(workspace);
@@ -392,12 +393,13 @@ export function initPanelMenus() {
 }
 function paintPanelSelector() {
     const nav=document.querySelector('.permission-panel-nav');if(!nav)return;
-    nav.innerHTML=`<h4>${__('perms.panels')}</h4>`+Object.entries(PANELS).map(([tab,panels])=>`<div class="permission-module-label">${__('nav.'+tab)}</div>${panels.map(panel=>`<button type="button" class="permission-panel-button ${openMenuPanel===tab+'.'+panel.id?'active':''}" data-permission-panel="${tab}.${panel.id}" aria-pressed="${openMenuPanel===tab+'.'+panel.id}">${__(panel.key)}</button>`).join('')}`).join('');
+    nav.innerHTML=`<label class="permission-mobile-picker">${__('perms.panels')}<select aria-label="${__('perms.panels')}">${Object.entries(PANELS).map(([tab,panels])=>`<optgroup label="${__('nav.'+tab)}">${panels.map(panel=>`<option value="${tab}.${panel.id}" ${openMenuPanel===tab+'.'+panel.id?'selected':''}>${__(panel.key)}</option>`).join('')}</optgroup>`).join('')}</select></label><h4>${__('perms.panels')}</h4>`+Object.entries(PANELS).map(([tab,panels])=>`<div class="permission-module-label">${__('nav.'+tab)}</div>${panels.map(panel=>`<button type="button" class="permission-panel-button ${openMenuPanel===tab+'.'+panel.id?'active':''}" data-permission-panel="${tab}.${panel.id}" aria-pressed="${openMenuPanel===tab+'.'+panel.id}">${__(panel.key)}</button>`).join('')}`).join('');
+    nav.querySelector('select').onchange=event=>{openMenuPanel=event.target.value;renderPanelMenuContent();};
     nav.querySelectorAll('button').forEach(button=>button.onclick=()=>{openMenuPanel=button.dataset.permissionPanel;paintPanelSelector();renderPanelMenuContent();nav.querySelector(`[data-permission-panel="${openMenuPanel}"]`)?.focus({preventScroll:true});});
 }
 function renderPanelMenuContent() {
     const pop=document.querySelector('.permission-workspace .panel-menu-pop');
-    if(!pop || !departmentPermissions || !openMenuPanel)return;
+    if(!pop)return;if(permissionError){pop.innerHTML='<div class="state-block"><p>'+userErrorMessage(permissionError)+'</p><button class="chrome-btn-outline" data-permission-retry>'+__('common.retry')+'</button></div>';pop.querySelector('button').onclick=()=>initRolesModule();return;}if(!departmentPermissions){pop.innerHTML='<div class="skeleton sk-text"></div><p>'+__('common.loading')+'</p>';return;}if(!openMenuPanel || !findPanelMeta(openMenuPanel).panel)openMenuPanel='contributors.list';
     const focus = pop.contains(document.activeElement) ? {...document.activeElement.dataset} : null;
     const panelKey=openMenuPanel;
     const {panel}=findPanelMeta(panelKey);
@@ -436,9 +438,10 @@ function renderPanelMenuContent() {
     const focusDept=focus?.menuDept || focus?.menuReset;
     if(focusDept)pop.querySelector(`[data-menu-dept="${focusDept}"]`)?.focus({preventScroll:true});
 }
+let rolesInitialized=false;
 export function initRolesModule() {
     const finish=beginPanelLoading(document.getElementById('dept-permissions-container'));
-    loadDepartmentPermissions().then(()=>{confirmedPermissions=structuredClone(departmentPermissions);finish();renderMatrixTable();initPanelMenus();});
-    onLangChange(()=>{renderMatrixTable();paintPanelSelector();renderPanelMenuContent();});
+    loadDepartmentPermissions().then(()=>{confirmedPermissions=structuredClone(departmentPermissions);finish();renderMatrixTable();initPanelMenus();renderPanelMenuContent();});
+    if(!rolesInitialized){rolesInitialized=true;onLangChange(()=>{renderMatrixTable();paintPanelSelector();renderPanelMenuContent();});}
 }
 export {TABS,DEPARTMENTS};

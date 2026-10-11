@@ -1,0 +1,74 @@
+
+> test
+> node --test tests/*.test.cjs
+
+TAP version 13
+# Subtest: callable carries Auth and available App Check headers; never retries writes
+ok 1 - callable carries Auth and available App Check headers; never retries writes
+  ---
+  duration_ms: 0.921333
+  ...
+# Subtest: concurrent attestation failure is coalesced and backed off without altering backend enforcement
+ok 2 - concurrent attestation failure is coalesced and backed off without altering backend enforcement
+  ---
+  duration_ms: 10.251417
+  ...
+# Subtest: non-JSON infrastructure errors keep HTTP classification
+ok 3 - non-JSON infrastructure errors keep HTTP classification
+  ---
+  duration_ms: 1.865459
+  ...
+# Subtest: structured certificate readiness and exact legacy compatibility preserve localized reason
+ok 4 - structured certificate readiness and exact legacy compatibility preserve localized reason
+  ---
+  duration_ms: 1.280875
+  ...
+# Subtest: invalid success envelope and network timeout fail safely without retry
+ok 5 - invalid success envelope and network timeout fail safely without retry
+  ---
+  duration_ms: 1.316666
+  ...
+# Subtest: TR/EN parity and nonempty translations
+ok 6 - TR/EN parity and nonempty translations
+  ---
+  duration_ms: 0.8895
+  ...
+# Subtest: all HTML and JS literal translation references resolve
+ok 7 - all HTML and JS literal translation references resolve
+  ---
+  duration_ms: 0.038375
+  ...
+# Subtest: dictionary entries are unique
+ok 8 - dictionary entries are unique
+  ---
+  duration_ms: 0.824042
+  ...
+# Subtest: storage denied, unsupported and prototype locale values safely use Turkish
+ok 9 - storage denied, unsupported and prototype locale values safely use Turkish
+  ---
+  duration_ms: 2.658958
+  ...
+# Subtest: missing keys have current-language readable fallback and deduplicated dev diagnostics
+ok 10 - missing keys have current-language readable fallback and deduplicated dev diagnostics
+  ---
+  duration_ms: 1.562
+  ...
+# Subtest: translation does not overwrite controller-owned document titles
+ok 11 - translation does not overwrite controller-owned document titles
+  ---
+  duration_ms: 0.471875
+  ...
+# Subtest: brand is identical in both languages
+ok 12 - brand is identical in both languages
+  ---
+  duration_ms: 0.046875
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 109.417417

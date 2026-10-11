@@ -192,7 +192,7 @@ async function handleNotificationFormSubmit(e) {
         handleScheduleSwitchChange();
     } catch (error) {
         console.error("[CLIENT] Error submitting notification:", error);
-        showToast(deliveryUncertain ? __('notif.uncertain') : error.code ? userErrorMessage(error) : error.message, 'error');
+        showToast(()=>deliveryUncertain ? __('notif.uncertain') : userErrorMessage(error), 'error');
     } finally {
         submissionPending = false;
         submitBtn.disabled = deliveryUncertain;

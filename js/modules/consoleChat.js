@@ -94,9 +94,7 @@ async function loadChannels() {
         if (!currentChannelId && channels.length) selectChannel(channels[0].id);
     } catch (error) {
         console.error('[CHAT] Kanallar yüklenemedi:', error);
-        const msg = /unauthenticated|permission/i.test(error.message)
-            ? __('chat.login_hint')
-            : error.message;
+        const msg = userErrorMessage(error);
         el('chat-channel-list').innerHTML = `<p class="form-hint chat-hint">${escapeHTML(msg)}</p>`;
     } finally { finishLoading(); }
 }
@@ -155,7 +153,7 @@ async function loadMessages(animate = true) {
     } catch (error) {
         finishLoading();
         console.error('[CHAT] Mesajlar yüklenemedi:', error);
-        container.innerHTML = `<p class="form-hint chat-hint">${escapeHTML(error.message)}</p>`;
+        container.innerHTML = `<p class="form-hint chat-hint">${escapeHTML(userErrorMessage(error))}</p>`;
     }
     finishLoading();
 }
@@ -488,10 +486,10 @@ export function initConsoleChat() {
         }
     });
 
-    if (auth && auth.currentUser) loadChannels();
+    if (auth && auth.currentUser && el('tab-chat')?.classList.contains('active')) loadChannels();
     // Yeni mesaj/kanallar için hafif yoklama
     pollTimer = setInterval(() => {
-        if (document.hidden || !auth || !auth.currentUser) return;
+        if (document.hidden || !auth || !auth.currentUser || !el('tab-chat')?.classList.contains('active')) return;
         loadChannels();
         if (currentChannelId) loadMessages(false);
     }, 8000);

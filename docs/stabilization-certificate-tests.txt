@@ -1,0 +1,135 @@
+TAP version 13
+# Subtest: valid canonical certificate is verified without creation or delivery
+ok 1 - valid canonical certificate is verified without creation or delivery
+  ---
+  duration_ms: 0.566708
+  ...
+# Subtest: revoked certificate is not valid
+ok 2 - revoked certificate is not valid
+  ---
+  duration_ms: 0.183
+  ...
+# Subtest: failed certificate is not valid
+ok 3 - failed certificate is not valid
+  ---
+  duration_ms: 0.053958
+  ...
+# Subtest: pending certificate is not valid
+ok 4 - pending certificate is not valid
+  ---
+  duration_ms: 0.072583
+  ...
+# Subtest: processing certificate is not valid
+ok 5 - processing certificate is not valid
+  ---
+  duration_ms: 0.176042
+  ...
+# Subtest: missing certificate and contributor return valid:false
+ok 6 - missing certificate and contributor return valid:false
+  ---
+  duration_ms: 0.080584
+  ...
+# Subtest: malformed certificate ID rejects without DB writes
+ok 7 - malformed certificate ID rejects without DB writes
+  ---
+  duration_ms: 0.272875
+  ...
+# Subtest: legacy revocation prevents valid result
+ok 8 - legacy revocation prevents valid result
+  ---
+  duration_ms: 0.056584
+  ...
+# Subtest: issueVertexCertificate: anonymous and department users denied before database work
+ok 9 - issueVertexCertificate: anonymous and department users denied before database work
+  ---
+  duration_ms: 1.990584
+  ...
+# Subtest: getVertexCertificateDetails: anonymous and department users denied before database work
+ok 10 - getVertexCertificateDetails: anonymous and department users denied before database work
+  ---
+  duration_ms: 0.444792
+  ...
+# Subtest: revokeVertexCertificate: anonymous and department users denied before database work
+ok 11 - revokeVertexCertificate: anonymous and department users denied before database work
+  ---
+  duration_ms: 1.2055
+  ...
+# Subtest: setVertexContributorJoiningDate: anonymous and department users denied before database work
+ok 12 - setVertexContributorJoiningDate: anonymous and department users denied before database work
+  ---
+  duration_ms: 0.51875
+  ...
+# Subtest: expanded delivery fails closed until Zapier and assets are verified
+ok 13 - expanded delivery fails closed until Zapier and assets are verified
+  ---
+  duration_ms: 0.362083
+  ...
+# Subtest: whitelist defaults only missing type; validates hostile and invalid values
+ok 14 - whitelist defaults only missing type; validates hostile and invalid values
+  ---
+  duration_ms: 0.757084
+  ...
+# Subtest: eligibility never treats application creation as joining; no invented threshold
+ok 15 - eligibility never treats application creation as joining; no invented threshold
+  ---
+  duration_ms: 1.198
+  ...
+# Subtest: concurrent issuance delivers once and preserves payload contract
+ok 16 - concurrent issuance delivers once and preserves payload contract
+  ---
+  duration_ms: 9.938333
+  ...
+# Subtest: legacy issued merit is never redelivered
+ok 17 - legacy issued merit is never redelivered
+  ---
+  duration_ms: 0.228625
+  ...
+# Subtest: ambiguous send remains uncertain and cannot be retried
+ok 18 - ambiguous send remains uncertain and cannot be retried
+  ---
+  duration_ms: 0.415042
+  ...
+# Subtest: non-2xx send is recorded without unsafe retry
+ok 19 - non-2xx send is recorded without unsafe retry
+  ---
+  duration_ms: 0.140792
+  ...
+# Subtest: correlated safe failure can be retried; stale callbacks cannot alter a newer attempt
+ok 20 - correlated safe failure can be retried; stale callbacks cannot alter a newer attempt
+  ---
+  duration_ms: 0.370208
+  ...
+# Subtest: success is terminal; revocation survives callbacks and repeated requests
+ok 21 - success is terminal; revocation survives callbacks and repeated requests
+  ---
+  duration_ms: 0.793542
+  ...
+# Subtest: legacy callback accepted on first merit but not uncorrelated non-merit
+ok 22 - legacy callback accepted on first merit but not uncorrelated non-merit
+  ---
+  duration_ms: 0.546875
+  ...
+# Subtest: invalid IDs, missing participant, invalid category and callbacks fail before sending
+ok 23 - invalid IDs, missing participant, invalid category and callbacks fail before sending
+  ---
+  duration_ms: 0.330584
+  ...
+# Subtest: Gmail delivery claim succeeds once, refuses replays and revoked records
+ok 24 - Gmail delivery claim succeeds once, refuses replays and revoked records
+  ---
+  duration_ms: 0.300792
+  ...
+# Subtest: joining date is explicit, audited, clearable and never inferred during issuance
+ok 25 - joining date is explicit, audited, clearable and never inferred during issuance
+  ---
+  duration_ms: 0.43875
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 56.740166

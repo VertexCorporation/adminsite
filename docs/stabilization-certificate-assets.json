@@ -1,0 +1,54 @@
+{
+  "assets": [
+    {
+      "file": "dirayet.webp",
+      "status": 200,
+      "contentType": "image/webp",
+      "image": true
+    },
+    {
+      "file": "tenacity.webp",
+      "status": 200,
+      "contentType": "image/webp",
+      "image": true
+    },
+    {
+      "file": "metanet.webp",
+      "status": 200,
+      "contentType": "image/webp",
+      "image": true
+    },
+    {
+      "file": "constancy.webp",
+      "status": 200,
+      "contentType": "image/webp",
+      "image": true
+    },
+    {
+      "file": "azamet.webp",
+      "status": 200,
+      "contentType": "image/webp",
+      "image": true
+    },
+    {
+      "file": "majesty.webp",
+      "status": 200,
+      "contentType": "image/webp",
+      "image": true
+    },
+    {
+      "file": "asalet.webp",
+      "status": 200,
+      "contentType": "image/webp",
+      "image": true
+    },
+    {
+      "file": "nobility.webp",
+      "status": 200,
+      "contentType": "image/webp",
+      "image": true
+    }
+  ],
+  "readinessGuardChanged": false,
+  "zapierChanged": false
+}

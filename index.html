@@ -4,9 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title data-i18n="page.title">VERTEX KONSOL</title>
+    <title data-i18n="page.title">Vertex Konsol</title>
 
-    <script type="module" src="js/lang.js"></script>
+                                            <!-- release:start -->
+    <meta name="vertex-release" content="7189f9b53e36">
+    <script type="importmap">{"imports":{"/js/core/firebase.js":"/assets/releases/7189f9b53e36/js/core/firebase.js","/js/core/initializer.js":"/assets/releases/7189f9b53e36/js/core/initializer.js","/js/lang.js":"/assets/releases/7189f9b53e36/js/lang.js","/js/main.js":"/assets/releases/7189f9b53e36/js/main.js","/js/modules/admin.js":"/assets/releases/7189f9b53e36/js/modules/admin.js","/js/modules/certificates.js":"/assets/releases/7189f9b53e36/js/modules/certificates.js","/js/modules/consoleChat.js":"/assets/releases/7189f9b53e36/js/modules/consoleChat.js","/js/modules/contributors.js":"/assets/releases/7189f9b53e36/js/modules/contributors.js","/js/modules/models.js":"/assets/releases/7189f9b53e36/js/modules/models.js","/js/modules/news.js":"/assets/releases/7189f9b53e36/js/modules/news.js","/js/modules/notification.js":"/assets/releases/7189f9b53e36/js/modules/notification.js","/js/modules/roles.js":"/assets/releases/7189f9b53e36/js/modules/roles.js","/js/modules/shell.js":"/assets/releases/7189f9b53e36/js/modules/shell.js","/js/modules/siteTeam.js":"/assets/releases/7189f9b53e36/js/modules/siteTeam.js","/js/modules/subscriptions.js":"/assets/releases/7189f9b53e36/js/modules/subscriptions.js","/js/modules/system.js":"/assets/releases/7189f9b53e36/js/modules/system.js","/js/modules/userMenu.js":"/assets/releases/7189f9b53e36/js/modules/userMenu.js","/js/modules/views.js":"/assets/releases/7189f9b53e36/js/modules/views.js","/js/utils/departments.js":"/assets/releases/7189f9b53e36/js/utils/departments.js","/js/utils/dom.js":"/assets/releases/7189f9b53e36/js/utils/dom.js","/js/utils/icons.js":"/assets/releases/7189f9b53e36/js/utils/icons.js","/js/utils/loading.js":"/assets/releases/7189f9b53e36/js/utils/loading.js","/js/utils/scrollEdges.js":"/assets/releases/7189f9b53e36/js/utils/scrollEdges.js","/js/utils/ui.js":"/assets/releases/7189f9b53e36/js/utils/ui.js"}}</script>
+    <!-- release:end -->
+    <script type="module" src="assets/releases/7189f9b53e36/js/lang.js"></script>
 
     <!-- SEO & Basic Meta -->
     <meta name="description" data-i18n="page.desc" content="Vertex içerikleri, kullanıcı yönetimi ve sistem yönetimi için merkezi kontrol paneli.">
@@ -15,6 +19,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+    <link rel="canonical" href="https://admin.vertexishere.com/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Vertex Konsol">
+    <meta property="og:description" content="Vertex Corporation yönetim konsolu.">
+    <meta property="og:image" content="https://admin.vertexishere.com/assets/vertex-konsol-og.png">
+    <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+    <meta property="og:url" content="https://admin.vertexishere.com/">
+    <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Vertex Konsol">
+    <meta name="twitter:image" content="https://admin.vertexishere.com/assets/vertex-konsol-og.png">
     <!-- Favicons -->
     <link rel="icon" href="favicon.png" type="image/png" sizes="32x32">
     <link id="vertex-favicon" rel="icon" href="assets/favicon-dark.svg?v=2" type="image/svg+xml">
@@ -26,14 +39,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/tokens.css">
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/layout.css">
-<link rel="stylesheet" href="css/components.css">
-<link rel="stylesheet" href="css/motion.css">
-<link rel="stylesheet" href="css/loading.css">
-<link rel="stylesheet" href="css/modules.css">
-<link rel="stylesheet" href="css/certificates.css">
+    <link rel="stylesheet" href="assets/releases/7189f9b53e36/css/tokens.css">
+<link rel="stylesheet" href="assets/releases/7189f9b53e36/css/base.css">
+<link rel="stylesheet" href="assets/releases/7189f9b53e36/css/layout.css">
+<link rel="stylesheet" href="assets/releases/7189f9b53e36/css/components.css">
+<link rel="stylesheet" href="assets/releases/7189f9b53e36/css/motion.css">
+<link rel="stylesheet" href="assets/releases/7189f9b53e36/css/loading.css">
+<link rel="stylesheet" href="assets/releases/7189f9b53e36/css/modules.css">
+<link rel="stylesheet" href="assets/releases/7189f9b53e36/css/certificates.css">
+<link rel="stylesheet" href="assets/releases/7189f9b53e36/css/stabilization.css">
 
     <script>
         // Sayfa yüklenmeden önce localStorage'dan temayı ayarlayan betik
@@ -75,32 +89,32 @@
                 <div class="logo-orb">
                     <img src="assets/vertex-logo.svg" class="vertex-brand-logo" width="32" height="32" alt="">
                 </div>
-                <h1 data-i18n="login.title">VERTEX KONSOL</h1>
-                <h2 data-i18n="login.subtitle">Sistem Yönetim Modülü</h2>
+                <h1 data-i18n="login.title">Vertex Konsol</h1>
+
             </div>
 
-            <div class="form-wrapper">
+            <form id="login-form" class="form-wrapper" novalidate>
                 <div class="input-field">
                     <svg class="prefix-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                     </svg>
-                    <input type="email" id="email" data-i18n-placeholder="login.email" placeholder="E-posta Adresiniz" autocomplete="email" required>
+                    <input type="email" id="email" data-i18n-aria-label="login.email" data-i18n-placeholder="login.email" placeholder="E-posta Adresiniz" autocomplete="email" required>
                 </div>
 
                 <div class="input-field">
                     <svg class="prefix-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
                     </svg>
-                    <input type="password" id="password" data-i18n-placeholder="login.password" placeholder="Şifreniz" required>
+                    <input type="password" id="password" autocomplete="current-password" data-i18n-aria-label="login.password" data-i18n-placeholder="login.password" placeholder="Şifreniz" required>
                 </div>
 
-                <button id="login-btn" class="chrome-btn-primary">
+                <button id="login-btn" type="submit" class="chrome-btn-primary">
                     <span data-i18n="login.btn">Oturum Aç</span>
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="margin-left: 8px;">
                         <path d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"/>
                     </svg>
                 </button>
-            </div>
+            </form>
 
             <div class="divider">
                 <span data-i18n="login.or">veya</span>
@@ -152,7 +166,7 @@
                     <img src="assets/vertex-logo.svg" class="vertex-brand-logo" width="32" height="32" alt="">
                 </div>
                 <div class="brand-info">
-                    <h1 class="vertex-wordmark" aria-label="Vertex Konsol"><span>VERTEX</span><span>KONSOL</span></h1>
+                    <h1 class="vertex-wordmark" aria-label="Vertex Konsol">Vertex Konsol</h1>
 
                 </div>
             <button type="button" class="icon-action-btn sidebar-close" aria-label="Navigasyonu kapat" data-i18n-aria-label="navigation.close"><i data-icon="close"></i></button></div>
@@ -331,7 +345,7 @@
                         </div>
 
                         <!-- Kategori Çipleri -->
-                        <div class="scroll-chips-row">
+                        <div class="scroll-chips-row filter-chips">
                             <button class="filter-chip active" data-filter="all" onclick="filterContributors('all')" data-i18n="contributors.filter.all">Tümü</button>
                             <button class="filter-chip" data-filter="vertex" onclick="filterContributors('vertex')" data-i18n="contributors.filter.vertex">Aktif Vertexliler</button>
                             <button class="filter-chip" data-filter="verified" onclick="filterContributors('verified')" data-i18n="contributors.filter.verified">Onaylılar</button>
@@ -997,7 +1011,7 @@
                                 <h3 data-i18n="system.gcs_backup">Google Cloud Storage (GCS) Yedekleme</h3>
                             </div>
                         </div>
-                        <p class="intro-description" data-i18n="system.gcs_desc">Otomatik GCS organizasyon yedekleme mekanizması (GitHub Actions üzerinden) şu anda <strong >AKTİF</strong> ve çalışır durumda.</p>
+                        <p class="intro-description" data-i18n="system.backup_unknown">Yedekleme sağlığı doğrulanamadı.</p><span class="status-badge" data-i18n="system.backup_configured">Yapılandırıldı</span>
                     </div>
 
                     <!-- Katılımcı Doğrulama (Manuel) -->
@@ -1345,7 +1359,7 @@
     </div>
 
     <!-- Firebase SDK ve Entegrasyon Modülleri -->
-    <script type="module" src="js/core/initializer.js"></script>
+    <script type="module" src="assets/releases/7189f9b53e36/js/core/initializer.js"></script>
 
     <!-- Hızlı Filtreleme & Buton Senkronizasyon Betikleri -->
     <script>

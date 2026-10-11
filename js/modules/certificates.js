@@ -1,7 +1,7 @@
 import { setVertexContributorJoiningDateFn, issueVertexCertificateFn, getVertexCertificateDetailsFn, revokeVertexCertificateFn } from '../core/firebase.js';
 import { escapeHTML as esc, showToast, userErrorMessage, __, getLang, onLangChange } from '../utils/ui.js';
 import { icon } from '../utils/icons.js';
-import { openDrawer, openModal, closeModal, confirmDialog } from './shell.js';
+import { openDrawer, confirmDialog } from './shell.js';
 import { createLoadingController, skeletonRows, skeletonCertificate, setButtonLoading } from '../utils/loading.js';
 import { isPanelAdmin } from './roles.js';
 const awards = [{type:'tenacity',months:1,icon:'award',tr:'Dirayet',en:'Tenacity'},{type:'constancy',months:3,icon:'shield',tr:'Metanet',en:'Constancy'},{type:'majesty',months:6,icon:'diamond',tr:'Azamet',en:'Majesty'},{type:'nobility',months:12,icon:'crown',tr:'Asalet',en:'Nobility'}];
@@ -18,8 +18,8 @@ function dateValue(value) {
     if (typeof value === 'string') return value.slice(0,10);
     return new Date((value._seconds ?? value.seconds)*1000).toISOString().slice(0,10);
 }
-function typeName(type, types) { return types?.[type]?.[getLang()] || awards.find(a=>a.type===type)?.[getLang()] || type; }
-function statusName(status) { if(status==='succeeded')return __('cert.success');if(status==='pending')return __('cert.processing');return ['processing','failed','revoked','delivered'].includes(status) ? __('cert.'+status) : status==='uncertain' ? __('cert.status_uncertain') : status; }
+function typeName(type, types) { return types?.[type]?.[getLang()] || awards.find(a=>a.type===type)?.[getLang()] || __('cert.status_unknown'); }
+function statusName(status) { if(status==='succeeded')return __('cert.success');if(status==='pending')return __('cert.processing');return ['processing','failed','revoked','delivered'].includes(status) ? __('cert.'+status) : status==='uncertain' ? __('cert.status_uncertain') : __('cert.status_unknown'); }
 
 export function openCertificates(person, refresh, anchor = document.activeElement, options = {}) {
     if (!isPanelAdmin() || !person) return;
@@ -59,8 +59,8 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
     }
     async function load() {
         const token=++generation; setTitle('cert.title'); loader.start();
-        try { const {data}=await getVertexCertificateDetailsFn({contributorId:person.id}); if(!alive||token!==generation)return; details=data; render(); }
-        catch(error) { if(alive&&token===generation)loader.error(__('cert.error'),load,__('common.retry')); }
+        try { const {data}=await getVertexCertificateDetailsFn({contributorId:person.id}); if(!alive||token!==generation)return; if(!data||typeof data!=='object'||!Array.isArray(data.history))throw Object.assign(new Error('Invalid certificate response'),{code:'functions/internal'}); details=data; render(); }
+        catch(error) { console.error('[CERTIFICATES] Details failed',{code:error.code,status:error.httpStatus});if(alive&&token===generation){footer.innerHTML='';loader.error(userErrorMessage(error),load,__('common.retry'));} }
     }
     async function execute(type, retry, button) {
         const key=person.id+':'+type;
@@ -70,7 +70,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
             const {data}=await issueVertexCertificateFn({contributorId:person.id,certificateType:type,...(retry?{retry:true}:{})});
             showToast(()=>statusName(data.status || 'processing'),'info');
             await refresh?.();
-        } catch(error) { unresolved.add(key); showToast(()=>userErrorMessage(error),'error'); }
+        } catch(error) { if(!error.httpStatus || ['functions/internal','functions/deadline-exceeded','functions/unavailable'].includes(error.code))unresolved.add(key);showToast(()=>userErrorMessage(error),'error'); }
         finally { pending.delete(key); setButtonLoading(button,false); await reloadHistory(); if(alive)render(); }
     }
     async function review(type, retry=false, button=anchor) {
@@ -83,22 +83,25 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
         try { const {data}=await getVertexCertificateDetailsFn({contributorId:person.id}); details=data; } catch(error){ showToast(()=>userErrorMessage(error),'error'); }
     }
     function editDate() {
-        let body;
-        const unsubscribeDate=onLangChange(()=>paint());
+        historyOpen=true;
+        let busy=false, saved=dateValue(details.eligibility?.joinedAt);
+        const unsubscribeDate=onLangChange(paint);
+        const leave=()=>{if(busy)return;historyOpen=false;unsubscribeDate();render();};
         function paint(){
-            const saved=body?.querySelector('input')?.value ?? dateValue(details.eligibility?.joinedAt);
-            if(!body)return;
-            body.parentElement.querySelector('.vx-modal-title').textContent=__('cert.date_edit');
-            body.innerHTML=`<form id="joining-date-form" class="join-date-form"><p>${__('cert.current_date')}: ${esc(formatCertificateDate(details.eligibility?.joinedAt))}</p><label for="joined-at">${__('cert.joined')}</label><input type="date" id="joined-at" value="${esc(saved)}"><p class="form-hint">${__('cert.date_help')}</p><div class="form-submit-row"><button type="submit" class="chrome-btn-primary">${__('common.save')}</button><button type="button" data-cancel class="chrome-btn-outline">${__('common.cancel')}</button></div></form>`;
-            body.querySelector('[data-cancel]').onclick=()=>closeModal();
-            body.querySelector('form').onsubmit=async event=>{
-                event.preventDefault(); const button=body.querySelector('[type=submit]'); if(button.disabled)return;
-                const joinedAt=body.querySelector('input').value || null; setButtonLoading(button,true,__('cert.processing'));
-                try { await setVertexContributorJoiningDateFn({contributorId:person.id,joinedAt}); await reloadHistory(); await refresh?.(); closeModal();if(alive)render(); }
-                catch(error){showToast(()=>userErrorMessage(error),'error');setButtonLoading(button,false);}
+            if(!alive)return;
+            saved=pop.querySelector('#joined-at')?.value ?? saved;
+            setTitle('cert.date_edit');back(leave);footer.innerHTML='';
+            pop.innerHTML=`<form id="joining-date-form" class="join-date-form"><p>${__('cert.current_date')}: ${esc(formatCertificateDate(details.eligibility?.joinedAt))}</p><label for="joined-at">${__('cert.joined')}</label><input type="date" id="joined-at" value="${esc(saved)}"><p class="form-hint">${__('cert.date_help')}</p><div class="form-submit-row"><button type="submit" class="chrome-btn-primary">${__('common.save')}</button><button type="button" data-cancel class="chrome-btn-outline">${__('common.cancel')}</button></div></form>`;
+            const button=pop.querySelector('[type=submit]');setButtonLoading(button,busy);
+            pop.querySelector('[data-cancel]').onclick=leave;
+            pop.querySelector('form').onsubmit=async event=>{
+                event.preventDefault();if(busy)return;busy=true;saved=pop.querySelector('input').value;
+                setButtonLoading(button,true);
+                try {await setVertexContributorJoiningDateFn({contributorId:person.id,joinedAt:saved || null});await reloadHistory();await refresh?.();busy=false;if(alive)leave();}
+                catch(error){busy=false;showToast(()=>userErrorMessage(error),'error');if(alive)setButtonLoading(pop.querySelector('[type=submit]'),false);}
             };
         }
-        body=openModal({title:__('cert.date_edit'),onAfterClose:unsubscribeDate});paint();
+        const previous=unsubscribe;unsubscribe=()=>{previous?.();unsubscribeDate();};paint();
     }
     function history() {
         historyOpen=true;

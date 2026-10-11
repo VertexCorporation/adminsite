@@ -88,6 +88,16 @@ export function startApp(firebaseConfig) {
         }
     });
 
+    const loadedWorkspaces=new Set();
+    const loadRolesWorkspace=()=>{initRolesModule();initPanelMenus();};
+    document.addEventListener('vertex:workspace',event=>{
+        if(!auth.currentUser || dom.adminPanel.style.display==='none')return;
+        const keys=event.detail.keys;
+        const tasks=[['contributors.list',fetchContributorsData],['models.library',fetchFullModelsData],['models.manage',fetchFullModelsData],['news.published',listenForArticles],['news.editor',listenForArticles],['notifications.scheduled',listenForScheduledTasks],['subscriptions.list',refreshSubscriptions],['system.deptUsers',refreshDepartmentUsers],['system.adminList',loadAdminsList],['system.serverStatus',initializeMaintenanceStatus],['system.deptPerms',loadRolesWorkspace],['chat.channels',refreshConsoleChat]];
+        for(const [key,load] of tasks)if(keys.includes(key)&&(key==='chat.channels'||getEffectivePanelLevel(key)!=='none')&&!loadedWorkspaces.has(load)){
+            loadedWorkspaces.add(load);try{Promise.resolve(load()).catch(error=>console.error('[WORKSPACE] Load failed',key,error.code));}catch(error){console.error('[WORKSPACE] Load failed',key,error.code);}
+        }
+    });
     // --- Step 3: Set up the Core Authentication State Listener ---
     // This is the central control point that reacts to user login/logout.
     let authEpoch=0;
@@ -105,12 +115,11 @@ export function startApp(firebaseConfig) {
                     : (idTokenResult.claims.department ? [idTokenResult.claims.department] : []);
 
                 if (!isAdmin && !departments.length) {
-                    throw new Error("User does not have admin or department privileges.");
+                    const denied=new Error('Console access denied');denied.code='auth/insufficient-permission';throw denied;
                 }
                 setCurrentUser(isAdmin, departments);
                 document.body.classList.toggle('admin-mode', isAdmin);
                 document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
-                refreshConsoleChat();
                 dom.loginContainer.style.display = 'none';
                 dom.adminPanel.style.display = 'grid';
                 renderProfile(user, isAdmin, departments);
@@ -120,45 +129,34 @@ export function startApp(firebaseConfig) {
                     resetTabFilter();
                     applyPanelGate(true);
                     dom.adminManagerSection.style.display = 'block';
-                    initRolesModule();
-                    initPanelMenus();
                     applyChipVisibility();
-                    initializeMaintenanceStatus();
-                    refreshDepartmentUsers();
-                    fetchFullModelsData();
-                    listenForArticles();
-                    listenForScheduledTasks();
-                    fetchContributorsData();
-                    refreshSubscriptions();
-                    loadAdminsList();
-                    refreshConsoleChat();
-                } else {
+                    } else {
                     console.log(`[AUTH] Access Level: Department (${departments.join(', ')}). Limited panel.`);
                     dom.adminManagerSection.style.display = 'none';
                     await loadDepartmentPermissions();
                     if(epoch!==authEpoch || document.documentElement.dataset.startupFailed === 'true')return;
-                    if(getEffectivePanelLevel('contributors.list')!=='none')fetchContributorsData();
+
                     const allowedTabs = getAccessibleTabs(departments);
                     console.log(`[AUTH] Allowed tabs for ${departments.join(', ')}:`, allowedTabs);
                     applyTabFilter(allowedTabs);
                     applyPanelGate(false);
                     applyChipVisibility();
-                    if(getEffectivePanelLevel('system.serverStatus')!=='none')initializeMaintenanceStatus();
+
                     document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
                 }
 
             } catch (error) {
                 console.error("[AUTH] Access check failed:", error.message);
-                showToast(() => __('auth.denied'), "error");
+                if(epoch!==authEpoch)return;showToast(() => userErrorMessage(error), 'error');
                 auth.signOut();
             }
         } else {
             // --- User is LOGGED OUT ---
             document.title = __('page.title');
-            setCurrentUser(false,[]);document.dispatchEvent(new CustomEvent('vertex:close-navigation'));document.body.classList.remove('admin-mode');
+            loadedWorkspaces.clear();setCurrentUser(false,[]);document.dispatchEvent(new CustomEvent('vertex:close-navigation'));document.body.classList.remove('admin-mode');
             closePopover({restoreFocus:false});closeModal();closeDrawer(false);
             console.log("[AUTH] No user signed in. Displaying login page.");
-            dom.loginContainer.style.display = 'block';
+            dom.loginContainer.style.display = 'flex';
             dom.adminPanel.style.display = 'none';
 
             // Clean up: Stop all real-time listeners to prevent memory leaks
@@ -170,16 +168,16 @@ export function startApp(firebaseConfig) {
     });
 
     // --- Step 4: Bind Login/Logout Button Listeners ---
-    dom.loginBtn.addEventListener('click', () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        if (email && password) {
-            auth.signInWithEmailAndPassword(email, password)
-                .catch(error => showToast(() => __('auth.login_failed'), 'error'));
-        } else {
-            showToast('Please enter both email and password.', 'info');
-        }
-    });
+    let loginPending=false;
+    async function submitLogin(event){
+        event?.preventDefault();if(loginPending)return;
+        const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value;
+        if(!email||!password){showToast(()=>__('auth.required'),'info');return;}
+        loginPending=true;dom.loginBtn.disabled=true;dom.loginBtn.setAttribute('aria-busy','true');
+        try{await auth.signInWithEmailAndPassword(email,password);}catch(error){console.error('[AUTH] Login failed',error.code);showToast(()=>userErrorMessage(error),'error');}
+        finally{loginPending=false;dom.loginBtn.disabled=false;dom.loginBtn.removeAttribute('aria-busy');}
+    }
+    document.getElementById('login-form').addEventListener('submit',submitLogin);
 
     // --- Google Sign-In ---
     const googleLoginBtn = document.getElementById('google-login-btn');

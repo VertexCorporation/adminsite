@@ -1,0 +1,60 @@
+{
+  "anonymousChecks": [
+    {
+      "name": "getVertexContributors",
+      "status": 401,
+      "code": "UNAUTHENTICATED",
+      "uriVerified": true,
+      "revision": "getvertexcontributors-00027-qic"
+    },
+    {
+      "name": "getVertexCertificateDetails",
+      "status": 401,
+      "code": "UNAUTHENTICATED",
+      "uriVerified": true,
+      "revision": "getvertexcertificatedetails-00001-rih"
+    },
+    {
+      "name": "setVertexContributorJoiningDate",
+      "status": 401,
+      "code": "UNAUTHENTICATED",
+      "uriVerified": true,
+      "revision": "setvertexcontributorjoiningdate-00003-xim"
+    },
+    {
+      "name": "toggleVertexStatus",
+      "status": 403,
+      "code": "PERMISSION_DENIED",
+      "uriVerified": true,
+      "revision": "togglevertexstatus-00012-jix"
+    },
+    {
+      "name": "listAdmins",
+      "status": 401,
+      "code": "UNAUTHENTICATED",
+      "uriVerified": true,
+      "revision": "listadmins-00023-qiz"
+    },
+    {
+      "name": "listDepartmentUsers",
+      "status": 401,
+      "code": "UNAUTHENTICATED",
+      "uriVerified": true,
+      "revision": "listdepartmentusers-00012-cay"
+    },
+    {
+      "name": "getServerStatus",
+      "status": 200,
+      "uriVerified": true,
+      "revision": "getserverstatus-00019-cuq"
+    },
+    {
+      "name": "getPanelPermissions",
+      "status": 401,
+      "code": "UNAUTHENTICATED",
+      "uriVerified": true,
+      "revision": "getpanelpermissions-00009-niv"
+    }
+  ],
+  "note": "No authenticated mutation was executed."
+}

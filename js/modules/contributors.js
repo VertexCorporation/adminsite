@@ -1,7 +1,7 @@
 import { displayDepartmentName, canonicalDepartment } from '../utils/departments.js';
 import { icon } from '../utils/icons.js';
 import { openDrawer, closeDrawer, confirmDialog, openPopover, closePopover } from './shell.js';
-import { createLoadingController, skeletonRows, createRequestGuard } from '../utils/loading.js';
+import { createLoadingController, skeletonRows, createRequestGuard, setButtonLoading } from '../utils/loading.js';
 import { formatCertificateDate } from './certificates.js';
 import { openCertificates } from './certificates.js';
 // js/modules/contributors.js
@@ -59,7 +59,7 @@ async function loadContributors() {
 
     const request = requestGuard.begin();
     loading.start();
-    if (refreshBtn) refreshBtn.disabled = true;
+    if (refreshBtn) setButtonLoading(refreshBtn,true);
 
     try {
         const result = await getVertexContributorsFn();
@@ -77,7 +77,7 @@ async function loadContributors() {
         else {loading.error(__('contributors.load_error'),fetchContributorsData,__('common.retry'));listContainer.querySelector('h4').dataset.i18n='contributors.load_error';listContainer.querySelector('button').dataset.i18n='common.retry';}
         showToast(() => __('contributors.load_error'), 'error');
     } finally {
-        if (requestGuard.isCurrent(request) && refreshBtn) refreshBtn.disabled = false;
+        if (requestGuard.isCurrent(request) && refreshBtn) setButtonLoading(refreshBtn,false);
     }
 }
 
@@ -92,7 +92,7 @@ function renderContributors(contributors) {
     const canWrite = getEffectivePanelLevel('contributors.list')==='write';
     const admin = isPanelAdmin();
     const headers = ['name','department','age','status','applied','actions'];
-    loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div>`+contributors.map(p=>`<div class="contributor-row" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(p.age??'—')}</span><span class="contributor-cell-status status-badge">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${p.membership?.status==='matched'?(p.membership.isVertex?'is-active':''):'is-unknown'}" data-membership="${escapeHTML(p.id)}" title="${__(p.membership?.status==='matched'?(p.membership.isVertex?'contributors.vertex_active':'contributors.vertex_inactive'):'contributors.vertex_unknown')}" aria-label="${__(p.membership?.status==='matched'?(p.membership.isVertex?'contributors.vertex_active':'contributors.vertex_inactive'):'contributors.vertex_unknown')}" ${p.membership?.status!=='matched'||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`));
+    loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(p.age??'—')}</span><span class="contributor-cell-status status-badge">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${p.membership?.status==='matched'?(p.membership.isVertex?'is-active':''):'is-unknown'}" data-membership="${escapeHTML(p.id)}" title="${__(p.membership?.status==='matched'?(p.membership.isVertex?'contributors.vertex_active':'contributors.vertex_inactive'):'contributors.vertex_unknown')}" aria-label="${__(p.membership?.status==='matched'?(p.membership.isVertex?'contributors.vertex_active':'contributors.vertex_inactive'):'contributors.vertex_unknown')}" ${p.membership?.status!=='matched'||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`));
     listContainer.querySelectorAll('[data-membership]').forEach(b=>b.onclick=()=>toggleMembership(contributors.find(p=>p.id===b.dataset.membership),b));
     listContainer.querySelectorAll('[data-details]').forEach(b=>b.onclick=()=>openContributorDetails(contributors.find(p=>p.id===b.dataset.details)));
     listContainer.querySelectorAll('.certificate-manage-btn').forEach(b=>b.onclick=()=>openCertificates(contributors.find(p=>p.id===b.dataset.id),fetchContributorsData,b));
@@ -241,7 +241,7 @@ function openContributorDetails(person) {
 
 async function toggleMembership(person,button) {
     if(!isPanelAdmin() || person?.membership?.status!=='matched'||membershipPending.has(person.id))return;
-    membershipPending.add(person.id);button.disabled=true;
+    membershipPending.add(person.id);setButtonLoading(button,true);
     try {
         const confirmed=await confirmDialog(()=>({title:__('subnav.vertex_status'),warning:__('contributors.vertex_confirm'),rows:[{label:__('contributors.field_email'),value:escapeHTML(person.email)},{label:'UID',value:escapeHTML(person.membership.uid)}]}));
         if(!confirmed)return;
@@ -250,7 +250,7 @@ async function toggleMembership(person,button) {
         person.membership.isVertex=data.isVertex;showToast(()=>__(data.isVertex?'system.vertex_enabled':'system.vertex_disabled'),'success');
         renderContributors(window.loadedContributors||[]);
     } catch(error){showToast(()=>userErrorMessage(error),'error');}
-    finally{membershipPending.delete(person.id);if(button.isConnected)button.disabled=false;renderContributors(window.loadedContributors||[]);}
+    finally{membershipPending.delete(person.id);setButtonLoading(button,false);renderContributors(window.loadedContributors||[]);}
 }
 function openCertificateSelector() {
     if(!isPanelAdmin())return;

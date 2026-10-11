@@ -1,0 +1,22 @@
+[
+  {
+    "file": "index.html",
+    "status": 200,
+    "matchesCheckpoint": true
+  },
+  {
+    "file": "js/core/firebase.js",
+    "status": 200,
+    "matchesCheckpoint": true
+  },
+  {
+    "file": "js/modules/certificates.js",
+    "status": 200,
+    "matchesCheckpoint": true
+  },
+  {
+    "file": "css/modules.css",
+    "status": 200,
+    "matchesCheckpoint": true
+  }
+]

@@ -1,3 +1,4 @@
+import { showWorkspace } from './views.js';
 // js/modules/shell.js
 //
 // Uygulama kabuğu ve yükseltilmiş yüzey altyapısı:
@@ -427,6 +428,7 @@ export function refreshNavigation() {
     const selected=activeModule?.querySelector('[data-nav-selected]:not([hidden])')||activeModule?.querySelector('.sidebar-sub-btn:not([hidden])');
     selected?.setAttribute('aria-current','page');
     document.querySelectorAll('.sidebar-group').forEach(group => { group.hidden = ![...group.querySelectorAll('.nav-module')].some(module => !module.hidden); });
+    if(selected)showWorkspace(document.querySelector('.tab-panel.active'),selected.dataset.navPanel.split(','));
     syncTopbarTitle();
     syncMobileDock();
 }
@@ -463,13 +465,29 @@ function initNavigation() {
         target.classList.add('active'); button.classList.add('active');
 
         refreshNavigation();
+        if(target.id==='tab-chat')document.dispatchEvent(new CustomEvent('vertex:workspace',{detail:{keys:['chat.channels']}}));
         if (changed) window.scrollTo({top:0,behavior:'instant'});
     };
     const dock=document.createElement('nav');dock.className='mobile-bottom-dock';dock.setAttribute('aria-label',__('navigation.main'));
     dock.innerHTML=['contributors','models','news','notifications'].map((id,i)=>`<button type="button" data-mobile-tab="tab-${id}">${icon(['users-group','robot','news','bell'][i])}</button>`).join('')+`<button type="button" data-mobile-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`;
     document.querySelector('.app-layout').append(dock);
-    dock.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.hasAttribute('data-mobile-more')){toggle.click();return;}const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);if(source){activateTab(source);closeSidebarDrawer(false);}});
+    dock.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.hasAttribute('data-mobile-more')){openMore(button);return;}const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);if(source){activateTab(source);source.closest('.nav-module')?.querySelector('[aria-current=page]')?.click();closeSidebarDrawer(false);}});
     onLangChange(()=>{dock.setAttribute('aria-label',__('navigation.main'));dock.querySelector('[data-mobile-more]').setAttribute('aria-label',__('contributors.more'));syncMobileDock();});
+    function openMore(anchor){
+        let unsubscribe=()=>{};const body=openModal({title:__('navigation.more'),titleKey:'navigation.more',onAfterClose:()=>unsubscribe()});
+        body.closest('.vx-modal').classList.add('mobile-more-sheet');
+        const paint=()=>{
+            body.innerHTML='<nav class="mobile-more-pages" aria-label="'+__('navigation.more')+'">'+[...document.querySelectorAll('.nav-module:not([hidden])')].map(module=>{
+                const main=module.querySelector('.dock-btn');const children=[...module.querySelectorAll('[data-nav-panel]:not([hidden])')];
+                return '<section data-more-module="'+main.dataset.target+'"><h3>'+main.querySelector('.dock-label').textContent+'</h3>'+children.map(child=>'<button type="button" data-more-panel="'+child.dataset.navPanel+'" data-more-action="'+child.dataset.navAction+'" '+(child.getAttribute('aria-current')==='page'?'aria-current="page"':'')+'>'+child.textContent.trim()+icon('chevron-right')+'</button>').join('')+(children.length?'':'<button type="button" data-more-tab="'+main.dataset.target+'">'+main.querySelector('.dock-label').textContent+icon('chevron-right')+'</button>')+'</section>';
+            }).join('')+'<section><button type="button" data-more-profile>'+__('nav.profile')+icon('chevron-right')+'</button></section></nav>';
+            body.querySelectorAll('[data-more-panel]').forEach(button=>button.onclick=()=>{const child=[...document.querySelectorAll('.sidebar-sub-btn:not([hidden])')].find(el=>el.dataset.navPanel===button.dataset.morePanel&&el.dataset.navAction===button.dataset.moreAction);if(child){closeModal();child.click();}});
+            body.querySelectorAll('[data-more-tab]').forEach(button=>button.onclick=()=>{const main=document.querySelector('.dock-btn[data-target="'+button.dataset.moreTab+'"]');closeModal();activateTab(main);});
+            body.querySelector('[data-more-profile]').onclick=()=>{closeModal();document.querySelector('.sidebar-footer .dock-btn').click();};
+        };paint();
+        unsubscribe=onLangChange(paint);document.addEventListener('vertex:departments',()=>{if(body.isConnected)paint();},{once:true});
+
+    }
     let restoringRoute = false;
     const recordRoute = child => {
         if (restoringRoute) return;
@@ -508,11 +526,12 @@ function initNavigation() {
         if(action!=='certificates')closeDrawer(false);
         if (parent.dataset.target === 'tab-system') document.dispatchEvent(new CustomEvent('vertex:system-section',{detail:action}));
         const keys = child.dataset.navPanel.split(',');
+        showWorkspace(document.getElementById(parent.dataset.target),keys);
         const card = [...document.querySelectorAll('.panel-card[data-panel]')].find(el => keys.includes(el.dataset.panel) && el.style.display !== 'none');
         closeSidebarDrawer(false);
-        if (action === 'model-editor') document.querySelector('[data-model-create]')?.click();
+        if (action === 'model-editor') {card?.focus({preventScroll:true});}
         else {
-            card?.scrollIntoView({behavior:'auto',block:'start'});
+            window.scrollTo({top:0,behavior:'instant'});
             if (action === 'certificates') document.dispatchEvent(new CustomEvent('vertex:certificate-selector'));
             else if (card) { card.tabIndex = -1; card.focus({preventScroll:true}); }
         }

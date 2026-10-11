@@ -1,0 +1,42 @@
+{
+  "suite": "stabilization",
+  "browser": "webkit",
+  "checks": [
+    "Permissions async race fixed: detail pane renders after load; duplicate System navigation removed",
+    "Real News/Models/Notifications/Subscriptions/Contributor subpages, draft preservation and browser back",
+    "Model publish, News, scheduled notification Ultra, subscription Pro, Chat posting and attribution access preserve contracts (mocks only)",
+    "Joining date editor stays in the certificate drawer, preserves unsaved locale changes and sends date-only payload (mock)",
+    "Icon DOM, label and geometry preserved during repeated pending calls and locale changes",
+    "Certificate inline error/manual retry, localized configuration reason and unknown status fallback; zero real issuance",
+    "Independent More sheet, permission-aware destinations, focus trap, Escape and outside dismissal",
+    "9 viewports × TR/EN × Dark/Light: real card/input/button bounds, long names, filter scroll, all workspaces, More and responsive toast queue",
+    "Contributor fog affects only row region and never masks header",
+    "200% text/viewport reflow and short screen bounds",
+    "Credential, throttling and network errors localized in TR/EN and both themes; short login stays scrollable",
+    "Centered Title Case login on mobile/desktop, localized required fields and Enter submit",
+    "Department read-only actions and hidden field policies",
+    "Logout and admin login auth state",
+    "Real auth flow hides inaccessible submenus for read-only and contributor-only departments without saving defaults",
+    "Reduced motion removes transitions and animations"
+  ],
+  "uncaughtErrors": [],
+  "unexpectedConsoleErrors": [],
+  "viewportWidths": [
+    320,
+    360,
+    375,
+    390,
+    430,
+    768,
+    1024,
+    1440,
+    1920
+  ],
+  "themes": [
+    "light",
+    "dark",
+    "system"
+  ],
+  "mockCalls": 120,
+  "layoutRelease": "620ced0e70d7"
+}

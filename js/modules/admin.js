@@ -1,7 +1,7 @@
 import { icon } from '../utils/icons.js';
 import { confirmDialog } from './shell.js';
 import { displayDepartmentName } from '../utils/departments.js';
-import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../utils/loading.js';
+import { beginPanelLoading, skeletonListItem, skeletonChatMessage, setButtonLoading } from '../utils/loading.js';
 // js/modules/admin.js
 
 import { showToast, userErrorMessage, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
@@ -130,14 +130,16 @@ async function loadDepartmentUsers() {
     const container = document.getElementById('dept-users-list');
     const button = document.getElementById('refresh-dept-users-btn');
     const finishLoading = beginPanelLoading(container);
-    button.disabled = true;
+    setButtonLoading(button,true);
     try {
         const users = [];
-        let pageToken;
+        let pageToken;const tokens=new Set();
         do {
             const result = await listDepartmentUsersFn({ pageToken: pageToken || null });
-            users.push(...(result.data.users || []));
+            if(!Array.isArray(result.data?.users))throw Object.assign(new Error('Invalid user list'),{code:'functions/internal'});
+            users.push(...result.data.users);
             pageToken = result.data.nextPageToken || null;
+            if(pageToken){if(tokens.has(pageToken)||tokens.size>=100)throw Object.assign(new Error('Invalid pagination'),{code:'functions/internal'});tokens.add(pageToken);}
         } while (pageToken);
         departmentUsers = users.map(user => ({
             uid: String(user.uid || ''),
@@ -150,10 +152,10 @@ async function loadDepartmentUsers() {
     } catch (error) {
         finishLoading();
         console.error('[CLIENT] Error loading department users:', error);
-        container.innerHTML = `<p class="form-hint dept-list-message" data-i18n="dept.load_error">${__('dept.load_error')}</p>`;
+        container.innerHTML = `<div class="state-block"><p data-i18n="dept.load_error">${__('dept.load_error')}</p><button type="button" class="chrome-btn-outline" data-i18n="common.retry">${__('common.retry')}</button></div>`;container.querySelector('button').onclick=loadDepartmentUsers;
     } finally {
         finishLoading();
-        button.disabled = false;
+        setButtonLoading(button,false);
     }
 }
 

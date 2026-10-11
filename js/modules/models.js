@@ -415,7 +415,7 @@ async function handleModelFormSubmit(e) {
         }
 
         const result = await response.json();
-        showToast(result.message, 'success');
+        showToast(()=>__('models.saved'),'success');
         if (isOffline) setAttributionsOutOfSync();
         resetModelForm();
         await fetchFullModelsData();
@@ -947,7 +947,7 @@ async function handleBlockOnlineModel(modelId) {
     showToast(() => __('models.blocking'), 'info');
     try {
         const result = await blockOnlineModelFn({ modelId });
-        showToast(result.data.message, 'success');
+        showToast(()=>__('models.status_updated'),'success');
         await fetchFullModelsData();
     } catch (error) {
         console.error(`[MODELS] Error blocking model ${modelId}:`, error);
@@ -1149,7 +1149,7 @@ function initModelWorkspace(){
         toolbar.innerHTML=`<button type="button" class="chrome-btn-outline" data-model-refresh>${icon('refresh')}<span data-i18n="common.refresh">${__('common.refresh')}</span></button>${canEditModels('models.manage')?`<button type="button" class="chrome-btn-primary" data-model-create>${icon('plus')}<span data-i18n="models.add">${__('models.add')}</span></button>`:''}${isPanelAdmin()?`<button type="button" class="chrome-btn-outline" data-model-publish>${icon('device-floppy')}<span data-i18n="models.publish">${__('models.publish')}</span></button>`:''}`;
         toolbar.querySelector('[data-model-refresh]').onclick=fetchFullModelsData;
         const create=toolbar.querySelector('[data-model-create]');if(create)create.onclick=()=>{resetModelForm();openModelEditor();};
-        const publish=toolbar.querySelector('[data-model-publish]');if(publish)publish.onclick=async()=>{if(!isPanelAdmin()||publish.disabled)return;const approved=await confirmDialog(()=>({title:__('models.publish'),body:__('models.publish_confirm')}));if(!approved)return;publish.disabled=true;try{await updateModelsListFn({});await fetchFullModelsData();showToast(() => __('models.published'),'success');}catch(error){showToast(error.message,'error');}finally{publish.disabled=false;}};
+        const publish=toolbar.querySelector('[data-model-publish]');if(publish)publish.onclick=async()=>{if(!isPanelAdmin()||publish.disabled)return;const approved=await confirmDialog(()=>({title:__('models.publish'),body:__('models.publish_confirm')}));if(!approved)return;publish.disabled=true;try{await updateModelsListFn({});await fetchFullModelsData();showToast(() => __('models.published'),'success');}catch(error){showToast(()=>userErrorMessage(error),'error');}finally{publish.disabled=false;}};
     }
     onLangChange(()=>{dom.modelSubmitBtn.textContent=__(dom.modelSubmitBtn.disabled?'system.saving':currentEditingModelId?'models.update_btn':'models.save_btn');document.querySelectorAll('[data-language-name]').forEach(label=>{label.textContent=new Intl.DisplayNames([getLang()],{type:'language'}).of(label.dataset.languageName);});paint();if(modelsData){renderManualModelsList();renderAllModelsExplorer();}});document.addEventListener('vertex:departments',paint);paint();
 }

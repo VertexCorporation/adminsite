@@ -1,0 +1,22 @@
+{
+  "browser": "webkit",
+  "checks": [
+    "PASS clean profile",
+    "PASS existing session",
+    "PASS tr",
+    "PASS en",
+    "PASS invalid locale",
+    "PASS denied storage",
+    "PASS slow SDK",
+    "PASS SDK failure",
+    "PASS config failure",
+    "PASS initializer exception",
+    "PASS module evaluation failure",
+    "PASS startup timeout",
+    "PASS corrupt cache",
+    "PASS denied session cache",
+    "PASS language change and refresh"
+  ],
+  "passed": 15,
+  "exitCode": 0
+}

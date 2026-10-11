@@ -59,7 +59,7 @@ async function handleNewsFormSubmit(e) {
         dom.newsForm.reset();
     } catch (error) {
         console.error("[CLIENT] An error occurred during news submission:", error);
-        showToast(error.message, 'error');
+        showToast(()=>userErrorMessage(error), 'error');
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = __('news.publish_btn');

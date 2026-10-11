@@ -1,0 +1,57 @@
+{
+  "target": "issueVertexCertificate",
+  "deployment": "blocked",
+  "reason": "regional Cloud Run CPU quota prevents revision startup",
+  "previousRevision": "issuevertexcertificate-00001-red",
+  "failedRevision": "issuevertexcertificate-00002-jag",
+  "rollback": {
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-11T18:28:34.563846Z",
+        "message": "Quota exceeded for total allowable CPU per project per region.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=vertex-ai-1618&resource=cloud_run_revision/service_name/issuevertexcertificate/revision_name/issuevertexcertificate-00002-jag&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22issuevertexcertificate%22%0Aresource.labels.revision_name%3D%22issuevertexcertificate-00002-jag%22 \nFor more troubleshooting guidance, see https://docs.cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+        "reason": "HealthCheckContainerError",
+        "status": "False",
+        "type": "Ready"
+      },
+      {
+        "severity": "Info",
+        "status": "True",
+        "type": "BaseImageValidated"
+      },
+      {
+        "lastTransitionTime": "2026-10-11T18:28:34.563846Z",
+        "message": "Quota exceeded for total allowable CPU per project per region.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=vertex-ai-1618&resource=cloud_run_revision/service_name/issuevertexcertificate/revision_name/issuevertexcertificate-00002-jag&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22issuevertexcertificate%22%0Aresource.labels.revision_name%3D%22issuevertexcertificate-00002-jag%22 \nFor more troubleshooting guidance, see https://docs.cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+        "reason": "HealthCheckContainerError",
+        "status": "False",
+        "type": "ConfigurationsReady"
+      },
+      {
+        "lastTransitionTime": "2026-10-11T18:33:04.318438Z",
+        "status": "True",
+        "type": "RoutesReady"
+      }
+    ],
+    "latestReadyRevisionName": "issuevertexcertificate-00001-red",
+    "traffic": [
+      {
+        "percent": 100,
+        "revisionName": "issuevertexcertificate-00001-red"
+      }
+    ]
+  },
+  "settingsPreserved": {
+    "availableMemory": true,
+    "availableCpu": true,
+    "maxInstanceCount": true,
+    "minInstanceCount": true,
+    "timeoutSeconds": true,
+    "ingressSettings": true,
+    "serviceAccountEmail": true,
+    "environmentVariables": true,
+    "secretEnvironmentVariables": true,
+    "vpcConnector": true
+  },
+  "productionIssuanceProbe": "not executed; approval review rejected potential production side effect",
+  "zapierChanged": false,
+  "realIssuanceExecuted": false
+}

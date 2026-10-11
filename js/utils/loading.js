@@ -159,17 +159,19 @@ export function createLoadingController(container, opts = {}) {
     return { start, success, error, empty, destroy };
 }
 
-/** Butonu işlem sırasında spinner'lı disabled durumuna alır. */
+const busyButtons = new WeakMap();
+/** Preserve the live icon, label, dimensions and the original disabled state. */
 export function setButtonLoading(btn, loading, loadingLabel = null) {
     if (!btn) return;
     if (loading) {
-        btn.dataset.originalHTML = btn.innerHTML;
+        if (busyButtons.has(btn)) return;
+        busyButtons.set(btn, {disabled:btn.disabled});
         btn.disabled = true;
-        btn.innerHTML = `<span class="spinner" aria-hidden="true"></span>${loadingLabel ? `<span>${loadingLabel}</span>` : ''}`;
+        btn.setAttribute('aria-busy','true');
+        btn.classList.add('button-pending');
     } else {
-        btn.disabled = false;
-        if (btn.dataset.originalHTML) btn.innerHTML = btn.dataset.originalHTML;
-        delete btn.dataset.originalHTML;
+        const state=busyButtons.get(btn);if(!state)return;
+        btn.disabled=state.disabled;btn.removeAttribute('aria-busy');btn.classList.remove('button-pending');busyButtons.delete(btn);
     }
 }
 

@@ -1,0 +1,5 @@
+--- /private/tmp/vertex-stabilization-certificates-before.js	2026-10-11 21:26:00
++++ /Users/baba/Documents/Fulcrum/functions/src/certificates.js	2026-10-11 21:26:00
+@@ -21 +21 @@
+-    throw new HttpsError('failed-precondition', 'Expanded issuance awaits certificate assets and verified Zapier configuration.');
++    throw new HttpsError('failed-precondition', 'Certificate delivery is not ready.', {reason:'certificate-delivery-not-ready'});

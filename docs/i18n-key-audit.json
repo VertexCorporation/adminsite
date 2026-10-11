@@ -1,8 +1,623 @@
 {
-  "dictionaryKeys": 721,
-  "staticReferences": 575,
+  "dictionaryKeys": 733,
+  "staticReferences": 578,
   "missing": [],
   "dynamicReferences": [
+    {
+      "file": "assets/releases/012d84bec118/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/012d84bec118/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/012d84bec118/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/012d84bec118/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/012d84bec118/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/012d84bec118/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/012d84bec118/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/012d84bec118/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/012d84bec118/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/012d84bec118/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/012d84bec118/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/012d84bec118/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/012d84bec118/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/042af4fefe72/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/215904ea5e40/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/3bcc256cc829/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/3deeb5d4fba7/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/620ced0e70d7/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/a9bc8ee3679d/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/f17c3f6e2fa1/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/fd8940f2a015/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
     {
       "file": "js/main.js",
       "expression": "__(`nav.${tabId}`",
@@ -47,6 +662,11 @@
       "file": "js/modules/roles.js",
       "expression": "__('perms.preset_'+",
       "prefix": "perms.preset_"
+    },
+    {
+      "file": "js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
     },
     {
       "file": "js/modules/roles.js",
@@ -127,15 +747,21 @@
     "subs.badge_expired",
     "subs.badge_active",
     "errors.permission",
+    "auth.denied",
     "errors.auth",
     "errors.capacity",
-    "errors.validation"
+    "errors.validation",
+    "errors.precondition",
+    "errors.not_found",
+    "errors.network",
+    "auth.credentials"
   ],
   "unreferencedCandidates": [
     "admin.revoke_blocked",
     "lang.name",
     "lang.flag",
     "loader.text",
+    "login.subtitle",
     "header.brand",
     "header.system",
     "contributors.interview_date",
@@ -170,6 +796,7 @@
     "profile.menu_8",
     "profile.perms_title",
     "auth.not_admin",
+    "auth.login_failed",
     "auth.enter_credentials",
     "auth.try_again"
   ],
