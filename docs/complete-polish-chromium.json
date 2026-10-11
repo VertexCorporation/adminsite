@@ -1,0 +1,32 @@
+{
+  "browser": "chromium",
+  "checks": [
+    "Real subpage titles, live locale, browser back/forward and first load route restoration",
+    "SVG favicon follows Dark, Light, System and live OS changes; two-line Ubuntu wordmark",
+    "Real createdAt application column, canonical and unknown department preservation, no raw interview JSON",
+    "Membership uses matched Auth uid, separate active filter, explicit confirmation, pending guard, failure rollback and unknown-account blocking (mock)",
+    "Inline email-based admin revocation, cancellation, failed row preservation, self/last UI policy; Auth users never deleted (mock)",
+    "Recipient search, same drawer identity, stable card/check animation, safe confirmation/cancel, back restoration and scroll-edge fog",
+    "Certificate processing/uncertain/revoked/failed and retrySafe blocking retained (mock, zero issuance)",
+    "Automatic load controller, true table shimmer, coalesced refreshes, retained rows on failure and inline retry",
+    "4 required sizes × TR/EN × Dark/Light: 8 modules, selector/card geometry, fixed drawer, centered success/error/neutral stacked snackbar and mobile dock separation",
+    "Department read-only actions and hidden field policies",
+    "Logout and admin login auth state",
+    "Real auth flow hides inaccessible submenus for read-only and contributor-only departments without saving defaults",
+    "Reduced motion removes transitions and animations"
+  ],
+  "uncaughtErrors": [],
+  "unexpectedConsoleErrors": [],
+  "viewportWidths": [
+    390,
+    768,
+    1440,
+    1920
+  ],
+  "themes": [
+    "light",
+    "dark",
+    "system"
+  ],
+  "mockCalls": 118
+}

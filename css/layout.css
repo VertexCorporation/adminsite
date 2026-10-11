@@ -329,3 +329,6 @@
 @media(max-width:360px){.app-header{padding-left:10px;padding-right:10px}.header-control-buttons{gap:2px}#lang-toggle-btn{gap:4px;padding:0 7px}.topbar-page-title{font-size:12px}#user-menu-trigger{padding:0 4px}}
 @media(max-height:500px) and (max-width:1023px){.mobile-bottom-dock{bottom:6px;opacity:.95}}
 .nav-module:not(.expanded) .sidebar-submenu-inner{padding-top:0;padding-bottom:0}
+.brand-container{gap:12px}.brand-info .vertex-wordmark{display:flex;flex-direction:column;font-family:Ubuntu,sans-serif;font-size:18px;font-weight:500;line-height:1.1;letter-spacing:.07em;white-space:nowrap;margin:0;gap:1px}
+@media(max-width:1023px){.brand-info .vertex-wordmark{font-size:17px}}
+@font-face{font-family:Ubuntu;font-style:normal;font-weight:500;font-display:swap;src:url('../assets/fonts/ubuntu-medium.ttf') format('truetype')}

@@ -16,8 +16,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <!-- Favicons -->
-    <link rel="icon" href="favicon.png" type="image/png">
-    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="icon" href="favicon.png" type="image/png" sizes="32x32">
+    <link id="vertex-favicon" rel="icon" href="assets/favicon-dark.svg?v=2" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180">
 
     <!-- Google Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,6 +40,8 @@
         (function () {
             try {
                 const theme = localStorage.getItem('theme');
+                const dark = theme !== 'light' && (theme !== 'system' || matchMedia('(prefers-color-scheme: dark)').matches);
+                document.getElementById('vertex-favicon')?.setAttribute('href', `assets/favicon-${dark ? 'dark' : 'light'}.svg?v=2`);
                 if (theme === 'light' || theme === 'system') {
                     document.documentElement.setAttribute('data-theme', theme);
                 }
@@ -149,7 +152,7 @@
                     <img src="assets/vertex-logo.svg" class="vertex-brand-logo" width="32" height="32" alt="">
                 </div>
                 <div class="brand-info">
-                    <h1>VERTEX KONSOL</h1>
+                    <h1 class="vertex-wordmark" aria-label="Vertex Konsol"><span>VERTEX</span><span>KONSOL</span></h1>
 
                 </div>
             <button type="button" class="icon-action-btn sidebar-close" aria-label="Navigasyonu kapat" data-i18n-aria-label="navigation.close"><i data-icon="close"></i></button></div>
@@ -280,7 +283,7 @@
 </button>
 <button type="button" class="sidebar-sub-btn" data-nav-panel="system.deptAssign,system.deptUsers" data-nav-action="departments" data-i18n="subnav.departments">
 </button>
-<button type="button" class="sidebar-sub-btn" data-nav-panel="system.adminRole,system.removeAdmin,system.adminList" data-nav-action="administrators" data-i18n="subnav.administrators">
+<button type="button" class="sidebar-sub-btn" data-nav-panel="system.adminRole,system.adminList" data-nav-action="administrators" data-i18n="subnav.administrators">
 </button>
 <button type="button" class="sidebar-sub-btn" data-nav-panel="system.manualVerify,system.teamLog" data-nav-action="verification" data-i18n="subnav.verification">
 </button>
@@ -330,6 +333,7 @@
                         <!-- Kategori Çipleri -->
                         <div class="scroll-chips-row">
                             <button class="filter-chip active" data-filter="all" onclick="filterContributors('all')" data-i18n="contributors.filter.all">Tümü</button>
+                            <button class="filter-chip" data-filter="vertex" onclick="filterContributors('vertex')" data-i18n="contributors.filter.vertex">Aktif Vertexliler</button>
                             <button class="filter-chip" data-filter="verified" onclick="filterContributors('verified')" data-i18n="contributors.filter.verified">Onaylılar</button>
                             <button class="filter-chip" data-filter="unverified" onclick="filterContributors('unverified')" data-i18n="contributors.filter.unverified">Onay Bekleyenler</button>
                             <button class="filter-chip" data-filter="age-14-15" onclick="filterContributors('age-14-15')" data-i18n="contributors.filter.age14">14-15 Yaş</button>
@@ -347,7 +351,7 @@
                         </div>
 
                         <div id="contributors-list-container" class="scrollable-list-box">
-                            <p class="form-hint" style="text-align:center; padding: 2rem; color: var(--text-secondary);" data-i18n="contributors.load_hint">Listeyi yüklemek için Yenile butonuna basın.</p>
+
                         </div>
                     </div>
 
@@ -1015,24 +1019,6 @@
                     </div>
 
                     <!-- Yetki Alma -->
-                    <div class="panel-card col-span-6" id="remove-admin-manager" data-panel="system.removeAdmin">
-                        <div class="card-title-row">
-                            <div class="title-details">
-                                <i class="" data-icon="person_remove"></i>
-                                <h3 data-i18n="system.remove_admin">Yönetici Yetkisi Al</h3>
-                            </div>
-                        </div>
-                        <p class="intro-description" data-i18n="system.remove_admin_desc">Bir sistem yöneticisinin (Admin) yetkilerini e-posta adresi üzerinden iptal edin.</p>
-                        <form id="remove-admin-form" class="form-stack" style="margin-top:10px;">
-                            <div class="form-group-field">
-                                <label for="remove-admin-email" data-i18n="system.remove_email">E-posta Adresi</label>
-                                <input type="email" id="remove-admin-email" placeholder="admin@example.com" required>
-                            </div>
-                            <button type="submit" class="chrome-btn-outline" style="color: var(--accent-clay); border-color: var(--accent-clay);"><span data-i18n="system.remove_btn">Yetkiyi İptal Et</span></button>
-                        </form>
-                    </div>
-
-                    <!-- Aktif Yöneticiler Listesi -->
                     <div class="panel-card col-span-12" id="admin-list-manager" data-panel="system.adminList">
                         <div class="card-title-row">
                             <div class="title-details">

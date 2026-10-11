@@ -1,5 +1,15 @@
 const LANG = {
   tr: {
+    "contributors.col_applied": "BAŞVURU TARİHİ",
+    "contributors.filter.vertex": "Aktif Vertexliler",
+    "contributors.vertex_active": "Aktif Vertex üyesi",
+    "contributors.vertex_inactive": "Vertex üyeliği pasif",
+    "contributors.vertex_unknown": "Hesap eşleştirmesi doğrulanamadı",
+    "contributors.vertex_confirm": "Bu hesabın Vertex üyeliğini değiştirmek istediğine emin misin?",
+    "admin.revoke_confirm": "Bu kullanıcının yönetici yetkisini kaldırmak istediğine emin misin?",
+    "admin.revoke_blocked": "Kendi yetkin veya son yönetici yetkisi kaldırılamaz.",
+    "common.back": "Geri",
+
     "cert.management": "Sertifika Yönetimi",
     "errors.permission": "Bu işlem için yetkin yok.",
     "errors.auth": "Oturumun sona erdi. Yeniden giriş yap.",
@@ -715,6 +725,16 @@ const LANG = {
   },
 
   en: {
+    "contributors.col_applied": "APPLICATION DATE",
+    "contributors.filter.vertex": "Active Vertex Members",
+    "contributors.vertex_active": "Active Vertex member",
+    "contributors.vertex_inactive": "Inactive Vertex membership",
+    "contributors.vertex_unknown": "Account mapping could not be verified",
+    "contributors.vertex_confirm": "Change Vertex membership for this account?",
+    "admin.revoke_confirm": "Remove administrator access from this user?",
+    "admin.revoke_blocked": "You cannot revoke your own access or the last administrator.",
+    "common.back": "Back",
+
     "cert.management": "Certificate management",
     "errors.permission": "You do not have permission for this operation.",
     "errors.auth": "Your session expired. Sign in again.",

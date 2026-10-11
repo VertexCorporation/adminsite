@@ -1,5 +1,5 @@
 {
-  "dictionaryKeys": 712,
+  "dictionaryKeys": 721,
   "staticReferences": 575,
   "missing": [],
   "dynamicReferences": [
@@ -80,6 +80,9 @@
     "system.vertex_result_unknown",
     "cert.month",
     "cert.months",
+    "contributors.vertex_active",
+    "contributors.vertex_inactive",
+    "contributors.vertex_unknown",
     "contributors.col_status",
     "contributors.applied_at",
     "dept.core",
@@ -126,10 +129,10 @@
     "errors.permission",
     "errors.auth",
     "errors.capacity",
-    "errors.validation",
-    "errors.service"
+    "errors.validation"
   ],
   "unreferencedCandidates": [
+    "admin.revoke_blocked",
     "lang.name",
     "lang.flag",
     "loader.text",
@@ -137,6 +140,7 @@
     "header.system",
     "contributors.interview_date",
     "contributors.no_interview",
+    "contributors.load_hint",
     "contributors.loading",
     "contributors.no_match",
     "contributors.search_no_match",
@@ -149,6 +153,7 @@
     "dept.essence",
     "dept.scout",
     "dept.vertest",
+    "contributors.field_interview_details",
     "chat.loading",
     "chat.msg_deleted",
     "team.staff",

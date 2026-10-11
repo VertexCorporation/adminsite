@@ -241,3 +241,5 @@ html.theme-anim .panel-card {
 :root{--bg-nav-parent:#202020;--bg-nav-child:#292929}
 [data-theme="light"]{--bg-nav-parent:#eaeaea;--bg-nav-child:#dedede}
 @media(prefers-color-scheme:light){[data-theme="system"]{--bg-nav-parent:#eaeaea;--bg-nav-child:#dedede}}
+
+:root{--toast-success-border:rgba(64,184,116,.55);--toast-success-bg:rgba(34,110,65,.12);--toast-error-border:rgba(230,87,87,.58);--toast-error-bg:rgba(130,35,35,.13)}

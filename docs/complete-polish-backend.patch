@@ -1,0 +1,155 @@
+--- a/functions/src/user.js
++++ b/functions/src/user.js
+@@ -0,0 +1 @@
++const {resolveMembership,revokeAdministrator}=require("./consoleAccountSafety");
+@@ -1200 +1201 @@
+-  { region: "europe-west1", appCheck: true },
++  { region: "europe-west1", appCheck: true, memory: "256MiB" },
+@@ -1212,7 +1213 @@
+-      const targetUser = await auth.getUserByEmail(email);
+-
+-      // Remove admin role from target user
+-      await auth.setCustomUserClaims(targetUser.uid, { admin: false });
+-
+-      // Remove from Firestore
+-      await db.collection('admins').doc(targetUser.uid).delete();
++      const targetUser = await revokeAdministrator({auth,db,actorUid:request.auth.uid,email,HttpsError});
+@@ -1245 +1240 @@
+-        admins.push(doc.data());
++        admins.push({...doc.data(),uid:doc.id});
+@@ -1249 +1244,7 @@
+-      return { admins, debug: { source: "firestore", count: admins.length } };
++      const active=[];
++      for(let i=0;i<admins.length;i+=8)await Promise.all(admins.slice(i,i+8).map(async row=>{
++        try {const account=await auth.getUser(row.uid);if(account.customClaims?.admin===true && row.email?.toLowerCase()===account.email?.toLowerCase())active.push({...row,email:account.email});}
++        catch(error){if(error.code!=='auth/user-not-found')throw error;}
++      }));
++      const order=new Map(admins.map((row,index)=>[row.uid,index]));active.sort((a,b)=>order.get(a.uid)-order.get(b.uid));
++      return { admins:active, debug: { source: "firestore", count: admins.length } };
+@@ -1262 +1263 @@
+-  { region: "europe-west1", appCheck: true },
++  { region: "europe-west1", appCheck: true, memory: "256MiB" },
+@@ -1281,4 +1282,14 @@
+-      const currentStatus = userDoc.data().isVertex === true;
+-      const newStatus = !currentStatus;
+-
+-      await userRef.update({ isVertex: newStatus });
++      const {contributorId,expectedStatus}=request.data;
++      if(contributorId){
++        const application=await db.collection('contributors').doc(contributorId).get();
++        const membership=await resolveMembership({auth,db,email:application.data()?.email});
++        if(membership.status!=='matched'||membership.uid!==targetUid)throw new HttpsError('failed-precondition','Account mapping could not be verified.');
++        if(typeof expectedStatus!=='boolean')throw new HttpsError('invalid-argument','Expected membership status is required.');
++      }
++      const newStatus=await db.runTransaction(async tx=>{
++        const latest=await tx.get(userRef);
++        if(!latest.exists)throw new HttpsError('not-found','Target user does not exist.');
++        const currentStatus=latest.data().isVertex===true;
++        if(typeof expectedStatus==='boolean'&&currentStatus!==expectedStatus)throw new HttpsError('failed-precondition','Membership changed. Refresh before retrying.');
++        tx.update(userRef,{isVertex:!currentStatus});return !currentStatus;
++      });
+--- a/functions/src/contributors.js
++++ b/functions/src/contributors.js
+@@ -6,0 +7 @@
++const { resolveMemberships } = require("./consoleAccountSafety");
+@@ -97,0 +99,13 @@
++    // Resolve by verified Auth email in bounded batches, never by application id.
++    try {
++      const records=new Map(snapshot.docs.map(doc=>[doc.id,doc.data()]));
++      const memberships=await resolveMemberships({auth:admin.auth(),db,emails:[...records.values()].map(data=>data.email)});
++      contributors.forEach(person=>{
++        const matched=memberships.get(String(records.get(person.id).email||'').trim().toLowerCase());
++        person.membership=matched?{...matched}:{status:'unknown'};
++        if(request.auth.token.admin!==true)delete person.membership.uid;
++      });
++    } catch(error){
++      logger.warn('[CONTRIBUTOR] Membership lookup unavailable',{code:error.code||'unknown'});
++      contributors.forEach(person=>{person.membership={status:'unknown'};});
++    }
+--- /dev/null
++++ b/functions/src/consoleAccountSafety.js
+@@ -0,0 +1,58 @@
++// Existing users.isVertex and Firebase Auth identity remain authoritative.
++async function resolveMembership({auth,db,email}) {
++  if(typeof email!=='string'||!email.includes('@'))return {status:'unknown'};
++  try {
++    const account=await auth.getUserByEmail(email.trim());
++    if(account.disabled||!account.emailVerified||account.email?.toLowerCase()!==email.trim().toLowerCase())return {status:'unknown'};
++    const doc=await db.collection('users').doc(account.uid).get();
++    const data=doc.data();
++    if(!doc.exists||typeof data?.isVertex!=='boolean'||(data.email&&data.email.toLowerCase()!==account.email.toLowerCase()))return {status:'unknown'};
++    return {status:'matched',uid:account.uid,isVertex:data.isVertex};
++  } catch(error) {
++    if(error.code==='auth/user-not-found')return {status:'unknown'};
++    throw error;
++  }
++}
++async function revokeAdministrator({auth,db,actorUid,email,HttpsError}) {
++  const target=await auth.getUserByEmail(email);
++  if(target.uid===actorUid)throw new HttpsError('failed-precondition','Self-revocation is not allowed.');
++  const actor=await auth.getUser(actorUid);
++  if(actor.customClaims?.admin!==true)throw new HttpsError('permission-denied','Administrator access is required.');
++  if(target.customClaims?.admin!==true)throw new HttpsError('failed-precondition','Target is not an active administrator.');
++  const collection=db.collection('admins'),targetRef=collection.doc(target.uid);
++  const saved=await db.runTransaction(async tx=>{
++    const roster=await tx.get(collection);
++    // Deleting this existing roster document serializes concurrent revocations.
++    // The actor must still be on the roster; the last administrator cannot be removed.
++    if(roster.size<2||!roster.docs.some(d=>d.id===actorUid)||!roster.docs.some(d=>d.id===target.uid))throw new HttpsError('failed-precondition','Administrator roster changed. Refresh and try again.');
++    const record=roster.docs.find(d=>d.id===target.uid).data();
++    if(record.email?.toLowerCase()!==target.email?.toLowerCase())throw new HttpsError('failed-precondition','Administrator identity does not match.');
++    tx.delete(targetRef);return record;
++  });
++  try {const latest=await auth.getUser(target.uid);await auth.setCustomUserClaims(target.uid,{...latest.customClaims,admin:false});}
++  catch(error){
++    // Restore only the roster entry if Auth rejects the revocation; never grant claims here.
++    await db.runTransaction(async tx=>{const current=await tx.get(targetRef);if(!current.exists)tx.set(targetRef,saved);});
++    throw error;
++  }
++  return target;
++}
++module.exports={resolveMembership,revokeAdministrator};
++
++async function resolveMemberships({auth,db,emails}) {
++  const result=new Map();
++  const unique=[...new Set(emails.filter(email=>typeof email==='string'&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())).map(email=>email.trim().toLowerCase()))];
++  for(let i=0;i<unique.length;i+=100){
++    const batch=unique.slice(i,i+100);
++    const {users}=await auth.getUsers(batch.map(email=>({email})));
++    const verified=users.filter(account=>!account.disabled&&account.emailVerified&&batch.includes(account.email?.toLowerCase()));
++    if(!verified.length)continue;
++    const docs=await db.getAll(...verified.map(account=>db.collection('users').doc(account.uid)));
++    verified.forEach((account,index)=>{
++      const doc=docs[index],data=doc.data();
++      if(doc.exists&&typeof data?.isVertex==='boolean'&&(!data.email||data.email.toLowerCase()===account.email.toLowerCase()))result.set(account.email.toLowerCase(),{status:'matched',uid:account.uid,isVertex:data.isVertex});
++    });
++  }
++  return result;
++}
++module.exports.resolveMemberships=resolveMemberships;
+--- /dev/null
++++ b/functions/test/console-account-safety.test.js
+@@ -0,0 +1,23 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
++const {resolveMembership,resolveMemberships,revokeAdministrator}=require('../src/consoleAccountSafety');
++class HttpsError extends Error{constructor(code,message){super(message);this.code=code;}}
++function fixture(){
++ const accounts=new Map([['a',{uid:'a',email:'a@example.invalid',emailVerified:true,customClaims:{admin:true,departments:['Core']}}],['b',{uid:'b',email:'b@example.invalid',emailVerified:true,customClaims:{admin:true,department:'Pulse'}}]]);
++ const roster=new Map([...accounts].map(([uid,u])=>[uid,{email:u.email}]));let failClaims=false;let queue=Promise.resolve();
++ const users=new Map([['a',{email:'a@example.invalid',isVertex:true}],['b',{email:'b@example.invalid',isVertex:false}]]);
++ const snapshot=map=>({size:map.size,docs:[...map].map(([id,data])=>({id,data:()=>({...data})}))});
++ const ref=(name,id)=>({name,id,get:async()=>({exists:(name==='users'?users:roster).has(id),data:()=>({...((name==='users'?users:roster).get(id))})})});
++ const db={collection:name=>({name,doc:id=>ref(name,id)}),getAll:async(...refs)=>Promise.all(refs.map(r=>r.get())),runTransaction:fn=>{const next=queue.then(async()=>{const writes=[];const result=await fn({get:async r=>r.id?r.get():snapshot(roster),delete:r=>writes.push(()=>roster.delete(r.id)),set:(r,v)=>writes.push(()=>roster.set(r.id,v)),update:(r,v)=>writes.push(()=>users.set(r.id,{...users.get(r.id),...v}))});writes.forEach(fn=>fn());return result;});queue=next.catch(()=>{});return next;}};
++ const auth={getUser:async uid=>{if(!accounts.has(uid))throw Object.assign(Error('missing'),{code:'auth/user-not-found'});return {...accounts.get(uid)};},getUserByEmail:async email=>{const u=[...accounts.values()].find(u=>u.email.toLowerCase()===email.toLowerCase());if(!u)throw Object.assign(Error('missing'),{code:'auth/user-not-found'});return {...u};},getUsers:async identifiers=>{assert(identifiers.length<=100);return {users:[...accounts.values()].filter(u=>identifiers.some(i=>i.email===u.email))};},setCustomUserClaims:async(uid,claims)=>{if(failClaims)throw Error('Auth unavailable');accounts.get(uid).customClaims=claims;}};
++ return {auth,db,accounts,roster,users,setFailClaims:()=>{failClaims=true;}};
++}
++test('membership resolves verified email to Auth uid, never application document id',async()=>{const f=fixture();assert.deepEqual(await resolveMembership({...f,email:'B@example.invalid'}),{status:'matched',uid:'b',isVertex:false});});
++test('unverified, disabled, absent and mismatched users remain unknown',async()=>{for(const state of ['unverified','disabled','absent','mismatch','missingStatus']){const f=fixture();if(state==='unverified')f.accounts.get('b').emailVerified=false;if(state==='disabled')f.accounts.get('b').disabled=true;if(state==='absent')f.users.delete('b');if(state==='mismatch')f.users.get('b').email='other@example.invalid';if(state==='missingStatus')delete f.users.get('b').isVertex;assert.deepEqual(await resolveMembership({...f,email:'b@example.invalid'}),{status:'unknown'});}assert.deepEqual(await resolveMembership({...fixture(),email:'unknown@example.invalid'}),{status:'unknown'});});
++test('batch mapping deduplicates emails and uses existing explicit membership state',async()=>{const f=fixture();const result=await resolveMemberships({...f,emails:['b@example.invalid','B@example.invalid','invalid','a@example.invalid']});assert.equal(result.size,2);assert.equal(result.get('b@example.invalid').uid,'b');});
++test('self and incomplete/last admin roster revocations are blocked without changing claims',async()=>{const f=fixture();await assert.rejects(revokeAdministrator({...f,actorUid:'a',email:'a@example.invalid',HttpsError}),{code:'failed-precondition'});f.roster.delete('a');await assert.rejects(revokeAdministrator({...f,actorUid:'a',email:'b@example.invalid',HttpsError}),{code:'failed-precondition'});assert.equal(f.accounts.get('b').customClaims.admin,true);});
++test('revocation removes only admin claim and roster entry, preserving other claims',async()=>{const f=fixture();await revokeAdministrator({...f,actorUid:'a',email:'b@example.invalid',HttpsError});assert.deepEqual(f.accounts.get('b').customClaims,{admin:false,department:'Pulse'});assert(!f.roster.has('b'));assert(f.accounts.has('b'));});
++test('concurrent mutual revocations cannot remove the last administrator',async()=>{const f=fixture();const outcomes=await Promise.allSettled([revokeAdministrator({...f,actorUid:'a',email:'b@example.invalid',HttpsError}),revokeAdministrator({...f,actorUid:'b',email:'a@example.invalid',HttpsError})]);assert.equal(outcomes.filter(r=>r.status==='fulfilled').length,1);assert.equal([...f.accounts.values()].filter(u=>u.customClaims.admin===true).length,1);assert.equal(f.roster.size,1);});
++test('Auth failure restores roster and leaves claims intact',async()=>{const f=fixture();f.setFailClaims();await assert.rejects(revokeAdministrator({...f,actorUid:'a',email:'b@example.invalid',HttpsError}));assert.equal(f.roster.size,2);assert.equal(f.accounts.get('b').customClaims.admin,true);});
++function toggle(f){const source=fs.readFileSync(require.resolve('../src/user'),'utf8');const start=source.indexOf('exports.toggleVertexStatus =');const end=source.indexOf('/**\n * A simple callable',start);const exports={};vm.runInNewContext(source.slice(start,end),{exports,auth:f.auth,db:f.db,resolveMembership,onCall:(_,fn)=>fn,HttpsError,logger:{info(){},error(){}}});return exports.toggleVertexStatus;}
++test('membership callable requires admin and authoritative matching uid before writes',async()=>{const f=fixture(),fn=toggle(f);await assert.rejects(fn({auth:{uid:'a',token:{}},data:{targetUid:'b'}}),{code:'permission-denied'});f.db.collection=(original=>name=>name==='contributors'?{doc:()=>({get:async()=>({data:()=>({email:'b@example.invalid'})})})}:original(name))(f.db.collection);await assert.rejects(fn({auth:{uid:'a',token:{admin:true}},data:{targetUid:'a',contributorId:'application-not-auth-uid',expectedStatus:true}}),{code:'failed-precondition'});assert.equal(f.users.get('a').isVertex,true);});
++test('membership expected state prevents duplicate toggle and preserves legacy payload',async()=>{const f=fixture(),fn=toggle(f),request={auth:{uid:'a',token:{admin:true}},data:{targetUid:'b',expectedStatus:false}};assert.equal((await fn(request)).isVertex,true);await assert.rejects(fn(request),{code:'failed-precondition'});assert.equal(f.users.get('b').isVertex,true);assert.equal((await fn({...request,data:{targetUid:'b'}})).isVertex,false);});

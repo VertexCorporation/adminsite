@@ -1,3 +1,4 @@
+import { icon } from './icons.js';
 import { __, onLangChange } from '../lang.js';
 // js/utils/ui.js
 
@@ -34,39 +35,38 @@ export function sanitizeHTML(str) {
  * @param {string | (() => string)} message A render callback keeps translated text current.
  * @param {'info' | 'success' | 'error'} type The type of toast.
  */
+const liveToasts = new Set();
 export function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
-
+    const text = () => String(typeof message === 'function' ? message() : message);
+    const initial = text();
+    const duplicate = [...liveToasts].find(item => item.type === type && item.text() === initial && Date.now()-item.created < 1200);
+    if (duplicate) return duplicate.dismiss;
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    const paint = () => {
-        toast.textContent = typeof message === 'function' ? message() : message;
-        toast.title = __('toast.dismiss_hint');
-    };
+    toast.className = `toast ${['success','error','warning'].includes(type)?type:'info'}`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    toast.innerHTML = `${icon(type==='success'?'circle-check':type==='error'?'alert-circle':'info-circle')}<span class="toast-message"></span><button type="button" class="toast-dismiss icon-action-btn">${icon('x',{size:16})}</button>`;
+    const label = toast.querySelector('.toast-message'),close = toast.querySelector('button');
+    const paint = () => {label.textContent=text();close.setAttribute('aria-label',__('toast.dismiss_hint'));close.title=__('toast.dismiss_hint');};
     paint();
     const unsubscribe = onLangChange(paint);
-    const remove = () => { unsubscribe(); toast.remove(); };
-    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
-    toast.addEventListener('click', () => {
-        toast.classList.remove('show');
-        setTimeout(() => remove(), 250);
-    });
-
-    container.appendChild(toast);
-    // Trigger the animation
-    setTimeout(() => toast.classList.add('show'), 100);
-
-    // Set timeout to hide and then remove the toast
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => remove(), 300);
-        toast.addEventListener('transitionend', () => {
-            if (toast.parentElement) {
-                remove();
-            }
-        }, { once: true });
-    }, 5000);
+    let timer, exitTimer, dismissed = false;
+    const item = {type,text,created:Date.now(),dismiss};
+    function dismiss() {
+        if (dismissed) return;
+        dismissed=true;clearTimeout(timer);unsubscribe();liveToasts.delete(item);
+        toast.classList.remove('show');toast.classList.add('is-leaving');
+        exitTimer=setTimeout(()=>toast.remove(),matchMedia('(prefers-reduced-motion: reduce)').matches?0:160);
+    }
+    const schedule = () => {clearTimeout(timer);if(!dismissed)timer=setTimeout(dismiss,type==='error'?7500:5000);};
+    close.onclick=dismiss;
+    toast.addEventListener('mouseenter',()=>clearTimeout(timer));toast.addEventListener('mouseleave',schedule);
+    toast.addEventListener('focusin',()=>clearTimeout(timer));toast.addEventListener('focusout',schedule);
+    container.prepend(toast);liveToasts.add(item);
+    if(liveToasts.size>4)[...liveToasts][0].dismiss();
+    requestAnimationFrame(()=>{if(!dismissed)toast.classList.add('show');});schedule();
+    return dismiss;
 }
 
 /**

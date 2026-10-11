@@ -30,6 +30,7 @@ export function applyTheme(mode) {
     const isDark = mode === 'dark' ||
         (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     if (meta) meta.setAttribute('content', isDark ? THEME_META_DARK : THEME_META_LIGHT);
+    document.getElementById('vertex-favicon')?.setAttribute('href', `assets/favicon-${isDark ? 'dark' : 'light'}.svg?v=2`);
     document.dispatchEvent(new CustomEvent('vertex:theme', { detail: { mode } }));
     setTimeout(() => html.classList.remove('theme-anim'), 200);
     updateThemeButton();
@@ -57,7 +58,7 @@ function initTheme() {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
         if (getThemeMode() === 'system') applyTheme('system');
     });
-    updateThemeButton();
+    applyTheme(mode);
 }
 
 
@@ -390,8 +391,10 @@ function syncTopbarTitle() {
     const activeBtn = document.querySelector('.dock-btn.active');
     const title = document.querySelector('.topbar-page-title');
     if (activeBtn && title) {
-        title.textContent = activeBtn.querySelector('.dock-label')?.textContent || '';
-        document.title = title.textContent ? `${title.textContent} · ${__('page.title')}` : __('page.title');
+        const child = activeBtn.closest('.nav-module')?.querySelector('[aria-current=page]');
+        const section = activeBtn.dataset.target === 'tab-system' ? document.querySelector('#tab-system .system-sections [aria-pressed=true]') : null;
+        title.textContent = section?.textContent.trim() || child?.textContent.trim() || activeBtn.querySelector('.dock-label')?.textContent.trim() || '';
+        document.title = title.textContent ? `${title.textContent} · Vertex Konsol` : __('page.title');
     }
 }
 
@@ -467,6 +470,22 @@ function initNavigation() {
     document.querySelector('.app-layout').append(dock);
     dock.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.hasAttribute('data-mobile-more')){toggle.click();return;}const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);if(source){activateTab(source);closeSidebarDrawer(false);}});
     onLangChange(()=>{dock.setAttribute('aria-label',__('navigation.main'));dock.querySelector('[data-mobile-more]').setAttribute('aria-label',__('contributors.more'));syncMobileDock();});
+    let restoringRoute = false;
+    const recordRoute = child => {
+        if (restoringRoute) return;
+        const route = {panel:child.dataset.navPanel, action:child.dataset.navAction||''};
+        if (JSON.stringify(history.state?.vertexRoute) !== JSON.stringify(route)) history.pushState({vertexRoute:route}, '', location.pathname+'?panel='+encodeURIComponent(route.panel)+'&view='+encodeURIComponent(route.action));
+    };
+    const restoreRoute = () => {
+        const params=new URLSearchParams(location.search);
+        const route=history.state?.vertexRoute || {panel:params.get('panel'),action:params.get('view')||''};
+        const child=[...document.querySelectorAll('[data-nav-panel]')].find(el=>el.dataset.navPanel===route.panel&&el.dataset.navAction===route.action&&!el.hidden);
+        const exportChild=route.action==='attributions'?[...document.querySelectorAll('[data-nav-panel]')].find(el=>el.dataset.navAction==='export'&&el.dataset.navPanel===route.panel&&!el.hidden):null;
+        if(child||exportChild){restoringRoute=true;(child||exportChild).click();if(exportChild)document.dispatchEvent(new CustomEvent('vertex:system-section',{detail:'attributions'}));restoringRoute=false;}
+    };
+    document.addEventListener('vertex:system-page',event=>{syncTopbarTitle();if(document.querySelector('.dock-btn.active')?.dataset.target==='tab-system'&&event.detail==='attributions'){const source=document.querySelector('[data-nav-action=export]');if(source)recordRoute({dataset:{navPanel:source.dataset.navPanel,navAction:'attributions'}});}});
+    window.addEventListener('popstate',restoreRoute);
+    document.addEventListener('vertex:departments',()=>setTimeout(restoreRoute,0));
     nav?.addEventListener('click', event => {
         const button = event.target.closest('.dock-btn');
         if (button) {
@@ -474,6 +493,7 @@ function initNavigation() {
             const wasActive = button.classList.contains('active');
             const wasExpanded = module?.classList.contains('expanded');
             activateTab(button);
+            const destination=module?.querySelector('[aria-current=page]');if(destination)recordRoute(destination);
             if (wasActive) expandModule(module, !wasExpanded);
             // Keep mobile navigation open while choosing a contextual destination.
             if (!module?.querySelector('.sidebar-submenu')) closeSidebarDrawer(true);
@@ -483,7 +503,9 @@ function initNavigation() {
         if (!child || child.hidden) return;
         const parent = child.closest('.nav-module').querySelector('.dock-btn');
         activateTab(parent); child.closest('.nav-module').querySelectorAll('.sidebar-sub-btn').forEach(el=>{el.removeAttribute('aria-current');el.removeAttribute('data-nav-selected');});child.setAttribute('data-nav-selected','');child.setAttribute('aria-current','page');
+        recordRoute(child);syncTopbarTitle();
         const action = child.dataset.navAction;
+        if(action!=='certificates')closeDrawer(false);
         if (parent.dataset.target === 'tab-system') document.dispatchEvent(new CustomEvent('vertex:system-section',{detail:action}));
         const keys = child.dataset.navPanel.split(',');
         const card = [...document.querySelectorAll('.panel-card[data-panel]')].find(el => keys.includes(el.dataset.panel) && el.style.display !== 'none');
@@ -522,6 +544,7 @@ function initNavigation() {
     document.addEventListener('vertex:close-navigation', () => closeSidebarDrawer());
     document.addEventListener('vertex:departments', () => queueMicrotask(refreshNavigation));
     closeSidebarDrawer(); syncTopbarTitle();
+    if(!history.state?.vertexRoute&&!new URLSearchParams(location.search).has('panel')){const initial=document.querySelector('.nav-module .dock-btn.active')?.closest('.nav-module').querySelector('[aria-current=page]');if(initial)history.replaceState({vertexRoute:{panel:initial.dataset.navPanel,action:initial.dataset.navAction||''}},'');}
 }
 
 function initTopbarMenus() {

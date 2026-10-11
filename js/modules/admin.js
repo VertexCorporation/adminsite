@@ -1,3 +1,4 @@
+import { icon } from '../utils/icons.js';
 import { confirmDialog } from './shell.js';
 import { displayDepartmentName } from '../utils/departments.js';
 import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../utils/loading.js';
@@ -6,7 +7,7 @@ import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../uti
 import { showToast, userErrorMessage, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
 import { auth, addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, setUserSubscriptionFn, bulkSetUserSubscriptionsFn } from '../core/firebase.js';
-import { DEPARTMENTS, getEffectivePanelLevel } from './roles.js';
+import { DEPARTMENTS, getEffectivePanelLevel, isPanelAdmin } from './roles.js';
 
 // --- Module state for attributions ---
 let attributionsOutOfSync = false;
@@ -321,27 +322,6 @@ async function handleManualVerifySubmit(e) {
 /**
  * Handles the submission to remove admin privileges from a user.
  */
-async function handleRemoveAdminSubmit(e) {
-    e.preventDefault();
-    const email = document.getElementById('remove-admin-email').value;
-    const btn = document.querySelector('#remove-admin-form button[type="submit"]');
-    btn.disabled = true;
-    btn.innerHTML = `<span data-i18n="system.saving">${__('system.saving')}</span>`;
-
-    try {
-        const result = await removeAdminRoleFn({ email });
-        showToast(() => __('system.remove_success'), 'success');
-        document.getElementById('remove-admin-form').reset();
-        loadAdminsList(); // Refresh the list
-    } catch (error) {
-        console.error("[CLIENT] Error removing admin role:", error);
-        showToast(() => userErrorMessage(error), 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span data-i18n="system.remove_btn">${__('system.remove_btn')}</span>`;
-    }
-}
-
 /**
  * Fetches and displays the list of active administrators.
  */
@@ -362,23 +342,21 @@ export async function loadAdminsList() {
             return;
         }
 
-        let html = '';
-        admins.forEach(admin => {
-            html += `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color);">
-                    <div>
-                        <strong style="color: var(--text-primary);">${sanitizeHTML(admin.email)}</strong>
-                        <div style="color: var(--text-secondary); font-size: 0.85rem;">UID: ${sanitizeHTML(admin.uid)}</div>
-                    </div>
-                </div>
-            `;
+        container.innerHTML=admins.map(admin=>`<div class="admin-user-row"><div><strong>${sanitizeHTML(admin.email)}</strong><small>${sanitizeHTML(admin.uid||'')}</small></div>${isPanelAdmin()?`<button type="button" class="icon-action-btn" data-revoke-admin="${sanitizeHTML(admin.uid||'')}" title="${__('system.remove_admin')}" aria-label="${__('system.remove_admin')}" ${admins.length<2||admin.uid===auth.currentUser?.uid||!admin.uid||!admin.email?'disabled':''}>${icon('user-minus')}</button>`:''}</div>`).join('');
+        container.querySelectorAll('[data-revoke-admin]').forEach(button=>button.onclick=async()=>{
+            const target=admins.find(admin=>admin.uid===button.dataset.revokeAdmin);
+            if(!isPanelAdmin()||!target||target.uid===auth.currentUser?.uid||admins.length<2||button.disabled)return;
+            button.disabled=true;
+            try {
+                if(!await confirmDialog(()=>({title:__('system.remove_admin'),warning:__('admin.revoke_confirm'),rows:[{label:__('contributors.field_email'),value:sanitizeHTML(target.email)}]})))return;
+                await removeAdminRoleFn({email:target.email});showToast(()=>__('system.remove_success'),'success');await loadAdminsList();
+            } catch(error){showToast(()=>userErrorMessage(error),'error');}
+            finally{if(button.isConnected)button.disabled=false;}
         });
-        container.innerHTML = html;
     } catch (error) {
         finishLoading();
         console.error("[CLIENT] Error loading admins list:", error);
-        const details = error.code ? `${error.code}: ${error.message}` : error.message;
-        container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem; color: var(--accent-clay);">${__('system.error')}: ${sanitizeHTML(details)}</p>`;
+        container.innerHTML=`<div class="state-block"><p data-i18n="errors.service">${__('errors.service')}</p><button class="chrome-btn-outline" data-i18n="common.retry">${__('common.retry')}</button></div>`;container.querySelector('button').onclick=loadAdminsList;
     } finally { finishLoading(); }
 }
 
@@ -431,6 +409,7 @@ export function refreshDepartmentUsers() {
 export function initAdminModule() {
     renderDepartmentOptions();
     onLangChange(() => {
+        document.querySelectorAll('[data-revoke-admin]').forEach(button=>{button.title=__('system.remove_admin');button.setAttribute('aria-label',__('system.remove_admin'));});
         renderDepartmentOptions();
         updateMaintenanceUI();updateAttributionsUI();
         const grant=document.getElementById('grant-admin-btn');grant.textContent=__(grant.disabled?'admin.granting':'admin.grant_btn');
@@ -472,8 +451,6 @@ export function initAdminModule() {
     const verifyForm = document.getElementById('verify-user-form');
     if (verifyForm) verifyForm.addEventListener('submit', handleManualVerifySubmit);
 
-    const removeAdminForm = document.getElementById('remove-admin-form');
-    if (removeAdminForm) removeAdminForm.addEventListener('submit', handleRemoveAdminSubmit);
 
     const refreshAdminsBtn = document.getElementById('refresh-admins-btn');
     if (refreshAdminsBtn) {

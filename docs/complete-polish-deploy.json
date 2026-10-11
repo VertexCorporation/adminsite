@@ -1,0 +1,65 @@
+{
+  "project": "vertex-ai-1618",
+  "targets": [
+    {
+      "name": "getVertexContributors",
+      "region": "europe-west1",
+      "state": "ACTIVE",
+      "before": "getvertexcontributors-00026-xav",
+      "after": "getvertexcontributors-00027-qic",
+      "configurationPreserved": true
+    },
+    {
+      "name": "listAdmins",
+      "region": "europe-west1",
+      "state": "ACTIVE",
+      "before": "listadmins-00022-won",
+      "after": "listadmins-00023-qiz",
+      "configurationPreserved": true
+    },
+    {
+      "name": "removeAdminRole",
+      "region": "europe-west1",
+      "state": "ACTIVE",
+      "before": "removeadminrole-00013-diy",
+      "after": "removeadminrole-00014-nay",
+      "configurationPreserved": true
+    },
+    {
+      "name": "toggleVertexStatus",
+      "region": "europe-west1",
+      "state": "ACTIVE",
+      "before": "togglevertexstatus-00011-nin",
+      "after": "togglevertexstatus-00012-jix",
+      "configurationPreserved": true
+    }
+  ],
+  "method": "four individual firebase deploy --only functions:NAME commands; existing authorized session; no local environment files uploaded",
+  "productionDataWrites": false,
+  "anonymousChecks": [
+    {
+      "name": "getVertexContributors",
+      "status": 401,
+      "code": "UNAUTHENTICATED",
+      "anonymousDenied": true
+    },
+    {
+      "name": "listAdmins",
+      "status": 401,
+      "code": "UNAUTHENTICATED",
+      "anonymousDenied": true
+    },
+    {
+      "name": "removeAdminRole",
+      "status": 403,
+      "code": "PERMISSION_DENIED",
+      "anonymousDenied": true
+    },
+    {
+      "name": "toggleVertexStatus",
+      "status": 403,
+      "code": "PERMISSION_DENIED",
+      "anonymousDenied": true
+    }
+  ]
+}

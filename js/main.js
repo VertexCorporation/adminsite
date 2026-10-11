@@ -1,3 +1,4 @@
+import { initScrollEdges } from './utils/scrollEdges.js';
 import { displayDepartmentName } from './utils/departments.js';
 import { initSystemSections } from './modules/system.js';
 import { initIcons } from './utils/icons.js';
@@ -28,6 +29,7 @@ import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
 export function startApp(firebaseConfig) {
     // --- Step 1: Initialize Firebase ---
     initFirebase(firebaseConfig);
+    initScrollEdges();
     console.log('[APP] Main application started.');
 
     // --- Step 2: Initialize All Feature Modules (Bind Static Event Listeners) ---
@@ -135,6 +137,7 @@ export function startApp(firebaseConfig) {
                     dom.adminManagerSection.style.display = 'none';
                     await loadDepartmentPermissions();
                     if(epoch!==authEpoch || document.documentElement.dataset.startupFailed === 'true')return;
+                    if(getEffectivePanelLevel('contributors.list')!=='none')fetchContributorsData();
                     const allowedTabs = getAccessibleTabs(departments);
                     console.log(`[AUTH] Allowed tabs for ${departments.join(', ')}:`, allowedTabs);
                     applyTabFilter(allowedTabs);

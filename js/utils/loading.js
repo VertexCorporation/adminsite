@@ -28,14 +28,7 @@ export function skeletonButton() {
 
 /** Tablo satır iskeleti — gerçek satır geometrisi korunur. */
 export function skeletonTableRow() {
-    return `<div class="contributor-skeleton-row" aria-hidden="true">
-        <div class="skeleton sk-avatar"></div>
-        <div class="skeleton sk-text w-60"></div>
-        <div class="skeleton sk-text w-40"></div>
-        <div class="skeleton sk-text w-40"></div>
-        <div class="skeleton sk-text w-40"></div>
-        <div class="skeleton sk-text w-40"></div>
-    </div>`;
+    return `<div class="contributor-skeleton-row" aria-hidden="true"><div class="sk-contributor-name"><div class="skeleton sk-avatar"></div><div class="skeleton sk-text w-60"></div></div><div class="skeleton sk-text w-60"></div><div class="skeleton sk-text w-40"></div><div class="skeleton sk-text w-80"></div><div class="skeleton sk-text w-80"></div><div class="skeleton sk-button"></div></div>`;
 }
 
 export function skeletonListItem() {
@@ -112,7 +105,7 @@ export function createLoadingController(container, opts = {}) {
             container.setAttribute('aria-busy', 'true');
             container.innerHTML = opts.skeletonHTML || skeletonRows(6);
             opts.onSkeleton?.();
-        }, SKELETON_DELAY);
+        }, opts.skeletonDelay ?? SKELETON_DELAY);
     }
 
     function cancelTimer() {
