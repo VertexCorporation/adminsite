@@ -1,0 +1,17 @@
+{
+  "verifiedAt": "2026-10-11T10:53:06.207Z",
+  "service": "projects/vertex-ai-1618/locations/europe-west1/services/setvertexcontributorjoiningdate",
+  "readyRevision": "setvertexcontributorjoiningdate-00001-jat",
+  "bindings": [
+    {
+      "role": "roles/run.invoker",
+      "members": [
+        "allUsers"
+      ]
+    }
+  ],
+  "unauthorizedStatus": 401,
+  "unauthorizedCode": "UNAUTHENTICATED",
+  "containerChanged": false,
+  "productionDataMutated": false
+}
