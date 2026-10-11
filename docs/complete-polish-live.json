@@ -1,0 +1,97 @@
+{
+  "sourceMatches": [
+    {
+      "file": "index.html",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "js/lang.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "js/main.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "js/modules/shell.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "js/modules/contributors.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "js/modules/certificates.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "js/modules/admin.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "js/utils/ui.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "js/utils/scrollEdges.js",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "css/components.css",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "css/modules.css",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "assets/favicon-light.svg",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "assets/favicon-dark.svg",
+      "status": 200,
+      "matches": true
+    },
+    {
+      "file": "assets/fonts/ubuntu-medium.ttf",
+      "status": 200,
+      "matches": true
+    }
+  ],
+  "cases": [
+    {
+      "lang": "tr",
+      "state": "login visible",
+      "email": "E-posta Adresiniz",
+      "uncaughtErrors": [],
+      "failedResponses": []
+    },
+    {
+      "lang": "en",
+      "state": "login visible",
+      "email": "Your Email Address",
+      "uncaughtErrors": [],
+      "failedResponses": []
+    }
+  ],
+  "note": "Read-only unauthenticated production verification; no production writes or login attempted.",
+  "frontendCommit": "6e69ae4",
+  "alternateHostname": {
+    "hostname": "adminsite.vertexishere.com",
+    "status": "blocked",
+    "reason": "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
+  }
+}
