@@ -31,3 +31,7 @@ Commands use `CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google
 The supplied https://adminsite.vertexishere.com fails strict Chrome TLS validation with `ERR_CERT_AUTHORITY_INVALID`; Node also reports `UNABLE_TO_VERIFY_LEAF_SIGNATURE`. No TLS bypass or unrelated domain/account change was made. The configured existing Pages production domain https://admin.vertexishere.com is accessible.
 
 The earlier production App Check attestation 403 is documented in `precision-refinement.md`. A mock pass does not establish authenticated production operations. Publication and read-only live verification results are recorded separately after the push.
+
+## Published result
+
+`c94cbd8` was pushed and deployed to Pages production as `958b9a01-758b-4b1d-86db-3eaf42ec9218` (https://958b9a01.adminsite-b1x.pages.dev). Live verification matched all six checked source files, displayed login, removed the loader, verified light/dark at 390/1440 px and observed no uncaught application JavaScript errors. The strict live check **failed** because App Check returned `403 PERMISSION_DENIED: App attestation failed.` This remains a production attestation limitation observed in automated Chrome; neither its full root cause nor authenticated production writes are claimed verified. See `final-polish-live-verification.json`.

@@ -1,0 +1,70 @@
+{
+  "url": "https://admin.vertexishere.com/",
+  "verifiedAt": "2026-10-11T13:21:21.094Z",
+  "sourceMatches": [
+    {
+      "file": "index.html",
+      "matches": true
+    },
+    {
+      "file": "assets/vertex-logo.svg",
+      "matches": true
+    },
+    {
+      "file": "css/tokens.css",
+      "matches": true
+    },
+    {
+      "file": "css/layout.css",
+      "matches": true
+    },
+    {
+      "file": "js/lang.js",
+      "matches": true
+    },
+    {
+      "file": "js/modules/shell.js",
+      "matches": true
+    }
+  ],
+  "loginVisible": true,
+  "loaderHidden": true,
+  "viewportWidths": [
+    390,
+    1440
+  ],
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "errors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 403 ()"
+  ],
+  "failedRequests": [
+    {
+      "url": "https://content-firebaseappcheck.googleapis.com/v1/projects/vertex-ai-1618/apps/1:561391430514:web:5f06c6a84539ecffb10beb:exchangeRecaptchaV3Token",
+      "status": 403,
+      "errorCode": "PERMISSION_DENIED",
+      "reason": "App attestation failed."
+    }
+  ],
+  "screenshots": [
+    "/Users/baba/Documents/adminsite/tests/results/final-polish/live-login-390-dark.png",
+    "/Users/baba/Documents/adminsite/tests/results/final-polish/live-login-390-light.png",
+    "/Users/baba/Documents/adminsite/tests/results/final-polish/live-login-1440-dark.png",
+    "/Users/baba/Documents/adminsite/tests/results/final-polish/live-login-1440-light.png"
+  ],
+  "authenticatedWritesTested": false,
+  "deployment": {
+    "id": "958b9a01-758b-4b1d-86db-3eaf42ec9218",
+    "source": "c94cbd8",
+    "url": "https://958b9a01.adminsite-b1x.pages.dev"
+  },
+  "strictCheckPassed": false,
+  "requestedDomain": {
+    "url": "https://adminsite.vertexishere.com",
+    "chromeError": "ERR_CERT_AUTHORITY_INVALID",
+    "nodeError": "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
+  }
+}
