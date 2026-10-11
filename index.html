@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title data-i18n="page.title">Vertex Kontrol - Yönetici Paneli</title>
 
     <!-- SEO & Basic Meta -->
@@ -20,19 +20,25 @@
     <!-- Google Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/motion.css">
+<link rel="stylesheet" href="css/loading.css">
+<link rel="stylesheet" href="css/modules.css">
+<link rel="stylesheet" href="css/certificates.css">
 
     <script>
         // Sayfa yüklenmeden önce localStorage'dan temayı ayarlayan betik
         (function () {
             try {
                 const theme = localStorage.getItem('theme');
-                if (theme === 'light') {
-                    document.documentElement.setAttribute('data-theme', 'light');
+                if (theme === 'light' || theme === 'system') {
+                    document.documentElement.setAttribute('data-theme', theme);
                 }
             } catch (e) {
                 console.error("localStorage'dan tema ayarlanamadı", e);
@@ -127,8 +133,23 @@
     <div id="admin-panel" class="app-layout" style="display:none;">
 
         <!-- ÜST BAŞLIK (SABİT HEADER) -->
-        <header class="app-header">
-            <div class="brand-container">
+        <header class="app-header"><button id="nav-toggle" type="button" class="icon-action-btn" aria-label="Navigation" aria-expanded="false">☰</button><span class="topbar-page-title"></span>
+            <div class="header-control-buttons topbar-actions"><div id="user-menu-root"></div>
+                <button id="lang-toggle-btn" class="icon-circle-btn" aria-label="TR / EN" title="Theme">
+                    <span id="lang-indicator">TR</span>
+                </button>
+                <button id="theme-menu-btn" class="icon-circle-btn" aria-haspopup="dialog" data-i18n-title="header.theme" title="Theme">
+                    <i data-icon="sun"></i><span class="topbar-select-label"></span>
+                </button>
+                <button id="logout-btn" class="btn-sign-out">
+                    <i class="" data-icon="logout"></i>
+                    <span data-i18n="header.logout">Çıkış</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- ORTAK HİBRİT NAVİGASYON (MOBİLDE ALT BAR, DESKTOPTA SOL SIDEBAR) -->
+        <aside class="app-sidebar">            <div class="brand-container">
                 <div class="brand-symbol">
                     <svg viewBox="0 0 100 100" width="22">
                         <polygon points="50,15 95,85 5,85" fill="none" stroke="currentColor" stroke-width="8"></polygon>
@@ -139,47 +160,31 @@
                     <span class="system-tag" data-i18n="header.system">Sistem Portal</span>
                 </div>
             </div>
-            <div class="header-control-buttons">
-                <button id="lang-toggle-btn" class="icon-circle-btn" data-i18n-title="header.theme" title="Temayı Değiştir">
-                    <span id="lang-indicator">TR</span>
-                </button>
-                <button id="theme-toggle-btn" class="icon-circle-btn" data-i18n-title="header.theme" title="Temayı Değiştir">
-                    <span class="material-symbols-rounded sun-icon">light_mode</span>
-                    <span class="material-symbols-rounded moon-icon">dark_mode</span>
-                </button>
-                <button id="logout-btn" class="btn-sign-out">
-                    <span class="material-symbols-rounded">logout</span>
-                    <span data-i18n="header.logout">Çıkış</span>
-                </button>
-            </div>
-        </header>
-
-        <!-- ORTAK HİBRİT NAVİGASYON (MOBİLDE ALT BAR, DESKTOPTA SOL SIDEBAR) -->
-        <nav class="app-navigation" id="navigation-tabs-dock">
+<nav class="sidebar-nav sidebar-scroll" id="navigation-tabs-dock">
             <button class="dock-btn active" data-target="tab-contributors">
-                <span class="material-symbols-rounded">group</span>
+                <i class="" data-icon="group"></i>
                 <span class="dock-label" data-i18n="nav.contributors">Katılımcı</span>
             </button>
             <button class="dock-btn" data-target="tab-models">
-                <span class="material-symbols-rounded">smart_toy</span>
+                <i class="" data-icon="smart_toy"></i>
                 <span class="dock-label" data-i18n="nav.models">Modeller</span>
             </button>
             <button class="dock-btn" data-target="tab-news">
-                <span class="material-symbols-rounded">newspaper</span>
+                <i class="" data-icon="newspaper"></i>
                 <span class="dock-label" data-i18n="nav.news">Haberler</span>
             </button>
             <button class="dock-btn" data-target="tab-notifications">
-                <span class="material-symbols-rounded">notifications_active</span>
+                <i class="" data-icon="notifications_active"></i>
                 <span class="dock-label" data-i18n="nav.notifications">Bildirim</span>
             </button>
             <button class="dock-btn" data-target="tab-system">
-                <span class="material-symbols-rounded">settings_ethernet</span>
+                <i class="" data-icon="settings_ethernet"></i>
                 <span class="dock-label" data-i18n="nav.system">Sistem</span>
             </button>
-        </nav>
+        <button class="dock-btn" data-target="tab-subscriptions"><i data-icon="crown"></i><span class="dock-label" data-i18n="nav.subscriptions"></span></button><button class="dock-btn" data-target="tab-chat"><i data-icon="messages"></i><span class="dock-label" data-i18n="nav.chat"></span></button><button class="dock-btn" data-target="tab-profile"><i data-icon="user-circle"></i><span class="dock-label" data-i18n="nav.profile"></span></button></nav></aside>
 
         <!-- İÇERİK ALANI -->
-        <main class="app-viewport">
+        <main class="app-main">
             <div class="tab-scroll-container" id="tab-scroll-container">
 
             <!-- SEKME 1: KATILIMCILAR & YETKİLER -->
@@ -191,14 +196,14 @@
 
                 <div class="grid-layout">
                     <!-- Başvurular Listesi -->
-                    <div class="panel-card col-span-8">
+                    <div class="panel-card col-span-12" data-panel="contributors.list">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">group_work</span>
+                                <i class="" data-icon="group_work"></i>
                                 <h3 data-i18n="contributors.section">Başvuran Adaylar & Üyeler</h3>
                             </div>
                             <button id="refresh-contributors-btn" class="btn-refresh">
-                                <span class="material-symbols-rounded">refresh</span>
+                                <i class="" data-icon="refresh"></i>
                                 <span data-i18n="contributors.refresh">Yenile</span>
                             </button>
                         </div>
@@ -218,7 +223,7 @@
 
                         <!-- Arama Kutusu -->
                         <div class="search-input-field">
-                            <span class="material-symbols-rounded search-icon">search</span>
+                            <i class=" search-icon" data-icon="search"></i>
                             <input type="text" id="contributor-search" data-i18n-placeholder="contributors.search" placeholder="Listede isim, e-posta veya biyografi ara..." oninput="searchContributorsLocal()">
                         </div>
 
@@ -228,10 +233,10 @@
                     </div>
 
                     <!-- Yönetici Ekleme -->
-                    <div class="panel-card col-span-4" id="admin-manager">
+                    <div class="panel-card col-span-4" id="admin-manager" data-panel="system.adminRole">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">shield_person</span>
+                                <i class="" data-icon="shield_person"></i>
                                 <h3 data-i18n="admin.title">Yönetici Rolü Tanımla</h3>
                             </div>
                         </div>
@@ -241,23 +246,23 @@
                             <div class="form-group-field">
                                 <label for="new-admin-email" data-i18n="admin.email_label">Kullanıcı E-postası</label>
                                 <div class="form-input-wrapper">
-                                    <span class="material-symbols-rounded">mail</span>
+                                    <i class="" data-icon="mail"></i>
                                     <input type="email" id="new-admin-email" data-i18n-placeholder="admin.email_placeholder" placeholder="kullanici@vertexishere.com" required>
                                 </div>
                                 <span class="form-field-info" data-i18n="admin.email_hint">Kullanıcı sisteme kayıtlı olmalıdır.</span>
                             </div>
                             <button type="submit" id="grant-admin-btn" class="chrome-btn-accent">
-                                <span class="material-symbols-rounded">admin_panel_settings</span>
+                                <i class="" data-icon="admin_panel_settings"></i>
                                 <span data-i18n="admin.grant_btn">Yönetici Yetkisi Ver</span>
                             </button>
                         </form>
                     </div>
 
                     <!-- Vertex Status Toggle -->
-                    <div class="panel-card col-span-4" id="vertex-status-manager">
+                    <div class="panel-card col-span-4" id="vertex-status-manager" data-panel="contributors.vertexStatus">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">verified_user</span>
+                                <i class="" data-icon="verified_user"></i>
                                 <h3>Toggle Vertex Status</h3>
                             </div>
                         </div>
@@ -267,13 +272,13 @@
                             <div class="form-group-field">
                                 <label for="vertex-target-uid">User UID</label>
                                 <div class="form-input-wrapper">
-                                    <span class="material-symbols-rounded">badge</span>
+                                    <i class="" data-icon="badge"></i>
                                     <input type="text" id="vertex-target-uid" placeholder="Enter target User ID" required>
                                 </div>
                                 <span class="form-field-info">UID can be found in Firebase Console.</span>
                             </div>
                             <button type="submit" id="toggle-vertex-btn" class="chrome-btn-outline">
-                                <span class="material-symbols-rounded">swap_vert</span>
+                                <i class="" data-icon="swap_vert"></i>
                                 <span>Toggle isVertex Status</span>
                             </button>
                         </form>
@@ -290,10 +295,10 @@
 
                 <div class="grid-layout">
                     <!-- Model Kayıt Formu -->
-                    <div id="model-manager" class="panel-card col-span-7">
+                    <div id="model-manager" class="panel-card col-span-7" data-panel="models.manage">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">add_circle</span>
+                                <i class="" data-icon="add_circle"></i>
                                 <h3 data-i18n="models.form_title">Model Ekleme ve Düzenleme</h3>
                             </div>
                         </div>
@@ -487,10 +492,10 @@
                     </div>
 
                     <!-- Model Listeleri -->
-                    <div class="panel-card col-span-5">
+                    <div class="panel-card col-span-5" data-panel="models.library">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">list_alt</span>
+                                <i class="" data-icon="list_alt"></i>
                                 <h3 data-i18n="models.active_models">Aktif Modeller</h3>
                             </div>
                             <div class="count-chips-container">
@@ -505,14 +510,14 @@
 
                         <div class="card-title-row" style="margin-top: 1.5rem;">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">database</span>
+                                <i class="" data-icon="database"></i>
                                 <h3 data-i18n="models.all_models">Tüm Modeller Ağacı</h3>
                             </div>
                         </div>
                         
                         <div id="all-models-explorer" class="database-tree-box">
                             <div id="all-models-list-container">
-                                <p class="form-hint" data-i18n="models.loading">Yükleniyor...</p>
+                                
                             </div>
                         </div>
                     </div>
@@ -528,10 +533,10 @@
 
                 <div class="grid-layout">
                     <!-- Haber Editörü -->
-                    <div id="news-creator" class="panel-card col-span-7">
+                    <div id="news-creator" class="panel-card col-span-7" data-panel="news.editor">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">post_add</span>
+                                <i class="" data-icon="post_add"></i>
                                 <h3 data-i18n="news.form_title">Haber Duyurusu Yaz</h3>
                             </div>
                         </div>
@@ -599,10 +604,10 @@
                     </div>
 
                     <!-- Yayınlanmış Makaleler -->
-                    <div id="news-manager" class="panel-card col-span-5">
+                    <div id="news-manager" class="panel-card col-span-5" data-panel="news.published">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">article</span>
+                                <i class="" data-icon="article"></i>
                                 <h3 data-i18n="news.active_articles">Aktif Yayındaki Haberler</h3>
                             </div>
                         </div>
@@ -622,10 +627,10 @@
 
                 <div class="grid-layout">
                     <!-- Bildirim Gönderici Form -->
-                    <div id="notification-sender" class="panel-card col-span-7">
+                    <div id="notification-sender" class="panel-card col-span-7" data-panel="notifications.sender">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">campaign</span>
+                                <i class="" data-icon="campaign"></i>
                                 <h3 data-i18n="notif.form_title">Push Bildirim Gönder / Ayarla</h3>
                             </div>
                         </div>
@@ -771,10 +776,10 @@
                     </div>
 
                     <!-- Zamanlanmış Görevler Listesi -->
-                    <div id="scheduled-tasks-manager" class="panel-card col-span-5">
+                    <div id="scheduled-tasks-manager" class="panel-card col-span-5" data-panel="notifications.scheduled">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">calendar_month</span>
+                                <i class="" data-icon="calendar_month"></i>
                                 <h3 data-i18n="notif.scheduled_title">Zamanlanmış Bildirimler</h3>
                             </div>
                         </div>
@@ -792,12 +797,80 @@
                     <p data-i18n="system.desc">Sistem altyapısını kontrol edin, bakım modunu açıp kapatın veya atıflar sayfasını yayınlayın.</p>
                 </div>
 
-                <div class="grid-layout">
+                <div class="grid-layout"><div class="panel-card col-span-6" id="team-log-manager" data-panel="system.teamLog">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="diversity_3"></i>
+                                <h3 data-i18n="team.title">Ekip Kaydı</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description" data-i18n="team.desc">vertexishere.com'daki Moderatörler listesini yönetin; Staff listesi onayladığınız adaylardan otomatik oluşur.</p>
+                        <div class="team-log-grid">
+                            <div class="team-log-col">
+                                <h4 data-i18n="team.mods">Modlar</h4>
+                                <div id="team-mod-list" class="team-entry-list"></div>
+                                <div class="team-add-row">
+                                    <input type="text" id="team-mod-input" maxlength="60" placeholder="Ad Soyad" data-i18n-placeholder="team.name_ph">
+                                    <button type="button" id="team-mod-add" class="chrome-btn-outline">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div><div class="panel-card col-span-6" id="dept-users-manager" data-panel="system.deptUsers">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="groups"></i>
+                                <h3 data-i18n="dept.users_title">Departman Kullanıcıları</h3>
+                            </div>
+                            <button type="button" id="refresh-dept-users-btn" class="btn-refresh" data-i18n-title="dept.refresh" title="Yenile">
+                                <i class="" data-icon="refresh"></i>
+                                <span data-i18n="dept.refresh">Yenile</span>
+                            </button>
+                        </div>
+                        <div class="search-input-field">
+                            <i class=" search-icon" data-icon="search"></i>
+                            <input type="search" id="dept-users-search" data-i18n-placeholder="dept.search" placeholder="İsim, e-posta veya departman ara..." aria-label="Departman kullanıcılarını ara">
+                        </div>
+                        <div id="dept-users-list" class="dept-users-list" aria-live="polite"></div>
+                    </div><div class="panel-card col-span-6" id="dept-assign-manager" data-panel="system.deptAssign">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="person_add"></i>
+                                <h3 data-i18n="dept.assign_title">Kullanıcıya Departman Ata</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description" data-i18n="dept.assign_desc">Kullanıcının erişeceği departmanları seçin. Kaydetme mevcut departman listesinin yerini alır.</p>
+                        <form id="dept-assign-form" class="form-stack" style="margin-top:10px;">
+                            <div class="form-group-field">
+                                <label for="dept-user-email" data-i18n="dept.assign_email">Kullanıcı E-postası</label>
+                                <input type="email" id="dept-user-email" data-i18n-placeholder="admin.email_placeholder" placeholder="kullanici@vertexishere.com" required>
+                            </div>
+                            <div class="form-group-field">
+                                <span class="field-label" id="dept-options-label" data-i18n="dept.assign_dept">Departmanlar</span>
+                                <div id="dept-options" class="dept-options" role="group" aria-labelledby="dept-options-label"></div>
+                                <span class="form-field-info" data-i18n="dept.select_hint">En az bir departman seçin.</span>
+                            </div>
+                            <button type="submit" class="chrome-btn-accent">
+                                <i class="" data-icon="assignment_ind"></i>
+                                <span data-i18n="dept.assign_btn">Departman Ata</span>
+                            </button>
+                        </form>
+                    </div><div class="panel-card col-span-12" id="dept-perms-manager" data-panel="system.deptPerms">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="admin_panel_settings"></i>
+                                <h3 data-i18n="dept.title">Departman Erişim Yetkileri</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description" data-i18n="perms.desc">Her departmanın hangi bölümleri göreceğini ve düzenleyebileceğini belirleyin. Hücreler Yok / Gör / Düzenle arasında geçer; kanal ikonuyla panelleri tek tek ayarlayabilirsiniz. Değişiklikler otomatik kaydedilir.</p>
+                        <div id="dept-permissions-container" class="scrollable-list-box" style="max-height: none; overflow-x: auto;">
+                            
+                        </div>
+                    </div>
                     <!-- GCS Backup Status -->
                     <div class="panel-card col-span-12" id="gcs-backup-status" style="border: 1px solid var(--accent-sage);">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded" style="color: var(--accent-sage);">cloud_done</span>
+                                <i class="" style="color: var(--accent-sage);" data-icon="cloud_done"></i>
                                 <h3 data-i18n="system.gcs_backup">Google Cloud Storage (GCS) Yedekleme</h3>
                             </div>
                         </div>
@@ -805,10 +878,10 @@
                     </div>
 
                     <!-- Katılımcı Doğrulama (Manuel) -->
-                    <div class="panel-card col-span-6" id="manual-verify-manager">
+                    <div class="panel-card col-span-6" id="manual-verify-manager" data-panel="system.manualVerify">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">verified_user</span>
+                                <i class="" data-icon="verified_user"></i>
                                 <h3 data-i18n="system.verify_user">Katılımcı Doğrula (Manuel)</h3>
                             </div>
                         </div>
@@ -823,10 +896,10 @@
                     </div>
 
                     <!-- Yetki Alma -->
-                    <div class="panel-card col-span-6" id="remove-admin-manager">
+                    <div class="panel-card col-span-6" id="remove-admin-manager" data-panel="system.removeAdmin">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">person_remove</span>
+                                <i class="" data-icon="person_remove"></i>
                                 <h3 data-i18n="system.remove_admin">Yönetici Yetkisi Al</h3>
                             </div>
                         </div>
@@ -841,26 +914,26 @@
                     </div>
 
                     <!-- Aktif Yöneticiler Listesi -->
-                    <div class="panel-card col-span-12" id="admin-list-manager">
+                    <div class="panel-card col-span-12" id="admin-list-manager" data-panel="system.adminList">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">admin_panel_settings</span>
+                                <i class="" data-icon="admin_panel_settings"></i>
                                 <h3 data-i18n="system.admin_list">Aktif Sistem Yöneticileri</h3>
                             </div>
                             <button class="icon-action-btn" id="refresh-admins-btn" title="Yenile">
-                                <span class="material-symbols-rounded">refresh</span>
+                                <i class="" data-icon="refresh"></i>
                             </button>
                         </div>
                         <div id="admin-list-container" class="scrollable-list-box-small" style="max-height: none; overflow-y: visible;">
-                            <p class="form-hint" style="text-align:center; padding: 1rem;" data-i18n="system.loading_admins">Yükleniyor...</p>
+                            
                         </div>
                     </div>
 
                     <!-- Sunucu Durumu -->
-                    <div class="panel-card col-span-6" id="server-status-manager">
+                    <div class="panel-card col-span-6" id="server-status-manager" data-panel="system.serverStatus">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">dns</span>
+                                <i class="" data-icon="dns"></i>
                                 <h3 data-i18n="system.maintenance">Sunucu Bakım Modu</h3>
                             </div>
                         </div>
@@ -876,10 +949,10 @@
                     </div>
 
                     <!-- Atıflar Sayfası Güncelleme -->
-                    <div class="panel-card col-span-6" id="attributions-manager">
+                    <div class="panel-card col-span-6" id="attributions-manager" data-panel="system.attributions">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">sync</span>
+                                <i class="" data-icon="sync"></i>
                                 <h3 data-i18n="system.attributions">Atıflar Sayfasını Yayınla</h3>
                             </div>
                         </div>
@@ -894,10 +967,10 @@
                     </div>
 
                     <!-- Veri Dışa Aktar -->
-                    <div class="panel-card col-span-12" id="data-exporter-manager">
+                    <div class="panel-card col-span-12" id="data-exporter-manager" data-panel="system.exporter">
                         <div class="card-title-row">
                             <div class="title-details">
-                                <span class="material-symbols-rounded">download</span>
+                                <i class="" data-icon="download"></i>
                                 <h3 data-i18n="system.export">Verileri Dışa Aktar / İndir</h3>
                             </div>
                         </div>
@@ -925,7 +998,7 @@
                             </div>
                             
                             <button type="button" onclick="exportDataLocal()" class="chrome-btn-accent" style="margin-top: 10px;">
-                                <span class="material-symbols-rounded">download_for_offline</span>
+                                <i class="" data-icon="download_for_offline"></i>
                                 <span data-i18n="system.export_btn">Veriyi Derle ve İndir</span>
                             </button>
                         </div>
@@ -934,6 +1007,232 @@
                 </div>
             </div>
 
+            </div>
+<div class="tab-panel" id="tab-chat">
+                <div class="panel-section-title">
+                    <h2 data-i18n="chat.title">Sohbet</h2>
+                    <p data-i18n="chat.desc">Departman kanalları, görev takibi ve @etiket bildirimleri.</p>
+                </div>
+
+                <div class="chat-layout">
+                    <div class="panel-card chat-sidebar">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="forum"></i>
+                                <h3 data-i18n="chat.channels">Kanallar</h3>
+                            </div>
+                            <button type="button" id="chat-create-btn" class="icon-action-btn" title="Kanal Oluştur" style="display:none;">
+                                <i class="" data-icon="add"></i>
+                            </button>
+                        </div>
+                        <div id="chat-channel-list" class="chat-channel-list"></div>
+                    </div>
+
+                    <div class="panel-card chat-main">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" id="chat-channel-icon" data-icon="tag"></i>
+                                <h3 id="chat-channel-title">—</h3>
+                            </div>
+                            <div id="chat-channel-badges" class="dept-badges"></div>
+                            <button type="button" id="chat-channel-edit" class="icon-action-btn" title="Kanalı Düzenle" style="display:none;">
+                                <i class="" data-icon="settings"></i>
+                            </button>
+                        </div>
+                        <div id="chat-channel-desc" class="intro-description"></div>
+                        <div id="chat-messages" class="chat-messages">
+                            <p class="form-hint chat-hint" data-i18n="chat.select_hint">Bir kanal seçin.</p>
+                        </div>
+                        <div id="chat-composer" class="chat-composer" style="display:none;">
+                            <textarea id="chat-input" rows="2" data-i18n-placeholder="chat.placeholder" placeholder="Mesaj yazın — @Departman veya @mail ile etiketleyin"></textarea>
+                            <div class="chat-composer-actions">
+                                <label class="chat-task-toggle"><input type="checkbox" id="chat-as-task"><span data-i18n="chat.as_task">Görev/Sorun</span></label>
+                                <button type="button" id="chat-send" class="chrome-btn-accent"><i class="" data-icon="send"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="chat-channel-form" class="panel-card chat-channel-form" style="display:none;">
+                    <div class="card-title-row">
+                        <div class="title-details">
+                            <i class="" data-icon="add_circle"></i>
+                            <h3 id="chat-form-title">Kanal Oluştur</h3>
+                        </div>
+                    </div>
+                    <div class="form-stack">
+                        <div class="form-group-field">
+                            <label for="chat-form-name">Kanal Adı</label>
+                            <input type="text" id="chat-form-name" maxlength="60" placeholder="örn. Genel, Array Görev Kanalı">
+                        </div>
+                        <div class="form-group-field">
+                            <label for="chat-form-desc">Açıklama</label>
+                            <input type="text" id="chat-form-desc" maxlength="300" placeholder="Kanalın amacı">
+                        </div>
+                        <div class="form-group-field">
+                            <label>Hangi departmanlara açık?</label>
+                            <div id="chat-form-depts" class="chat-form-depts"></div>
+                        </div>
+                        <div class="form-group-field">
+                            <label for="chat-form-postlevel">Kimler yazabilir?</label>
+                            <select id="chat-form-postlevel">
+                                <option value="all">Herkes</option>
+                                <option value="admins">Yalnızca Yöneticiler</option>
+                            </select>
+                        </div>
+                        <div class="form-group-field" id="chat-pin-group" style="display:none;">
+                            <label class="chat-task-toggle"><input type="checkbox" id="chat-form-pin"><span data-i18n="chat.pin">Sabitle</span></label>
+                        </div>
+                        <div class="form-submit-row">
+                            <button type="button" id="chat-form-delete" class="chat-form-delete-btn" style="display:none;"><i class="" data-icon="delete"></i><span data-i18n="chat.delete_channel">Kanalı Sil</span></button>
+                            <button type="button" id="chat-form-save" class="chrome-btn-accent">Kaydet</button>
+                            <button type="button" id="chat-form-cancel" class="chrome-btn-outline">İptal</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+<div class="tab-panel" id="tab-subscriptions">
+                <div class="panel-section-title">
+                    <h2 data-i18n="subs.title">Abonelik Yönetimi</h2>
+                    <p data-i18n="subs.desc">Kullanıcı hesaplarına manuel Plus, Pro veya Ultra abonelik tanımlayın, aktif atamaları takip edin.</p>
+                </div>
+
+                <div class="grid-layout">
+                    <!-- Abonelik Atama Formu -->
+                    <div class="panel-card col-span-7" id="subscription-manager" data-panel="subscriptions.assign">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="workspace_premium"></i>
+                                <h3 data-i18n="subs.form_title">Kullanıcıya Abonelik Tanımla</h3>
+                            </div>
+                        </div>
+                        <p class="intro-description" data-i18n="subs.form_desc">Kullanıcının hesap e-postasını girerek seçtiğiniz aboneliği anında otomatik olarak atayın; süre en fazla 1 yıl olabilir.</p>
+
+                        <form id="subscription-form" class="form-stack" style="margin-top:10px;">
+                            <div class="flex-row">
+                                <div class="form-group-field flex-grow">
+                                    <label for="sub-username" data-i18n="subs.username_label">Kullanıcı İsmi</label>
+                                    <div class="form-input-wrapper">
+                                        <i class="" data-icon="person"></i>
+                                        <input type="text" id="sub-username" data-i18n-placeholder="subs.username_ph" placeholder="Uygulamadaki kullanıcı adı" autocomplete="off">
+                                    </div>
+                                    <span class="form-field-info" data-i18n="subs.username_hint">Listede görüntülemek için; atama e-posta ile eşleştirilir.</span>
+                                </div>
+                                <div class="form-group-field flex-grow">
+                                    <label for="sub-user-email" data-i18n="subs.email_label">Hesap Gmaili (E-posta)</label>
+                                    <div class="form-input-wrapper">
+                                        <i class="" data-icon="mail"></i>
+                                        <input type="email" id="sub-user-email" data-i18n-placeholder="admin.email_placeholder" placeholder="kullanici@gmail.com" autocomplete="off" required>
+                                    </div>
+                                    <span class="form-field-info" data-i18n="subs.email_hint">Kullanıcı sisteme bu e-posta ile kayıtlı olmalıdır.</span>
+                                </div>
+                            </div>
+
+                            <div class="flex-row">
+                                <div class="form-group-field flex-grow">
+                                    <label for="sub-plan" data-i18n="subs.plan_label">Abonelik Seviyesi</label>
+                                    <select id="sub-plan" required></select>
+                                </div>
+                            </div>
+
+                            <div class="form-group-field">
+                                <label for="sub-end" data-i18n="subs.end_label">Bitiş Zamanı (En Fazla 1 Yıl)</label>
+                                <input type="datetime-local" id="sub-end" required>
+                                <span class="form-field-info" data-i18n="subs.duration_hint">Abonelik anında başlar; en fazla 1 yıl ileri tarih ayarlanabilir.</span>
+                            </div>
+
+                            <div class="form-submit-row">
+                                <button type="submit" id="assign-subscription-btn" class="chrome-btn-accent">
+                                    <i class="" data-icon="workspace_premium"></i>
+                                    <span data-i18n="subs.assign_btn">Aboneliği Tanımla</span>
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Toplu Tanımlama (basınca açılır; ham girdi sunucuda ayrıştırılır) -->
+                        <div id="sub-bulk-section" style="margin-top: 14px;">
+                            <button type="button" id="sub-bulk-toggle" class="chrome-btn-outline sub-bulk-toggle" aria-expanded="false" aria-controls="sub-bulk-panel">
+                                <i class=" sub-chevron" data-icon="expand_more"></i>
+                                <span data-i18n="subs.bulk_toggle">Toplu Tanımlama</span>
+                            </button>
+                            <div id="sub-bulk-panel" class="form-stack" style="display: none; margin-top: 10px;">
+                                <p class="intro-description" data-i18n="subs.bulk_hint">Posta listesini yapıştır: virgül, noktalı virgül, boşluk veya alt alta ayırabilirsin — ayırma işini sunucu yapar ve listeyi 50'lik gruplara bölerek aralıklarla tanımlar. Abonelik seviyesi ve bitiş zamanı yukarıdaki alanlardan alınır.</p>
+                                <div class="form-group-field">
+                                    <label for="sub-bulk-input" data-i18n="subs.bulk_label">Posta Listesi</label>
+                                    <textarea id="sub-bulk-input" rows="6" data-i18n-placeholder="subs.bulk_placeholder" placeholder="posta1@gmail.com, posta2@gmail.com, posta3@gmail.com ..."></textarea>
+                                </div>
+                                <div class="form-submit-row">
+                                    <button type="button" id="sub-bulk-submit" class="chrome-btn-accent">
+                                        <i class="" data-icon="playlist_add"></i>
+                                        <span data-i18n="subs.bulk_btn">Toplu Tanımla</span>
+                                    </button>
+                                </div>
+                                <div id="sub-bulk-result" class="scrollable-list-box-small" style="display: none;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Aktif Abonelik Listesi -->
+                    <div class="panel-card col-span-5" id="subscription-list-manager" data-panel="subscriptions.list">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="history"></i>
+                                <h3 data-i18n="subs.list_title">Tanımlı Abonelikler</h3>
+                            </div>
+                            <button type="button" id="refresh-subscriptions-btn" class="btn-refresh" data-i18n-title="subs.refresh" title="Yenile">
+                                <i class="" data-icon="refresh"></i>
+                                <span data-i18n="subs.refresh">Yenile</span>
+                            </button>
+                        </div>
+                        <div class="search-input-field">
+                            <i class=" search-icon" data-icon="search"></i>
+                            <input type="search" id="subscriptions-search" data-i18n-placeholder="subs.search" placeholder="İsim, e-posta veya seviye ara..." aria-label="Abonelikleri ara">
+                        </div>
+                        <div id="subscriptions-list" class="dept-users-list" aria-live="polite">
+                            <p class="form-hint dept-list-message" data-i18n="subs.load_hint">Listeyi yüklemek için Yenile butonuna basın.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+<div class="tab-panel" id="tab-profile">
+                <div class="panel-section-title">
+                    <h2 data-i18n="profile.title">Profilim</h2>
+                    <p data-i18n="profile.desc">Hesap bilgilerinizi ve panel erişiminizi görüntüleyin.</p>
+                </div>
+                <div class="grid-layout">
+                    <div class="panel-card col-span-6 profile-card">
+                        <div class="profile-heading">
+                            <div class="profile-avatar-ring">
+                                <i class="profile-avatar-icon " data-icon="person"></i>
+                            </div>
+                            <div class="profile-heading-info">
+                                <h3 id="profile-name">—</h3>
+                                <p id="profile-email">—</p>
+                            </div>
+                            <button type="button" id="profile-menu-btn" class="panel-menu-btn" style="display:inline-flex;" title="Menü">
+                                <i class="" data-icon="apps"></i>
+                            </button>
+                            <div id="profile-menu-pop" class="panel-menu-pop profile-menu-pop" style="display:none;"></div>
+                        </div>
+                        <form id="profile-form" class="form-stack">
+                            <div class="form-group-field">
+                                <label for="profile-display-name" data-i18n="profile.display_name">Görünen ad</label>
+                                <input id="profile-display-name" type="text" maxlength="80" autocomplete="name">
+                            </div>
+                            <button type="submit" class="chrome-btn-accent"><i class="" data-icon="save"></i><span data-i18n="profile.save">Profili Kaydet</span></button>
+                        </form>
+                    </div>
+                    <div class="panel-card col-span-6 profile-card">
+                        <div class="card-title-row"><div class="title-details"><i class="" data-icon="verified_user"></i><h3 data-i18n="profile.access">Erişim Bilgileri</h3></div></div>
+                        <dl class="profile-details">
+                            <div><dt data-i18n="profile.role">Rol</dt><dd id="profile-role">—</dd></div>
+                            <div><dt data-i18n="profile.departments">Departmanlar</dt><dd id="profile-departments">—</dd></div>
+                            <div><dt data-i18n="profile.uid">Kullanıcı kimliği</dt><dd><span id="profile-uid">—</span><button type="button" id="copy-uid-btn" class="profile-copy-btn" title="Kopyala"><i class="" data-icon="content_copy"></i></button></dd></div>
+                        </dl>
+                        <div class="panel-menu-section-title" style="margin-top:16px;" data-i18n="perms.menu_access">Erişim</div>
+                        <div id="profile-perms" class="profile-perms"></div>
+                    </div>
+                </div>
             </div>
         </main>
 
@@ -944,189 +1243,6 @@
 
     <!-- Hızlı Filtreleme & Buton Senkronizasyon Betikleri -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const dockButtons = document.querySelectorAll('.dock-btn');
-            const scrollContainer = document.getElementById('tab-scroll-container');
-            const panels = document.querySelectorAll('.tab-panel');
-
-            if (!scrollContainer || dockButtons.length === 0 || panels.length === 0) return;
-
-            // Initial snap on load to prevent scroll restoration bugs
-            const initialActiveBtn = document.querySelector('.dock-btn.active');
-            if (initialActiveBtn) {
-                const initialTargetId = initialActiveBtn.getAttribute('data-target');
-                const initialTargetPanel = document.getElementById(initialTargetId);
-                if (initialTargetPanel) {
-                    scrollContainer.scrollLeft = initialTargetPanel.offsetLeft;
-                }
-            }
-
-            // Click listener for tab switcher (smooth scrolling)
-            dockButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const targetId = btn.getAttribute('data-target');
-                    const targetPanel = document.getElementById(targetId);
-                    
-                    if (targetPanel) {
-                        scrollContainer.scrollTo({
-                            left: targetPanel.offsetLeft,
-                            behavior: 'smooth'
-                        });
-                        
-                        dockButtons.forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                    }
-                });
-            });
-
-            // Scroll listener for swipe-to-switch synchronization (debounced for stability)
-            let scrollTimeout;
-            scrollContainer.addEventListener('scroll', () => {
-                clearTimeout(scrollTimeout);
-                scrollTimeout = setTimeout(() => {
-                    const width = scrollContainer.clientWidth;
-                    if (width === 0) return;
-                    const index = Math.round(scrollContainer.scrollLeft / width);
-                    
-                    const activePanel = panels[index];
-                    if (activePanel) {
-                        const activeId = activePanel.id;
-                        const targetBtn = document.querySelector(`.dock-btn[data-target="${activeId}"]`);
-                        
-                        if (targetBtn && !targetBtn.classList.contains('active')) {
-                            dockButtons.forEach(b => b.classList.remove('active'));
-                            targetBtn.classList.add('active');
-                            targetBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
-                    }
-                }, 100);
-            });
-
-            // Align scroll position on window resize
-            window.addEventListener('resize', () => {
-                const activeBtn = document.querySelector('.dock-btn.active');
-                if (activeBtn) {
-                    const targetId = activeBtn.getAttribute('data-target');
-                    const targetPanel = document.getElementById(targetId);
-                    if (targetPanel) {
-                        scrollContainer.scrollLeft = targetPanel.offsetLeft;
-                    }
-                }
-            });
-            
-            // Yenileme butonuna basıldığında filtreleri sıfırla
-            const refBtn = document.getElementById('refresh-contributors-btn');
-            if (refBtn) {
-                refBtn.addEventListener('click', () => {
-                    filterContributors('all');
-                    const searchInput = document.getElementById('contributor-search');
-                    if (searchInput) searchInput.value = '';
-                });
-            }
-        });
-
-        // Hızlı filtreleme
-        window.filterContributors = function(filterType) {
-            const listContainer = document.getElementById('contributors-list-container');
-            if (!listContainer) return;
-            const items = listContainer.children;
-            
-            document.querySelectorAll('.filter-chip').forEach(btn => {
-                if (btn.getAttribute('data-filter') === filterType) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-
-            let matchCount = 0;
-            for (let item of items) {
-                if (item.tagName === 'P') continue;
-
-                const toggleInput = item.querySelector('.verify-toggle');
-                const isVerified = toggleInput ? toggleInput.checked : false;
-                const innerText = item.innerHTML || "";
-                const textContent = item.textContent || "";
-                
-                const ageMatch = textContent.match(/(?:Age|Yaş):\s*(\d+)/i);
-                const age = ageMatch ? parseInt(ageMatch[1], 10) : 0;
-                
-                const hasLinkedIn = innerText.includes('LinkedIn');
-                const hasGitHub = innerText.includes('GitHub');
-                const hasInterview = innerText.includes('Interview:');
-
-                let visible = true;
-                if (filterType === 'verified' && !isVerified) visible = false;
-                else if (filterType === 'unverified' && isVerified) visible = false;
-                else if (filterType === 'age-14-15' && (age < 14 || age > 15)) visible = false;
-                else if (filterType === 'age-16-17' && (age < 16 || age > 17)) visible = false;
-                else if (filterType === 'age-18' && age < 18) visible = false;
-                else if (filterType === 'linkedin' && !hasLinkedIn) visible = false;
-                else if (filterType === 'github' && !hasGitHub) visible = false;
-                else if (filterType === 'interview' && !hasInterview) visible = false;
-
-                item.style.display = visible ? 'flex' : 'none';
-                if (visible) matchCount++;
-            }
-
-            const noMatchId = 'contributor-no-match-alert';
-            let noMatchAlert = document.getElementById(noMatchId);
-            if (matchCount === 0 && items.length > 0) {
-                if (!noMatchAlert) {
-                    noMatchAlert = document.createElement('p');
-                    noMatchAlert.id = noMatchId;
-                    noMatchAlert.className = 'form-hint';
-                    noMatchAlert.style.cssText = 'text-align:center; padding:2rem; color: var(--accent-clay); font-weight:600; width:100%;';
-                    noMatchAlert.textContent = window.__('contributors.no_match');
-                    listContainer.appendChild(noMatchAlert);
-                }
-            } else {
-                if (noMatchAlert) noMatchAlert.remove();
-            }
-        };
-
-        // İstemci tarafı hızlı arama
-        window.searchContributorsLocal = function() {
-            const searchInput = document.getElementById('contributor-search');
-            if (!searchInput) return;
-            const query = searchInput.value.toLowerCase().trim();
-            const listContainer = document.getElementById('contributors-list-container');
-            if (!listContainer) return;
-            const items = listContainer.children;
-            
-            if (query.length > 0) {
-                document.querySelectorAll('.filter-chip').forEach(btn => {
-                    if (btn.getAttribute('data-filter') === 'all') btn.classList.add('active');
-                    else btn.classList.remove('active');
-                });
-            }
-
-            let matchCount = 0;
-            for (let item of items) {
-                if (item.tagName === 'P' || item.id === 'contributor-no-match-alert') continue;
-                
-                const text = item.textContent.toLowerCase();
-                const visible = text.includes(query);
-                item.style.display = visible ? 'flex' : 'none';
-                if (visible) matchCount++;
-            }
-
-            const noMatchId = 'contributor-no-match-alert';
-            let noMatchAlert = document.getElementById(noMatchId);
-            if (matchCount === 0 && items.length > 0) {
-                if (!noMatchAlert) {
-                    noMatchAlert = document.createElement('p');
-                    noMatchAlert.id = noMatchId;
-                    noMatchAlert.className = 'form-hint';
-                    noMatchAlert.style.cssText = 'text-align:center; padding:2rem; color: var(--accent-clay); font-weight:600; width:100%;';
-                    noMatchAlert.textContent = window.__('contributors.search_no_match');
-                    listContainer.appendChild(noMatchAlert);
-                }
-            } else {
-                if (noMatchAlert) noMatchAlert.remove();
-            }
-        };
-
         // Verileri CSV/JSON Formatında Yerel Olarak Derleme ve İndirme Betiği
         window.exportDataLocal = function() {
             const dataType = document.getElementById('export-data-type').value;

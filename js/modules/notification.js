@@ -1,8 +1,9 @@
+import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/notification.js
 
 import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
-import { showToast } from '../utils/ui.js';
+import { showToast, __ } from '../utils/ui.js';
 
 let unsubscribeFromScheduledTasks = null;
 
@@ -13,7 +14,7 @@ function handleScheduleSwitchChange() {
     const isScheduled = dom.notificationScheduleSwitch.checked;
     dom.scheduleDateTimePicker.style.display = isScheduled ? 'block' : 'none';
     document.getElementById('notification-schedule-time').required = isScheduled;
-    document.getElementById('submit-notification-btn').textContent = isScheduled ? 'Schedule Notification' : 'Send Notification Now';
+    document.getElementById('submit-notification-btn').textContent = isScheduled ? __('notif.schedule') : __('notif.send_now');
 }
 
 /**
@@ -205,14 +206,16 @@ async function handleCancelTask(taskId) {
  * Attaches a real-time listener for scheduled notifications.
  */
 export function listenForScheduledTasks() {
+    const finishLoading = beginPanelLoading(dom.scheduledTasksListContainer);
     if (unsubscribeFromScheduledTasks) unsubscribeFromScheduledTasks();
 
     unsubscribeFromScheduledTasks = db.collection('scheduledNotifications')
         .orderBy('scheduleTime', 'asc')
         .onSnapshot(snapshot => {
+        finishLoading();
             dom.scheduledTasksListContainer.innerHTML = '';
             if (snapshot.empty) {
-                dom.scheduledTasksListContainer.innerHTML = '<p class="form-hint">No scheduled notifications found.</p>';
+                dom.scheduledTasksListContainer.innerHTML = `<p class="form-hint">${__('notif.empty')}</p>`;
                 return;
             }
             snapshot.forEach(doc => {
@@ -236,6 +239,7 @@ export function listenForScheduledTasks() {
                 dom.scheduledTasksListContainer.appendChild(item);
             });
         }, error => {
+        finishLoading();
             console.error("[CLIENT] Error listening for scheduled tasks:", error);
             dom.scheduledTasksListContainer.innerHTML = '<p class="form-hint" style="color:var(--error-color);">Error loading tasks.</p>';
         });

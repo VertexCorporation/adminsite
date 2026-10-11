@@ -1,3 +1,4 @@
+import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../utils/loading.js';
 // js/modules/models.js
 
 /**
@@ -484,7 +485,7 @@ function renderManualModelsList() {
 
     dom.manualModelsListContainer.innerHTML = '';
     if (!allManualModels || allManualModels.length === 0) {
-        dom.manualModelsListContainer.innerHTML = '<p class="form-hint">No manual models found.</p>';
+        dom.manualModelsListContainer.innerHTML = `<p class="form-hint">${__('models.no_models')}</p>`;
         return;
     }
 
@@ -501,9 +502,9 @@ function renderManualModelsList() {
                 <span class="model-type-badge ${sanitizeHTML(modelType)}">${sanitizeHTML(modelType)}</span>
             </div>
             <div class="item-actions">
-                <button class="edit-btn" data-id="${sanitizeHTML(model.id)}">Edit</button>
-                <button class="translations-btn" data-id="${sanitizeHTML(model.id)}">Translations</button>
-                <button class="delete-btn" data-id="${sanitizeHTML(model.id)}">Delete</button>
+                <button class="edit-btn" data-id="${sanitizeHTML(model.id)}">${__('common.edit')}</button>
+                <button class="translations-btn" data-id="${sanitizeHTML(model.id)}">${__('common.translations')}</button>
+                <button class="delete-btn" data-id="${sanitizeHTML(model.id)}">${__('common.delete')}</button>
             </div>`;
         dom.manualModelsListContainer.appendChild(item);
     });
@@ -529,8 +530,8 @@ function renderAllModelsExplorer() {
                 <summary>
                     <span class="series-name">${sanitizeHTML(sName)} ${isHidden ? '(Hidden)' : ''}</span>
                     <div class="series-actions">
-                        <button class="edit-series-desc-btn" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}">Edit Desc</button>
-                        <button class="${isHidden ? 'unhide-series-btn' : 'hide-series-btn'}" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}">${isHidden ? 'Unhide' : 'Hide'}</button>
+                        <button class="edit-series-desc-btn" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}">${__('models.edit_desc')}</button>
+                        <button class="${isHidden ? 'unhide-series-btn' : 'hide-series-btn'}" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}">${isHidden ? __('common.unhide') : __('common.hide')}</button>
                     </div>
                 </summary>
                 <div class="details-content">`;
@@ -546,8 +547,8 @@ function renderAllModelsExplorer() {
                             <span class="model-id-label">${sanitizeHTML(model.id)}</span>
                         </div>
                         <div class="item-actions">
-                            <button class="translations-btn" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}" data-vname="${sanitizeHTML(vName)}" ${!hasDesc ? 'disabled' : ''}>Translations</button>
-                            ${model.source === 'openrouter' ? `<button class="block-btn" data-id="${sanitizeHTML(model.id)}" title="Permanently block this model.">🚫 Block</button>` : ''}
+                            <button class="translations-btn" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}" data-vname="${sanitizeHTML(vName)}" ${!hasDesc ? 'disabled' : ''}>${__('common.translations')}</button>
+                            ${model.source === 'openrouter' ? `<button class="block-btn" data-id="${sanitizeHTML(model.id)}" title="Permanently block this model.">${__('models.block')}</button>` : ''}
                         </div>
                     </div>`;
                 }
@@ -565,18 +566,6 @@ function renderAllModelsExplorer() {
  * @param {string} text - The text to display below the loader.
  * @returns {string} The HTML string for the loader.
  */
-function createLoaderHTML(text) {
-    return `
-        <div class="content-loader-wrapper">
-            <svg class="loader-logo" viewBox="0 0 100 100">
-                <polygon class="logo-bg" points="50,15 95,85 5,85"></polygon>
-                <polygon class="logo-line" points="50,15 95,85 5,85"></polygon>
-            </svg>
-            <p>${sanitizeHTML(text)}</p>
-        </div>
-    `;
-}
-
 /**
  * Fetches the complete models.json database, processes it to find manual models
  * and warnings, and then triggers the rendering of all relevant UI components.
@@ -584,10 +573,8 @@ function createLoaderHTML(text) {
 export async function fetchFullModelsData() {
     console.log('[MODELS] Fetching full models database...');
 
-    // Display animated loaders while data is being fetched.
-    dom.manualModelsListContainer.innerHTML = createLoaderHTML('Loading Manual Models...');
-    dom.allModelsListContainer.innerHTML = createLoaderHTML('Loading Full Database...');
-
+    const finishLoading = beginPanelLoading(dom.manualModelsListContainer);
+    const finishDatabase = beginPanelLoading(dom.allModelsListContainer);
     try {
         const response = await fetch(FULL_DB_URL, { cache: 'no-store' });
         if (!response.ok) throw new Error(`Server responded with ${response.status}`);
@@ -637,13 +624,15 @@ export async function fetchFullModelsData() {
     } catch (error) {
         console.error('[MODELS] Critical error fetching models data:', error);
         showToast("Could not load the main models database. Editing is disabled.", "error");
+        if (modelsData) return;
         modelsData = null;
         allManualModels = [];
 
         const errorHTML = `<p class="form-hint" style="color:var(--error-color);">Failed to load data. Please refresh.</p>`;
         dom.manualModelsListContainer.innerHTML = errorHTML;
         dom.allModelsListContainer.innerHTML = errorHTML;
-    }
+        [dom.manualModelsListContainer,dom.allModelsListContainer].forEach(container=>{const retry=document.createElement('button');retry.className='chrome-btn-outline';retry.textContent=__('common.retry');retry.onclick=fetchFullModelsData;container.append(retry);});
+    } finally { finishLoading(); finishDatabase(); }
 }
 
 // ===================================================================================

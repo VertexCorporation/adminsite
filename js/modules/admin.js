@@ -1,11 +1,158 @@
+import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../utils/loading.js';
 // js/modules/admin.js
 
-import { showToast, __ } from '../utils/ui.js';
+import { showToast, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
-import { addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn } from '../core/firebase.js';
+import { auth, addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, setUserSubscriptionFn, bulkSetUserSubscriptionsFn } from '../core/firebase.js';
+import { DEPARTMENTS, getEffectivePanelLevel } from './roles.js';
 
 // --- Module state for attributions ---
 let attributionsOutOfSync = false;
+let departmentUsers = [];
+
+// --- Premium Abonelik Atama (grantPremium) ---
+// Admin panelinin abonelik atama akışı: Fulcrum'daki setUserSubscription
+// Cloud Function'ını çağırır. 1 yıl sınırı burada da zorlanır; asıl garanti
+// sunucu tarafındadır (validateAdminGrant).
+const MAX_GRANT_TOLERANCE_MS = 60 * 1000;
+
+/**
+ * Kullanıcının hesabına Plus/Pro/Ultra abonelik tanımlar.
+ * @param {object} input
+ * @param {string} input.email Hesabın Gmail adresi (zorunlu).
+ * @param {string} [input.displayName] Panel listesinde görünen kullanıcı ismi.
+ * @param {'plus'|'pro'|'ultra'} input.tier Abonelik seviyesi (zorunlu).
+ * @param {string|Date|number} input.expiresAt Bitiş zamanı (zorunlu, en fazla 1 yıl).
+ * @returns {Promise<object>} Sunucudan dönen { success, uid, tier, expiresAtMillis }.
+ */
+export async function grantPremium({ email, displayName = '', tier, expiresAt }) {
+    if (!email || !tier || !expiresAt) {
+        throw new Error('grantPremium: email, tier ve expiresAt zorunludur.');
+    }
+    const expiryDate = new Date(expiresAt);
+    if (isNaN(expiryDate.getTime())) {
+        throw new Error('grantPremium: expiresAt geçerli bir tarih olmalıdır.');
+    }
+    const maxExpiry = new Date();
+    maxExpiry.setFullYear(maxExpiry.getFullYear() + 1);
+    if (expiryDate.getTime() - maxExpiry.getTime() > MAX_GRANT_TOLERANCE_MS) {
+        throw new Error('Abonelik süresi en fazla 1 yıl olabilir.');
+    }
+
+    const result = await setUserSubscriptionFn({
+        email: String(email).trim(),
+        displayName: displayName ? String(displayName).trim() : null,
+        tier,
+        expiresAt: expiryDate.toISOString(),
+    });
+    return result.data;
+}
+
+/**
+ * Toplu abonelik atama: ham postalistesini sunucuya ilettiği gibi gönderir;
+ * ayırma/dogrulama/batch sunucuda yapılır (bulkSetUserSubscriptions).
+ * Seviye ve bitiş zamanı tüm adreslere uygulanır; süre sınırı burada da kontrol edilir.
+ * @param {object} input
+ * @param {string} input.raw Yapıştırılan ham posta listesi (virgül/boşluk/alt alta — karışık olabilir).
+ * @param {'plus'|'pro'|'ultra'} input.tier Abonelik seviyesi (zorunlu).
+ * @param {string|Date|number} input.expiresAt Bitiş zamanı (zorunlu, en fazla 1 yıl).
+ * @returns {Promise<object>} { success, valid, grantedCount, failedCount, failed, invalidTokens }
+ */
+export async function grantPremiumBulk({ raw, tier, expiresAt }) {
+    if (!raw || !tier || !expiresAt) {
+        throw new Error('grantPremiumBulk: raw, tier ve expiresAt zorunludur.');
+    }
+    const expiryDate = new Date(expiresAt);
+    if (isNaN(expiryDate.getTime())) {
+        throw new Error('grantPremiumBulk: expiresAt geçerli bir tarih olmalıdır.');
+    }
+    const maxExpiry = new Date();
+    maxExpiry.setFullYear(maxExpiry.getFullYear() + 1);
+    if (expiryDate.getTime() - maxExpiry.getTime() > MAX_GRANT_TOLERANCE_MS) {
+        throw new Error('Abonelik süresi en fazla 1 yıl olabilir.');
+    }
+
+    const result = await bulkSetUserSubscriptionsFn({
+        raw: String(raw),
+        tier,
+        expiresAt: expiryDate.toISOString(),
+    });
+    return result.data;
+}
+
+function selectedDepartments() {
+    return [...document.querySelectorAll('#dept-options input:checked')].map(input => input.value);
+}
+
+function renderDepartmentOptions() {
+    const container = document.getElementById('dept-options');
+    const selected = new Set(selectedDepartments());
+    container.replaceChildren();
+    DEPARTMENTS.forEach(dept => {
+        const label = document.createElement('label');
+        label.className = 'dept-choice';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.value = dept.id;
+        input.checked = selected.has(dept.id);
+        label.append(input, document.createTextNode(__(dept.nameKey)));
+        container.append(label);
+    });
+}
+
+function renderDepartmentUsers() {
+    const container = document.getElementById('dept-users-list');
+    const query = document.getElementById('dept-users-search').value.trim().toLocaleLowerCase();
+    const filtered = departmentUsers.filter(user =>
+        [user.displayName, user.email, ...(user.departments || [])]
+            .some(value => String(value || '').toLocaleLowerCase().includes(query))
+    );
+    if (!filtered.length) {
+        container.innerHTML = `<p class="form-hint dept-list-message">${query ? __('dept.no_match') : __('dept.empty')}</p>`;
+        return;
+    }
+    container.innerHTML = filtered.map(user => `
+        <div class="dept-user-row">
+            <div class="dept-user-main">
+                <strong>${sanitizeHTML(user.displayName || user.email || user.uid)}</strong>
+                ${user.displayName ? `<span>${sanitizeHTML(user.email || '')}</span>` : ''}
+                <div class="dept-badges">${user.departments.map(id => `<span class="dept-badge">${sanitizeHTML(id)}</span>`).join('')}</div>
+            </div>
+            ${getEffectivePanelLevel('system.deptUsers') === 'write' ? `<button type="button" class="dept-user-edit chrome-btn-outline" data-uid="${sanitizeHTML(user.uid)}">${__('dept.edit')}</button>` : ''}
+        </div>
+    `).join('');
+}
+
+async function loadDepartmentUsers() {
+    const container = document.getElementById('dept-users-list');
+    const button = document.getElementById('refresh-dept-users-btn');
+    const finishLoading = beginPanelLoading(container);
+    button.disabled = true;
+    try {
+        const users = [];
+        let pageToken;
+        do {
+            const result = await listDepartmentUsersFn({ pageToken: pageToken || null });
+            users.push(...(result.data.users || []));
+            pageToken = result.data.nextPageToken || null;
+        } while (pageToken);
+        departmentUsers = users.map(user => ({
+            uid: String(user.uid || ''),
+            email: String(user.email || ''),
+            displayName: String(user.displayName || ''),
+            departments: Array.isArray(user.departments) ? user.departments : (user.department ? [user.department] : [])
+        })).filter(user => user.departments.length);
+        departmentUsers.sort((a, b) => a.email.localeCompare(b.email));
+        renderDepartmentUsers();
+    } catch (error) {
+        finishLoading();
+        console.error('[CLIENT] Error loading department users:', error);
+        container.innerHTML = `<p class="form-hint dept-list-message">${__('dept.load_error')}</p>`;
+    } finally {
+        finishLoading();
+        button.disabled = false;
+    }
+}
 
 /**
  * Updates the maintenance mode UI based on the server's status.
@@ -175,7 +322,7 @@ async function handleVertexStatusToggle(e) {
         showToast(`Error: ${error.message}`, 'error');
     } finally {
         toggleBtn.disabled = false;
-        toggleBtn.innerHTML = `<span class="material-symbols-rounded">swap_vert</span><span>Toggle isVertex Status</span>`;
+        toggleBtn.innerHTML = `<i class="" data-icon="swap_vert"></i><span>Toggle isVertex Status</span>`;
     }
 }
 
@@ -229,11 +376,11 @@ async function handleRemoveAdminSubmit(e) {
 /**
  * Fetches and displays the list of active administrators.
  */
-async function loadAdminsList() {
+export async function loadAdminsList() {
     const container = document.getElementById('admin-list-container');
     if (!container) return;
     
-    container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem;">${__('system.loading_admins')}</p>`;
+    const finishLoading = beginPanelLoading(container);
 
     try {
         const result = await listAdminsFn();
@@ -249,7 +396,7 @@ async function loadAdminsList() {
                     debugInfo += `<br><small style="color: var(--text-muted);">Claims found: ${JSON.stringify(debug.claimsLog)}</small>`;
                 }
             }
-            container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem;">Sistem yöneticisi bulunamadı.${debugInfo}</p>`;
+            container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem;">${__('system.admins_empty')}${debugInfo}</p>`;
             return;
         }
 
@@ -266,16 +413,79 @@ async function loadAdminsList() {
         });
         container.innerHTML = html;
     } catch (error) {
+        finishLoading();
         console.error("[CLIENT] Error loading admins list:", error);
         const details = error.code ? `${error.code}: ${error.message}` : error.message;
-        container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem; color: var(--accent-clay);">Hata: ${details}</p>`;
+        container.innerHTML = `<p class="form-hint" style="text-align:center; padding: 1rem; color: var(--accent-clay);">${__('system.error')}: ${sanitizeHTML(details)}</p>`;
+    } finally { finishLoading(); }
+}
+
+/**
+ * Handles the submission of the form to assign a department to a user.
+ * @param {Event} e - The form submission event.
+ */
+async function handleDeptAssignSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('dept-user-email').value.trim();
+    const departments = selectedDepartments();
+    if (!departments.length) {
+        showToast(__('dept.select_hint'), 'error');
+        return;
+    }
+    const btn = document.querySelector('#dept-assign-form button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = `<span>${__('system.saving')}</span>`;
+
+    try {
+        let result;
+        try {
+            result = await setUserDepartmentsFn({ email, departments });
+        } catch (error) {
+            if (error.code !== 'functions/not-found') throw error;
+            if (departments.length !== 1) {
+                throw new Error(__('dept.backend_required'));
+            }
+            result = await setUserDepartmentFn({ email, department: departments[0] });
+        }
+        showToast(result.data.message || __('dept.assign_success'), 'success');
+        document.getElementById('dept-assign-form').reset();
+        await loadDepartmentUsers();
+    } catch (error) {
+        console.error("[CLIENT] Error assigning department:", error);
+        showToast(`${__('system.error')}: ${error.message}`, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="" data-icon="assignment_ind"></i><span>${__('dept.assign_btn')}</span>`;
     }
 }
 
 /**
  * Initializes all event listeners and logic for the admin management module.
  */
+export function refreshDepartmentUsers() {
+    return loadDepartmentUsers();
+}
+
 export function initAdminModule() {
+    renderDepartmentOptions();
+    onLangChange(() => {
+        renderDepartmentOptions();
+        if (departmentUsers.length) renderDepartmentUsers();
+    });
+    document.getElementById('refresh-dept-users-btn').addEventListener('click', loadDepartmentUsers);
+    document.getElementById('dept-users-search').addEventListener('input', renderDepartmentUsers);
+    document.getElementById('dept-users-list').addEventListener('click', event => {
+        const button = event.target.closest('.dept-user-edit');
+        if (!button) return;
+        const user = departmentUsers.find(item => item.uid === button.dataset.uid);
+        if (!user) return;
+        document.getElementById('dept-user-email').value = user.email;
+        document.querySelectorAll('#dept-options input').forEach(input => {
+            input.checked = user.departments.includes(input.value);
+        });
+        document.getElementById('dept-assign-manager').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('dept-user-email').focus({ preventScroll: true });
+    });
     dom.adminForm.addEventListener('submit', handleAdminFormSubmit);
     dom.maintenanceActionBtn.addEventListener('click', handleMaintenanceToggle);
     initializeMaintenanceStatus();
@@ -304,6 +514,9 @@ export function initAdminModule() {
         refreshAdminsBtn.addEventListener('click', loadAdminsList);
     }
     
-    // Load admins list initially
-    loadAdminsList();
+    const deptAssignForm = document.getElementById('dept-assign-form');
+    if (deptAssignForm) deptAssignForm.addEventListener('submit', handleDeptAssignSubmit);
+    
+    // Load admins list initially (giris oncesi cagrilmaz; login akisi yeniden cagirir)
+    if (auth && auth.currentUser) loadAdminsList();
 }

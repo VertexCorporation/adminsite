@@ -1,8 +1,9 @@
+import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/news.js
 
 import { db, createNewsArticleFn, deleteNewsArticleFn, getCoverUploadUrlFn } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
-import { showToast } from '../utils/ui.js';
+import { __, showToast } from '../utils/ui.js';
 
 let unsubscribeFromArticles = null;
 
@@ -83,14 +84,16 @@ async function handleDeleteArticle(slug) {
  * Attaches a real-time listener to the 'news' collection in Firestore.
  */
 export function listenForArticles() {
+    const finishLoading = beginPanelLoading(dom.articlesListContainer);
     if (unsubscribeFromArticles) unsubscribeFromArticles(); 
 
     console.log("[CLIENT] Attaching real-time listener for 'news' collection.");
     unsubscribeFromArticles = db.collection('news').orderBy('publishedAt', 'desc').onSnapshot(snapshot => {
+        finishLoading();
         dom.articlesListContainer.innerHTML = '';
         if (snapshot.empty) {
             window.loadedArticles = [];
-            dom.articlesListContainer.innerHTML = '<p class="form-hint">No articles found.</p>';
+            dom.articlesListContainer.innerHTML = `<p class="form-hint">${__('news.empty')}</p>`;
             return;
         }
         const articles = [];
@@ -103,12 +106,13 @@ export function listenForArticles() {
                     <span class="item-title">${doc.data().translations.en.title || 'Untitled'}</span>
                 </div>
                 <div class="item-actions">
-                    <button class="delete-btn" data-slug="${doc.id}">Delete</button>
+                    <button class="delete-btn" data-slug="${doc.id}">${__('common.delete')}</button>
                 </div>`;
             dom.articlesListContainer.appendChild(item);
         });
         window.loadedArticles = articles;
     }, error => {
+        finishLoading();
         console.error("[CLIENT] Error listening for article updates:", error);
         showToast("Could not load articles in real-time.", 'error');
     });

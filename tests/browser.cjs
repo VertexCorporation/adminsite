@@ -1,0 +1,112 @@
+const {chromium} = require('playwright');
+const fs=require('fs'),path=require('path'),http=require('http'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..');
+const server=http.createServer((req,res)=>{const p=path.join(root,decodeURIComponent(req.url.split('?')[0])==='/'?'index.html':req.url.split('?')[0]);if(!p.startsWith(root))return res.end();fs.readFile(p,(err,data)=>{if(err){res.statusCode=404;return res.end();}res.setHeader('Content-Type',p.endsWith('.js')?'text/javascript':p.endsWith('.css')?'text/css':p.endsWith('.png')?'image/png':'text/html');res.end(data);});});
+(async()=>{
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const browser=await chromium.launch({...(process.env.CHROME_PATH ? {executablePath:process.env.CHROME_PATH} : {}),headless:true});
+const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=true,history=[],people=null,contributorDelay=0,failContributors=false; let joiningDate=null;
+
+const person={id:'person',name:'Example Participant',email:'person@example.invalid',language:'en',hasVerified:false,createdAt:{_seconds:1767272400},department:'Core',interviewDate:'2026-10-10',about:'Local test fixture'};
+const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet'},constancy:{en:'Constancy',tr:'Metanet'},nobility:{en:'Nobility',tr:'Asalet'},majesty:{en:'Majesty',tr:'Azamet'}};
+const page=await browser.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|Fixture unavailable/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
+await page.addInitScript(()=>{
+ localStorage.setItem('siteLang','en');
+ const snapshot={docs:[],empty:true,exists:false,data:()=>({}),forEach:()=>{}};
+ const chain={orderBy:()=>chain,where:()=>chain,limit:()=>chain,doc:()=>chain,get:async()=>snapshot,onSnapshot:fn=>{setTimeout(()=>fn(snapshot),0);return ()=>{};}};
+ const user={uid:'admin',email:'admin@example.invalid',displayName:'Local Admin',getIdTokenResult:async()=>({claims:{admin:true}}),getIdToken:async()=>'test-only',updateProfile:async()=>{}};
+ const listeners=[];const auth={currentUser:user,onAuthStateChanged:fn=>{listeners.push(fn);setTimeout(()=>fn(user),10);return ()=>{};},signOut:async()=>{auth.currentUser=null;listeners.forEach(fn=>fn(null));},signInWithEmailAndPassword:async()=>{auth.currentUser=user;listeners.forEach(fn=>fn(user));}};
+ window.firebase={apps:[],initializeApp:()=>{},auth:()=>auth,firestore:()=>({collection:()=>chain}),storage:()=>({}),functions:()=>({}),appCheck:()=>({activate:()=>{}}),app:()=>({functions:()=>({httpsCallable:()=>async()=>({data:{}})})})};
+});
+await page.route('**/*',async route=>{
+ const url=new URL(route.request().url());
+ if(url.hostname.endsWith('cloudfunctions.net')) return route.fulfill({contentType:'application/json',body:JSON.stringify(verificationValid ? {valid:true,name:'Example Participant',language:'en',certificateType:'tenacity',formattedDate:'01/01/2026'} : {valid:false})});
+ if(url.hostname==='127.0.0.1'){
+  if(url.pathname.startsWith('/verify/'))return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.resolve(root,'../vertexite/verify.html'),'utf8')});
+  if(url.pathname==='/js/core/initializer.js')return route.fulfill({contentType:'text/javascript',body:"import {startApp} from '../main.js'; startApp({apiKey:'test'});"});
+  return route.continue();
+ }
+ if(url.hostname.endsWith('run.app')){
+  const name=url.hostname.split('-')[0];calls.push(name);payloads.push({name,data:route.request().postDataJSON()?.data});
+  let result={};
+  if(name==='getvertexcontributors'){const fixture=people || [person];if(contributorDelay)await new Promise(r=>setTimeout(r,contributorDelay));if(failContributors)return route.fulfill({contentType:'application/json',status:503,body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});result={contributors:fixture};}
+  else if(name==='getvertexcertificatedetails')result={types,eligibility:{status:'joining-date-required',eligibleTypes:[],joinedAt:joiningDate},history};
+  else if(name==='setvertexcontributorjoiningdate'){joiningDate=route.request().postDataJSON().data.joinedAt;result={success:true};}
+  else if(name==='issuevertexcertificate'){history=[{id:'person--tenacity',certificateType:'tenacity',status:'processing',attempts:[]}];result={id:'person',status:'processing'};}
+  else if(name==='revokevertexcertificate'){history=history.map(j=>({...j,status:'revoked'}));result={success:true};}
+  else if(name==='listconsolechatchannels')result={isAdmin:true,channels:[{id:'general',name:'General',canPost:true,canManage:true}]};
+  else if(name==='listconsolechatmessages')result={messages:[{id:'m1',authorUid:'admin',authorName:'Local Admin',authorEmail:'admin@example.invalid',text:'Fixture message',createdAt:'2026-10-11T00:00:00Z'}]};
+  else if(name==='bulksetusersubscriptions')result={grantedCount:1,failedCount:1,failed:[{email:'missing@example.invalid',error:'User not found'}],invalidTokens:[]};
+  else if(name==='listdepartmentusers')result={users:[]};
+  else if(name==='listadmins')result={admins:[]};
+  else if(name==='listusersubscriptions')result={subscriptions:[]};
+  else if(name==='listsiteteam')result={staff:[],mods:[]};
+  else if(name==='getcoveruploadurl')result={signedUrl:'https://upload.example.invalid/cover',filePath:'test-cover.png'};
+  return route.fulfill({contentType:'application/json',body:JSON.stringify({result})});
+ }
+ if(url.pathname.endsWith('.json') || url.pathname === '/models')return route.fulfill({contentType:'application/json',body:JSON.stringify({producers:{Vertex:{Fixture:{Example:{id:'fixture-model',source:'manual',type:'offline',details:{en:{title:'Fixture Model'},tr:{title:'Örnek Model'}}}}}},models:[]})});
+ return route.fulfill({status:200,body:'',contentType:url.pathname.endsWith('.css')?'text/css':'text/plain'});
+});
+
+console.log("Starting page");await page.goto(`http://127.0.0.1:${server.address().port}`,{waitUntil:"domcontentloaded",timeout:15000});console.log("Page loaded");
+await page.waitForSelector('.certificate-manage-btn');
+assert.equal(errors.length,0);
+const checks=[];
+const note=x=>{checks.push(x);console.log('PASS',x);};
+const issueCount=()=>calls.filter(n=>n==='issuevertexcertificate').length;
+const openCert=async()=>{await page.locator('.certificate-manage-btn').first().click();await page.waitForSelector('[data-award]');};
+const selectTab=async id=>{if(await page.locator('#nav-toggle').isVisible())await page.locator('#nav-toggle').click();await page.locator(`[data-target="tab-${id}"]`).click();};
+for(const width of [360,390,768,1024,1440,1920]){
+ await page.setViewportSize({width,height:900});
+ for(const theme of ['light','dark']){
+  await page.evaluate(async mode=>(await import('/js/modules/shell.js')).applyTheme(mode),theme);
+  await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),theme==='light'?'rgb(248, 249, 250)':'rgb(11, 12, 14)');
+  for(const id of ['contributors','models','news','notifications','subscriptions','chat','system','profile']){
+   await selectTab(id);
+   assert(await page.locator('#tab-'+id).isVisible(),id);
+   const dims=await page.evaluate(()=>({w:innerWidth,scroll:document.documentElement.scrollWidth}));
+   if(dims.scroll>dims.w+1)console.error(await page.evaluate(()=>[...document.querySelectorAll("body *")].filter(el=>el.getBoundingClientRect().right>innerWidth+1).map(el=>({tag:el.tagName,id:el.id,cls:el.className,right:el.getBoundingClientRect().right})).slice(0,20)));assert(dims.scroll<=dims.w+1,`${width}/${theme}/${id}: overflow ${dims.scroll}`);
+  }
+  await selectTab('contributors');await openCert();
+  await page.waitForTimeout(200);const box=await page.locator('.cert-popover').boundingBox();assert(box.x>=0&&box.x+box.width<=width+1&&box.y>=0&&box.y+box.height<=901,JSON.stringify(box));
+  if(process.env.VERTEX_SCREENSHOTS){fs.mkdirSync(process.env.VERTEX_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.VERTEX_SCREENSHOTS,`vertex-${width}-${theme}.png`)});}
+  await page.keyboard.press('Escape');
+ }
+}
+note('8 navigation tabs, light/dark, 6 viewport widths, popover bounds');
+await page.setViewportSize({width:1440,height:900});
+await page.locator('[data-details]').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Contributor drawer');
+await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());assert.equal(await page.locator('.contributor-row').count(),0);
+await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));assert.equal(await page.locator('.contributor-row').count(),1);
+await page.evaluate(()=>window.filterContributors('verified'));assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
+await openCert();assert.deepEqual(await page.locator('[data-award]').evaluateAll(es=>es.map(e=>e.dataset.award)),['tenacity','constancy','majesty','nobility']);
+await page.locator('[data-award=tenacity]').click();assert.equal(issueCount(),0);await page.locator('[data-review]').click();await page.waitForSelector('.confirm-ok');assert.equal(issueCount(),0);
+await page.locator('.confirm-ok').focus();await page.keyboard.press('Tab');assert(await page.locator('.modal-close').evaluate(el=>el===document.activeElement));await page.keyboard.press('Shift+Tab');assert(await page.locator('.confirm-ok').evaluate(el=>el===document.activeElement));await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('tr');});assert.equal(await page.locator('.vx-modal-title').innerText(),'Sertifikayı İncele');await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('en');});await page.locator('.confirm-cancel').click();assert.equal(issueCount(),0);note('Selection and cancellation never issue certificates; confirmation focus trap and live language');
+await openCert();await page.locator('[data-date]').click();await page.locator('#joined-at').fill('2026-01-01');await page.locator('#joining-date-form [type=submit]').click();await page.waitForSelector('[data-award]');assert.equal(payloads.find(p=>p.name==='setvertexcontributorjoiningdate').data.joinedAt,'2026-01-01');note('Separate joining date editor and exact date payload');
+await page.locator('[data-award=tenacity]').click();await page.locator('[data-review]').click();await page.waitForSelector('.confirm-ok');await page.locator('.confirm-ok').click();await page.waitForFunction(()=>document.querySelectorAll('.certificate-manage-btn').length>0);await page.waitForTimeout(150);assert.equal(issueCount(),1);assert.deepEqual(payloads.find(p=>p.name==='issuevertexcertificate').data,{contributorId:'person',certificateType:'tenacity'});note('Explicit confirmation and correct issue payload');
+await openCert();assert(await page.locator('[data-award=tenacity]').isDisabled());await page.locator('[data-history]').click();assert(await page.locator('.is-processing').isVisible());await page.locator('[data-revoke]').click();await page.waitForSelector('.confirm-ok');assert(!calls.includes('revokevertexcertificate'));await page.locator('.confirm-ok').click();await page.waitForSelector('.is-revoked');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Processing history and explicit revoke confirmation');
+history=[{id:'uncertain',certificateType:'tenacity',status:'uncertain',attempts:[]}];await openCert();assert(await page.locator('[data-award=tenacity]').isDisabled());await page.locator('[data-history]').click();assert.equal(await page.locator('[data-retry]').count(),0);await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Uncertain blocks resending');
+for(const retrySafe of [false,true]){history=[{id:'failed',certificateType:'tenacity',status:'failed',retrySafe,attempts:[]}];await openCert();assert(await page.locator('[data-award=tenacity]').isDisabled());await page.locator('[data-history]').click();assert.equal(await page.locator('[data-retry]').count(),retrySafe?1:0);if(retrySafe){await page.locator('[data-retry]').click();await page.waitForSelector('.confirm-ok');await page.locator('.confirm-ok').click();await page.waitForTimeout(150);assert.equal(payloads.filter(p=>p.name==='issuevertexcertificate').at(-1).data.retry,true);}await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});}
+note('Failed retrySafe gate and retry:true contract');
+history=[];await openCert();await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('tr');});assert.equal(await page.locator('.cert-popover h2').innerText(),'Sertifika Tanımla');await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('en');});await page.keyboard.press('Escape');note('Live TR/EN popover localization');
+for(let i=0;i<8;i++){await openCert();await page.keyboard.press('Escape');assert.equal(await page.locator('.cert-popover').count(),0);}assert(await page.locator('.certificate-manage-btn').first().evaluate(el=>el===document.activeElement));note('Repeated open/close and focus restoration');
+await page.emulateMedia({colorScheme:'light'});await page.evaluate(async()=>{(await import('/js/modules/shell.js')).applyTheme('system');});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(248, 249, 250)');await page.emulateMedia({colorScheme:'dark'});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(11, 12, 14)');note('System theme follows OS');
+people=[];await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .state-block');note('Empty state');
+failContributors=true;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('.retry-btn');failContributors=false;people=null;await page.locator('.retry-btn').click();await page.waitForSelector('.contributor-row');note('Error and retry state');
+await page.evaluate(()=>{document.getElementById('contributors-list-container').replaceChildren();});contributorDelay=500;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .skeleton');await page.waitForSelector('.contributor-row');assert.equal(await page.locator('#contributors-list-container .skeleton').count(),0);contributorDelay=0;note('Delayed skeleton to content');
+people=[{...person,name:'Old Response'}];contributorDelay=500;
+await page.evaluate(()=>{import('/js/modules/contributors.js').then(m=>m.fetchContributorsData());});await page.waitForTimeout(75);people=[{...person,name:'Latest Response'}];contributorDelay=0;
+await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});await page.waitForTimeout(550);assert.equal(await page.locator('.contributor-name').innerText(),'Latest Response');people=null;note('Stale responses cannot overwrite latest list');
+await selectTab('models');await page.locator('#model-id').fill('fixture-model');assert.equal(await page.locator('#model-id').inputValue(),'fixture-model');note('Model editor remains editable');
+await selectTab('news');for(const id of ['title-en','title-tr','summary-en','summary-tr','content-en','content-tr'])await page.locator('#'+id).fill('Fixture Article');for(const lang of ['en','tr'])await page.locator('#cover-image-'+lang).setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from('fixture')});await page.locator('#news-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert(calls.includes('createnewsarticle'));note('News image upload and publish payload remain functional (mock)');
+await selectTab('notifications');await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('ALL_USERS');await page.locator('#notification-schedule-switch').check();await page.locator('#notification-schedule-time').fill('2027-01-01T12:00');await page.locator('#notification-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert(calls.includes('schedulenotification'));note('Notification template and scheduling payload (mock)');
+await selectTab('subscriptions');await page.locator('#sub-user-email').fill('fixture@example.invalid');await page.locator('#sub-plan').selectOption('pro');await page.locator('#subscription-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert.equal(payloads.find(p=>p.name==='setusersubscription').data.tier,'pro');note('Subscription Pro assignment contract (mock)');
+await selectTab('chat');await page.locator('#chat-input').fill('Mock message');await page.locator('#chat-send').click();await page.waitForTimeout(150);assert(calls.includes('postconsolechatmessage'));note('Chat channels, messages and posting (mock)');
+await selectTab('system');assert.equal(await page.locator('[data-section]').count(),7);await page.locator('[data-section=export]').click();assert(await page.locator('#data-exporter-manager').isVisible());note('7 functional System sections');
+await selectTab('contributors');
+// Authorization is tested against the same UI, with backend calls still mocked.
+await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.setCurrentUser(false,['Senatus']);await roles.loadDepartmentPermissions();const permissions=roles.getDepartmentPermissions();permissions.Senatus.hiddenFields={'contributors.list':['contact','age','links','interview']};permissions.Senatus.hiddenChips={'contributors.list':['github']};roles.getAccessibleTabs(['Senatus']);await (await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.certificate-manage-btn').count(),0);assert.equal(await page.locator('.edit-contributor-btn').count(),0);assert.equal(await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');return roles.getEffectivePanelLevel('contributors.list');}),'read');assert.equal(await page.locator('.contributor-cell-age').innerText(),'—');await page.locator('[data-details]').click();assert.equal(await page.locator('.vx-drawer-body').innerText().then(s=>s.includes('person@example.invalid')),false);await page.keyboard.press('Escape');note('Department read-only actions and hidden field policies');
+await page.locator('#logout-btn').click();await page.waitForSelector('#login-container',{state:'visible'});assert.equal(await page.locator('#admin-panel').isVisible(),false);await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('.certificate-manage-btn');note('Logout and admin login auth state');
+assert.equal(await page.locator('.material-symbols-rounded').count(),0);assert.equal(errors.length,0,errors.join('\n'));assert.deepEqual(consoleErrors,[]);
+const report={checks,uncaughtErrors:errors,unexpectedConsoleErrors:consoleErrors,viewportWidths:[360,390,768,1024,1440,1920],themes:['light','dark','system'],mockCalls:calls.length};fs.mkdirSync(path.join(root,'tests/results'),{recursive:true});fs.writeFileSync(path.join(root,'tests/results/browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser.close();server.close();
+})().catch(e=>{console.error(e);server.close();process.exit(1);});

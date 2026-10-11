@@ -43,3 +43,7 @@ export const notificationTargetType = document.getElementById('notification-targ
 export const targetUidInput = document.getElementById('target-uid-input');
 export const targetLevelInput = document.getElementById('target-level-input');
 export const scheduledTasksListContainer = document.getElementById('scheduled-tasks-list-container');
+
+// Subscription Management
+export const subscriptionForm = document.getElementById('subscription-form');
+export const subscriptionsList = document.getElementById('subscriptions-list');

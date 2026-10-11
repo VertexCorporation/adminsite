@@ -1,15 +1,23 @@
+import { initSystemSections } from './modules/system.js';
+import { initIcons } from './utils/icons.js';
+import { initShell } from './modules/shell.js';
 // js/main.js
 
 import { initFirebase, auth } from './core/firebase.js';
 import * as dom from './utils/dom.js';
-import { showToast, __, getLang, setLang, translatePage } from './utils/ui.js';
+import { showToast, __, getLang, setLang, translatePage, onLangChange } from './utils/ui.js';
 
 // Import module initializers
-import { initAdminModule } from './modules/admin.js';
+import { initAdminModule, refreshDepartmentUsers, loadAdminsList } from './modules/admin.js';
 import { initModelsModule, fetchFullModelsData } from './modules/models.js';
 import { initNewsModule, listenForArticles, stopListeningForArticles } from './modules/news.js';
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
-import { initContributorsModule, fetchContributorsData } from './modules/contributors.js';
+import { initContributorsModule, fetchContributorsData, applyChipVisibility } from './modules/contributors.js';
+import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscriptions.js';
+import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, PANELS } from './modules/roles.js';
+import { initSiteTeamPanel } from './modules/siteTeam.js';
+import { initUserMenu } from './modules/userMenu.js';
+import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
 
 /**
  * The main application function.
@@ -29,36 +37,109 @@ export function startApp(firebaseConfig) {
     initNewsModule();
     initNotificationModule();
     initContributorsModule();
+    initSubscriptionsModule();
+    initUserMenu();
+    initConsoleChat();
+    // initDockNav kaldirildi: yay fiziği döngüsü nav butonlarina surekli inline
+    // genislik yazip titreme/taşmaya yol açiyordu (kullanicinin istedigi kaldirim).
+    initProfileMenu();
+    initSiteTeamPanel();
+
+    initShell();
+    initSystemSections();
+    initIcons();
+    const readOnlyObserver = new MutationObserver(records => {
+        const panels = new Set();
+        for(const record of records) for(const node of record.addedNodes) {
+            if(node.nodeType !== 1) continue;
+            const panel=node.closest('.panel-readonly');if(panel)panels.add(panel);
+        }
+        panels.forEach(disableReadOnlyControls);
+    });
+    readOnlyObserver.observe(dom.adminPanel,{childList:true,subtree:true});
+    onLangChange(() => {
+        if (auth.currentUser) {
+            auth.currentUser.getIdTokenResult().then(token => {
+                const departments = Array.isArray(token.claims.departments)
+                    ? token.claims.departments
+                    : (token.claims.department ? [token.claims.department] : []);
+                renderProfile(auth.currentUser, !!token.claims.admin, departments);
+            }).catch(console.error);
+        }
+    });
+    document.getElementById('profile-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const user = auth.currentUser;
+        if (!user) return;
+        const name = document.getElementById('profile-display-name').value.trim();
+        const button = event.currentTarget.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+            await user.updateProfile({ displayName: name });
+            document.getElementById('profile-name').textContent = name || user.email || '—';
+            showToast(__('profile.saved'), 'success');
+        } catch (error) {
+            showToast(`${__('system.error')}: ${error.message}`, 'error');
+        } finally {
+            button.disabled = false;
+        }
+    });
 
     // --- Step 3: Set up the Core Authentication State Listener ---
     // This is the central control point that reacts to user login/logout.
     auth.onAuthStateChanged(async (user) => {
         if (user) {
-            // --- User is LOGGED IN ---
             console.log(`[AUTH] User signed in: ${user.email}`);
-            dom.loginContainer.style.display = 'none';
-            dom.adminPanel.style.display = 'block';
-
             try {
-                // Verify admin privileges
                 const idTokenResult = await user.getIdTokenResult(true);
-                if (!idTokenResult.claims.admin) {
-                    throw new Error("User does not have admin privileges.");
+                const isAdmin = !!idTokenResult.claims.admin;
+                const departments = Array.isArray(idTokenResult.claims.departments)
+                    ? idTokenResult.claims.departments
+                    : (idTokenResult.claims.department ? [idTokenResult.claims.department] : []);
+
+                if (!isAdmin && !departments.length) {
+                    throw new Error("User does not have admin or department privileges.");
+                }
+                setCurrentUser(isAdmin, departments);
+                document.body.classList.toggle('admin-mode', isAdmin);
+                document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
+                refreshConsoleChat();
+                dom.loginContainer.style.display = 'none';
+                dom.adminPanel.style.display = 'grid';
+                renderProfile(user, isAdmin, departments);
+
+                if (isAdmin) {
+                    console.log("[AUTH] Access Level: Admin. Full panel enabled.");
+                    resetTabFilter();
+                    applyPanelGate(true);
+                    dom.adminManagerSection.style.display = 'block';
+                    initRolesModule();
+                    initPanelMenus();
+                    applyChipVisibility();
+                    refreshDepartmentUsers();
+                    fetchFullModelsData();
+                    listenForArticles();
+                    listenForScheduledTasks();
+                    fetchContributorsData();
+                    refreshSubscriptions();
+                    loadAdminsList();
+                    refreshConsoleChat();
+                } else {
+                    console.log(`[AUTH] Access Level: Department (${departments.join(', ')}). Limited panel.`);
+                    dom.adminManagerSection.style.display = 'none';
+                    await loadDepartmentPermissions();
+                    const allowedTabs = getAccessibleTabs(departments);
+                    console.log(`[AUTH] Allowed tabs for ${departments.join(', ')}:`, allowedTabs);
+                    applyTabFilter(allowedTabs);
+                    applyPanelGate(false);
+                    applyChipVisibility();
+                    document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
                 }
 
-                console.log("[AUTH] Access Level: Admin. Full panel enabled.");
-                dom.adminManagerSection.style.display = 'block';
-
-                // Fetch data and start real-time listeners for the admin session
-                fetchFullModelsData();
-                listenForArticles();
-                listenForScheduledTasks();
-                fetchContributorsData();
-
             } catch (error) {
-                console.error("[AUTH] Admin check failed:", error.message);
+                console.error("[AUTH] Access check failed:", error.message);
                 showToast("You are not authorized to access this panel.", "error");
-                auth.signOut(); // Force sign out if not an admin
+                auth.signOut();
             }
         } else {
             // --- User is LOGGED OUT ---
@@ -139,40 +220,9 @@ export function startApp(firebaseConfig) {
 
     dom.logoutBtn.addEventListener('click', () => auth.signOut());
 
-    // --- Step 5: Bind Theme Toggle Listener ---
-    const themeToggleButton = document.getElementById('theme-toggle-btn');
-    themeToggleButton.addEventListener('click', () => {
-        const htmlElement = document.documentElement;
-        // Toggle the 'light' theme
-        if (htmlElement.hasAttribute('data-theme')) {
-            htmlElement.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            htmlElement.setAttribute('data-theme', 'light');
-            localStorage.setItem('theme', 'light');
-        }
-    });
-
-    // --- Step 6: Bind Language Toggle ---
-    const langToggleBtn = document.getElementById('lang-toggle-btn');
-    if (langToggleBtn) {
-        const langIndicator = document.getElementById('lang-indicator');
-        langToggleBtn.addEventListener('click', () => {
-            const current = getLang();
-            const next = current === 'tr' ? 'en' : 'tr';
-            setLang(next);
-            if (langIndicator) {
-                langIndicator.textContent = __('lang.flag');
-            }
-            showToast(`Language: ${__('lang.name')}`, 'info');
-        });
-        // Initialize lang indicator and apply saved language
-        translatePage();
-        if (langIndicator) {
-            langIndicator.textContent = __('lang.flag');
-        }
-    }
-
+    translatePage();
+    document.getElementById('lang-indicator').textContent = __('lang.flag');
+    onLangChange(() => { document.getElementById('lang-indicator').textContent = __('lang.flag'); });
     // --- Step 7: Hide Loader and Show App ---
     // The app is now fully initialized and ready.
     if (dom.appLoader) {
@@ -182,4 +232,156 @@ export function startApp(firebaseConfig) {
            dom.appLoader.remove();
         }, { once: true });
     }
+}
+
+function resetTabFilter() {
+    document.querySelectorAll('.dock-btn, .tab-panel').forEach(element => {
+        element.style.display = '';
+        element.classList.remove('active');
+    });
+    document.querySelector('[data-target="tab-contributors"]').classList.add('active');
+    document.getElementById('tab-contributors').classList.add('active');
+}
+
+function applyTabFilter(allowedTabs) {
+    const visibleTabs = new Set([...allowedTabs, 'profile', 'chat']);
+    const dockButtons = document.querySelectorAll('.dock-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    [...dockButtons, ...tabPanels].forEach(element => {
+        element.style.display = '';
+        element.classList.remove('active');
+    });
+
+    dockButtons.forEach(btn => {
+        const targetId = btn.getAttribute('data-target');
+        const tabId = targetId?.replace('tab-', '');
+        if (tabId && !visibleTabs.has(tabId)) {
+            btn.style.display = 'none';
+        }
+    });
+
+    tabPanels.forEach(panel => {
+        const tabId = panel.id.replace('tab-', '');
+        if (!visibleTabs.has(tabId)) {
+            panel.classList.remove('active');
+            panel.style.display = 'none';
+        }
+    });
+
+    const firstTab = allowedTabs[0] || 'profile';
+    const firstBtn = document.querySelector(`.dock-btn[data-target="tab-${firstTab}"]`);
+    const firstPanel = document.getElementById(`tab-${firstTab}`);
+    if (firstBtn && firstPanel) {
+        firstBtn.classList.add('active');
+        firstPanel.classList.add('active');
+    }
+
+    if (allowedTabs.includes('contributors')) {
+        fetchContributorsData();
+    }
+    if (allowedTabs.includes('subscriptions')) {
+        refreshSubscriptions();
+    }
+    if (allowedTabs.includes('models')) {
+        fetchFullModelsData();
+    }
+    if (allowedTabs.includes('news')) {
+        listenForArticles();
+    }
+    if (allowedTabs.includes('notifications')) {
+        listenForScheduledTasks();
+    }
+}
+
+/**
+ * Panel kartlarını kullanıcının efektif panel seviyesine göre aç/kapa.
+ * Adminler her şeyi görür; departman kullanıcılarında 'none' olan paneller
+ * tamamen gizlenir. Yetki editörü (dept-perms-manager) her zaman admin-only.
+ */
+function applyPanelGate(isAdmin) {
+    document.querySelectorAll('[data-panel]').forEach(el => {
+        if (isAdmin) {
+            el.style.display = '';
+            el.classList.remove('panel-readonly');
+            el.querySelectorAll('[data-role-disabled]').forEach(control=>{control.disabled=false;delete control.dataset.roleDisabled;});
+            return;
+        }
+        const level = getEffectivePanelLevel(el.getAttribute('data-panel'));
+        if (level === 'none') {
+            el.style.display = 'none';
+        } else {
+            el.style.display = '';
+            // Salt-okunur kartlar: içerik görünür, düzenleme öğeleri CSS ile gizli.
+            el.classList.toggle('panel-readonly', level !== 'write');
+            if(level !== 'write') disableReadOnlyControls(el);
+        }
+    });
+    if (!isAdmin) {
+        const permsCard = document.getElementById('dept-perms-manager');
+        if (permsCard) permsCard.style.display = 'none';
+    }
+}
+
+function renderProfile(user, isAdmin, departments) {
+    document.getElementById('profile-name').textContent = user.displayName || user.email || '—';
+    document.getElementById('profile-email').textContent = user.email || '—';
+    document.getElementById('profile-display-name').value = user.displayName || '';
+    document.getElementById('profile-role').textContent = isAdmin ? __('profile.admin') : __('profile.member');
+    document.getElementById('profile-departments').textContent = departments.join(', ') || __('profile.none');
+    document.getElementById('profile-uid').textContent = user.uid;
+    renderPermSummary();
+}
+
+// UID'yi panoya kopyala
+document.getElementById('copy-uid-btn')?.addEventListener('click', () => {
+    const uid = document.getElementById('profile-uid').textContent;
+    if (!uid || uid === '—') return;
+    navigator.clipboard?.writeText(uid).then(
+        () => showToast(__('profile.uid_copied'), 'success'),
+        () => showToast(__('profile.uid_copied_fail'), 'error')
+    );
+});
+
+/** Profil menusu: 8 sablon ogeli (icerikler sonradan doldurulacak). */
+function initProfileMenu() {
+    const btn = document.getElementById('profile-menu-btn');
+    const pop = document.getElementById('profile-menu-pop');
+    if (!btn || !pop) return;
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = pop.style.display !== 'none';
+        if (open) { pop.style.display = 'none'; return; }
+        pop.innerHTML = `<button type="button" class="menu-item">${__('header.logout')}</button>`;
+        pop.style.display = 'block';
+        pop.querySelector('button').onclick = () => auth.signOut();
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#profile-menu-pop') && !e.target.closest('#profile-menu-btn')) {
+            pop.style.display = 'none';
+        }
+    });
+}
+
+/** Profil kartinda kullanacinin sekmeler bazindaki efektif yetkileri. */
+function renderPermSummary() {
+    const container = document.getElementById('profile-perms');
+    if (!container) return;
+    container.innerHTML = PANELS ? Object.entries(PANELS).map(([tabId, panels]) => {
+        const best = panels.reduce((acc, p) => {
+            const lvl = getEffectivePanelLevel(`${tabId}.${p.id}`);
+            return ({ none: 0, read: 1, write: 2 })[lvl] > ({ none: 0, read: 1, write: 2 })[acc] ? lvl : acc;
+        }, 'none');
+        const label = best === 'write' ? __('perms.level_write') : best === 'read' ? __('perms.level_read') : __('perms.level_none');
+        const cls = best === 'write' ? 'perm-write' : best === 'read' ? 'perm-read' : 'perm-none';
+        return `<div class="perm-summary-row"><span>${__(`nav.${tabId}`)}</span><span class="perm-badge ${cls}">${label}</span></div>`;
+    }).join('') : '';
+}
+
+function disableReadOnlyControls(panel) {
+    panel.querySelectorAll('input,textarea,select,button').forEach(control => {
+        if(control.id.includes('search') || control.matches('.btn-refresh,.filter-chip,.contributor-cell-name,.retry-btn'))return;
+        if(!control.disabled)control.dataset.roleDisabled='true';
+        control.disabled=true;
+    });
 }

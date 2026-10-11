@@ -1,0 +1,227 @@
+/* ================================================================
+   VERTEX KONSOL — DESIGN TOKENS
+   Quiet Authority: monokrom kimlik, tek merkezi kaynak.
+   Sıra: tokens.css → base.css → layout.css → components.css →
+         motion.css → loading.css → modules.css → certificates.css
+   ================================================================ */
+
+:root {
+    /* ---------- Renk: Dark (varsayılan) ---------- */
+    --bg-app: #0B0C0E;
+    --bg-sidebar: #101114;
+    --bg-surface: #151619;
+    --bg-elevated: #1C1E22;
+    --bg-hover: #24262B;
+
+    --border-subtle: #25272C;
+    --border-strong: #34373D;
+
+    --text-primary: #F5F5F6;
+    --text-secondary: #A7A9AF;
+    --text-muted: #858891;
+    --text-disabled: #696D75;
+
+    --action-primary: #F5F5F6;
+    --action-primary-text: #111214;
+
+    /* Durum renkleri — kontrollü semantik vurgu */
+    --status-success: #3FB68B;
+    --status-success-soft: rgba(63, 182, 139, 0.12);
+    --status-error: #E5654E;
+    --status-error-soft: rgba(229, 101, 78, 0.12);
+    --status-warning: #D9A03F;
+    --status-warning-soft: rgba(217, 160, 63, 0.12);
+    --status-info: #7FA8C9;
+    --status-info-soft: rgba(127, 168, 201, 0.12);
+    --status-processing: var(--text-muted);
+
+    /* ---------- Tipografi ---------- */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'SF Mono', 'Cascadia Code', Consolas, monospace;
+
+    --fs-page-title: 24px;
+    --fs-section-title: 16px;
+    --fs-component-title: 14px;
+    --fs-body: 14px;
+    --fs-secondary: 13px;
+    --fs-metadata: 12px;
+    --fs-label: 11px;
+
+    --lh-tight: 1.25;
+    --lh-normal: 1.5;
+
+    /* ---------- Spacing ---------- */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+
+    /* ---------- Geometri ---------- */
+    --radius-xs: 6px;
+    --radius-sm: 8px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+    --radius-xl: 14px;
+    --radius-full: 999px;
+
+    /* Boyutlar */
+    --sidebar-width: 240px;
+    --topbar-height: 56px;
+    --content-max: 1480px;
+    --content-pad-x: 32px;
+
+    /* Butonlar / girdiler */
+    --control-height: 36px;
+    --control-height-lg: 40px;
+    --input-height: 42px;
+    --touch-target: 44px;
+
+    /* ---------- Hareket ---------- */
+    --motion-fast: 100ms;
+    --motion-normal: 160ms;
+    --motion-slow: 220ms;
+    --motion-popover: 180ms;
+
+    --motion-popover-close: 120ms;
+    --motion-drawer: 220ms;
+
+    --ease-standard: cubic-bezier(.2, .8, .2, 1);
+    --ease-exit: cubic-bezier(.4, 0, 1, 1);
+
+    /* ---------- Gölge (yalnızca yükseltilmiş yüzeyler) ---------- */
+    --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.32);
+    --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4);
+
+    /* Glass — yalnızca popover gibi yükseltilmiş yüzeylerde, düşük opaklık */
+    --glass-bg: rgba(21, 22, 25, 0.92);
+    --glass-blur: 14px;
+
+    /* Odak */
+    --focus-ring: 0 0 0 2px var(--bg-app), 0 0 0 4px var(--action-primary);
+
+    /* Eski değişken uyumluluğu (JS içinde geçen yerler için) */
+    --primary-color: var(--text-primary);
+    --text-color: var(--text-primary);
+    --border-color: var(--border-subtle);
+    --border-focus: var(--action-primary);
+    --accent-sage: var(--status-success);
+    --accent-clay: var(--status-error);
+    --accent-slate: var(--status-info);
+    --accent-gold: var(--action-primary);
+    --transition: all var(--motion-normal) var(--ease-standard);
+}
+
+/* ---------- Light ---------- */
+html[data-theme="light"] {
+    --bg-app: #F8F9FA;
+    --bg-sidebar: #F3F4F6;
+    --bg-surface: #FFFFFF;
+    --bg-elevated: #FFFFFF;
+    --bg-hover: #EFF1F3;
+
+    --border-subtle: #E3E5E8;
+    --border-strong: #D4D7DB;
+
+    --text-primary: #17191D;
+    --text-secondary: #59616C;
+    --text-muted: #707782;
+    --text-disabled: #9298A1;
+
+    --action-primary: #191B1F;
+    --action-primary-text: #FFFFFF;
+
+    --status-success: #2E8B67;
+    --status-success-soft: rgba(46, 139, 103, 0.10);
+    --status-error: #C2482F;
+    --status-error-soft: rgba(194, 72, 47, 0.10);
+    --status-warning: #A97A1E;
+    --status-warning-soft: rgba(169, 122, 30, 0.10);
+    --status-info: #4A7396;
+    --status-info-soft: rgba(74, 115, 150, 0.10);
+
+    --shadow-pop: 0 8px 24px rgba(23, 25, 29, 0.10), 0 2px 8px rgba(23, 25, 29, 0.08);
+    --shadow-modal: 0 16px 48px rgba(23, 25, 29, 0.16), 0 4px 16px rgba(23, 25, 29, 0.10);
+
+    --glass-bg: rgba(255, 255, 255, 0.94);
+}
+
+/* ---------- System: işletim sistemi tercihini izler ---------- */
+html[data-theme="system"] {
+    --bg-app: #F8F9FA;
+    --bg-sidebar: #F3F4F6;
+    --bg-surface: #FFFFFF;
+    --bg-elevated: #FFFFFF;
+    --bg-hover: #EFF1F3;
+
+    --border-subtle: #E3E5E8;
+    --border-strong: #D4D7DB;
+
+    --text-primary: #17191D;
+    --text-secondary: #59616C;
+    --text-muted: #707782;
+    --text-disabled: #9298A1;
+
+    --action-primary: #191B1F;
+    --action-primary-text: #FFFFFF;
+
+    --status-success: #2E8B67;
+    --status-success-soft: rgba(46, 139, 103, 0.10);
+    --status-error: #C2482F;
+    --status-error-soft: rgba(194, 72, 47, 0.10);
+    --status-warning: #A97A1E;
+    --status-warning-soft: rgba(169, 122, 30, 0.10);
+    --status-info: #4A7396;
+    --status-info-soft: rgba(74, 115, 150, 0.10);
+
+    --shadow-pop: 0 8px 24px rgba(23, 25, 29, 0.10), 0 2px 8px rgba(23, 25, 29, 0.08);
+    --shadow-modal: 0 16px 48px rgba(23, 25, 29, 0.16), 0 4px 16px rgba(23, 25, 29, 0.10);
+
+    --glass-bg: rgba(255, 255, 255, 0.94);
+}
+
+@media (prefers-color-scheme: dark) {
+    html[data-theme="system"] {
+        --bg-app: #0B0C0E;
+        --bg-sidebar: #101114;
+        --bg-surface: #151619;
+        --bg-elevated: #1C1E22;
+        --bg-hover: #24262B;
+
+        --border-subtle: #25272C;
+        --border-strong: #34373D;
+
+        --text-primary: #F5F5F6;
+        --text-secondary: #A7A9AF;
+        --text-muted: #858891;
+        --text-disabled: #696D75;
+
+        --action-primary: #F5F5F6;
+        --action-primary-text: #111214;
+
+        --status-success: #3FB68B;
+        --status-success-soft: rgba(63, 182, 139, 0.12);
+        --status-error: #E5654E;
+        --status-error-soft: rgba(229, 101, 78, 0.12);
+        --status-warning: #D9A03F;
+        --status-warning-soft: rgba(217, 160, 63, 0.12);
+        --status-info: #7FA8C9;
+        --status-info-soft: rgba(127, 168, 201, 0.12);
+
+        --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.32);
+        --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4);
+
+        --glass-bg: rgba(21, 22, 25, 0.92);
+    }
+}
+
+/* Tema geçişi: kısa ve kontrollü renk geçişi (agresif fade yok) */
+html.theme-anim body,
+html.theme-anim .app-sidebar,
+html.theme-anim .app-header,
+html.theme-anim .panel-card {
+    transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+

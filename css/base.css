@@ -1,0 +1,132 @@
+/* ================================================================
+   VERTEX KONSOL — BASE
+   Reset, tipografi, scrollbar, genel kurallar.
+   ================================================================ */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: var(--fs-body);
+    line-height: var(--lh-normal);
+    color: var(--text-primary);
+    background: var(--bg-app);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+}
+
+/* ---------- Tipografi ölçeği ---------- */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: var(--lh-tight);
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+
+h2.page-title { font-size: var(--fs-page-title); font-weight: 600; }
+h3 { font-size: var(--fs-section-title); font-weight: 600; }
+h4 { font-size: var(--fs-component-title); font-weight: 600; }
+
+p, li { font-size: var(--fs-body); }
+
+p.intro-description,
+.intro-description {
+    font-size: var(--fs-secondary);
+    color: var(--text-secondary);
+    line-height: var(--lh-normal);
+}
+
+.form-hint {
+    font-size: var(--fs-metadata);
+    color: var(--text-muted);
+    line-height: var(--lh-normal);
+}
+
+small, .text-metadata { font-size: var(--fs-metadata); color: var(--text-muted); }
+
+a {
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: color var(--motion-fast) var(--ease-standard);
+}
+a:hover { color: var(--text-secondary); }
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+    background-color: var(--border-strong);
+    border-radius: var(--radius-full);
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--text-disabled); }
+
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+
+/* ---------- Formel temel ---------- */
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: none; }
+button:disabled, input:disabled, select:disabled, textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+img { max-width: 100%; display: block; }
+
+/* ---------- Odak görünürlüğü ---------- */
+:focus { outline: none; }
+:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-xs);
+}
+
+/* ---------- Yardımcı düzen sınıfları ---------- */
+.hidden { display: none !important; }
+
+.flex-row { display: flex; gap: var(--space-3); align-items: flex-start; flex-wrap: wrap; }
+.flex-column { display: flex; flex-direction: column; gap: var(--space-3); }
+.flex-grow { flex: 1 1 200px; min-width: 0; }
+
+.form-stack { display: flex; flex-direction: column; gap: var(--space-4); }
+.form-block-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--bg-app);
+    margin-bottom: var(--space-3);
+}
+.form-sub-section { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-3); }
+
+.block-title {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.sub-block-title {
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.field-label { font-size: var(--fs-metadata); font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: var(--space-2); }
+.form-field-info { font-size: var(--fs-metadata); color: var(--text-muted); margin-top: var(--space-1); display: block; }
+.form-hint, .form-submit-row { margin-top: var(--space-2); }
+
+.form-submit-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
