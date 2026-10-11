@@ -1,6 +1,8 @@
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/roles.js
 
+import { icon } from '../utils/icons.js';
+import { openPopover, closePopover } from './shell.js';
 import { db, saveDepartmentPermissionsFn, getPanelPermissionsFn } from '../core/firebase.js';
 import { showToast, __, onLangChange } from '../utils/ui.js';
 
@@ -261,7 +263,7 @@ async function readDepartmentPermissions() {
 export async function saveDepartmentPermissions(permissions) {
     try {
         await saveDepartmentPermissionsFn({ departments: permissions });
-        departmentPermissions = permissions;
+        // Acknowledging this snapshot must not overwrite a newer local draft.
     } catch (error) {
         console.error('[ROLES] Failed to save permissions:', error);
         let message = `Yetkiler kaydedilemedi: ${error.message}`;
@@ -280,259 +282,160 @@ export function getDepartmentPermissions() {
 
 // --- Matrix render (Sistem sekmesi) ---
 
-const cycleIcon = level => `<i class="" data-icon="${LEVEL_ICON[level]}"></i>`;
-
+const levelLabel = level => __('perms.level_' + level);
+const cycleIcon = level => `${icon(LEVEL_ICON[level] === 'close' ? 'x' : level === 'read' ? 'eye' : 'pencil', {size:14})}<span>${levelLabel(level)}</span>`;
+let confirmedPermissions = null;
+let permissionRevision = 0;
+let saving = false;
+let saveState = 'saved';
+function paintSaveState() {
+    const status = document.getElementById('permission-save-status');
+    if (status) {status.textContent = __('perms.' + saveState);status.dataset.state = saveState;}
+}
 function renderMatrixTable() {
     const container = document.getElementById('dept-permissions-container');
-    if (!container) return;
-
-    if (!departmentPermissions) {
-        container.setAttribute('aria-busy','true');
-        return;
-    }
-
-    const groupLabels = {
-        ust: __('dept.group_ust'),
-        orta: __('dept.group_orta'),
-        alt: __('dept.group_alt')
-    };
-
-    let html = '<div class="dept-perms-table panel-matrix">';
-    html += '<div class="dept-perms-header">';
-    html += `<span class="perm-dept-col">${__('perms.dept_col')}</span><span class="perm-preset-col"></span>`;
-    TABS.forEach(tab => {
-        html += `<span class="dept-perm-th"><i class="" data-icon="${tab.icon}"></i> ${__(tab.key)}</span>`;
-    });
-    html += '</div>';
-
-    let currentGroup = null;
+    if (!container || !departmentPermissions) return;
+    container.setAttribute('aria-busy','false');
+    const focus = document.activeElement?.dataset;
+    let html = '<div class="permission-status-row"><span id="permission-save-status" role="status" aria-live="polite"></span></div><div class="dept-perms-table panel-matrix" role="table" aria-label="'+__('perms.dept_col')+'"><div class="dept-perms-header" role="row"><span role="columnheader">'+__('perms.dept_col')+'</span>';
+    TABS.forEach(tab => {html += `<span class="dept-perm-th" role="columnheader">${__(tab.key)}</span>`;});
+    html += '<span role="columnheader" class="sr-only">'+__('common.actions')+'</span></div>';
+    let group = null;
     DEPARTMENTS.forEach(dept => {
-        if (dept.group !== currentGroup) {
-            currentGroup = dept.group;
-            html += `<div class="dept-perm-group-header">${groupLabels[currentGroup] || currentGroup}</div>`;
-        }
-
-        html += '<div class="dept-perm-row">';
-        html += `<span class="dept-perm-label">${__(dept.nameKey)}</span>`;
-        html += '<span class="perm-preset-col">' +
-            `<button type="button" class="perm-preset-btn" data-dept="${dept.id}" data-preset="none" title="${__('perms.preset_none')}"><i class="" data-icon="block"></i></button>` +
-            `<button type="button" class="perm-preset-btn" data-dept="${dept.id}" data-preset="read" title="${__('perms.preset_read')}"><i class="" data-icon="visibility"></i></button>` +
-            `<button type="button" class="perm-preset-btn" data-dept="${dept.id}" data-preset="write" title="${__('perms.preset_write')}"><i class="" data-icon="edit"></i></button>` +
-            '</span>';
+        if (dept.group !== group) {group=dept.group;html+=`<div class="dept-perm-group-header">${__('dept.group_' + group)}</div>`;}
+        html += `<div class="dept-perm-row" role="row"><span class="dept-perm-label" role="rowheader">${__(dept.nameKey)}</span>`;
         TABS.forEach(tab => {
             const level = levelFor(dept.id, wildcardKey(tab.id));
-            const hasOverride = Object.keys(departmentPermissions[dept.id]?.panels || {})
-                .some(key => key.startsWith(`${tab.id}.`) && key !== wildcardKey(tab.id));
-            html += `<span class="perm-cell"><button type="button" class="perm-cycle ${LEVEL_CLASS[level]}" data-dept="${dept.id}" data-tab="${tab.id}" data-level="${level}" title="${__('perms.cycle_hint')}">${cycleIcon(level)}</button>` +
-                `${hasOverride ? `<span class="perm-override-dot" title="${__('perms.override_hint')}"></span>` : ''}</span>`;
+            const overridden = Object.keys(departmentPermissions[dept.id]?.panels || {}).some(key=>key.startsWith(tab.id+'.') && key!==wildcardKey(tab.id));
+            html += `<span class="perm-cell" role="cell"><button type="button" class="perm-cycle ${LEVEL_CLASS[level]}" data-dept="${dept.id}" data-tab="${tab.id}" data-level="${level}" aria-label="${__(dept.nameKey)} · ${__(tab.key)}: ${levelLabel(level)}" title="${__('perms.cycle_hint')}">${cycleIcon(level)}</button>${overridden?`<span class="perm-override-dot" title="${__('perms.override_hint')}"></span>`:''}</span>`;
         });
-        html += '</div>';
+        html+=`<span role="cell"><button type="button" class="icon-action-btn perm-presets-trigger" data-preset-dept="${dept.id}" aria-haspopup="dialog" aria-label="${__(dept.nameKey)} · ${__('common.actions')}">${icon('dots')}</button></span></div>`;
     });
-
-    html += '</div>';
-    container.innerHTML = html;
-
-    container.querySelectorAll('.perm-cycle').forEach(btn => {
-        btn.addEventListener('click', () => handleMatrixCycle(btn));
-    });
-    container.querySelectorAll('.perm-preset-btn').forEach(btn => {
-        btn.addEventListener('click', () => handlePreset(btn));
-    });
+    container.innerHTML = html + '</div>';
+    paintSaveState();
+    container.querySelectorAll('.perm-cycle').forEach(button=>button.onclick=()=>handleMatrixCycle(button));
+    container.querySelectorAll('[data-preset-dept]').forEach(button=>button.onclick=()=>openPopover(button,{render(pop){
+        pop.innerHTML='<div class="menu-list">'+LEVELS.map(level=>`<button type="button" class="menu-item" data-dept="${button.dataset.presetDept}" data-preset="${level}">${icon(level==='none'?'circle-off':level==='read'?'eye':'pencil')}<span>${__('perms.preset_'+level)}</span></button>`).join('')+'</div>';
+        pop.querySelectorAll('[data-preset]').forEach(item=>item.onclick=()=>{closePopover();handlePreset(item);});
+    }}));
+    if (focus?.dept && focus?.tab) container.querySelector(`[data-dept="${focus.dept}"][data-tab="${focus.tab}"]`)?.focus({preventScroll:true});
 }
-
 function ensureDeptEntry(deptId) {
-    if (!departmentPermissions[deptId]) departmentPermissions[deptId] = { panels: {} };
-    if (!departmentPermissions[deptId].panels) departmentPermissions[deptId].panels = {};
-    return departmentPermissions[deptId].panels;
+    if (!departmentPermissions[deptId]) departmentPermissions[deptId] = {panels:{}};
+    return departmentPermissions[deptId].panels ||= {};
 }
-
 function clearTabOverrides(deptId, tabId) {
-    const panels = departmentPermissions[deptId]?.panels || {};
-    Object.keys(panels).forEach(key => {
-        if (key.startsWith(`${tabId}.`) && key !== wildcardKey(tabId)) delete panels[key];
-    });
+    const panels=ensureDeptEntry(deptId);
+    Object.keys(panels).forEach(key=>{if(key.startsWith(tabId+'.') && key!==wildcardKey(tabId))delete panels[key];});
 }
-
 function scheduleSave() {
+    if (!currentUser.isAdmin) return;
+    permissionRevision++;
+    saveState='pending';paintSaveState();
     clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-        saveDepartmentPermissions(departmentPermissions).then(() => {
-            showToast(__('dept.saved'), 'success');
-        }).catch(() => {});
-    }, 600);
+    saveTimeout=setTimeout(flushPermissions,600);
 }
-
-function handleMatrixCycle(btn) {
-    const { dept, tab } = btn.dataset;
-    const panels = ensureDeptEntry(dept);
-    const newLevel = nextLevel(panels[wildcardKey(tab)] ?? 'none');
-    clearTabOverrides(dept, tab);
-    if (newLevel === 'none') {
-        delete panels[wildcardKey(tab)];
-    } else {
-        panels[wildcardKey(tab)] = newLevel;
+async function flushPermissions() {
+    if (saving || !currentUser.isAdmin) return;
+    const revision=permissionRevision;
+    const snapshot=structuredClone(departmentPermissions);
+    saving=true;saveState='saving';paintSaveState();
+    try {
+        await saveDepartmentPermissions(snapshot);
+        confirmedPermissions=structuredClone(snapshot);
+        saveState=revision===permissionRevision?'saved':'pending';
+    } catch {
+        // Only roll back the failed draft if it has not been superseded.
+        if (revision===permissionRevision) {
+            departmentPermissions=structuredClone(confirmedPermissions || {});
+            saveState='failed';renderMatrixTable();renderPanelMenuContent();
+        } else saveState='pending';
+    } finally {
+        saving=false;paintSaveState();
+        if(revision!==permissionRevision){clearTimeout(saveTimeout);saveTimeout=setTimeout(flushPermissions,600);}
     }
-    scheduleSave();
-    renderMatrixTable();
-    if (openMenuPanel) renderPanelMenuContent();
 }
-
-function handlePreset(btn) {
-    const { dept, preset } = btn.dataset;
-    const panels = ensureDeptEntry(dept);
-    Object.keys(panels).forEach(key => delete panels[key]);
-    if (preset !== 'none') {
-        TABS.forEach(tab => { panels[wildcardKey(tab.id)] = preset; });
-    }
+function handleMatrixCycle(button) {
+    if (!currentUser.isAdmin) return;
+    const {dept,tab}=button.dataset;
+    const panels=ensureDeptEntry(dept);
+    const next=nextLevel(panels[wildcardKey(tab)] || 'none');
+    clearTabOverrides(dept,tab);
+    if(next==='none')delete panels[wildcardKey(tab)];else panels[wildcardKey(tab)]=next;
+    scheduleSave();renderMatrixTable();renderPanelMenuContent();
+}
+function handlePreset(button) {
+    if (!currentUser.isAdmin) return;
+    const {dept,preset}=button.dataset;
+    const panels=ensureDeptEntry(dept);
+    Object.keys(panels).forEach(key=>delete panels[key]);
+    if(preset!=='none')TABS.forEach(tab=>panels[wildcardKey(tab.id)]=preset);
     delete departmentPermissions[dept].hiddenFields;
     delete departmentPermissions[dept].hiddenChips;
-    scheduleSave();
-    renderMatrixTable();
-    if (openMenuPanel) renderPanelMenuContent();
+    scheduleSave();renderMatrixTable();renderPanelMenuContent();
 }
-
-// --- Panel köşe menüsü (her panelin sağ üstündeki ayar tuşu) ---
-
 function findPanelMeta(panelKey) {
-    const [tabId, panelId] = panelKey.split('.');
-    const tab = TABS.find(t => t.id === tabId);
-    const panel = (PANELS[tabId] || []).find(p => p.id === panelId);
-    return { tabId, tab, panel };
+    const [tabId,panelId]=panelKey.split('.');
+    return {tabId,tab:TABS.find(tab=>tab.id===tabId),panel:(PANELS[tabId]||[]).find(panel=>panel.id===panelId)};
 }
-
-/** Panelleri baslik satirindan acilip kapanir yapar (durum localStorage'da). */
 export function initPanelMenus() {
-    const host = document.getElementById('dept-perms-manager');
-    if (!host || host.querySelector('.permission-panel-selector')) return;
-    const select = document.createElement('select');
-    select.className = 'permission-panel-selector';
-    select.setAttribute('aria-label', __('perms.menu_access'));
-    select.innerHTML = Object.entries(PANELS).flatMap(([tab, panels]) => panels.map(panel => `<option value="${tab}.${panel.id}">${__(panel.key)}</option>`)).join('');
-    const content = document.createElement('div');
-    content.className = 'panel-menu-pop';
-    content.style.position = 'static';
-    host.append(select, content);
-    const render = () => { openMenuPanel = select.value; content.dataset.panel = select.value; renderPanelMenuContent(); };
-    select.onchange = render;
-    loadDepartmentPermissions().then(render);
+    const host=document.getElementById('dept-perms-manager');
+    if(!host || host.querySelector('.permission-workspace'))return;
+    const workspace=document.createElement('div');workspace.className='permission-workspace';
+    workspace.innerHTML=`<div class="permission-panel-nav" aria-label="${__('perms.panels')}"></div><div class="panel-menu-pop"></div>`;
+    host.append(workspace);
+    if(!openMenuPanel)openMenuPanel='contributors.list';
+    paintPanelSelector();renderPanelMenuContent();
 }
-
-function closePanelMenu() {
-    document.querySelectorAll('.panel-menu-pop').forEach(el => el.remove());
-    openMenuPanel = null;
+function paintPanelSelector() {
+    const nav=document.querySelector('.permission-panel-nav');if(!nav)return;
+    nav.innerHTML=`<h4>${__('perms.panels')}</h4>`+Object.entries(PANELS).map(([tab,panels])=>`<div class="permission-module-label">${__('nav.'+tab)}</div>${panels.map(panel=>`<button type="button" class="permission-panel-button ${openMenuPanel===tab+'.'+panel.id?'active':''}" data-permission-panel="${tab}.${panel.id}" aria-pressed="${openMenuPanel===tab+'.'+panel.id}">${__(panel.key)}</button>`).join('')}`).join('');
+    nav.querySelectorAll('button').forEach(button=>button.onclick=()=>{openMenuPanel=button.dataset.permissionPanel;paintPanelSelector();renderPanelMenuContent();nav.querySelector(`[data-permission-panel="${openMenuPanel}"]`)?.focus({preventScroll:true});});
 }
-
-function openPanelMenu(panelKey, card) {
-    closePanelMenu();
-    openMenuPanel = panelKey;
-    const pop = document.createElement('div');
-    pop.className = 'panel-menu-pop';
-    pop.dataset.panel = panelKey;
-    card.appendChild(pop);
-    renderPanelMenuContent();
-}
-
 function renderPanelMenuContent() {
-    const pop = document.querySelector(`.panel-menu-pop[data-panel="${openMenuPanel}"]`);
-    if (!pop || !departmentPermissions) return;
-    const panelKey = openMenuPanel;
-    const { panel } = findPanelMeta(panelKey);
-    const contentOpts = CONTENT_OPTIONS[panelKey];
-
-    let html = `<div class="panel-menu-title"><i class="" data-icon="${panel?.icon || 'tune'}"></i> ${__(panel?.key || panelKey)}</div>`;
-
-    // Erişim: tüm ranklar için Gizle/Gör/Düzenle
-    html += `<div class="panel-menu-section-title">${__('perms.menu_access')}</div>`;
-    DEPARTMENTS.forEach(dept => {
-        const explicit = departmentPermissions[dept.id]?.panels?.[panelKey];
-        const effective = levelFor(dept.id, panelKey);
-        html += `<div class="panel-menu-row">` +
-            `<span class="panel-menu-rank">${__(dept.nameKey)}</span>` +
-            `<span class="perm-cell">` +
-            `<button type="button" class="perm-cycle ${LEVEL_CLASS[effective]}" data-menu-dept="${dept.id}" data-menu-level="${effective}" title="${__('perms.cycle_hint')}">${cycleIcon(effective)}</button>` +
-            `${explicit !== undefined ? `<button type="button" class="perm-reset-btn" data-menu-reset="${dept.id}" title="${__('perms.reset_btn')}"><i class="" data-icon="restart_alt"></i></button>` : ''}` +
-            `</span></div>`;
+    const pop=document.querySelector('.permission-workspace .panel-menu-pop');
+    if(!pop || !departmentPermissions || !openMenuPanel)return;
+    const focus = pop.contains(document.activeElement) ? {...document.activeElement.dataset} : null;
+    const panelKey=openMenuPanel;
+    const {panel}=findPanelMeta(panelKey);
+    const options=CONTENT_OPTIONS[panelKey];
+    pop.dataset.panel=panelKey;
+    let html=`<h4 class="panel-menu-title">${__(panel.key)}</h4><p class="form-hint">${__('perms.panel_desc')}</p><div class="panel-menu-section-title">${__('perms.menu_access')}</div>`;
+    DEPARTMENTS.forEach(dept=>{
+        const explicit=departmentPermissions[dept.id]?.panels?.[panelKey];
+        const effective=levelFor(dept.id,panelKey);
+        html+=`<div class="panel-menu-row"><div><span class="panel-menu-rank">${__(dept.nameKey)}</span>${explicit===undefined?`<span class="permission-inherited">${__('perms.inherited')}</span>`:''}</div><span class="perm-cell"><button type="button" class="perm-cycle ${LEVEL_CLASS[effective]}" data-menu-dept="${dept.id}" data-menu-level="${effective}" aria-label="${__(dept.nameKey)}: ${levelLabel(effective)}">${cycleIcon(effective)}</button>${explicit!==undefined?`<button type="button" class="icon-action-btn small" data-menu-reset="${dept.id}" title="${__('perms.reset_btn')}" aria-label="${__('perms.reset_btn')}">${icon('refresh',{size:14})}</button>`:''}</span></div>`;
     });
-
-    // İçerik ayarları (destekleyen panellerde)
-    if (contentOpts) {
-        html += `<div class="panel-menu-section-title">${__('perms.menu_content')}</div>`;
-        html += `<select class="panel-menu-rank-select">` +
-            DEPARTMENTS.map(d => `<option value="${d.id}" ${d.id === menuContentDept ? 'selected' : ''}>${__(d.nameKey)}</option>`).join('') +
-            `</select>`;
-        const deptData = departmentPermissions[menuContentDept] || {};
-        const hiddenTags = new Set(deptData.hiddenFields?.[panelKey] || []);
-        const hiddenChips = new Set(deptData.hiddenChips?.[panelKey] || []);
-
-        html += `<div class="panel-menu-checks">`;
-        contentOpts.fieldGroups.forEach(opt => {
-            html += `<label class="perm-hidden-choice"><input type="checkbox" data-cfg="hiddenFields" data-tag="${opt.tag}" ${hiddenTags.has(opt.tag) ? 'checked' : ''}><span>${__(opt.key)}</span></label>`;
-        });
-        html += `</div>`;
-        html += `<div class="panel-menu-section-title">${__('perms.menu_chips')}</div>`;
-        html += `<div class="panel-menu-checks">`;
-        contentOpts.chips.forEach(opt => {
-            html += `<label class="perm-hidden-choice"><input type="checkbox" data-cfg="hiddenChips" data-tag="${opt.id}" ${hiddenChips.has(opt.id) ? 'checked' : ''}><span>${__(opt.key)}</span></label>`;
-        });
-        html += `</div>`;
-        html += `<p class="intro-description" style="margin-top:6px;">${__('perms.hidden_hint')}</p>`;
+    if(options) {
+        const deptData=departmentPermissions[menuContentDept]||{};
+        html+=`<div class="visibility-controls"><div class="permission-department-picker"><span>${__('perms.choose_department')}</span><button type="button" class="chrome-btn-outline" data-select-department aria-haspopup="dialog">${__(DEPARTMENTS.find(dept=>dept.id===menuContentDept).nameKey)}${icon('chevron-down',{size:14})}</button></div>`;
+        for(const [bucket,list,title] of [['hiddenFields',options.fieldGroups,'perms.menu_content'],['hiddenChips',options.chips,'perms.menu_chips']]) {
+            const hidden=new Set(deptData[bucket]?.[panelKey]||[]);
+            html+=`<fieldset><legend>${__(title)}</legend>`+list.map(option=>`<label class="perm-hidden-choice"><input type="checkbox" data-cfg="${bucket}" data-tag="${option.tag||option.id}" ${hidden.has(option.tag||option.id)?'checked':''}><span>${__(option.key)}</span></label>`).join('')+'</fieldset>';
+        }
+        html+=`<p class="form-hint">${__('perms.hidden_hint')}</p></div>`;
     }
-
-    // DOM once yazilir, listener'lar SONRA baglanir — innerHTML sonrasina tasiyarak
-    // buton ogelerini olduren eski siralama duzeltildi.
-    pop.innerHTML = html;
-
-    pop.querySelectorAll('.perm-cycle[data-menu-dept]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const dept = btn.dataset.menuDept;
-            const panels = ensureDeptEntry(dept);
-            panels[panelKey] = nextLevel(btn.dataset.menuLevel);
-            scheduleSave();
-            renderMatrixTable();
-            renderPanelMenuContent();
-        });
+    pop.innerHTML=html;
+    pop.querySelectorAll('[data-menu-dept]').forEach(button=>button.onclick=()=>{if(!currentUser.isAdmin)return;ensureDeptEntry(button.dataset.menuDept)[panelKey]=nextLevel(button.dataset.menuLevel);scheduleSave();renderMatrixTable();renderPanelMenuContent();});
+    pop.querySelectorAll('[data-menu-reset]').forEach(button=>button.onclick=()=>{if(!currentUser.isAdmin)return;delete ensureDeptEntry(button.dataset.menuReset)[panelKey];scheduleSave();renderMatrixTable();renderPanelMenuContent();});
+    const picker=pop.querySelector('[data-select-department]');
+    if(picker)picker.onclick=()=>openPopover(picker,{render(menu){menu.innerHTML='<div class="menu-list">'+DEPARTMENTS.map(dept=>`<button type="button" class="menu-item ${dept.id===menuContentDept?'is-selected':''}" data-content-dept="${dept.id}">${__(dept.nameKey)}</button>`).join('')+'</div>';menu.querySelectorAll('button').forEach(button=>button.onclick=()=>{menuContentDept=button.dataset.contentDept;closePopover();renderPanelMenuContent();});}});
+    pop.querySelectorAll('input[data-cfg]').forEach(input=>input.onchange=()=>{
+        if(!currentUser.isAdmin)return;
+        ensureDeptEntry(menuContentDept);
+        const entry=departmentPermissions[menuContentDept];
+        const bucket=entry[input.dataset.cfg] ||= {};
+        const tags=new Set(bucket[panelKey]||[]);
+        if(input.checked)tags.add(input.dataset.tag);else tags.delete(input.dataset.tag);
+        if(tags.size)bucket[panelKey]=[...tags];else {delete bucket[panelKey];if(!Object.keys(bucket).length)delete entry[input.dataset.cfg];}
+        scheduleSave();
     });
-    pop.querySelectorAll('[data-menu-reset]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const dept = btn.dataset.menuReset;
-            const panels = departmentPermissions[dept]?.panels;
-            if (panels) delete panels[panelKey];
-            scheduleSave();
-            renderMatrixTable();
-            renderPanelMenuContent();
-        });
-    });
-    const select = pop.querySelector('.panel-menu-rank-select');
-    if (select) {
-        select.addEventListener('change', () => { menuContentDept = select.value; renderPanelMenuContent(); });
-    }
-    pop.querySelectorAll('input[data-cfg]').forEach(input => {
-        input.addEventListener('change', () => {
-            if (!departmentPermissions[menuContentDept]) departmentPermissions[menuContentDept] = { panels: {} };
-            const bucket = departmentPermissions[menuContentDept][input.dataset.cfg] || (departmentPermissions[menuContentDept][input.dataset.cfg] = {});
-            const tags = new Set(bucket[panelKey] || []);
-            if (input.checked) tags.add(input.dataset.tag); else tags.delete(input.dataset.tag);
-            if (tags.size) bucket[panelKey] = [...tags];
-            else {
-                delete bucket[panelKey];
-                if (!Object.keys(bucket).length) delete departmentPermissions[menuContentDept][input.dataset.cfg];
-            }
-            scheduleSave();
-        });
-    });
+    const focusDept=focus?.menuDept || focus?.menuReset;
+    if(focusDept)pop.querySelector(`[data-menu-dept="${focusDept}"]`)?.focus({preventScroll:true});
 }
-
 export function initRolesModule() {
-    const finishLoading = beginPanelLoading(document.getElementById('dept-permissions-container'));
-    loadDepartmentPermissions().then(() => {
-        finishLoading();
-        renderMatrixTable();
-    });
-    onLangChange(() => {
-        if (departmentPermissions) renderMatrixTable();
-    });
+    const finish=beginPanelLoading(document.getElementById('dept-permissions-container'));
+    loadDepartmentPermissions().then(()=>{confirmedPermissions=structuredClone(departmentPermissions);finish();renderMatrixTable();initPanelMenus();});
+    onLangChange(()=>{renderMatrixTable();paintPanelSelector();renderPanelMenuContent();});
 }
-
-export { TABS, DEPARTMENTS };
+export {TABS,DEPARTMENTS};

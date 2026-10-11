@@ -1,6 +1,6 @@
 import { initSystemSections } from './modules/system.js';
 import { initIcons } from './utils/icons.js';
-import { initShell, closePopover, closeDrawer, closeModal } from './modules/shell.js';
+import { initShell, refreshNavigation, closePopover, closeDrawer, closeModal } from './modules/shell.js';
 // js/main.js
 
 import { initFirebase, auth } from './core/firebase.js';
@@ -147,7 +147,7 @@ export function startApp(firebaseConfig) {
             }
         } else {
             // --- User is LOGGED OUT ---
-            setCurrentUser(false,[]);document.body.classList.remove('admin-mode');
+            setCurrentUser(false,[]);document.dispatchEvent(new CustomEvent('vertex:close-navigation'));document.body.classList.remove('admin-mode');
             closePopover({restoreFocus:false});closeModal();closeDrawer(false);
             console.log("[AUTH] No user signed in. Displaying login page.");
             dom.loginContainer.style.display = 'block';
@@ -327,6 +327,7 @@ function applyPanelGate(isAdmin) {
         const permsCard = document.getElementById('dept-perms-manager');
         if (permsCard) permsCard.style.display = 'none';
     }
+    refreshNavigation();
 }
 
 function renderProfile(user, isAdmin, departments) {

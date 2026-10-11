@@ -2,7 +2,7 @@ import { confirmDialog } from './shell.js';
 import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../utils/loading.js';
 // js/modules/subscriptions.js
 
-import { showToast, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
+import { showToast, __, getLang, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
 import { removeUserSubscriptionFn, listUserSubscriptionsFn } from '../core/firebase.js';
 import { grantPremium, grantPremiumBulk } from './admin.js';
@@ -62,7 +62,7 @@ function populatePlanOptions() {
 
 function formatDate(value) {
     if (!value) return '—';
-    return new Date(value).toLocaleString(undefined, {
+    return new Date(value).toLocaleString(getLang() === 'tr' ? 'tr-TR' : 'en-US', {
         year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
 }

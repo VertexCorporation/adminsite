@@ -143,39 +143,6 @@
 }
 
 /* ---------- Departman yetki matrisi (System > Permissions) ---------- */
-.perms-matrix { width: 100%; border-collapse: collapse; font-size: var(--fs-secondary); }
-.perms-matrix th, .perms-matrix td { padding: var(--space-2); text-align: left; }
-.perms-matrix thead th {
-    font-size: var(--fs-label);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--text-muted);
-    border-bottom: 1px solid var(--border-strong);
-    white-space: nowrap;
-}
-.perms-matrix tbody tr { border-bottom: 1px solid var(--border-subtle); }
-.perms-matrix tbody tr:hover { background: var(--bg-hover); }
-.perms-matrix .perm-cycle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: var(--touch-target);
-    height: 30px;
-    padding: 0 var(--space-2);
-    border-radius: var(--radius-xs);
-    border: 1px solid var(--border-subtle);
-    background: transparent;
-    font-size: var(--fs-metadata);
-    font-weight: 600;
-    color: var(--text-secondary);
-    transition: background-color var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
-}
-.perms-matrix .perm-cycle:hover { background: var(--bg-hover); color: var(--text-primary); }
-.perms-matrix .perm-cycle.perm-write { color: var(--status-success); border-color: transparent; background: var(--status-success-soft); }
-.perms-matrix .perm-cycle.perm-read { color: var(--status-info); border-color: transparent; background: var(--status-info-soft); }
-.perms-matrix .perm-cycle.perm-none { color: var(--text-muted); background: var(--bg-hover); }
-
 /* Gizli alan / çip ayarları (erişim ayarları bölümünde) */
 .perm-hidden-choice {
     display: flex;
@@ -439,7 +406,7 @@
 .contributor-row > * {min-width:0;}
 .contributor-cell-name {text-align:left;}
 .panel-readonly input,.panel-readonly select,.panel-readonly textarea,.panel-readonly button[type=submit],.panel-readonly .write-only{pointer-events:none;}
-.dept-perms-table {overflow-x:auto;} .dept-perms-header,.dept-perms-row{display:grid;grid-template-columns:140px 100px repeat(6,80px);min-width:760px;gap:8px;align-items:center;padding:8px;}
+.dept-perms-table {overflow-x:auto;}
 .system-sections {display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;}
 #dept-perms-manager .panel-menu-pop{width:100%;padding:16px;}
 .profile-details .detail-row,.profile-details > div {display:flex;justify-content:space-between;padding:12px 0;gap:12px;overflow-wrap:anywhere;}
@@ -476,3 +443,53 @@
 .vx-drawer #model-manager>.card-title-row{display:none}
 .vx-modal-body>.modal-content{width:100%;max-height:none;overflow:visible;border:0;padding:0;box-shadow:none;background:transparent}
 @media(max-width:767px){.model-workspace-actions{width:100%}.model-workspace-actions>button{flex:1}.series-group summary{align-items:center}.model-item{gap:var(--space-2)}}
+
+/* A single grid template keeps matrix headers and actual rendered rows aligned. */
+#dept-perms-manager{background:transparent;border:0;padding:0}
+#dept-perms-manager>.card-title-row .title-details>.icon{display:none}
+.dept-perms-table{--permission-columns:minmax(132px,1.25fr) repeat(6,minmax(108px,1fr)) 36px;border-top:1px solid var(--border-subtle);margin-top:12px}
+.dept-perms-header,.dept-perm-row{display:grid;grid-template-columns:var(--permission-columns);gap:8px;align-items:center;min-width:950px;padding:10px 8px}
+.dept-perms-header{color:var(--text-muted);font-size:11px;font-weight:500;min-height:42px}
+.dept-perm-row{border-bottom:1px solid var(--border-subtle);font-size:13px;min-height:54px}
+.dept-perm-row:hover{background:var(--bg-nav-hover)}
+.dept-perm-label{font-weight:500;color:var(--text-primary)}
+.dept-perm-group-header{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;padding:16px 8px 4px}
+.perm-cell{display:flex;align-items:center;gap:4px;min-width:0;position:relative}
+.perm-cycle{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:30px;padding:0 9px;border:1px solid var(--border-subtle);border-radius:8px;font-size:11px;white-space:nowrap;color:var(--text-secondary);background:transparent;min-width:80px;transition:background-color var(--motion-fast) var(--ease-standard),border-color var(--motion-fast) var(--ease-standard),color var(--motion-fast) var(--ease-standard)}
+.perm-cycle.perm-write{color:var(--text-primary);background:var(--bg-elevated);border-color:var(--border-strong)}
+.perm-cycle.perm-read{color:var(--text-secondary);background:var(--bg-surface)}
+.perm-cycle.perm-none{color:var(--text-muted)}
+.perm-cycle:hover{background:var(--bg-hover);border-color:var(--border-strong)}
+.perm-override-dot{width:4px;height:4px;background:var(--text-muted);border-radius:50%;flex-shrink:0}
+.permission-status-row{min-height:28px;display:flex;align-items:center;justify-content:flex-end;font-size:12px;color:var(--text-muted)}
+#permission-save-status[data-state="failed"]{color:var(--status-error)}
+#permission-save-status[data-state="saving"]{color:var(--text-secondary)}
+.permission-workspace{display:grid;grid-template-columns:220px minmax(0,1fr);gap:28px;margin-top:32px;border-top:1px solid var(--border-subtle);padding-top:24px;align-items:start}
+.permission-panel-nav{max-height:650px;overflow-y:auto;padding-right:8px;display:flex;flex-direction:column;gap:3px;position:sticky;top:80px}
+.permission-panel-nav h4{font-size:13px;font-weight:500;margin-bottom:8px}
+.permission-module-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;padding:14px 8px 4px;letter-spacing:.04em}
+.permission-panel-button{font-size:12px;text-align:left;padding:9px 10px;border-radius:8px;color:var(--text-secondary);transition:background-color var(--motion-fast) var(--ease-standard),color var(--motion-fast) var(--ease-standard)}
+.permission-panel-button:hover{background:var(--bg-nav-hover)}
+.permission-panel-button.active{background:var(--bg-elevated);color:var(--text-primary)}
+#dept-perms-manager .panel-menu-pop{border:0;background:transparent;padding:0;min-width:0}
+.panel-menu-title{font-size:16px;margin-bottom:6px;font-weight:600}
+.panel-menu-row{border-bottom:1px solid var(--border-subtle);min-height:48px;padding:8px 0;gap:12px}
+.panel-menu-rank{font-size:13px}
+.permission-inherited{display:block;font-size:11px;color:var(--text-muted);margin-top:3px}
+.visibility-controls{margin-top:28px;display:flex;flex-direction:column;gap:20px}
+.permission-department-picker{display:flex;align-items:center;gap:12px;justify-content:space-between;font-size:12px;color:var(--text-secondary)}
+.panel-menu-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.perm-hidden-choice{padding:8px 0;min-height:36px;font-size:12px}
+#tab-contributors [data-panel="contributors.list"]{background:transparent;border:0;padding:0}
+#tab-contributors .filter-chip{height:28px;padding:0 9px;font-size:11px}
+.contributor-avatar{background:var(--bg-elevated);color:var(--text-muted)}
+.contributor-row .status-badge{background:var(--bg-elevated);border-color:var(--border-subtle);color:var(--text-secondary)}
+.contributor-table-head{color:var(--text-muted)}
+#subscription-list-manager .dept-user-row{padding:10px 0;min-height:64px}
+#subscription-list-manager .dept-badge{background:var(--bg-elevated);color:var(--text-secondary)}
+#assign-subscription-btn,#sub-bulk-submit{background:transparent;color:var(--text-primary);border-color:var(--border-strong)}
+#sub-bulk-submit{font-size:12px}
+@media(max-width:720px){.permission-workspace{grid-template-columns:minmax(0,1fr);gap:24px}.permission-panel-nav{position:static;max-height:220px;overflow:auto}.permission-panel-button{min-height:40px}.perm-cycle{height:34px}.dept-perms-table{margin-left:0}.panel-menu-row{gap:8px}.permission-status-row{justify-content:flex-start;min-height:36px}}
+
+.visibility-controls fieldset{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}.visibility-controls legend{grid-column:1/-1}
+@media(max-width:460px){.visibility-controls fieldset{grid-template-columns:1fr}}

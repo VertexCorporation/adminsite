@@ -6,23 +6,25 @@
    ================================================================ */
 
 :root {
+    color-scheme: dark;
     /* ---------- Renk: Dark (varsayılan) ---------- */
-    --bg-app: #0B0C0E;
-    --bg-sidebar: #101114;
-    --bg-surface: #151619;
-    --bg-elevated: #1C1E22;
-    --bg-hover: #24262B;
+    --bg-app: #0F0F10;
+    --bg-sidebar: #171717;
+    --bg-surface: #171717;
+    --bg-elevated: #212121;
+    --bg-hover: #242424;
+    --bg-nav-hover: #1C1C1C;
 
-    --border-subtle: #25272C;
-    --border-strong: #34373D;
+    --border-subtle: #292929;
+    --border-strong: #353535;
 
-    --text-primary: #F5F5F6;
-    --text-secondary: #A7A9AF;
-    --text-muted: #858891;
-    --text-disabled: #696D75;
+    --text-primary: #F5F5F5;
+    --text-secondary: #ACACAC;
+    --text-muted: #858585;
+    --text-disabled: #646464;
 
-    --action-primary: #F5F5F6;
-    --action-primary-text: #111214;
+    --action-primary: #F5F5F5;
+    --action-primary-text: #171717;
 
     /* Durum renkleri — kontrollü semantik vurgu */
     --status-success: #3FB68B;
@@ -68,7 +70,7 @@
     --radius-full: 999px;
 
     /* Boyutlar */
-    --sidebar-width: 240px;
+    --sidebar-width: 256px;
     --topbar-height: 56px;
     --content-max: 1480px;
     --content-pad-x: 32px;
@@ -80,14 +82,18 @@
     --touch-target: 44px;
 
     /* ---------- Hareket ---------- */
-    --motion-fast: 100ms;
-    --motion-normal: 160ms;
+    --motion-instant: 80ms;
+    --motion-fast: 120ms;
+    --motion-normal: 170ms;
+    --motion-overlay: 190ms;
     --motion-slow: 220ms;
     --motion-popover: 180ms;
 
     --motion-popover-close: 120ms;
     --motion-drawer: 220ms;
 
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+    --ease-in: cubic-bezier(.4, 0, 1, 1);
     --ease-standard: cubic-bezier(.2, .8, .2, 1);
     --ease-exit: cubic-bezier(.4, 0, 1, 1);
 
@@ -96,7 +102,7 @@
     --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4);
 
     /* Glass — yalnızca popover gibi yükseltilmiş yüzeylerde, düşük opaklık */
-    --glass-bg: rgba(21, 22, 25, 0.92);
+    --glass-bg: rgba(33, 33, 33, 0.98);
     --glass-blur: 14px;
 
     /* Odak */
@@ -116,11 +122,13 @@
 
 /* ---------- Light ---------- */
 html[data-theme="light"] {
+    color-scheme: light;
     --bg-app: #F8F9FA;
     --bg-sidebar: #F3F4F6;
     --bg-surface: #FFFFFF;
     --bg-elevated: #FFFFFF;
     --bg-hover: #EFF1F3;
+    --bg-nav-hover: #ECEDEF;
 
     --border-subtle: #E3E5E8;
     --border-strong: #D4D7DB;
@@ -150,11 +158,13 @@ html[data-theme="light"] {
 
 /* ---------- System: işletim sistemi tercihini izler ---------- */
 html[data-theme="system"] {
+    color-scheme: light;
     --bg-app: #F8F9FA;
     --bg-sidebar: #F3F4F6;
     --bg-surface: #FFFFFF;
     --bg-elevated: #FFFFFF;
     --bg-hover: #EFF1F3;
+    --bg-nav-hover: #ECEDEF;
 
     --border-subtle: #E3E5E8;
     --border-strong: #D4D7DB;
@@ -184,22 +194,24 @@ html[data-theme="system"] {
 
 @media (prefers-color-scheme: dark) {
     html[data-theme="system"] {
-        --bg-app: #0B0C0E;
-        --bg-sidebar: #101114;
-        --bg-surface: #151619;
-        --bg-elevated: #1C1E22;
-        --bg-hover: #24262B;
+        color-scheme: dark;
+        --bg-app: #0F0F10;
+        --bg-sidebar: #171717;
+        --bg-surface: #171717;
+        --bg-elevated: #212121;
+        --bg-hover: #242424;
+    --bg-nav-hover: #1C1C1C;
 
-        --border-subtle: #25272C;
-        --border-strong: #34373D;
+        --border-subtle: #292929;
+        --border-strong: #353535;
 
-        --text-primary: #F5F5F6;
-        --text-secondary: #A7A9AF;
-        --text-muted: #858891;
-        --text-disabled: #696D75;
+        --text-primary: #F5F5F5;
+        --text-secondary: #ACACAC;
+        --text-muted: #858585;
+        --text-disabled: #646464;
 
-        --action-primary: #F5F5F6;
-        --action-primary-text: #111214;
+        --action-primary: #F5F5F5;
+        --action-primary-text: #171717;
 
         --status-success: #3FB68B;
         --status-success-soft: rgba(63, 182, 139, 0.12);
@@ -213,7 +225,7 @@ html[data-theme="system"] {
         --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.32);
         --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4);
 
-        --glass-bg: rgba(21, 22, 25, 0.92);
+        --glass-bg: rgba(33, 33, 33, 0.98);
     }
 }
 

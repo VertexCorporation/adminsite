@@ -34,7 +34,7 @@ export function initContributorsModule() {
 /** Rank bazli gizlenen filtre ciplerini uygula (adminler hepsini gorur). */
 export function applyChipVisibility() {
     const hidden = new Set(getHiddenChipsFor('contributors.list'));
-    document.querySelectorAll('.filter-chip').forEach(chip => {
+    document.querySelectorAll('#tab-contributors .filter-chip').forEach(chip => {
         const filter = chip.getAttribute('data-filter');
         if (filter && filter !== 'all') chip.style.display = hidden.has(filter) ? 'none' : '';
     });
@@ -71,7 +71,7 @@ function renderContributors(contributors) {
         const match = ({all:true,verified:!!p.hasVerified,unverified:!p.hasVerified,'age-14-15':p.age>=14&&p.age<=15,'age-16-17':p.age>=16&&p.age<=17,'age-18':p.age>=18,linkedin:!!p.linkedin,github:!!p.github,interview:!!p.interviewDate})[activeFilter];
         return match && [p.name,p.email,p.department].some(v=>String(v || '').toLowerCase().includes(query));
     });
-    document.querySelectorAll('.filter-chip').forEach(b=>b.classList.toggle('active',b.dataset.filter===activeFilter));
+    document.querySelectorAll('#tab-contributors .filter-chip').forEach(b=>b.classList.toggle('active',b.dataset.filter===activeFilter));
     const canWrite = getEffectivePanelLevel('contributors.list')==='write';
     const admin = isPanelAdmin();
     const headers = ['name','department','age','status','interview','actions'];

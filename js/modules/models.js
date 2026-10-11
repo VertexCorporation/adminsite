@@ -1129,7 +1129,7 @@ function openModelEditor(){
     const card=document.getElementById('model-manager');
     if(!modelHome)modelHome={parent:card.parentElement,next:card.nextSibling};
     card.hidden=false;
-    openDrawer({title:__('models.form_title'),render:body=>body.append(card),onAfterClose:()=>{card.hidden=true;modelHome.parent.insertBefore(card,modelHome.next);}});
+    openDrawer({title:__('models.form_title'),render:body=>body.append(card),onAfterClose:()=>{if(card.closest('.vx-drawer')?.getAttribute('aria-hidden')!=='true')return;card.hidden=true;modelHome.parent.insertBefore(card,modelHome.next);}});
 }
 function compactModelActions(root){
     root.querySelectorAll('.item-actions,.series-actions').forEach(actions=>{

@@ -1,5 +1,7 @@
 # vertex console verification
 
+For the latest interface refinement and its 35 browser check groups, see [precision-refinement.md](precision-refinement.md) and [precision-verification.json](precision-verification.json). The results below describe the preceding reconstruction and backend repair.
+
 The existing vanilla JavaScript application and Firebase/Curator contracts are retained. The initial reconstruction checkpoint is `24d8b21`.
 
 ## interface

@@ -5,8 +5,8 @@
    ================================================================ */
 
 @keyframes tabFade {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fadeIn {
@@ -26,7 +26,7 @@
 
 /* İçerik geçişi: skeleton → içerik crossfade */
 .content-fade-in {
-    animation: fadeIn 180ms var(--ease-standard) both;
+    animation: fadeIn var(--motion-normal) var(--ease-standard) both;
 }
 
 /* Dekoratif hareketleri tamamen kaldır */

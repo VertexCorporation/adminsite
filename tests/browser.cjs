@@ -5,16 +5,17 @@ const server=http.createServer((req,res)=>{const p=path.join(root,decodeURICompo
 (async()=>{
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch({...(process.env.CHROME_PATH ? {executablePath:process.env.CHROME_PATH} : {}),headless:true});
-const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=true,history=[],people=null,contributorDelay=0,failContributors=false,failNotification=false; let joiningDate=null;
+const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=true,history=[],people=null,contributorDelay=0,failContributors=false,failNotification=false; let joiningDate=null,failPermissionSave=false;
 
 const person={id:'person',name:'Example Participant',email:'person@example.invalid',language:'en',hasVerified:false,createdAt:{_seconds:1767272400},department:'Core',interviewDate:'2026-10-10',about:'Local test fixture'};
 const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet'},constancy:{en:'Constancy',tr:'Metanet'},nobility:{en:'Nobility',tr:'Asalet'},majesty:{en:'Majesty',tr:'Azamet'}};
-const page=await browser.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|Fixture unavailable|Mock delivery outcome uncertain/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
+const page=await browser.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|Fixture unavailable|Mock delivery outcome uncertain|Fixture permission rejection/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
+if(process.env.VERTEX_TRACE)await page.context().tracing.start({screenshots:true,snapshots:true,sources:true});
 await page.addInitScript(()=>{
  localStorage.setItem('siteLang','en');
  const snapshot={docs:[],empty:true,exists:false,data:()=>({}),forEach:()=>{}};
  const chain={orderBy:()=>chain,where:()=>chain,limit:()=>chain,doc:()=>chain,get:async()=>snapshot,onSnapshot:fn=>{setTimeout(()=>fn(snapshot),0);return ()=>{};}};
- const user={uid:'admin',email:'admin@example.invalid',displayName:'Local Admin',getIdTokenResult:async()=>({claims:{admin:true}}),getIdToken:async()=>'test-only',updateProfile:async()=>{}};
+ const user={uid:'admin',email:'admin@example.invalid',displayName:'Local Admin',getIdTokenResult:async()=>({claims:window.__testClaims || {admin:true}}),getIdToken:async()=>'test-only',updateProfile:async()=>{}};
  const listeners=[];const auth={currentUser:user,onAuthStateChanged:fn=>{listeners.push(fn);setTimeout(()=>fn(user),10);return ()=>{};},signOut:async()=>{auth.currentUser=null;listeners.forEach(fn=>fn(null));},signInWithEmailAndPassword:async()=>{auth.currentUser=user;listeners.forEach(fn=>fn(user));}};
  window.firebase={apps:[],initializeApp:()=>{},auth:()=>auth,firestore:()=>({collection:()=>chain}),storage:()=>({}),functions:()=>({}),appCheck:()=>({activate:()=>{}}),app:()=>({functions:()=>({httpsCallable:()=>async()=>({data:{}})})})};
 });
@@ -30,6 +31,7 @@ await page.route('**/*',async route=>{
   const name=url.hostname.split('-')[0];calls.push(name);payloads.push({name,data:route.request().postDataJSON()?.data});
   if(name==='sendtargetednotification' && failNotification)return route.fulfill({status:500,contentType:'application/json',body:JSON.stringify({error:{status:'INTERNAL',message:'Mock delivery outcome uncertain'}})});
   let result={};
+  if(name==='savedepartmentpermissions' && failPermissionSave)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture permission rejection'}})});
   if(name==='getvertexcontributors'){const fixture=people || [person];if(contributorDelay)await new Promise(r=>setTimeout(r,contributorDelay));if(failContributors)return route.fulfill({contentType:'application/json',status:503,body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});result={contributors:fixture};}
   else if(name==='getvertexcertificatedetails')result={types,eligibility:{status:'joining-date-required',eligibleTypes:[],joinedAt:joiningDate},history};
   else if(name==='setvertexcontributorjoiningdate'){joiningDate=route.request().postDataJSON().data.joinedAt;result={success:true};}
@@ -40,7 +42,7 @@ await page.route('**/*',async route=>{
   else if(name==='bulksetusersubscriptions')result={grantedCount:1,failedCount:1,failed:[{email:'missing@example.invalid',error:'User not found'}],invalidTokens:[]};
   else if(name==='listdepartmentusers')result={users:[]};
   else if(name==='listadmins')result={admins:[]};
-  else if(name==='listusersubscriptions')result={subscriptions:[]};
+  else if(name==='listusersubscriptions')result={subscriptions:[{uid:'sub-fixture',displayName:'Example Subscriber',email:'subscriber@example.invalid',tier:'pro',expiresAt:'2027-01-01T12:00:00Z'}]};
   else if(name==='listsiteteam')result={staff:[],mods:[]};
   else if(name==='getcoveruploadurl')result={signedUrl:'https://upload.example.invalid/cover',filePath:'test-cover.png'};
   return route.fulfill({contentType:'application/json',body:JSON.stringify({result})});
@@ -56,19 +58,19 @@ const checks=[];
 const note=x=>{checks.push(x);console.log('PASS',x);};
 const issueCount=()=>calls.filter(n=>n==='issuevertexcertificate').length;
 const openCert=async()=>{await page.waitForSelector('.vx-popover.is-closing',{state:'detached'});await page.waitForSelector('.vx-modal[aria-hidden=true]',{state:'detached'});await page.locator('.certificate-manage-btn').first().click();await page.waitForSelector('[data-award]');};
-const selectTab=async id=>{if(await page.locator('#nav-toggle').isVisible())await page.locator('#nav-toggle').click();await page.locator(`[data-target="tab-${id}"]`).click();};
+const selectTab=async id=>{if(await page.locator('#nav-toggle').isVisible())await page.locator('#nav-toggle').click();await page.locator(`[data-target="tab-${id}"]`).click();if(await page.locator('#nav-toggle').isVisible()&&await page.locator('.app-sidebar.open').count())await page.keyboard.press('Escape');};
 for(const width of [360,390,768,1024,1440,1920]){
  await page.setViewportSize({width,height:900});
- for(const theme of ['light','dark']){
+ for(const theme of ['light','dark']){console.log('VIEW',width,theme);
   await page.evaluate(async mode=>(await import('/js/modules/shell.js')).applyTheme(mode),theme);
-  await page.waitForTimeout(350);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),theme==='light'?'rgb(248, 249, 250)':'rgb(11, 12, 14)');
+  await page.waitForTimeout(350);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),theme==='light'?'rgb(248, 249, 250)':'rgb(15, 15, 16)');
   for(const id of ['contributors','models','news','notifications','subscriptions','chat','system','profile']){
    await selectTab(id);
    assert(await page.locator('#tab-'+id).isVisible(),id);
    const dims=await page.evaluate(()=>({w:innerWidth,scroll:document.documentElement.scrollWidth}));
    if(dims.scroll>dims.w+1)console.error(await page.evaluate(()=>[...document.querySelectorAll("body *")].filter(el=>el.getBoundingClientRect().right>innerWidth+1).map(el=>({tag:el.tagName,id:el.id,cls:el.className,right:el.getBoundingClientRect().right})).slice(0,20)));assert(dims.scroll<=dims.w+1,`${width}/${theme}/${id}: overflow ${dims.scroll}`);
   }
-  await selectTab('contributors');await openCert();
+  await selectTab('contributors');if(process.env.VERTEX_SCREENSHOTS){await page.waitForTimeout(250);fs.mkdirSync(process.env.VERTEX_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.VERTEX_SCREENSHOTS,`before-${width}-${theme}.png`)});}await openCert();
   await page.waitForTimeout(200);const box=await page.locator('.cert-popover').boundingBox();assert(box.x>=0&&box.x+box.width<=width+1&&box.y>=0&&box.y+box.height<=901,JSON.stringify(box));
   if(process.env.VERTEX_SCREENSHOTS){fs.mkdirSync(process.env.VERTEX_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.VERTEX_SCREENSHOTS,`vertex-${width}-${theme}.png`)});}
   await page.keyboard.press('Escape');
@@ -91,7 +93,7 @@ for(const retrySafe of [false,true]){history=[{id:'failed',certificateType:'tena
 note('Failed retrySafe gate and retry:true contract');
 history=[];await openCert();await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('tr');});assert.equal(await page.locator('.cert-popover h2').innerText(),'Sertifika Tanımla');await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('en');});await page.keyboard.press('Escape');note('Live TR/EN popover localization');
 for(let i=0;i<8;i++){await openCert();await page.keyboard.press('Escape');assert.equal(await page.locator('.cert-popover:not(.is-closing)').count(),0);}assert(await page.locator('.certificate-manage-btn').first().evaluate(el=>el===document.activeElement));note('Repeated open/close and focus restoration');
-await page.emulateMedia({colorScheme:'light'});await page.evaluate(async()=>{(await import('/js/modules/shell.js')).applyTheme('system');});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(248, 249, 250)');await page.emulateMedia({colorScheme:'dark'});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(11, 12, 14)');note('System theme follows OS');
+await page.emulateMedia({colorScheme:'light'});await page.evaluate(async()=>{(await import('/js/modules/shell.js')).applyTheme('system');});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(248, 249, 250)');await page.emulateMedia({colorScheme:'dark'});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(15, 15, 16)');note('System theme follows OS');
 people=[];await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .state-block');note('Empty state');
 failContributors=true;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('.retry-btn');failContributors=false;people=null;await page.locator('.retry-btn').click();await page.waitForSelector('.contributor-row');note('Error and retry state');
 await page.evaluate(()=>{document.getElementById('contributors-list-container').replaceChildren();});contributorDelay=500;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .skeleton');await page.waitForSelector('.contributor-row');assert.equal(await page.locator('#contributors-list-container .skeleton').count(),0);contributorDelay=0;note('Delayed skeleton to content');
@@ -106,9 +108,26 @@ await selectTab('subscriptions');await page.locator('#sub-user-email').fill('fix
 await selectTab('chat');await page.locator('#chat-input').fill('Mock message');await page.locator('#chat-send').click();await page.waitForTimeout(150);assert(calls.includes('postconsolechatmessage'));note('Chat channels, messages and posting (mock)');
 await selectTab('system');assert.equal(await page.locator('[data-section]').count(),7);await page.locator('[data-section=export]').click();assert(await page.locator('#data-exporter-manager').isVisible());note('7 functional System sections');
 await selectTab('contributors');
+await require('./precision.cjs')({page,selectTab,note,payloads,calls,failPermissions:value=>{failPermissionSave=value;}});
+await selectTab('contributors');
 // Authorization is tested against the same UI, with backend calls still mocked.
 await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.setCurrentUser(false,['Senatus']);await roles.loadDepartmentPermissions();const permissions=roles.getDepartmentPermissions();permissions.Senatus.hiddenFields={'contributors.list':['contact','age','links','interview']};permissions.Senatus.hiddenChips={'contributors.list':['github']};roles.getAccessibleTabs(['Senatus']);await (await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.certificate-manage-btn').count(),0);assert.equal(await page.locator('.edit-contributor-btn').count(),0);assert.equal(await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');return roles.getEffectivePanelLevel('contributors.list');}),'read');assert.equal(await page.locator('.contributor-cell-age').innerText(),'—');await page.locator('[data-details]').click();assert.equal(await page.locator('.vx-drawer-body').innerText().then(s=>s.includes('person@example.invalid')),false);await page.keyboard.press('Escape');note('Department read-only actions and hidden field policies');
 await page.locator('[data-details]').click();await page.waitForSelector('.vx-drawer');await page.evaluate(()=>document.getElementById('logout-btn').click());await page.waitForSelector('.vx-drawer',{state:'detached'});await page.waitForSelector('#login-container',{state:'visible'});assert.equal(await page.locator('#admin-panel').isVisible(),false);await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('.certificate-manage-btn');note('Logout and admin login auth state');
+for(const claims of [{admin:false,departments:['Senatus']},{admin:false,departments:['Aero']}]) {
+ const before=calls.filter(name=>name==='savedepartmentpermissions').length;
+ await page.evaluate(async value=>{window.__testClaims=value;await window.firebase.auth().signOut();},claims);
+ await page.waitForSelector('#login-container',{state:'visible'});
+ await page.locator('#email').fill('member@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();
+ await page.waitForSelector('#admin-panel',{state:'visible'});await page.waitForTimeout(200);
+ assert.equal(await page.locator('[data-nav-action=certificates]').isVisible(),false);
+ assert.equal(await page.locator('[data-nav-action=model-editor]').isVisible(),false);
+ assert.equal(await page.locator('[data-i18n="subnav.permissions"]').isVisible(),false);
+ if(claims.departments[0]==='Aero')assert.equal(await page.locator('[data-target=tab-system]').isVisible(),false);
+ assert.equal(calls.filter(name=>name==='savedepartmentpermissions').length,before);
+}
+await page.evaluate(async()=>{window.__testClaims={admin:true};await window.firebase.auth().signOut();});
+await page.waitForSelector('#login-container',{state:'visible'});await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('.certificate-manage-btn');
+note('Real auth flow hides inaccessible submenus for read-only and contributor-only departments without saving defaults');
 await page.emulateMedia({reducedMotion:'reduce'});assert(await page.locator('.tab-panel.active').evaluate(el=>parseFloat(getComputedStyle(el).animationDuration)<0.001));note('Reduced motion removes transitions and animations');assert.equal(await page.locator('.material-symbols-rounded').count(),0);assert.equal(errors.length,0,errors.join('\n'));assert.deepEqual(consoleErrors,[]);
-const report={checks,uncaughtErrors:errors,unexpectedConsoleErrors:consoleErrors,viewportWidths:[360,390,768,1024,1440,1920],themes:['light','dark','system'],mockCalls:calls.length};fs.mkdirSync(path.join(root,'tests/results'),{recursive:true});fs.writeFileSync(path.join(root,'tests/results/browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser.close();server.close();
+const report={checks,uncaughtErrors:errors,unexpectedConsoleErrors:consoleErrors,viewportWidths:[360,390,768,1024,1440,1920],themes:['light','dark','system'],mockCalls:calls.length};fs.mkdirSync(path.join(root,'tests/results'),{recursive:true});fs.writeFileSync(path.join(root,'tests/results/browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));if(process.env.VERTEX_TRACE)await page.context().tracing.stop({path:path.join(root,'tests/results/precision-trace.zip')});await browser.close();server.close();
 })().catch(e=>{console.error(e);server.close();process.exit(1);});

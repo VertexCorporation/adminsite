@@ -1,11 +1,11 @@
 import { __, onLangChange } from '../utils/ui.js';
 import { isPanelAdmin, getEffectivePanelLevel } from './roles.js';
-const sections={permissions:['dept-perms-manager'],departments:['dept-assign-manager','dept-users-manager'],administrators:['admin-manager','remove-admin-manager','admin-list-manager'],verification:['vertex-status-manager','manual-verify-manager','team-log-manager'],server:['gcs-backup-status','server-status-manager'],attributions:['attributions-manager'],export:['data-exporter-manager']};
+const sections={permissions:['dept-perms-manager'],departments:['dept-assign-manager','dept-users-manager'],administrators:['admin-manager','remove-admin-manager','admin-list-manager'],verification:['manual-verify-manager','team-log-manager'],server:['gcs-backup-status','server-status-manager'],attributions:['attributions-manager'],export:['data-exporter-manager']};
 export function initSystemSections(){
     const system=document.getElementById('tab-system');
     if(!system)return;
     const grid=system.querySelector('.grid-layout');
-    for(const id of ['admin-manager','vertex-status-manager']){const card=document.getElementById(id);if(card)grid.append(card);}
+    for(const id of ['admin-manager']){const card=document.getElementById(id);if(card)grid.append(card);}
     const nav=document.createElement('nav');nav.className='system-sections';nav.setAttribute('aria-label',__('nav.system'));
     grid.before(nav);
     let selected='permissions';
@@ -14,7 +14,9 @@ export function initSystemSections(){
         if(!visible.includes(selected))selected=visible[0];
         nav.innerHTML=visible.map(key=>`<button type="button" class="filter-chip ${selected===key?'active':''}" data-section="${key}" aria-pressed="${selected===key}">${__('system.'+key)}</button>`).join('');
         for(const [key,ids] of Object.entries(sections))for(const id of ids){const card=document.getElementById(id);if(card)card.hidden=key!==selected;}
+        document.querySelectorAll('[data-nav-module=system] .sidebar-sub-btn').forEach(button=>{if(button.dataset.navAction===selected || (button.dataset.navAction==='export' && selected==='attributions'))button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
         nav.querySelectorAll('button').forEach(button=>button.onclick=()=>{selected=button.dataset.section;render();});
     }
+    document.addEventListener('vertex:system-section', event => {if(sections[event.detail]){selected=event.detail;render();}});
     onLangChange(render);document.addEventListener('vertex:departments',()=>queueMicrotask(render));render();
 }

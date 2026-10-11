@@ -9,7 +9,7 @@
     <!-- SEO & Basic Meta -->
     <meta name="description" data-i18n="page.desc" content="Vertex içerikleri, kullanıcı yönetimi ve sistem yönetimi için merkezi kontrol paneli.">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#090909">
+    <meta name="theme-color" content="#0F0F10">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -133,12 +133,13 @@
     <div id="admin-panel" class="app-layout" style="display:none;">
 
         <!-- ÜST BAŞLIK (SABİT HEADER) -->
-        <header class="app-header"><button id="nav-toggle" type="button" class="icon-action-btn" aria-label="Navigation" aria-expanded="false">☰</button><span class="topbar-page-title"></span>
+        <header class="app-header"><button id="nav-toggle" type="button" class="icon-action-btn" aria-label="Navigation" aria-controls="navigation-tabs-dock" aria-expanded="false"><i data-icon="menu"></i></button><span class="topbar-page-title"></span>
             <div class="header-control-buttons topbar-actions"><div id="user-menu-root"></div>
-                <button id="lang-toggle-btn" class="icon-circle-btn" aria-label="TR / EN" title="Theme">
+                <button id="lang-toggle-btn" class="topbar-select-btn" aria-haspopup="dialog" data-i18n-title="language.select" aria-label="Language">
+                    <i data-icon="language"></i>
                     <span id="lang-indicator">TR</span>
                 </button>
-                <button id="theme-menu-btn" class="icon-circle-btn" aria-haspopup="dialog" data-i18n-title="header.theme" title="Theme">
+                <button id="theme-menu-btn" class="topbar-select-btn" aria-haspopup="dialog" data-i18n-title="header.theme" title="Theme">
                     <i data-icon="sun"></i><span class="topbar-select-label"></span>
                 </button>
                 <button id="logout-btn" class="btn-sign-out">
@@ -156,32 +157,158 @@
                     </svg>
                 </div>
                 <div class="brand-info">
-                    <h1>VERTEX <span>CONTROL</span></h1>
-                    <span class="system-tag" data-i18n="header.system">Sistem Portal</span>
+                    <h1>VERTEX CONTROL</h1>
+                    <span class="system-tag">System Portal</span>
                 </div>
-            </div>
-<nav class="sidebar-nav sidebar-scroll" id="navigation-tabs-dock">
-            <button class="dock-btn active" data-target="tab-contributors">
-                <i class="" data-icon="group"></i>
-                <span class="dock-label" data-i18n="nav.contributors">Katılımcı</span>
-            </button>
-            <button class="dock-btn" data-target="tab-models">
-                <i class="" data-icon="smart_toy"></i>
-                <span class="dock-label" data-i18n="nav.models">Modeller</span>
-            </button>
-            <button class="dock-btn" data-target="tab-news">
-                <i class="" data-icon="newspaper"></i>
-                <span class="dock-label" data-i18n="nav.news">Haberler</span>
-            </button>
-            <button class="dock-btn" data-target="tab-notifications">
-                <i class="" data-icon="notifications_active"></i>
-                <span class="dock-label" data-i18n="nav.notifications">Bildirim</span>
-            </button>
-            <button class="dock-btn" data-target="tab-system">
-                <i class="" data-icon="settings_ethernet"></i>
-                <span class="dock-label" data-i18n="nav.system">Sistem</span>
-            </button>
-        <button class="dock-btn" data-target="tab-subscriptions"><i data-icon="crown"></i><span class="dock-label" data-i18n="nav.subscriptions"></span></button><button class="dock-btn" data-target="tab-chat"><i data-icon="messages"></i><span class="dock-label" data-i18n="nav.chat"></span></button><button class="dock-btn" data-target="tab-profile"><i data-icon="user-circle"></i><span class="dock-label" data-i18n="nav.profile"></span></button></nav></aside>
+            <button type="button" class="icon-action-btn sidebar-close" aria-label="Close navigation"><i data-icon="close"></i></button></div>
+<nav class="sidebar-nav sidebar-scroll" id="navigation-tabs-dock" aria-label="Main navigation">
+<section class="sidebar-group" data-nav-group="workspace">
+<h2 class="sidebar-group-label" data-i18n="navgroup.workspace">
+</h2>
+<div class="nav-module" data-nav-module="contributors">
+<button type="button" class="dock-btn active" data-target="tab-contributors" aria-controls="nav-sub-contributors" aria-expanded="false">
+<i data-icon="group">
+</i>
+<span class="dock-label" data-i18n="nav.contributors">
+</span>
+<i class="nav-chevron" data-icon="keyboard_arrow_down">
+</i>
+</button>
+<div class="sidebar-submenu" id="nav-sub-contributors" inert>
+<div class="sidebar-submenu-inner">
+<button type="button" class="sidebar-sub-btn" data-nav-panel="contributors.list" data-nav-action="" data-i18n="subnav.applicants">
+</button>
+<button type="button" class="sidebar-sub-btn" data-nav-panel="contributors.vertexStatus" data-nav-action="" data-i18n="subnav.vertex_status">
+</button>
+<button type="button" class="sidebar-sub-btn" data-nav-panel="contributors.list" data-nav-action="certificates" data-i18n="subnav.certificates">
+</button>
+</div>
+</div>
+</div>
+<div class="nav-module" data-nav-module="models">
+<button type="button" class="dock-btn" data-target="tab-models" aria-controls="nav-sub-models" aria-expanded="false">
+<i data-icon="smart_toy">
+</i>
+<span class="dock-label" data-i18n="nav.models">
+</span>
+<i class="nav-chevron" data-icon="keyboard_arrow_down">
+</i>
+</button>
+<div class="sidebar-submenu" id="nav-sub-models" inert>
+<div class="sidebar-submenu-inner">
+<button type="button" class="sidebar-sub-btn" data-nav-panel="models.library" data-nav-action="" data-i18n="subnav.catalog">
+</button>
+<button type="button" class="sidebar-sub-btn" data-nav-panel="models.manage" data-nav-action="model-editor" data-i18n="subnav.manage_models">
+</button>
+</div>
+</div>
+</div>
+<div class="nav-module" data-nav-module="news">
+<button type="button" class="dock-btn" data-target="tab-news" aria-controls="nav-sub-news" aria-expanded="false">
+<i data-icon="newspaper">
+</i>
+<span class="dock-label" data-i18n="nav.news">
+</span>
+<i class="nav-chevron" data-icon="keyboard_arrow_down">
+</i>
+</button>
+<div class="sidebar-submenu" id="nav-sub-news" inert>
+<div class="sidebar-submenu-inner">
+<button type="button" class="sidebar-sub-btn" data-nav-panel="news.published" data-nav-action="" data-i18n="subnav.published">
+</button>
+<button type="button" class="sidebar-sub-btn" data-nav-panel="news.editor" data-nav-action="" data-i18n="subnav.editor">
+</button>
+</div>
+</div>
+</div>
+</section>
+<section class="sidebar-group" data-nav-group="operations">
+<h2 class="sidebar-group-label" data-i18n="navgroup.operations">
+</h2>
+<div class="nav-module" data-nav-module="notifications">
+<button type="button" class="dock-btn" data-target="tab-notifications" aria-controls="nav-sub-notifications" aria-expanded="false">
+<i data-icon="notifications_active">
+</i>
+<span class="dock-label" data-i18n="nav.notifications">
+</span>
+<i class="nav-chevron" data-icon="keyboard_arrow_down">
+</i>
+</button>
+<div class="sidebar-submenu" id="nav-sub-notifications" inert>
+<div class="sidebar-submenu-inner">
+<button type="button" class="sidebar-sub-btn" data-nav-panel="notifications.sender" data-nav-action="" data-i18n="subnav.compose">
+</button>
+<button type="button" class="sidebar-sub-btn" data-nav-panel="notifications.scheduled" data-nav-action="" data-i18n="subnav.scheduled">
+</button>
+</div>
+</div>
+</div>
+<div class="nav-module" data-nav-module="subscriptions">
+<button type="button" class="dock-btn" data-target="tab-subscriptions" aria-controls="nav-sub-subscriptions" aria-expanded="false">
+<i data-icon="workspace_premium">
+</i>
+<span class="dock-label" data-i18n="nav.subscriptions">
+</span>
+<i class="nav-chevron" data-icon="keyboard_arrow_down">
+</i>
+</button>
+<div class="sidebar-submenu" id="nav-sub-subscriptions" inert>
+<div class="sidebar-submenu-inner">
+<button type="button" class="sidebar-sub-btn" data-nav-panel="subscriptions.assign" data-nav-action="" data-i18n="subnav.assign">
+</button>
+<button type="button" class="sidebar-sub-btn" data-nav-panel="subscriptions.list" data-nav-action="" data-i18n="subnav.active_subscriptions">
+</button>
+</div>
+</div>
+</div>
+<div class="nav-module" data-nav-module="chat">
+<button type="button" class="dock-btn" data-target="tab-chat">
+<i data-icon="forum">
+</i>
+<span class="dock-label" data-i18n="nav.chat">
+</span>
+</button>
+</div>
+</section>
+<section class="sidebar-group" data-nav-group="administration">
+<h2 class="sidebar-group-label" data-i18n="navgroup.administration">
+</h2>
+<div class="nav-module" data-nav-module="system">
+<button type="button" class="dock-btn" data-target="tab-system" aria-controls="nav-sub-system" aria-expanded="false">
+<i data-icon="settings_ethernet">
+</i>
+<span class="dock-label" data-i18n="nav.system">
+</span>
+<i class="nav-chevron" data-icon="keyboard_arrow_down">
+</i>
+</button>
+<div class="sidebar-submenu" id="nav-sub-system" inert>
+<div class="sidebar-submenu-inner">
+<button type="button" class="sidebar-sub-btn" data-nav-panel="system.deptPerms" data-nav-action="permissions" data-i18n="subnav.permissions">
+</button>
+<button type="button" class="sidebar-sub-btn" data-nav-panel="system.deptAssign,system.deptUsers" data-nav-action="departments" data-i18n="subnav.departments">
+</button>
+<button type="button" class="sidebar-sub-btn" data-nav-panel="system.adminRole,system.removeAdmin,system.adminList" data-nav-action="administrators" data-i18n="subnav.administrators">
+</button>
+<button type="button" class="sidebar-sub-btn" data-nav-panel="system.manualVerify,system.teamLog" data-nav-action="verification" data-i18n="subnav.verification">
+</button>
+<button type="button" class="sidebar-sub-btn" data-nav-panel="system.serverStatus" data-nav-action="server" data-i18n="subnav.server">
+</button>
+<button type="button" class="sidebar-sub-btn" data-nav-panel="system.exporter,system.attributions" data-nav-action="export" data-i18n="subnav.exports_attributions">
+</button>
+</div>
+</div>
+</div>
+</section>
+</nav>
+<div class="sidebar-footer">
+<button type="button" class="dock-btn" data-target="tab-profile">
+<i data-icon="person">
+</i>
+<span class="dock-label" data-i18n="nav.profile">
+</span>
+</button>
+</div></aside>
 
         <!-- İÇERİK ALANI -->
         <main class="app-main">
@@ -867,14 +994,14 @@
                         </div>
                     </div>
                     <!-- GCS Backup Status -->
-                    <div class="panel-card col-span-12" id="gcs-backup-status" style="border: 1px solid var(--accent-sage);">
+                    <div class="panel-card col-span-12" id="gcs-backup-status" >
                         <div class="card-title-row">
                             <div class="title-details">
-                                <i class="" style="color: var(--accent-sage);" data-icon="cloud_done"></i>
+                                <i class=""  data-icon="cloud_done"></i>
                                 <h3 data-i18n="system.gcs_backup">Google Cloud Storage (GCS) Yedekleme</h3>
                             </div>
                         </div>
-                        <p class="intro-description" data-i18n="system.gcs_desc">Otomatik GCS organizasyon yedekleme mekanizması (GitHub Actions üzerinden) şu anda <strong style="color: var(--accent-sage);">AKTİF</strong> ve çalışır durumda.</p>
+                        <p class="intro-description" data-i18n="system.gcs_desc">Otomatik GCS organizasyon yedekleme mekanizması (GitHub Actions üzerinden) şu anda <strong >AKTİF</strong> ve çalışır durumda.</p>
                     </div>
 
                     <!-- Katılımcı Doğrulama (Manuel) -->

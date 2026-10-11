@@ -11,12 +11,13 @@
 
 import { __, getLang, setLang, onLangChange } from '../utils/ui.js';
 import { icon } from '../utils/icons.js';
+import { getEffectivePanelLevel, isPanelAdmin } from './roles.js';
 
 /* ==================================================================
    TEMA
    ================================================================== */
 
-const THEME_META_DARK = '#0B0C0E';
+const THEME_META_DARK = '#0F0F10';
 const THEME_META_LIGHT = '#F8F9FA';
 
 export function applyTheme(mode) {
@@ -41,6 +42,8 @@ export function getThemeMode() {
 function updateThemeButton() {
     const label = document.querySelector('#theme-menu-btn .topbar-select-label');
     if (label) label.textContent = __(`theme.${getThemeMode()}`);
+    const svg = document.querySelector('#theme-menu-btn .icon');
+    if (svg) {const holder=document.createElement('template');holder.innerHTML=icon(getThemeMode()==='light'?'sun':getThemeMode()==='dark'?'moon':'device-desktop');svg.replaceWith(holder.content.firstChild);}
 }
 
 function initTheme() {
@@ -74,6 +77,7 @@ export function closePopover({ restoreFocus = true } = {}) {
     el.classList.remove('is-open');
     el.classList.add('is-closing');
     el.setAttribute('aria-hidden','true');
+    el.inert = true;
     if (el.isConnected) setTimeout(()=>el.remove(), window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:120);
     anchor?.classList.remove('is-open');
     anchor?.setAttribute('aria-expanded', 'false');
@@ -95,11 +99,12 @@ export function openPopover(anchor, opts = {}) {
     const el = document.createElement('div');
     el.className = `vx-popover ${opts.className || ''}`;
     el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', anchor.getAttribute('aria-label') || anchor.textContent.trim());
 
     const unbind = [];
     const position = () => {
-        // Mobil (<=720px): CSS bottom sheet devralır; sadece temizle.
-        if (window.innerWidth <= 720) { el.style.left = ''; el.style.top = ''; return; }
+        // Certificate sheets keep their compact mobile layout; utility menus stay anchored.
+        if (window.innerWidth <= 720 && el.classList.contains('cert-popover')) { el.style.left = ''; el.style.top = ''; return; }
         const r = anchor.getBoundingClientRect();
         const margin = 8;
         const pw = el.offsetWidth, ph = el.offsetHeight;
@@ -120,6 +125,7 @@ export function openPopover(anchor, opts = {}) {
     opts.render?.(el);
     position();
     requestAnimationFrame(() => {
+        if (activePopover?.el !== el) return;
         el.classList.add('is-open');
         position();
     });
@@ -133,6 +139,14 @@ export function openPopover(anchor, opts = {}) {
     };
     const onKey = (e) => {
         if (e.key === 'Escape') { e.stopPropagation(); closePopover(); }
+        if (el.contains(document.activeElement) && ['ArrowDown','ArrowUp','Home','End'].includes(e.key)) {
+            const items=[...el.querySelectorAll('.menu-item:not([disabled])')];
+            if (!items.length) return;
+            e.preventDefault();
+            const current=items.indexOf(document.activeElement);
+            const index=e.key==='Home'?0:e.key==='End'?items.length-1:(current+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;
+            items[index].focus();
+        }
     };
     const onScroll = (e) => {
         if (el.contains(e.target)) return;
@@ -169,14 +183,16 @@ export function closeDrawer(restoreFocus = true) {
     activeDrawer = null;
     unbind.forEach(fn => fn());
     root.classList.remove('is-open');
+    root.setAttribute('aria-hidden', 'true');
+    root.inert = true;
+    scrim.style.pointerEvents = 'none';
     scrim.classList.remove('is-open');
-    setTimeout(() => { root.remove(); scrim.remove(); }, window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:220);
+    setTimeout(() => { root.remove(); scrim.remove(); onAfterClose?.(); }, window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:220);
     document.body.style.overflow = '';
     unregisterSurface('drawer');
     if (restoreFocus && previouslyFocused && document.contains(previouslyFocused)) {
         previouslyFocused.focus({ preventScroll: true });
     }
-    onAfterClose?.();
 }
 
 /**
@@ -213,6 +229,7 @@ export function openDrawer(opts = {}) {
     opts.render?.(body);
 
     requestAnimationFrame(() => {
+        if (activeDrawer?.root !== root) return;
         root.classList.add('is-open');
         scrim.classList.add('is-open');
     });
@@ -257,8 +274,8 @@ export function closeModal() {
     activeModal = null;
     unbind.forEach(fn => fn());
     root.classList.remove('is-open');overlay.classList.remove('is-open');overlay.classList.add('is-closing');
-    root.setAttribute('aria-hidden','true');root.style.pointerEvents='none';overlay.style.pointerEvents='none';
-    setTimeout(()=>{root.remove();overlay.remove();},window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:160);
+    root.setAttribute('aria-hidden','true');root.inert=true;root.style.pointerEvents='none';overlay.style.pointerEvents='none';
+    setTimeout(()=>{root.remove();overlay.remove();},window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:190);
     document.body.style.overflow = activeDrawer?'hidden':'';
     unregisterSurface('modal');
     if (previouslyFocused && document.contains(previouslyFocused)) previouslyFocused.focus({ preventScroll: true });
@@ -297,7 +314,7 @@ export function openModal(opts = {}) {
     document.body.style.overflow = 'hidden';
     const body = root.querySelector('.vx-modal-body');
     opts.render?.(body);
-    requestAnimationFrame(() => { overlay.classList.add('is-open'); root.classList.add('is-open'); });
+    requestAnimationFrame(() => { if(activeModal?.root !== root)return;overlay.classList.add('is-open'); root.classList.add('is-open'); });
 
     registerSurface('modal');
 
@@ -349,6 +366,7 @@ export function confirmDialog(options = {}) {
             root.setAttribute('aria-label',opts.title || __('common.confirm'));
             const rows=(opts.rows || []).map(row=>`<div class="confirm-row"><dt>${row.label}</dt><dd>${row.value}</dd></div>`).join('');
             body.innerHTML=`${rows?`<dl class="confirm-list">${rows}</dl>`:''}${opts.warning?`<div class="confirm-warn">${icon('alert-triangle')}<span>${opts.warning}</span></div>`:''}`;
+            if (opts.body) { const message = document.createElement('p'); message.textContent = opts.body; body.prepend(message); }
             root.querySelector('.confirm-ok').textContent=opts.confirmLabel || __('common.confirm');
             root.querySelector('.confirm-cancel').textContent=opts.cancelLabel || __('common.cancel');
         }
@@ -366,49 +384,119 @@ export function confirmDialog(options = {}) {
    ================================================================== */
 
 function syncTopbarTitle() {
-    const activeBtn = document.querySelector('.sidebar-nav .dock-btn.active');
+    const activeBtn = document.querySelector('.dock-btn.active');
     const title = document.querySelector('.topbar-page-title');
     if (activeBtn && title) title.textContent = activeBtn.querySelector('.dock-label')?.textContent || '';
+}
+
+function expandModule(module, expanded) {
+    if (!module) return;
+    const submenu = module.querySelector('.sidebar-submenu');
+    if (!submenu) return;
+    if (!expanded && submenu.contains(document.activeElement)) module.querySelector('.dock-btn').focus();
+    module.classList.toggle('expanded', expanded);
+    module.querySelector('.dock-btn').setAttribute('aria-expanded', String(expanded));
+    submenu.inert = !expanded;
+}
+
+export function refreshNavigation() {
+    document.querySelectorAll('.nav-module').forEach(module => {
+        const button = module.querySelector('.dock-btn');
+        const available = button.style.display !== 'none';
+        module.hidden = !available;
+        module.querySelectorAll('[data-nav-panel]').forEach(child => {
+            const keys = child.dataset.navPanel.split(',');
+            child.hidden = !keys.some(key => (key !== 'system.deptPerms' || isPanelAdmin()) && getEffectivePanelLevel(key) !== 'none');
+            if (child.dataset.navAction === 'model-editor') child.hidden = getEffectivePanelLevel('models.manage') !== 'write';
+            if (child.dataset.navAction === 'certificates') child.hidden = !isPanelAdmin();
+        });
+        button.querySelector('.nav-chevron')?.toggleAttribute('hidden', ![...module.querySelectorAll('[data-nav-panel]')].some(child => !child.hidden));
+        expandModule(module, available && button.classList.contains('active'));
+    });
+    document.querySelectorAll('.sidebar-group').forEach(group => { group.hidden = ![...group.querySelectorAll('.nav-module')].some(module => !module.hidden); });
+    syncTopbarTitle();
 }
 
 function initNavigation() {
     const nav = document.getElementById('navigation-tabs-dock');
     const sidebar = document.querySelector('.app-sidebar');
     const toggle = document.getElementById('nav-toggle');
-
-    const closeSidebarDrawer = () => {
-        sidebar?.classList.remove('open');
+    const scrim = document.createElement('div'); scrim.className = 'nav-scrim'; document.body.append(scrim);
+    let mobileTrigger = null;
+    const mobile = () => window.innerWidth < 1024;
+    const closeSidebarDrawer = (restore = false) => {
+        sidebar?.classList.remove('open'); scrim.classList.remove('is-open');
+        document.querySelectorAll('.app-main,.app-header').forEach(el => {el.inert=false;});
         toggle?.setAttribute('aria-expanded', 'false');
+        if (sidebar) sidebar.inert = mobile();
+        sidebar?.removeAttribute('aria-modal'); sidebar?.removeAttribute('role');
+        if (restore && mobileTrigger?.isConnected) mobileTrigger.focus({preventScroll:true});
     };
-
-    nav?.addEventListener('click', (e) => {
-        const btn = e.target.closest('.dock-btn');
-        if (!btn) return;
-        const targetId = btn.getAttribute('data-target');
-        const targetPanel = document.getElementById(targetId);
-        if (!targetPanel) return;
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        targetPanel.classList.add('active');
-        document.querySelectorAll('.sidebar-nav .dock-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        syncTopbarTitle();
-        closeSidebarDrawer();
-    });
-
-    toggle?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isOpen = sidebar?.classList.toggle('open');
-        toggle.setAttribute('aria-expanded', String(!!isOpen));
-    });
-    document.addEventListener('keydown', e => { if(e.key === 'Escape') closeSidebarDrawer(); });
-    document.addEventListener('click', (e) => {
-        if (sidebar?.classList.contains('open') &&
-            !sidebar.contains(e.target) && !toggle.contains(e.target)) {
-            closeSidebarDrawer();
+    const activateTab = button => {
+        const target = document.getElementById(button.dataset.target);
+        if (!target || button.style.display === 'none') return;
+        const changed = !target.classList.contains('active');
+        document.querySelectorAll('.tab-panel,.dock-btn').forEach(el => el.classList.remove('active'));
+        target.classList.add('active'); button.classList.add('active');
+        document.querySelectorAll('.sidebar-sub-btn').forEach(el => el.removeAttribute('aria-current'));
+        refreshNavigation();
+        if (changed) window.scrollTo({top:0,behavior:'instant'});
+    };
+    nav?.addEventListener('click', event => {
+        const button = event.target.closest('.dock-btn');
+        if (button) {
+            const module = button.closest('.nav-module');
+            const wasActive = button.classList.contains('active');
+            const wasExpanded = module?.classList.contains('expanded');
+            activateTab(button);
+            if (wasActive) expandModule(module, !wasExpanded);
+            // Keep mobile navigation open while choosing a contextual destination.
+            if (!module?.querySelector('.sidebar-submenu')) closeSidebarDrawer(true);
+            return;
+        }
+        const child = event.target.closest('[data-nav-panel]');
+        if (!child || child.hidden) return;
+        const parent = child.closest('.nav-module').querySelector('.dock-btn');
+        activateTab(parent); child.setAttribute('aria-current', 'page');
+        const action = child.dataset.navAction;
+        if (parent.dataset.target === 'tab-system') document.dispatchEvent(new CustomEvent('vertex:system-section',{detail:action}));
+        const keys = child.dataset.navPanel.split(',');
+        const card = [...document.querySelectorAll('.panel-card[data-panel]')].find(el => keys.includes(el.dataset.panel) && el.style.display !== 'none');
+        closeSidebarDrawer(false);
+        if (action === 'model-editor') document.querySelector('[data-model-create]')?.click();
+        else {
+            card?.scrollIntoView({behavior:'auto',block:'start'});
+            if (action === 'certificates') card?.querySelector('.certificate-manage-btn')?.click();
+            else if (card) { card.tabIndex = -1; card.focus({preventScroll:true}); }
         }
     });
-    window.addEventListener('resize', () => { if (window.innerWidth > 1024) closeSidebarDrawer(); });
-    syncTopbarTitle();
+    document.querySelector('.sidebar-footer .dock-btn')?.addEventListener('click', event => { activateTab(event.currentTarget); closeSidebarDrawer(true); });
+    toggle?.addEventListener('click', () => {
+        if (sidebar.classList.contains('open')) { closeSidebarDrawer(true); return; }
+        mobileTrigger = document.activeElement;
+        sidebar.inert = false; sidebar.classList.add('open'); scrim.classList.add('is-open');
+        document.querySelectorAll('.app-main,.app-header').forEach(el => {el.inert=true;});
+        sidebar.setAttribute('role','dialog'); sidebar.setAttribute('aria-modal','true'); sidebar.setAttribute('aria-label',__('navgroup.workspace'));
+        toggle.setAttribute('aria-expanded','true');
+        (sidebar.querySelector('.dock-btn.active') || sidebar.querySelector('.dock-btn'))?.focus();
+    });
+    scrim.addEventListener('click', () => closeSidebarDrawer(true));
+    sidebar.querySelector('.sidebar-close')?.addEventListener('click', () => closeSidebarDrawer(true));
+    document.addEventListener('keydown', event => {
+        if (!sidebar.classList.contains('open')) return;
+        if (event.key === 'Escape') { event.preventDefault(); closeSidebarDrawer(true); }
+        if (event.key === 'Tab') {
+            const items = [...sidebar.querySelectorAll('button:not([disabled])')].filter(el => el.getClientRects().length && !el.closest('[inert]'));
+            const first = items[0], last = items.at(-1);
+            if (event.shiftKey && document.activeElement === first) {event.preventDefault();last?.focus();}
+            else if (!event.shiftKey && document.activeElement === last) {event.preventDefault();first?.focus();}
+        }
+    });
+    let previousWidth = window.innerWidth;
+    window.addEventListener('resize', () => {if(window.innerWidth!==previousWidth){previousWidth=window.innerWidth;closeSidebarDrawer();}});
+    document.addEventListener('vertex:close-navigation', () => closeSidebarDrawer());
+    document.addEventListener('vertex:departments', () => queueMicrotask(refreshNavigation));
+    closeSidebarDrawer(); syncTopbarTitle();
 }
 
 function initTopbarMenus() {
@@ -442,16 +530,35 @@ function initTopbarMenus() {
 
     const langBtn = document.getElementById('lang-toggle-btn');
     langBtn?.addEventListener('click', () => {
-        const next = getLang() === 'tr' ? 'en' : 'tr';
-        setLang(next);
+        openPopover(langBtn, {className:'language-popover', render(el) {
+            el.innerHTML = `<div class="menu-list" role="menu">${[['tr','Türkçe'],['en','English']].map(([lang,label]) => `<button type="button" class="menu-item ${getLang() === lang ? 'is-selected' : ''}" role="menuitemradio" aria-checked="${getLang() === lang}" data-language="${lang}"><span>${label}</span><span class="menu-item-check">${icon('check')}</span></button>`).join('')}</div>`;
+            el.querySelectorAll('[data-language]').forEach(button => button.onclick = () => {setLang(button.dataset.language);closePopover();});
+        }});
     });
+}
+
+function initFileControls() {
+    const controls = [];
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+        const wrapper = document.createElement('div'); wrapper.className = 'file-control';
+        const button = document.createElement('button'); button.type = 'button';button.className = 'chrome-btn-outline file-select-btn write-only';
+        button.setAttribute('aria-controls',input.id);
+        const label = document.createElement('span');label.className='file-control-name';label.setAttribute('aria-live','polite');
+        input.before(wrapper);wrapper.append(input,button,label);
+        input.classList.add('file-control-input');input.tabIndex=-1;
+        button.onclick=()=>input.click();
+        const paint=()=>{button.textContent=__('common.choose_file');label.textContent=input.files?.[0]?.name || __('common.no_file');button.disabled=input.disabled;};
+        input.addEventListener('change',paint);controls.push(paint);paint();
+    });
+    onLangChange(()=>controls.forEach(paint=>paint()));
 }
 
 export function initShell() {
     initTheme();
+    initFileControls();
     initNavigation();
     initTopbarMenus();
-    onLangChange(() => { syncTopbarTitle(); updateThemeButton(); });
+    onLangChange(() => { syncTopbarTitle(); updateThemeButton(); if(document.querySelector('.language-popover.is-open,.theme-popover.is-open'))closePopover({restoreFocus:false}); });
 }
 
 /* ==================================================================
