@@ -1,3 +1,4 @@
+import { confirmDialog } from './shell.js';
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/siteTeam.js
 
@@ -100,7 +101,7 @@ async function rename(id) {
 }
 
 async function remove(id) {
-    if (!confirm(__('team.remove_confirm'))) return;
+    if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('team.remove_confirm')}))) return;
     try {
         await deleteSiteTeamEntryFn({ id });
         await loadTeam();

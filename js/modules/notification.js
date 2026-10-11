@@ -1,3 +1,4 @@
+import { confirmDialog } from './shell.js';
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/notification.js
 
@@ -6,6 +7,8 @@ import * as dom from '../utils/dom.js';
 import { showToast, __ } from '../utils/ui.js';
 
 let unsubscribeFromScheduledTasks = null;
+let submissionPending = false;
+let deliveryUncertain = false;
 
 /**
  * Handles changes in the notification schedule switch.
@@ -120,6 +123,8 @@ function handleTemplateSelection() {
  */
 async function handleNotificationFormSubmit(e) {
     e.preventDefault();
+    if (submissionPending || deliveryUncertain) return;
+    submissionPending = true;
     const submitBtn = document.getElementById('submit-notification-btn');
     submitBtn.disabled = true;
     submitBtn.textContent = 'SUBMITTING';
@@ -151,7 +156,10 @@ async function handleNotificationFormSubmit(e) {
             target.uid = document.getElementById('notification-target-uid').value.trim();
             if (!target.uid) throw new Error("User ID (UID) is required.");
         } else if (targetType === 'SUBSCRIPTION_LEVEL') {
-            target.level = parseInt(document.getElementById('notification-target-level').value, 10);
+            const tiers = ['free', 'plus', 'pro', 'ultra'];
+            target.type = 'SUBSCRIPTION_TIER';
+            target.tier = tiers[Number(document.getElementById('notification-target-level').value)];
+            if (!target.tier) throw new Error('Select a valid subscription tier.');
         }
 
         const isScheduled = dom.notificationScheduleSwitch.checked;
@@ -169,7 +177,13 @@ async function handleNotificationFormSubmit(e) {
         if (!isScheduled) delete apiPayload.scheduleTime;
 
         showToast(isScheduled ? 'Scheduling notification' : 'Sending notification', 'info');
-        const result = await apiFunction(apiPayload);
+        let result;
+        try { result = await apiFunction(apiPayload); }
+        catch (error) {
+            // A network/500 failure can follow partial delivery; never invite a blind resend.
+            if (!isScheduled && !['functions/invalid-argument','functions/permission-denied','functions/unauthenticated'].includes(error.code)) deliveryUncertain = true;
+            throw error;
+        }
         showToast(result.data.message, 'success');
 
         dom.notificationForm.reset();
@@ -177,10 +191,12 @@ async function handleNotificationFormSubmit(e) {
         handleScheduleSwitchChange();
     } catch (error) {
         console.error("[CLIENT] Error submitting notification:", error);
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(deliveryUncertain ? __('notif.uncertain') : error.message, 'error');
     } finally {
-        submitBtn.disabled = false;
+        submissionPending = false;
+        submitBtn.disabled = deliveryUncertain;
         handleScheduleSwitchChange();
+        if (deliveryUncertain) submitBtn.textContent = __('notif.uncertain_short');
     }
 }
 
@@ -189,7 +205,7 @@ async function handleNotificationFormSubmit(e) {
  * @param {string} taskId - The ID of the task to cancel.
  */
 async function handleCancelTask(taskId) {
-    if (!confirm(`Are you sure you want to cancel this scheduled notification?`)) return;
+    if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('notif.cancel_confirm')}))) return;
     showToast(`Cancelling task ${taskId}`, 'info');
     try {
         const result = await cancelScheduledNotificationFn({ taskId });
@@ -225,7 +241,7 @@ export function listenForScheduledTasks() {
                     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
 
-                const title = task.notification?.title || 'Data-only Notification';
+                const title = task.payload?.notification?.title || task.notification?.title || task.payload?.notification_title_key || 'Data-only Notification';
 
                 const item = document.createElement('div');
                 item.className = 'task-item';

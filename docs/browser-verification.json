@@ -1,0 +1,48 @@
+{
+  "checks": [
+    "8 navigation tabs, light/dark, 6 viewport widths, popover bounds",
+    "Contributor drawer",
+    "Combined search and filters",
+    "Selection and cancellation never issue certificates; confirmation focus trap and live language",
+    "Separate joining date editor and exact date payload",
+    "Explicit confirmation and correct issue payload",
+    "Processing history and explicit revoke confirmation",
+    "Uncertain blocks resending",
+    "Failed retrySafe gate and retry:true contract",
+    "Live TR/EN popover localization",
+    "Repeated open/close and focus restoration",
+    "System theme follows OS",
+    "Empty state",
+    "Error and retry state",
+    "Delayed skeleton to content",
+    "Stale responses cannot overwrite latest list",
+    "Model editor drawer remains editable",
+    "Catalog actions, translation focus surface and explicit publish confirmation (mock)",
+    "News image upload and publish payload remain functional (mock)",
+    "Notification template and scheduling payload (mock)",
+    "Notification subscription tier contract includes Ultra",
+    "Uncertain immediate delivery blocks duplicate submission and blind retry",
+    "Subscription Pro assignment contract (mock)",
+    "Chat channels, messages and posting (mock)",
+    "7 functional System sections",
+    "Department read-only actions and hidden field policies",
+    "Logout and admin login auth state",
+    "Reduced motion removes transitions and animations"
+  ],
+  "uncaughtErrors": [],
+  "unexpectedConsoleErrors": [],
+  "viewportWidths": [
+    360,
+    390,
+    768,
+    1024,
+    1440,
+    1920
+  ],
+  "themes": [
+    "light",
+    "dark",
+    "system"
+  ],
+  "mockCalls": 91
+}

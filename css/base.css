@@ -103,10 +103,10 @@ img { max-width: 100%; display: block; }
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    padding: var(--space-4);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    background: var(--bg-app);
+    padding: var(--space-4) 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     margin-bottom: var(--space-3);
 }
 .form-sub-section { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-3); }
@@ -130,3 +130,5 @@ img { max-width: 100%; display: block; }
 .form-hint, .form-submit-row { margin-top: var(--space-2); }
 
 .form-submit-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+
+.form-block-group + .form-block-group {border-top:1px solid var(--border-subtle);padding-top:var(--space-5)}

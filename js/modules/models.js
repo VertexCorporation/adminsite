@@ -11,9 +11,12 @@ import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../uti
  * main model explorer and manual model editor.
  */
 
-import { storage, getModelImageUploadUrlFn, blockOnlineModelFn, auth } from '../core/firebase.js';
+import { storage, getModelImageUploadUrlFn, blockOnlineModelFn, updateModelsListFn, auth } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
-import { showToast, getAuthToken, sanitizeHTML, simpleHash } from '../utils/ui.js';
+import { showToast, __, onLangChange, getAuthToken, sanitizeHTML, simpleHash } from '../utils/ui.js';
+import { icon } from '../utils/icons.js';
+import { openDrawer, openModal, closeModal, openPopover, closePopover, confirmDialog } from './shell.js';
+import { isPanelAdmin, getEffectivePanelLevel } from './roles.js';
 import { setAttributionsOutOfSync } from './admin.js';
 
 // --- CONSTANTS ---
@@ -294,6 +297,7 @@ function populateModelFormForEdit(modelData) {
  * @param {Event} e - The form submission event.
  */
 async function handleModelFormSubmit(e) {
+    if (!canEditModels("models.manage")) return;
     e.preventDefault();
     dom.modelSubmitBtn.disabled = true;
     dom.modelSubmitBtn.textContent = currentEditingModelId ? 'UPDATING...' : 'SAVING...';
@@ -493,7 +497,7 @@ function renderManualModelsList() {
         const item = document.createElement('div');
         item.className = 'model-item';
 
-        const titleText = model.details.en.title || 'Untitled';
+        const titleText = model.details?.[document.documentElement.lang]?.title || model.details?.en?.title || model.id;
         const modelType = model.type || 'unknown';
 
         item.innerHTML = `
@@ -508,6 +512,7 @@ function renderManualModelsList() {
             </div>`;
         dom.manualModelsListContainer.appendChild(item);
     });
+    compactModelActions(dom.manualModelsListContainer);
 }
 
 /**
@@ -558,6 +563,7 @@ function renderAllModelsExplorer() {
         explorerHTML += `</div></details>`;
     }
     dom.allModelsListContainer.innerHTML = explorerHTML;
+    compactModelActions(dom.allModelsListContainer);
 }
 
 
@@ -570,7 +576,9 @@ function renderAllModelsExplorer() {
  * Fetches the complete models.json database, processes it to find manual models
  * and warnings, and then triggers the rendering of all relevant UI components.
  */
+let modelRequest=0;
 export async function fetchFullModelsData() {
+    const request=++modelRequest;
     console.log('[MODELS] Fetching full models database...');
 
     const finishLoading = beginPanelLoading(dom.manualModelsListContainer);
@@ -578,7 +586,9 @@ export async function fetchFullModelsData() {
     try {
         const response = await fetch(FULL_DB_URL, { cache: 'no-store' });
         if (!response.ok) throw new Error(`Server responded with ${response.status}`);
-        modelsData = await response.json();
+        const data=await response.json();
+        if(request!==modelRequest)return;
+        modelsData=data;
         console.log('[MODELS] Full models database loaded.');
 
         const manualModels = [];
@@ -608,8 +618,8 @@ export async function fetchFullModelsData() {
                 return a.type === MODEL_TYPE.OFFLINE ? -1 : 1;
             }
 
-            const titleA = a.details?.en?.title.toLowerCase() || a.id;
-            const titleB = b.details?.en?.title.toLowerCase() || b.id;
+            const titleA = a.details?.en?.title?.toLowerCase() || a.id;
+            const titleB = b.details?.en?.title?.toLowerCase() || b.id;
             return titleA.localeCompare(titleB);
         });
 
@@ -622,6 +632,7 @@ export async function fetchFullModelsData() {
         console.log(`[MODELS] Derived and sorted ${allManualModels.length} manual models from database.`);
 
     } catch (error) {
+        if(request!==modelRequest)return;
         console.error('[MODELS] Critical error fetching models data:', error);
         showToast("Could not load the main models database. Editing is disabled.", "error");
         if (modelsData) return;
@@ -647,6 +658,7 @@ export async function fetchFullModelsData() {
  * @param {string} modelSource - The source of the model ('manual' or 'openrouter').
  */
 async function handleSaveSeriesDescription(seriesPath, formElement) {
+    if (!canEditModels("models.library")) return;
     const saveButton = formElement.querySelector('button[type="submit"]');
     saveButton.disabled = true;
     saveButton.textContent = 'SAVING';
@@ -713,7 +725,7 @@ async function handleSaveSeriesDescription(seriesPath, formElement) {
         });
 
         showToast('Series descriptions updated successfully (Local & Remote)!', 'success');
-        document.body.removeChild(document.getElementById('translation-modal-overlay'));
+        closeModal();
         
     } catch (error) {
         console.error('[MODELS_DEBUG] Error:', error);
@@ -729,6 +741,7 @@ async function handleSaveSeriesDescription(seriesPath, formElement) {
  * [UPDATED v3.3] Optimistic UI Update + Batch API
  */
 async function handleSaveTranslations(modelPath, formElement, modelSource) {
+    if (!canEditModels("models.library")) return;
     const saveButton = formElement.querySelector('button[type="submit"]');
     saveButton.disabled = true;
     saveButton.textContent = 'SAVING...';
@@ -836,7 +849,7 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
             }
         }
 
-        document.body.removeChild(document.getElementById('translation-modal-overlay'));
+        closeModal();
         
         const count = Math.round(updates.length / 3);
         showToast(`Success! ${count} translations updated locally & remotely.`, 'success');
@@ -860,9 +873,7 @@ function openDescriptionEditor(seriesPath) {
     if (!seriesObj) return showToast(`Could not find series: ${pName}/${sName}`, "error");
 
     const descObj = seriesObj.series_description || {};
-    const modalOverlay = document.createElement('div');
-    modalOverlay.id = 'translation-modal-overlay';
-    modalOverlay.className = 'modal-overlay';
+    let modalOverlay;
 
     let formHTML = `<div class="modal-content"><button class="modal-close-btn">×</button><h2>Edit Series Description for "${sanitizeHTML(sName)}"</h2><form id="series-desc-form">`;
     formHTML += `<div class="translation-field-group"><h4>Description Texts</h4>`;
@@ -877,14 +888,16 @@ function openDescriptionEditor(seriesPath) {
     });
 
     formHTML += `</div><button type="submit">Save Series Descriptions</button></form></div>`;
-    modalOverlay.innerHTML = formHTML;
-    document.body.appendChild(modalOverlay);
+    const content=document.createElement('div');content.innerHTML=formHTML;
+    const title=content.querySelector('h2').textContent;
+    content.querySelector('h2').remove();content.querySelector('.modal-close-btn').remove();
+    modalOverlay=openModal({title,render:body=>{body.append(content.querySelector('.modal-content'));}});
+    modalOverlay.id='translation-modal-overlay';
     modalOverlay.querySelector('form').addEventListener('submit', e => {
         e.preventDefault();
         handleSaveSeriesDescription(seriesPath, e.currentTarget);
     });
-    modalOverlay.addEventListener('click', e => e.target === modalOverlay && document.body.removeChild(modalOverlay));
-    modalOverlay.querySelector('.modal-close-btn').addEventListener('click', () => document.body.removeChild(modalOverlay));
+
 }
 
 /**
@@ -892,8 +905,9 @@ function openDescriptionEditor(seriesPath) {
  * @param {string} id - The ID of the model to delete.
  */
 async function handleDeleteModel(id) {
+    if (!canEditModels("models.library")) return;
     const modelToDelete = allManualModels.find(m => m.id === id);
-    if (!modelToDelete || !confirm(`Delete "${modelToDelete.details.en.title}"? This cannot be undone.`)) return;
+    if (!modelToDelete || !await confirmDialog(()=>({title:__('common.delete'),body:__('models.delete_confirm')}))) return;
 
     showToast(`Deleting model: ${id}`, 'info');
     try {
@@ -927,7 +941,8 @@ async function handleDeleteModel(id) {
  * @param {string} modelId - The ID of the model to block (e.g., "openai/gpt-4").
  */
 async function handleBlockOnlineModel(modelId) {
-    if (!confirm(`Permanently block "${modelId}"? This is irreversible from the UI.`)) return;
+    if (!canEditModels("models.library")) return;
+    if (!await confirmDialog(()=>({title:__('models.block'),body:__('models.block_confirm')}))) return;
     showToast(`Blocking model: ${modelId}`, 'info');
     try {
         const result = await blockOnlineModelFn({ modelId });
@@ -946,6 +961,7 @@ async function handleBlockOnlineModel(modelId) {
  * @param {*} value - The new value for the property.
  */
 async function updateSeriesProperty(seriesPath, property, value) {
+    if (!canEditModels("models.library")) return;
     const { pName, sName } = seriesPath;
     const action = property === 'hidden' ? (value ? 'Hiding' : 'Unhiding') : 'Updating';
     showToast(`${action} series: ${sName}`, 'info');
@@ -990,9 +1006,7 @@ function openTranslationEditor(modelPath) {
         return showToast("This model has no translatable text.", "info");
     }
 
-    const modalOverlay = document.createElement('div');
-    modalOverlay.id = 'translation-modal-overlay';
-    modalOverlay.className = 'modal-overlay';
+    let modalOverlay;
     let formHTML = `<div class="modal-content"><button class="modal-close-btn">×</button><h2>Translations for "${sanitizeHTML(vName)}"</h2><form>`;
     translatableFields.forEach(field => {
         if (!englishDetails[field.k]) return;
@@ -1007,14 +1021,16 @@ function openTranslationEditor(modelPath) {
         formHTML += `</div>`;
     });
     formHTML += `<button type="submit">Save Translations</button></form></div>`;
-    modalOverlay.innerHTML = formHTML;
-    document.body.appendChild(modalOverlay);
+    const content=document.createElement('div');content.innerHTML=formHTML;
+    const title=content.querySelector('h2').textContent;
+    content.querySelector('h2').remove();content.querySelector('.modal-close-btn').remove();
+    modalOverlay=openModal({title,render:body=>{body.append(content.querySelector('.modal-content'));}});
+    modalOverlay.id='translation-modal-overlay';
     modalOverlay.querySelector('form').addEventListener('submit', e => {
         e.preventDefault();
         handleSaveTranslations(modelPath, e.currentTarget, modelObj.source);
     });
-    modalOverlay.addEventListener('click', e => e.target === modalOverlay && document.body.removeChild(modalOverlay));
-    modalOverlay.querySelector('.modal-close-btn').addEventListener('click', () => document.body.removeChild(modalOverlay));
+
 }
 
 // ===================================================================================
@@ -1025,6 +1041,7 @@ function openTranslationEditor(modelPath) {
  * Initializes all event listeners for the models module.
  */
 export function initModelsModule() {
+    initModelWorkspace();
     dom.modelForm.addEventListener('submit', handleModelFormSubmit);
     dom.modelTypeSwitch.addEventListener('change', handleModelTypeChange);
     dom.modelCancelBtn.addEventListener('click', resetModelForm);
@@ -1037,13 +1054,14 @@ export function initModelsModule() {
         });
 
     dom.manualModelsListContainer.addEventListener('click', (e) => {
-        const target = e.target;
+        const target = e.target.closest('button');
+        if (!target) return;
         const id = target.dataset.id;
         if (!id) return;
 
         if (target.classList.contains('edit-btn')) {
             const modelToEdit = allManualModels.find(m => m.id === id);
-            if (modelToEdit) populateModelFormForEdit(modelToEdit);
+            if (modelToEdit) { openModelEditor(); populateModelFormForEdit(modelToEdit); }
         } else if (target.classList.contains('delete-btn')) {
             handleDeleteModel(id);
         } else if (target.classList.contains('translations-btn')) {
@@ -1052,11 +1070,14 @@ export function initModelsModule() {
                 return;
             }
             let opened = false;
-            for (const pName in modelsData.producers) {
-                if (modelsData.producers[pName][id]?.['Default']?.source === 'manual') {
-                    openTranslationEditor({ pName, sName: id, vName: 'Default' });
-                    opened = true;
-                    break;
+            outer: for (const [pName, producer] of Object.entries(modelsData.producers)) {
+                for (const [sName, series] of Object.entries(producer)) {
+                    if (!series || typeof series !== 'object') continue;
+                    for (const [vName, variant] of Object.entries(series)) {
+                        if (variant?.id === id && variant.source === 'manual') {
+                            openTranslationEditor({pName,sName,vName});opened = true;break outer;
+                        }
+                    }
                 }
             }
             if (!opened) showToast('No translatable manual entry found for this model.', 'info');
@@ -1100,4 +1121,34 @@ export function initModelsModule() {
             updateSeriesProperty({ pName: pname, sName: sname }, 'hidden', null);
         }
     });
+}
+let modelHome=null;
+function canEditModels(panel){return isPanelAdmin() || getEffectivePanelLevel(panel)==='write';}
+function openModelEditor(){
+    if(!canEditModels('models.manage'))return;
+    const card=document.getElementById('model-manager');
+    if(!modelHome)modelHome={parent:card.parentElement,next:card.nextSibling};
+    card.hidden=false;
+    openDrawer({title:__('models.form_title'),render:body=>body.append(card),onAfterClose:()=>{card.hidden=true;modelHome.parent.insertBefore(card,modelHome.next);}});
+}
+function compactModelActions(root){
+    root.querySelectorAll('.item-actions,.series-actions').forEach(actions=>{
+        const originals=[...actions.querySelectorAll('button')];if(!originals.length)return;
+        const source=document.createElement('div');source.hidden=true;originals.forEach(button=>source.append(button));actions.append(source);
+        const trigger=document.createElement('button');trigger.type='button';trigger.className='icon-action-btn model-actions-trigger';trigger.setAttribute('aria-label',__('common.actions'));trigger.innerHTML=icon('dots');
+        if(!canEditModels('models.library'))trigger.hidden=true;
+        actions.append(trigger);
+        trigger.onclick=e=>{e.preventDefault();e.stopPropagation();openPopover(trigger,{render:popover=>{popover.classList.add('model-menu');originals.forEach(original=>{const button=document.createElement('button');button.type='button';button.className='menu-item';button.textContent=original.textContent;button.disabled=original.disabled;button.onclick=()=>{closePopover();original.click();};popover.append(button);});}});};
+    });
+}
+function initModelWorkspace(){
+    const card=document.getElementById('model-manager');card.hidden=true;
+    const heading=document.querySelector('#tab-models .panel-section-title');const toolbar=document.createElement('div');toolbar.className='model-workspace-actions';heading.append(toolbar);
+    function paint(){
+        toolbar.innerHTML=`<button type="button" class="chrome-btn-outline" data-model-refresh>${icon('refresh')}<span>${__('common.refresh')}</span></button>${canEditModels('models.manage')?`<button type="button" class="chrome-btn-primary" data-model-create>${icon('plus')}<span>${__('models.add')}</span></button>`:''}${isPanelAdmin()?`<button type="button" class="chrome-btn-outline" data-model-publish>${icon('device-floppy')}<span>${__('models.publish')}</span></button>`:''}`;
+        toolbar.querySelector('[data-model-refresh]').onclick=fetchFullModelsData;
+        const create=toolbar.querySelector('[data-model-create]');if(create)create.onclick=()=>{resetModelForm();openModelEditor();};
+        const publish=toolbar.querySelector('[data-model-publish]');if(publish)publish.onclick=async()=>{if(!isPanelAdmin()||publish.disabled)return;const approved=await confirmDialog(()=>({title:__('models.publish'),body:__('models.publish_confirm')}));if(!approved)return;publish.disabled=true;try{await updateModelsListFn({});await fetchFullModelsData();showToast(__('models.published'),'success');}catch(error){showToast(error.message,'error');}finally{publish.disabled=false;}};
+    }
+    onLangChange(()=>{paint();if(modelsData){renderManualModelsList();renderAllModelsExplorer();}});document.addEventListener('vertex:departments',paint);paint();
 }

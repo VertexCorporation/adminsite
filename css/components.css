@@ -680,3 +680,15 @@ button {font:inherit;color:inherit;}
 .panel-menu-section-title {margin:16px 0 8px;font-weight:600;}
 .vx-overlay {z-index:130;}
 .vx-popover {max-height:calc(100dvh - 16px);overflow:auto;}
+
+/* Shared switches retain native keyboard and form behavior. */
+.chrome-switch-row{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap}
+.switch-label-text{font-size:var(--fs-secondary);color:var(--text-secondary)}
+.chrome-switch{position:relative;display:inline-flex;flex:0 0 44px;width:44px;height:32px;margin:0;cursor:pointer}
+.chrome-switch input{position:absolute;inset:0;width:100%;height:100%;min-height:0;opacity:0;margin:0;z-index:1;cursor:pointer}
+.chrome-switch .slider{position:absolute;left:3px;top:5px;width:38px;height:22px;border-radius:var(--radius-full);background:var(--border-strong);transition:background-color var(--motion-normal) var(--ease-standard);pointer-events:none}
+.chrome-switch .slider::before{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text-secondary);transition:transform var(--motion-normal) var(--ease-standard),background-color var(--motion-normal) var(--ease-standard)}
+.chrome-switch input:checked+.slider{background:var(--action-primary)}
+.chrome-switch input:checked+.slider::before{transform:translateX(16px);background:var(--action-primary-text)}
+.chrome-switch:focus-within .slider{box-shadow:var(--focus-ring)}
+.chrome-switch input:disabled+.slider{opacity:.55}

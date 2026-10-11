@@ -1,3 +1,4 @@
+import { confirmDialog } from './shell.js';
 import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../utils/loading.js';
 // js/modules/consoleChat.js
 
@@ -321,7 +322,7 @@ async function submitChannelForm() {
 
 async function deleteCurrentChannel() {
     if (channelFormMode !== 'edit' || !currentChannelId) return;
-    if (!confirm(__('chat.delete_channel_confirm'))) return;
+    if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('chat.delete_channel_confirm')}))) return;
     try {
         await deleteConsoleChatChannelFn({ channelId: currentChannelId });
         showToast(__('chat.deleted'), 'success');
@@ -443,10 +444,10 @@ export function initConsoleChat() {
         const btn = e.target.closest('.chat-channel-item');
         if (btn && btn.dataset.channel) selectChannel(btn.dataset.channel);
     });
-    el('chat-messages').addEventListener('click', (e) => {
+    el('chat-messages').addEventListener('click', async (e) => {
         const del = e.target.closest('.chat-msg-del');
         if (del && !del.disabled) {
-            if (!confirm(__('chat.msg_delete_confirm'))) return;
+            if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('chat.msg_delete_confirm')}))) return;
             del.disabled = true;
             deleteConsoleChatMessageFn({ channelId: currentChannelId, messageId: del.dataset.del })
                 .then(() => loadMessages(false))

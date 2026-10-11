@@ -71,7 +71,10 @@ export function closePopover({ restoreFocus = true } = {}) {
     const { el, anchor, onAfterClose, unbind } = activePopover;
     activePopover = null;
     unbind.forEach(fn => fn());
-    if (el.isConnected) el.remove();
+    el.classList.remove('is-open');
+    el.classList.add('is-closing');
+    el.setAttribute('aria-hidden','true');
+    if (el.isConnected) setTimeout(()=>el.remove(), window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:120);
     anchor?.classList.remove('is-open');
     anchor?.setAttribute('aria-expanded', 'false');
     unregisterSurface('popover');
@@ -167,7 +170,7 @@ export function closeDrawer(restoreFocus = true) {
     unbind.forEach(fn => fn());
     root.classList.remove('is-open');
     scrim.classList.remove('is-open');
-    setTimeout(() => { root.remove(); scrim.remove(); }, 240);
+    setTimeout(() => { root.remove(); scrim.remove(); }, window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:220);
     document.body.style.overflow = '';
     unregisterSurface('drawer');
     if (restoreFocus && previouslyFocused && document.contains(previouslyFocused)) {
@@ -218,7 +221,7 @@ export function openDrawer(opts = {}) {
 
     const unbind = [];
     const onKey = (e) => {
-        if (document.querySelector('.vx-modal')) return;
+        if (activeModal) return;
         if (e.key === 'Escape') { e.stopPropagation(); closeDrawer(); }
         if (e.key === 'Tab') {
             const items=[...root.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled])')];
@@ -253,9 +256,10 @@ export function closeModal() {
     const { root, overlay, unbind, onAfterClose, previouslyFocused } = activeModal;
     activeModal = null;
     unbind.forEach(fn => fn());
-    root.remove();
-    overlay.remove();
-    document.body.style.overflow = '';
+    root.classList.remove('is-open');overlay.classList.remove('is-open');overlay.classList.add('is-closing');
+    root.setAttribute('aria-hidden','true');root.style.pointerEvents='none';overlay.style.pointerEvents='none';
+    setTimeout(()=>{root.remove();overlay.remove();},window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:160);
+    document.body.style.overflow = activeDrawer?'hidden':'';
     unregisterSurface('modal');
     if (previouslyFocused && document.contains(previouslyFocused)) previouslyFocused.focus({ preventScroll: true });
     onAfterClose?.();
@@ -267,6 +271,7 @@ export function closeModal() {
  */
 export function openModal(opts = {}) {
     if (activeModal) closeModal();
+    document.querySelectorAll('.vx-modal[aria-hidden=true],.vx-overlay.is-closing').forEach(surface=>surface.remove());
     closePopover({ restoreFocus: true });
 
     const previouslyFocused = document.activeElement;

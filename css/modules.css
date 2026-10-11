@@ -462,3 +462,17 @@
 .details-content {padding:8px 0 8px 12px;}
 .model-type-badge,.dept-badge {font-size:11px;background:var(--bg-hover);border-radius:6px;padding:2px 6px;width:fit-content;}
 @media(max-width:720px){.model-item,.article-item,.task-item,.dept-user-row{align-items:flex-start;flex-wrap:wrap;}.item-actions button,.series-actions button,.task-actions button{min-height:44px;}.details-content{padding-left:8px;}}
+
+/* Catalog workspace shares the console's list and surface hierarchy. */
+#tab-models .panel-section-title{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-3)}
+#tab-models .panel-section-title>p{flex:1;min-width:180px}
+.model-workspace-actions{display:flex;gap:var(--space-2);flex-wrap:wrap}
+#tab-models [data-panel="models.library"]{grid-column:1/-1}
+#manual-models-list-container{max-height:none}
+.model-menu{min-width:180px;width:220px;padding:var(--space-1)}
+.model-menu .menu-item{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--text-primary);padding:var(--space-3);border-radius:var(--radius-sm)}
+.model-menu .menu-item:hover{background:var(--bg-hover)}
+.vx-drawer #model-manager{padding:0;border:0;background:transparent;width:100%}
+.vx-drawer #model-manager>.card-title-row{display:none}
+.vx-modal-body>.modal-content{width:100%;max-height:none;overflow:visible;border:0;padding:0;box-shadow:none;background:transparent}
+@media(max-width:767px){.model-workspace-actions{width:100%}.model-workspace-actions>button{flex:1}.series-group summary{align-items:center}.model-item{gap:var(--space-2)}}

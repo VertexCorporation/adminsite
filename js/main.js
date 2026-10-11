@@ -1,6 +1,6 @@
 import { initSystemSections } from './modules/system.js';
 import { initIcons } from './utils/icons.js';
-import { initShell } from './modules/shell.js';
+import { initShell, closePopover, closeDrawer, closeModal } from './modules/shell.js';
 // js/main.js
 
 import { initFirebase, auth } from './core/firebase.js';
@@ -87,12 +87,15 @@ export function startApp(firebaseConfig) {
 
     // --- Step 3: Set up the Core Authentication State Listener ---
     // This is the central control point that reacts to user login/logout.
+    let authEpoch=0;
     auth.onAuthStateChanged(async (user) => {
+        const epoch=++authEpoch;
         if (user) {
             console.log(`[AUTH] User signed in: ${user.email}`);
             try {
                 const idTokenResult = await user.getIdTokenResult(true);
-                const isAdmin = !!idTokenResult.claims.admin;
+                if(epoch!==authEpoch)return;
+                const isAdmin = idTokenResult.claims.admin === true;
                 const departments = Array.isArray(idTokenResult.claims.departments)
                     ? idTokenResult.claims.departments
                     : (idTokenResult.claims.department ? [idTokenResult.claims.department] : []);
@@ -128,6 +131,7 @@ export function startApp(firebaseConfig) {
                     console.log(`[AUTH] Access Level: Department (${departments.join(', ')}). Limited panel.`);
                     dom.adminManagerSection.style.display = 'none';
                     await loadDepartmentPermissions();
+                    if(epoch!==authEpoch)return;
                     const allowedTabs = getAccessibleTabs(departments);
                     console.log(`[AUTH] Allowed tabs for ${departments.join(', ')}:`, allowedTabs);
                     applyTabFilter(allowedTabs);
@@ -143,6 +147,8 @@ export function startApp(firebaseConfig) {
             }
         } else {
             // --- User is LOGGED OUT ---
+            setCurrentUser(false,[]);document.body.classList.remove('admin-mode');
+            closePopover({restoreFocus:false});closeModal();closeDrawer(false);
             console.log("[AUTH] No user signed in. Displaying login page.");
             dom.loginContainer.style.display = 'block';
             dom.adminPanel.style.display = 'none';

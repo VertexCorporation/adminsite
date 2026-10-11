@@ -34,7 +34,7 @@ import { startApp } from '../main.js';
     try {
         // --- DEBUG TOKEN SETUP (Must be before SDK load) ---
         if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-            self.FIREBASE_APPCHECK_DEBUG_TOKEN = "90187b16-44ba-4efb-a887-50c14cb24e1d";
+            self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
         }
 
         console.log('[INIT] Stage 1: Loading Core Firebase SDK...');

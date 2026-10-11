@@ -1,3 +1,4 @@
+import { confirmDialog } from './shell.js';
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/news.js
 
@@ -69,7 +70,7 @@ async function handleNewsFormSubmit(e) {
  * @param {string} slug - The slug of the article to delete.
  */
 async function handleDeleteArticle(slug) {
-    if (!confirm(`Are you sure you want to delete the article "${slug}"?`)) return;
+    if (!await confirmDialog(()=>({title:__('common.delete'),body:__('news.delete_confirm')}))) return;
     showToast(`Deleting article: ${slug}`, 'info');
     try {
         const result = await deleteNewsArticleFn({ slug });

@@ -41,7 +41,10 @@ async function callCallable(name, data) {
     try { json = await res.json(); } catch { /* bos govde */ }
     if (!res.ok || json.error) {
         const err = json.error || {};
-        const e = new Error(`${err.status || 'INTERNAL'}: ${err.message || 'HTTP ' + res.status}`);
+        const status=err.status || (res.status===401?'UNAUTHENTICATED':res.status===403?'PERMISSION_DENIED':res.status===429?'RESOURCE_EXHAUSTED':'INTERNAL');
+        const e = new Error(err.message || (res.status===429?'Service capacity is temporarily unavailable. Try again later.':'The request could not be completed.'));
+        e.code='functions/'+status.toLowerCase().replaceAll('_','-');
+        e.httpStatus=res.status;
         throw e;
     }
     return { data: json.result !== undefined ? json.result : null };

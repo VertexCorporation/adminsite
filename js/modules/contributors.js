@@ -1,5 +1,5 @@
 import { icon } from '../utils/icons.js';
-import { openDrawer, closeDrawer } from './shell.js';
+import { openDrawer, closeDrawer, confirmDialog } from './shell.js';
 import { createLoadingController, skeletonRows, createRequestGuard } from '../utils/loading.js';
 import { formatCertificateDate } from './certificates.js';
 import { openCertificates } from './certificates.js';
@@ -116,7 +116,7 @@ function renderContributors(contributors) {
     deleteBtns.forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const id = btn.getAttribute('data-id');
-            if (confirm(__('contributors.delete_confirm'))) {
+            if (await confirmDialog(()=>({title:__('common.delete'),body:__('contributors.delete_confirm')}))) {
                 btn.disabled = true;
                 try {
                     await deleteVertexContributorFn({ contributorId: id });
@@ -268,7 +268,7 @@ function openContributorDetails(person) {
         body.innerHTML=`<dl class="detail-list">${rows.map(([label,value])=>`<div class="detail-row"><dt>${__(label)}</dt><dd>${escapeHTML(String(value??'—'))}</dd></div>`).join('')}</dl>${!hidden.has('about')?`<p class="drawer-bio">${escapeHTML(person.about||'')}</p>`:''}${!hidden.has('links')?['linkedin','github'].filter(k=>/^https?:\/\//.test(person[k]||'')).map(k=>`<a href="${escapeHTML(person[k])}" target="_blank" rel="noopener">${k}</a>`).join(' · '):''}<div class="form-submit-row">${getEffectivePanelLevel('contributors.list')==='write'?`<button class="chrome-btn-outline" data-edit>${__('contributors.edit_title')}</button>`:''}${isPanelAdmin()?`<button class="cert-trigger" data-certificate aria-label="${__('cert.title')}">${icon('award')}</button><details><summary>${__('contributors.col_actions')}</summary><button class="chrome-btn-outline" data-delete>${__('contributors.delete_confirm')}</button><label><input type="checkbox" data-verify ${person.hasVerified?'checked':''}>${__('contributors.verified_label')}</label></details>`:''}</div>`;
         body.querySelector('[data-edit]')?.addEventListener('click',()=>openContributorEditor(person));
         body.querySelector('[data-certificate]')?.addEventListener('click',event=>openCertificates(person,fetchContributorsData,event.currentTarget));
-        body.querySelector('[data-delete]')?.addEventListener('click',async event=>{if(!confirm(__('contributors.delete_confirm')))return;event.currentTarget.disabled=true;try{await deleteVertexContributorFn({contributorId:person.id});closeDrawer();await fetchContributorsData();}catch(error){showToast(error.message,'error');paint();}});
+        body.querySelector('[data-delete]')?.addEventListener('click',async event=>{if(!await confirmDialog(()=>({title:__('common.delete'),body:__('contributors.delete_confirm')})))return;event.currentTarget.disabled=true;try{await deleteVertexContributorFn({contributorId:person.id});closeDrawer();await fetchContributorsData();}catch(error){showToast(error.message,'error');paint();}});
         body.querySelector('[data-verify]')?.addEventListener('change',async event=>{const toggle=event.currentTarget;toggle.disabled=true;try{await toggleContributorVerificationFn({contributorId:person.id,hasVerified:toggle.checked});person.hasVerified=toggle.checked;await fetchContributorsData();}catch(error){toggle.checked=!toggle.checked;showToast(error.message,'error');}finally{toggle.disabled=false;}});
     }
     const unsubscribe=onLangChange(paint);

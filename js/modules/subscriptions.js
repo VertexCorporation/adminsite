@@ -1,3 +1,4 @@
+import { confirmDialog } from './shell.js';
 import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../utils/loading.js';
 // js/modules/subscriptions.js
 
@@ -163,7 +164,7 @@ async function handleAssignSubmit(e) {
 }
 
 async function handleRemoveSubscription(uid, button) {
-    if (!confirm(__('subs.remove_confirm'))) return;
+    if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('subs.remove_confirm')}))) return;
     button.disabled = true;
     button.textContent = __('subs.removing');
     try {
