@@ -49,6 +49,7 @@ const LANG = {
     "models.description_texts": "Açıklamalar",
     "models.translations_for": "Model çevirileri",
 
+    "common.unavailable": "Kullanılamıyor",
     "init.error": "Uygulama başlatılamadı",
     "init.retry": "Başlatma sırasında hata oluştu. Sayfayı yenileyerek tekrar dene.",
     "vertex.uid_ph": "Hedef kullanıcı kimliği",
@@ -70,7 +71,6 @@ const LANG = {
     "subs.required": "E-posta, seviye ve bitiş tarihi gerekli.",
     "subs.invalid_date": "Geçerli bir bitiş tarihi gir.",
     "auth.denied": "Bu panele erişim yetkin yok.",
-    "auth.login_failed": "Giriş başarısız.",
     "navigation.close": "Navigasyonu kapat",
     "navigation.main": "Ana navigasyon",
 
@@ -81,8 +81,6 @@ const LANG = {
     "contributors.unverify": "Doğrulamayı Kaldır",
     "contributors.delete_action": "Başvuruyu Sil",
     "contributors.delete_warning": "Bu başvuruyu kalıcı olarak silmek istediğine emin misin? Bu işlem geri alınamaz.",
-    "contributors.deleted": "Başvuru silindi.",
-    "contributors.load_error": "Başvurular yüklenemedi.",
     "cert.select_person": "Sertifika için katılımcı seç",
     "cert.search_person": "Ad veya e-posta ile ara",
     "cert.not_joined": "Katılım tarihi belirtilmedi",
@@ -97,7 +95,6 @@ const LANG = {
     "notif.sending": "Bildirim gönderiliyor",
     "notif.scheduling": "Bildirim planlanıyor",
     "notif.scheduled_for": "Planlanan tarih",
-    "notif.target_label": "Hedef",
     "notif.cancelling": "Plan iptal ediliyor…",
     "notif.tasks_error": "Planlanan bildirimler yüklenemedi.",
     "notif.data_only": "Veri bildirimi",
@@ -132,9 +129,6 @@ const LANG = {
     "subnav.server": "Sunucu ve bakım",
     "subnav.exports_attributions": "Dışa aktarma / katkılar",
     "language.select": "Dil",
-    "perms.level_none": "Yok",
-    "perms.level_read": "Görüntüle",
-    "perms.level_write": "Düzenle",
     "perms.pending": "Kaydedilmemiş değişiklikler",
     "perms.saving": "Kaydediliyor…",
     "perms.saved": "Kaydedildi",
@@ -200,7 +194,6 @@ const LANG = {
     "cert.updated": "Kayıt güncellendi",
     "cert.current_date": "Mevcut tarih",
     "cert.participation": "Katılım günü",
-    "contributors.empty": "Katılımcı bulunamadı",
     "contributors.col_name": "İsim",
     "contributors.col_department": "Departman",
     "contributors.col_age": "Yaş",
@@ -212,8 +205,6 @@ const LANG = {
     "system.administrators": "Yöneticiler",
     "system.verification": "Katılımcılar ve Doğrulama",
     "system.server": "Sunucu ve Bakım",
-    "system.attributions": "Atıflar",
-    "system.export": "Veri Dışa Aktarma",
 
     'lang.name': 'Türkçe',
     'lang.flag': 'TR',
@@ -773,6 +764,7 @@ const LANG = {
     "models.description_texts": "Descriptions",
     "models.translations_for": "Model translations",
 
+    "common.unavailable": "Unavailable",
     "init.error": "Application could not start",
     "init.retry": "A startup error occurred. Refresh the page to try again.",
     "vertex.uid_ph": "Target user ID",
@@ -794,7 +786,6 @@ const LANG = {
     "subs.required": "Email, tier and end date are required.",
     "subs.invalid_date": "Enter a valid end date.",
     "auth.denied": "You are not authorized to access this panel.",
-    "auth.login_failed": "Sign-in failed.",
     "navigation.close": "Close navigation",
     "navigation.main": "Main navigation",
 
@@ -805,8 +796,6 @@ const LANG = {
     "contributors.unverify": "Remove verification",
     "contributors.delete_action": "Delete application",
     "contributors.delete_warning": "Are you sure you want to permanently delete this application? This cannot be undone.",
-    "contributors.deleted": "Application deleted.",
-    "contributors.load_error": "Could not load applications.",
     "cert.select_person": "Select a certificate recipient",
     "cert.search_person": "Search by name or email",
     "cert.not_joined": "Joining date not set",
@@ -821,7 +810,6 @@ const LANG = {
     "notif.sending": "Sending notification",
     "notif.scheduling": "Scheduling notification",
     "notif.scheduled_for": "Scheduled for",
-    "notif.target_label": "Target",
     "notif.cancelling": "Cancelling scheduled task…",
     "notif.tasks_error": "Could not load scheduled notifications.",
     "notif.data_only": "Data-only notification",
@@ -856,9 +844,6 @@ const LANG = {
     "subnav.server": "Server & Maintenance",
     "subnav.exports_attributions": "Exports / Attributions",
     "language.select": "Language",
-    "perms.level_none": "None",
-    "perms.level_read": "View",
-    "perms.level_write": "Edit",
     "perms.pending": "Unsaved changes",
     "perms.saving": "Saving…",
     "perms.saved": "Saved",
@@ -924,7 +909,6 @@ const LANG = {
     "cert.updated": "Record updated",
     "cert.current_date": "Current date",
     "cert.participation": "Participation days",
-    "contributors.empty": "No contributors found",
     "contributors.col_name": "Name",
     "contributors.col_department": "Department",
     "contributors.col_age": "Age",
@@ -936,8 +920,6 @@ const LANG = {
     "system.administrators": "Administrators",
     "system.verification": "Contributors & Verification",
     "system.server": "Server & Maintenance",
-    "system.attributions": "Attributions",
-    "system.export": "Data Export",
 
     'lang.name': 'English',
     'lang.flag': 'EN',
@@ -1448,84 +1430,69 @@ const LANG = {
   }
 };
 
-let currentLang = localStorage.getItem('siteLang') || 'tr';
+const supportedLang = lang => lang === 'tr' || lang === 'en';
+let currentLang = 'tr';
+try {
+  const stored = localStorage.getItem('siteLang');
+  if (supportedLang(stored)) currentLang = stored;
+} catch { /* Storage is optional, including in private browsing. */ }
+const missingKeys = new Set();
 
 export function __(key) {
-  const value = LANG[currentLang]?.[key];
+  const lang = supportedLang(currentLang) ? currentLang : 'tr';
+  const value = Object.hasOwn(LANG[lang], key) ? LANG[lang][key] : undefined;
   if (value !== undefined) return value;
-  const development = ['localhost','127.0.0.1'].includes(location.hostname);
-  if (development) { console.error(`[i18n] missing ${currentLang}:${key}`); return `[missing:${key}]`; }
-  return LANG.tr[key] ?? LANG[currentLang]['system.error'];
-}
-
-// Make __ available globally for inline scripts
-window.__ = __;
-
-export function getLang() {
-  return currentLang;
-}
-
-export function setLang(lang) {
-  if (LANG[lang]) {
-    currentLang = lang;
-    localStorage.setItem('siteLang', lang);
-    document.documentElement.lang = lang;
-    translatePage();
-    dispatchLangChange();
+  if (['localhost', '127.0.0.1'].includes(location.hostname) && !missingKeys.has(`${lang}:${key}`)) {
+    missingKeys.add(`${lang}:${key}`);
+    console.error(`[i18n] missing ${lang}:${key}`);
   }
+  return LANG[lang]['common.unavailable'];
 }
-
+window.__ = __;
+export function getLang() { return currentLang; }
+export function setLang(lang) {
+  currentLang = supportedLang(lang) ? lang : 'tr';
+  try { localStorage.setItem('siteLang', currentLang); } catch { /* Keep the session usable. */ }
+  translatePage();
+  dispatchLangChange();
+}
 const langChangeCallbacks = [];
-
 export function onLangChange(callback) {
   langChangeCallbacks.push(callback);
   return () => { const i = langChangeCallbacks.indexOf(callback); if (i >= 0) langChangeCallbacks.splice(i, 1); };
 }
-
 function dispatchLangChange() {
-  langChangeCallbacks.forEach(cb => {
-    try { cb(currentLang); } catch (e) { console.error(e); }
-  });
+  [...langChangeCallbacks].forEach(cb => { try { cb(currentLang); } catch (e) { console.error(e); } });
 }
-
+let lastTranslatedTitle;
 export function translatePage() {
   document.documentElement.lang = currentLang;
   document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    const translation = __(key);
-    if (el.tagName === 'OPTGROUP') {
-      el.label = translation;
-    } else if (translation.includes('<')) {
-      el.innerHTML = translation;
-    } else {
-      el.textContent = translation;
-    }
+    if (el.tagName === 'TITLE' || el.tagName === 'META') return;
+    const translation = __(el.getAttribute('data-i18n'));
+    if (el.tagName === 'OPTGROUP') el.label = translation;
+    else if (translation.includes('<')) el.innerHTML = translation;
+    else el.textContent = translation;
   });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    const key = el.getAttribute('data-i18n-placeholder');
-    el.placeholder = __(key);
-  });
-  document.querySelectorAll('[data-i18n-title]').forEach(el => {
-    const key = el.getAttribute('data-i18n-title');
-    el.title = __(key);
-  });
-  document.querySelectorAll('[data-i18n-value]').forEach(el => {
-    const key = el.getAttribute('data-i18n-value');
-    el.value = __(key);
-  });
-  document.querySelectorAll('[data-i18n-aria-label]').forEach(el=>el.setAttribute('aria-label',__(el.dataset.i18nAriaLabel)));
-  // Update page title
-  const titleKey = document.querySelector('title')?.getAttribute('data-i18n');
-  if (titleKey) document.title = __(titleKey);
-  const metaDesc = document.querySelector('meta[name="description"]');
-  if (metaDesc?.getAttribute('data-i18n')) {
-    metaDesc.content = __(metaDesc.getAttribute('data-i18n'));
-  }
-  // Update select option text content
-  document.querySelectorAll('select[data-i18n-options]').forEach(select => {
-    Array.from(select.options).forEach(opt => {
-      const key = opt.getAttribute('data-i18n');
-      if (key) opt.textContent = __(key);
+  for (const attribute of ['placeholder', 'title', 'value', 'aria-label']) {
+    document.querySelectorAll(`[data-i18n-${attribute}]`).forEach(el => {
+      el.setAttribute(attribute, __(el.getAttribute(`data-i18n-${attribute}`)));
+      if (attribute === 'value') el.value = __(el.getAttribute(`data-i18n-${attribute}`));
     });
-  });
+  }
+  const titleKey = document.querySelector('title')?.getAttribute('data-i18n');
+  // A page controller may own the title. Do not overwrite its dynamic title.
+  if (titleKey && ((lastTranslatedTitle === undefined && ['tr', 'en'].some(lang => document.title === LANG[lang][titleKey])) || document.title === lastTranslatedTitle)) {
+    document.title = __(titleKey);
+    lastTranslatedTitle = document.title;
+  }
+  const metaDesc = document.querySelector('meta[name="description"][data-i18n]');
+  if (metaDesc) metaDesc.content = __(metaDesc.getAttribute('data-i18n'));
+  document.documentElement.dataset.translationReady = 'true';
 }
+// No Firebase, configuration, authentication or feature-module dependency here.
+export const translationsReady = new Promise(resolve => {
+  const ready = () => { translatePage(); resolve(); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready, { once: true });
+  else ready();
+});

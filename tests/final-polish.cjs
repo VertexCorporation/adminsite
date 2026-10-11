@@ -4,7 +4,7 @@ module.exports=async({page,selectTab,note,calls,payloads,setPeople,person,failMa
  const locale=async lang=>page.evaluate(async lang=>(await import('/js/lang.js')).setLang(lang),lang);
  const closeDrawer=async()=>{await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});};
  await page.setViewportSize({width:1440,height:900});await selectTab('contributors');
- assert.equal(await page.title(),'VERTEX KONSOL');assert.equal(await page.locator('.brand-info').innerText(),'VERTEX KONSOL');
+ assert.equal(await page.title(),`${await page.locator('.topbar-page-title').textContent()} · VERTEX KONSOL`);assert.equal(await page.locator('.brand-info').innerText(),'VERTEX KONSOL');
  assert(await page.locator('.vertex-brand-logo').first().evaluate(img=>img.complete&&img.naturalWidth>0));
  const loaderCSS=await page.evaluate(async()=>{const css=await(await fetch('/css/layout.css')).text();return /2100ms linear infinite/.test(css)&&/opacity 180ms ease/.test(css);});assert(loaderCSS);await page.waitForSelector('#app-loader',{state:'detached'});assert.equal(await page.locator('#app-loader').count(),0);
  note('Official brand asset, exact Soft Sweep timing and bootstrap removal');

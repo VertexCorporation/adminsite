@@ -1,4 +1,4 @@
-import { __ } from '../lang.js';
+import { __, onLangChange } from '../lang.js';
 // js/utils/ui.js
 
 // Re-export translation functions from lang.js
@@ -31,7 +31,7 @@ export function sanitizeHTML(str) {
 
 /**
  * Displays a toast notification message.
- * @param {string} message The message to display.
+ * @param {string | (() => string)} message A render callback keeps translated text current.
  * @param {'info' | 'success' | 'error'} type The type of toast.
  */
 export function showToast(message, type = 'info') {
@@ -40,12 +40,17 @@ export function showToast(message, type = 'info') {
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.textContent = message;
+    const paint = () => {
+        toast.textContent = typeof message === 'function' ? message() : message;
+        toast.title = __('toast.dismiss_hint');
+    };
+    paint();
+    const unsubscribe = onLangChange(paint);
+    const remove = () => { unsubscribe(); toast.remove(); };
     toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
-    toast.title = __('toast.dismiss_hint');
     toast.addEventListener('click', () => {
         toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 250);
+        setTimeout(() => remove(), 250);
     });
 
     container.appendChild(toast);
@@ -55,10 +60,10 @@ export function showToast(message, type = 'info') {
     // Set timeout to hide and then remove the toast
     setTimeout(() => {
         toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
+        setTimeout(() => remove(), 300);
         toast.addEventListener('transitionend', () => {
             if (toast.parentElement) {
-                container.removeChild(toast);
+                remove();
             }
         }, { once: true });
     }, 5000);
@@ -97,7 +102,7 @@ export async function getAuthToken(auth) {
         return await user.getIdToken(true);
     } catch (error) {
         console.error("[AUTH] Error getting ID token:", error);
-        showToast("Authentication session expired. Please log in again.", "error");
+        showToast(() => __("auth.session_expired"), "error");
         auth.signOut(); // Sign out the user on token failure
         throw new Error("Failed to get a valid auth token.");
     }

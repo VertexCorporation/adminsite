@@ -149,7 +149,7 @@ async function loadDepartmentUsers() {
     } catch (error) {
         finishLoading();
         console.error('[CLIENT] Error loading department users:', error);
-        container.innerHTML = `<p class="form-hint dept-list-message">${__('dept.load_error')}</p>`;
+        container.innerHTML = `<p class="form-hint dept-list-message" data-i18n="dept.load_error">${__('dept.load_error')}</p>`;
     } finally {
         finishLoading();
         button.disabled = false;
@@ -175,7 +175,7 @@ function updateMaintenanceUI(isEnabled = maintenanceState) {
 export async function initializeMaintenanceStatus() {
     if(maintenancePending)return;maintenancePending=true;updateMaintenanceUI();
     try {const result=await getServerStatusFn();maintenanceState=typeof result.data.isUnderMaintenance==='boolean'?result.data.isUnderMaintenance:null;}
-    catch {maintenanceState=null;showToast(__('system.status_unavailable'),'error');}
+    catch {maintenanceState=null;showToast(() => __('system.status_unavailable'),'error');}
     finally{maintenancePending=false;updateMaintenanceUI();}
 }
 async function handleMaintenanceToggle() {
@@ -185,8 +185,8 @@ async function handleMaintenanceToggle() {
     if(!await confirmDialog(()=>({title:__('system.maintenance'),body:__('system.maintenance_confirm')})))return;
     if(maintenancePending)return;
     const next=!maintenanceState;maintenancePending=true;updateMaintenanceUI();
-    try{await setServerStatusFn({maintenanceEnabled:next});maintenanceState=next;showToast(__('system.maint_updated'),'success');}
-    catch{maintenanceState=null;showToast(__('system.error'),'error');}
+    try{await setServerStatusFn({maintenanceEnabled:next});maintenanceState=next;showToast(() => __('system.maint_updated'),'success');}
+    catch{maintenanceState=null;showToast(() => __('system.error'),'error');}
     finally{maintenancePending=false;updateMaintenanceUI();}
 }
 
@@ -203,11 +203,11 @@ async function handleAdminFormSubmit(e) {
 
     try {
         const result = await addAdminRoleFn({ email: newAdminEmail });
-        showToast(__('admin.grant_success'), 'success');
+        showToast(() => __('admin.grant_success'), 'success');
         dom.adminForm.reset();
     } catch (error) {
         console.error("[CLIENT] Error granting admin role:", error);
-        showToast(userErrorMessage(error), 'error');
+        showToast(() => userErrorMessage(error), 'error');
     } finally {
         grantBtn.disabled = false;
         grantBtn.textContent = __('admin.grant_btn');
@@ -246,7 +246,7 @@ export function setAttributionsOutOfSync() {
     if (attributionsOutOfSync === false) {
         attributionsOutOfSync = true;
         updateAttributionsUI();
-        showToast(__('system.attributions_hint'), 'info');
+        showToast(() => __('system.attributions_hint'), 'info');
     }
 }
 
@@ -260,13 +260,13 @@ async function handleAttributionsUpdate() {
     
     try {
         const result = await triggerAttributionsUpdateFn();
-        showToast(__('system.attributions_synced'), 'success');
+        showToast(() => __('system.attributions_synced'), 'success');
         // On success, reset the state
         attributionsOutOfSync = false;
         updateAttributionsUI();
     } catch (error) {
         console.error("[CLIENT] Error triggering attributions update:", error);
-        showToast(userErrorMessage(error), 'error');
+        showToast(() => userErrorMessage(error), 'error');
         // Re-enable the button on failure so the user can try again
         actionBtn.disabled = false;
         actionBtn.textContent = __('common.retry');
@@ -285,13 +285,13 @@ async function handleVertexStatusToggle(e) {
     const targetUid=document.getElementById('vertex-target-uid').value.trim();
     const button=document.getElementById('toggle-vertex-btn');
     if(button.disabled||getEffectivePanelLevel('contributors.vertexStatus')!=='write')return;
-    if(!targetUid||targetUid.length>128||/\s/.test(targetUid)){showToast(__('system.uid_invalid'),'error');return;}
+    if(!targetUid||targetUid.length>128||/\s/.test(targetUid)){showToast(() => __('system.uid_invalid'),'error');return;}
     if(!await confirmDialog(()=>({title:__('panel.contributors.vertexStatus'),body:__('system.vertex_confirm'),rows:[{label:'UID',value:targetUid}]})))return;
     vertexPending=true;button.disabled=true;button.textContent=__('system.saving');
     try{const result=await toggleVertexStatusFn({targetUid});
         let output=document.getElementById('vertex-operation-result');if(!output){output=document.createElement('p');output.id='vertex-operation-result';output.className='form-hint';output.setAttribute('role','status');button.after(output);}
         output.dataset.uid=targetUid;output.dataset.state=String(result.data.isVertex);updateVertexResult();
-    }catch{showToast(__('system.error'),'error');}
+    }catch{showToast(() => __('system.error'),'error');}
     finally{vertexPending=false;button.disabled=false;button.textContent=__('panel.contributors.vertexStatus');}
 }
 
@@ -307,11 +307,11 @@ async function handleManualVerifySubmit(e) {
 
     try {
         const result = await verifyUserEmailFn({ identifier });
-        showToast(__('system.verify_success'), 'success');
+        showToast(() => __('system.verify_success'), 'success');
         document.getElementById('verify-user-form').reset();
     } catch (error) {
         console.error("[CLIENT] Error verifying email:", error);
-        showToast(userErrorMessage(error), 'error');
+        showToast(() => userErrorMessage(error), 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = `<span data-i18n="system.verify_btn">${__('system.verify_btn')}</span>`;
@@ -330,12 +330,12 @@ async function handleRemoveAdminSubmit(e) {
 
     try {
         const result = await removeAdminRoleFn({ email });
-        showToast(__('system.remove_success'), 'success');
+        showToast(() => __('system.remove_success'), 'success');
         document.getElementById('remove-admin-form').reset();
         loadAdminsList(); // Refresh the list
     } catch (error) {
         console.error("[CLIENT] Error removing admin role:", error);
-        showToast(userErrorMessage(error), 'error');
+        showToast(() => userErrorMessage(error), 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = `<span data-i18n="system.remove_btn">${__('system.remove_btn')}</span>`;
@@ -358,7 +358,7 @@ export async function loadAdminsList() {
         const debug = result.data.debug;
         
         if (!admins || admins.length === 0) {
-            container.innerHTML = `<p class="form-hint dept-list-message">${__('system.admins_empty')}</p>`;
+            container.innerHTML = `<p class="form-hint dept-list-message" data-i18n="system.admins_empty">${__('system.admins_empty')}</p>`;
             return;
         }
 
@@ -391,7 +391,7 @@ async function handleDeptAssignSubmit(e) {
     const email = document.getElementById('dept-user-email').value.trim();
     const departments = selectedDepartments();
     if (!departments.length) {
-        showToast(__('dept.select_hint'), 'error');
+        showToast(() => __('dept.select_hint'), 'error');
         return;
     }
     const btn = document.querySelector('#dept-assign-form button[type="submit"]');
@@ -409,12 +409,12 @@ async function handleDeptAssignSubmit(e) {
             }
             result = await setUserDepartmentFn({ email, department: departments[0] });
         }
-        showToast(__('dept.assign_success'), 'success');
+        showToast(() => __('dept.assign_success'), 'success');
         document.getElementById('dept-assign-form').reset();
         await loadDepartmentUsers();
     } catch (error) {
         console.error("[CLIENT] Error assigning department:", error);
-        showToast(userErrorMessage(error), 'error');
+        showToast(() => userErrorMessage(error), 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="" data-icon="assignment_ind"></i><span data-i18n="dept.assign_btn">${__('dept.assign_btn')}</span>`;

@@ -6,7 +6,7 @@ import { initShell, refreshNavigation, closePopover, closeDrawer, closeModal } f
 
 import { initFirebase, auth } from './core/firebase.js';
 import * as dom from './utils/dom.js';
-import { showToast, __, getLang, setLang, translatePage, onLangChange } from './utils/ui.js';
+import { userErrorMessage, showToast, __, getLang, setLang, translatePage, onLangChange } from './utils/ui.js';
 
 // Import module initializers
 import { initAdminModule, initializeMaintenanceStatus, refreshDepartmentUsers, loadAdminsList } from './modules/admin.js';
@@ -78,9 +78,9 @@ export function startApp(firebaseConfig) {
         try {
             await user.updateProfile({ displayName: name });
             document.getElementById('profile-name').textContent = name || user.email || '—';
-            showToast(__('profile.saved'), 'success');
+            showToast(() => __('profile.saved'), 'success');
         } catch (error) {
-            showToast(`${__('system.error')}: ${error.message}`, 'error');
+            showToast(() => userErrorMessage(error), 'error');
         } finally {
             button.disabled = false;
         }
@@ -91,11 +91,12 @@ export function startApp(firebaseConfig) {
     let authEpoch=0;
     auth.onAuthStateChanged(async (user) => {
         const epoch=++authEpoch;
+        if(document.documentElement.dataset.startupFailed === 'true') return;
         if (user) {
             console.log(`[AUTH] User signed in: ${user.email}`);
             try {
                 const idTokenResult = await user.getIdTokenResult(true);
-                if(epoch!==authEpoch)return;
+                if(epoch!==authEpoch || document.documentElement.dataset.startupFailed === 'true')return;
                 const isAdmin = idTokenResult.claims.admin === true;
                 const departments = Array.isArray(idTokenResult.claims.departments)
                     ? idTokenResult.claims.departments
@@ -133,7 +134,7 @@ export function startApp(firebaseConfig) {
                     console.log(`[AUTH] Access Level: Department (${departments.join(', ')}). Limited panel.`);
                     dom.adminManagerSection.style.display = 'none';
                     await loadDepartmentPermissions();
-                    if(epoch!==authEpoch)return;
+                    if(epoch!==authEpoch || document.documentElement.dataset.startupFailed === 'true')return;
                     const allowedTabs = getAccessibleTabs(departments);
                     console.log(`[AUTH] Allowed tabs for ${departments.join(', ')}:`, allowedTabs);
                     applyTabFilter(allowedTabs);
@@ -145,11 +146,12 @@ export function startApp(firebaseConfig) {
 
             } catch (error) {
                 console.error("[AUTH] Access check failed:", error.message);
-                showToast(__('auth.denied'), "error");
+                showToast(() => __('auth.denied'), "error");
                 auth.signOut();
             }
         } else {
             // --- User is LOGGED OUT ---
+            document.title = __('page.title');
             setCurrentUser(false,[]);document.dispatchEvent(new CustomEvent('vertex:close-navigation'));document.body.classList.remove('admin-mode');
             closePopover({restoreFocus:false});closeModal();closeDrawer(false);
             console.log("[AUTH] No user signed in. Displaying login page.");
@@ -170,7 +172,7 @@ export function startApp(firebaseConfig) {
         const password = document.getElementById('password').value;
         if (email && password) {
             auth.signInWithEmailAndPassword(email, password)
-                .catch(error => showToast(__('auth.login_failed'), 'error'));
+                .catch(error => showToast(() => __('auth.login_failed'), 'error'));
         } else {
             showToast('Please enter both email and password.', 'info');
         }
@@ -192,7 +194,7 @@ export function startApp(firebaseConfig) {
                 .catch(error => {
                     console.error('[AUTH] Google sign-in error:', error);
                     if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-                        showToast(`Google Login Failed: ${error.message}`, 'error');
+                        showToast(() => userErrorMessage(error), 'error');
                     }
                 })
                 .finally(() => {
@@ -219,7 +221,7 @@ export function startApp(firebaseConfig) {
                 .catch(error => {
                     console.error('[AUTH] Apple sign-in error:', error);
                     if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-                        showToast(`Apple Login Failed: ${error.message}`, 'error');
+                        showToast(() => userErrorMessage(error), 'error');
                     }
                 })
                 .finally(() => {
@@ -341,8 +343,8 @@ document.getElementById('copy-uid-btn')?.addEventListener('click', () => {
     const uid = document.getElementById('profile-uid').textContent;
     if (!uid || uid === '—') return;
     navigator.clipboard?.writeText(uid).then(
-        () => showToast(__('profile.uid_copied'), 'success'),
-        () => showToast(__('profile.uid_copied_fail'), 'error')
+        () => showToast(() => __('profile.uid_copied'), 'success'),
+        () => showToast(() => __('profile.uid_copied_fail'), 'error')
     );
 });
 
@@ -391,7 +393,8 @@ function disableReadOnlyControls(panel) {
 
 function hideBootstrapLoader() {
     const loader=dom.appLoader;
-    if(!loader?.isConnected||loader.classList.contains('is-leaving'))return;
+    if(!loader?.isConnected||loader.classList.contains('is-leaving')||document.documentElement.dataset.startupFailed === 'true')return;
+    translatePage();
     loader.classList.add('is-leaving');
     loader.addEventListener('transitionend',()=>loader.remove(),{once:true});
     setTimeout(()=>loader.remove(),window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:220);

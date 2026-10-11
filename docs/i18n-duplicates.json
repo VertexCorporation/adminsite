@@ -1,0 +1,82 @@
+[
+  {
+    "locale": "tr",
+    "key": "contributors.load_error"
+  },
+  {
+    "locale": "tr",
+    "key": "contributors.empty"
+  },
+  {
+    "locale": "tr",
+    "key": "contributors.deleted"
+  },
+  {
+    "locale": "tr",
+    "key": "notif.target_label"
+  },
+  {
+    "locale": "tr",
+    "key": "system.attributions"
+  },
+  {
+    "locale": "tr",
+    "key": "system.export"
+  },
+  {
+    "locale": "tr",
+    "key": "perms.level_none"
+  },
+  {
+    "locale": "tr",
+    "key": "perms.level_read"
+  },
+  {
+    "locale": "tr",
+    "key": "perms.level_write"
+  },
+  {
+    "locale": "tr",
+    "key": "auth.login_failed"
+  },
+  {
+    "locale": "en",
+    "key": "contributors.load_error"
+  },
+  {
+    "locale": "en",
+    "key": "contributors.empty"
+  },
+  {
+    "locale": "en",
+    "key": "contributors.deleted"
+  },
+  {
+    "locale": "en",
+    "key": "notif.target_label"
+  },
+  {
+    "locale": "en",
+    "key": "system.attributions"
+  },
+  {
+    "locale": "en",
+    "key": "system.export"
+  },
+  {
+    "locale": "en",
+    "key": "perms.level_none"
+  },
+  {
+    "locale": "en",
+    "key": "perms.level_read"
+  },
+  {
+    "locale": "en",
+    "key": "perms.level_write"
+  },
+  {
+    "locale": "en",
+    "key": "auth.login_failed"
+  }
+]

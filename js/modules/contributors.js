@@ -59,7 +59,7 @@ export async function fetchContributorsData() {
         console.error('[CONTRIBUTORS] Failed to fetch data:', error);
         if (!requestGuard.isCurrent(request)) return;
         loading.error(__('cert.error'),fetchContributorsData,__('common.retry'));
-        showToast(__('contributors.load_error'), 'error');
+        showToast(() => __('contributors.load_error'), 'error');
     } finally {
         if (requestGuard.isCurrent(request) && refreshBtn) refreshBtn.disabled = false;
     }
@@ -197,11 +197,11 @@ function openContributorEditor(contributor) {
         try {
             await updateContributorApplicationFn({ contributorId: contributor.id, ...updates });
             closeDrawer();
-            showToast(__('contributors.edit_updated'), 'success');
+            showToast(() => __('contributors.edit_updated'), 'success');
             fetchContributorsData();
         } catch (error) {
             console.error('[CONTRIBUTORS] Edit failed:', error);
-            showToast(userErrorMessage(error), 'error');
+            showToast(() => userErrorMessage(error), 'error');
             submitBtn.disabled = false;
         }
     });
@@ -224,13 +224,13 @@ function openContributorDetails(person) {
             menu.querySelector('[data-verify]').onclick=async()=>{
                 if(pending||!isPanelAdmin())return; pending=true;closePopover();paint();
                 const next=!person.hasVerified;
-                try{await toggleContributorVerificationFn({contributorId:person.id,hasVerified:next});person.hasVerified=next;showToast(__('contributors.verify_updated'),'success');await fetchContributorsData();}
-                catch{showToast(__('system.error'),'error');}finally{pending=false;paint();}
+                try{await toggleContributorVerificationFn({contributorId:person.id,hasVerified:next});person.hasVerified=next;showToast(() => __('contributors.verify_updated'),'success');await fetchContributorsData();}
+                catch{showToast(() => __('system.error'),'error');}finally{pending=false;paint();}
             };
             menu.querySelector('[data-delete]').onclick=async()=>{
                 if(pending||!isPanelAdmin())return; closePopover();
                 if(!await confirmDialog(()=>({title:__('contributors.delete_action'),body:__('contributors.delete_warning'),confirmLabel:__('contributors.delete_action'),danger:true})))return;
-                pending=true;paint();try{await deleteVertexContributorFn({contributorId:person.id});closeDrawer();showToast(__('contributors.deleted'),'success');await fetchContributorsData();}catch{showToast(__('system.error'),'error');pending=false;paint();}
+                pending=true;paint();try{await deleteVertexContributorFn({contributorId:person.id});closeDrawer();showToast(() => __('contributors.deleted'),'success');await fetchContributorsData();}catch{showToast(() => __('system.error'),'error');pending=false;paint();}
             };
         }}));
     }

@@ -4,7 +4,7 @@ import { beginPanelLoading } from '../utils/loading.js';
 
 import { db, createNewsArticleFn, deleteNewsArticleFn, getCoverUploadUrlFn } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
-import { __, showToast, getLang, onLangChange, escapeHTML } from '../utils/ui.js';
+import { userErrorMessage, __, showToast, getLang, onLangChange, escapeHTML } from '../utils/ui.js';
 
 let unsubscribeFromArticles = null;
 
@@ -23,7 +23,7 @@ async function handleNewsFormSubmit(e) {
     const cleanSlug = titleEN.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
     if (!cleanSlug) {
-        showToast(__('news.slug_invalid'), 'error');
+        showToast(() => __('news.slug_invalid'), 'error');
         submitBtn.disabled = false;
         submitBtn.textContent = __('news.publish_btn');
         return;
@@ -38,7 +38,7 @@ async function handleNewsFormSubmit(e) {
     };
 
     try {
-        showToast(__('news.uploading'), 'info');
+        showToast(() => __('news.uploading'), 'info');
         const [filePathTR, filePathEN] = await Promise.all([
             uploadImage('cover-image-tr', 'tr'),
             uploadImage('cover-image-en', 'en')
@@ -53,9 +53,9 @@ async function handleNewsFormSubmit(e) {
                 tr: { title: document.getElementById('title-tr').value, summary: document.getElementById('summary-tr').value, content: document.getElementById('content-tr').value }
             }
         };
-        showToast(__('news.saving'), 'info');
+        showToast(() => __('news.saving'), 'info');
         const result = await createNewsArticleFn(articleData);
-        showToast(__('news.saved'), 'success');
+        showToast(() => __('news.saved'), 'success');
         dom.newsForm.reset();
     } catch (error) {
         console.error("[CLIENT] An error occurred during news submission:", error);
@@ -72,13 +72,13 @@ async function handleNewsFormSubmit(e) {
  */
 async function handleDeleteArticle(slug) {
     if (!await confirmDialog(()=>({title:__('common.delete'),body:__('news.delete_confirm')}))) return;
-    showToast(__('news.deleting'), 'info');
+    showToast(() => __('news.deleting'), 'info');
     try {
         const result = await deleteNewsArticleFn({ slug });
-        showToast(__('news.deleted'), 'success');
+        showToast(() => __('news.deleted'), 'success');
     } catch (error) {
         console.error(`[CLIENT] Error deleting article ${slug}:`, error);
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(() => userErrorMessage(error), 'error');
     }
 }
 
@@ -95,7 +95,7 @@ export function listenForArticles() {
         dom.articlesListContainer.innerHTML = '';
         if (snapshot.empty) {
             window.loadedArticles = [];
-            dom.articlesListContainer.innerHTML = `<p class="form-hint">${__('news.empty')}</p>`;
+            dom.articlesListContainer.innerHTML = `<p class="form-hint" data-i18n="news.empty">${__('news.empty')}</p>`;
             return;
         }
         const articles = [];
@@ -116,7 +116,7 @@ export function listenForArticles() {
     }, error => {
         finishLoading();
         console.error("[CLIENT] Error listening for article updates:", error);
-        showToast(__('news.load_error'), 'error');
+        showToast(() => __('news.load_error'), 'error');
     });
 }
 

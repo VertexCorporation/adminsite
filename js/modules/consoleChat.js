@@ -10,7 +10,7 @@ import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../uti
  * gönderilir (consoleChat* fonksiyonları).
  */
 
-import { showToast, __, getLang, onLangChange } from '../utils/ui.js';
+import { userErrorMessage, showToast, __, getLang, onLangChange } from '../utils/ui.js';
 import { getEffectivePanelLevel, isPanelAdmin, DEPARTMENTS } from './roles.js';
 import {
     listConsoleChatChannelsFn,
@@ -105,7 +105,7 @@ function renderChannelList() {
     const container = el('chat-channel-list');
     if (!container) return;
     if (!channels.length) {
-        container.innerHTML = `<p class="form-hint chat-hint">${__('chat.no_channels')}</p>`;
+        container.innerHTML = `<p class="form-hint chat-hint" data-i18n="chat.no_channels">${__('chat.no_channels')}</p>`;
         lastChannelsKey = '';
         return;
     }
@@ -121,7 +121,7 @@ function renderChannelList() {
             ${ch.postLevel === 'admins' ? `<i class=" chat-channel-lock" title="${__('chat.admin_channel')}" data-icon="shield"></i>` : ''}
         </button>
     `).join('') + (isAdmin ? `
-        <button type="button" class="chat-channel-new"><i class="" data-icon="add"></i><span>${__('chat.new_channel')}</span></button>` : '');
+        <button type="button" class="chat-channel-new"><i class="" data-icon="add"></i><span data-i18n="chat.new_channel">${__('chat.new_channel')}</span></button>` : '');
 }
 
 function selectChannel(channelId) {
@@ -148,7 +148,7 @@ async function loadMessages(animate = true) {
         // composer görünürlüğü
         el('chat-composer').style.display = channel.canPost ? 'flex' : 'none';
         if (!channel.canPost) {
-            container.insertAdjacentHTML('beforeend', `<p class="form-hint chat-hint">${__('chat.readonly')}</p>`);
+            container.insertAdjacentHTML('beforeend', `<p class="form-hint chat-hint" data-i18n="chat.readonly">${__('chat.readonly')}</p>`);
         }
         // admin düzenleme butonu
         el('chat-channel-edit').style.display = channel.canManage ? 'inline-flex' : 'none';
@@ -167,7 +167,7 @@ function renderChatHeader(channel) {
     badges.innerHTML = channel
         ? (channel.departments?.length
             ? channel.departments.map(d => `<span class="dept-badge">${escapeHTML(displayDepartmentName(d))}</span>`).join('')
-            : `<span class="dept-badge">${__('chat.open_all')}</span>`)
+            : `<span class="dept-badge" data-i18n="chat.open_all">${__('chat.open_all')}</span>`)
         : '';
 }
 
@@ -176,7 +176,7 @@ function renderChatHeader(channel) {
 function renderMessages(messages, channel, animate = true) {
     const container = el('chat-messages');
     if (!messages.length) {
-        container.innerHTML = `<p class="form-hint chat-hint">${__('chat.empty')}</p>`;
+        container.innerHTML = `<p class="form-hint chat-hint" data-i18n="chat.empty">${__('chat.empty')}</p>`;
         return;
     }
     // güne göre grupla
@@ -238,7 +238,7 @@ async function sendMessage() {
         el('chat-as-task').checked = false;
         await loadMessages(false);
     } catch (error) {
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(() => userErrorMessage(error), 'error');
     } finally {
         el('chat-send').disabled = false;
         input.disabled = false;
@@ -250,7 +250,7 @@ async function sendMessage() {
 
 function renderDeptCheckboxes(selected = []) {
     const container = el('chat-form-depts');
-    container.innerHTML = `<label class="chat-dept-all"><input type="checkbox" value="" ${selected.length ? '' : 'checked'}><span>${__('chat.open_all')}</span></label>` +
+    container.innerHTML = `<label class="chat-dept-all"><input type="checkbox" value="" ${selected.length ? '' : 'checked'}><span data-i18n="chat.open_all">${__('chat.open_all')}</span></label>` +
         DEPARTMENTS.map(d => `<label class="chat-dept-choice"><input type="checkbox" value="${d.id}" ${selected.includes(d.id) ? 'checked' : ''}><span>${d.id}</span></label>`).join('');
     // "Tümü" işaretliyse diğerlerini kapat
     container.querySelectorAll('input').forEach(input => {
@@ -299,21 +299,21 @@ async function submitChannelForm() {
     const postLevel = el('chat-form-postlevel').value;
     const departments = [...el('chat-form-depts').querySelectorAll('input:checked')].map(i => i.value).filter(Boolean);
     if (!name) {
-        showToast(__('chat.name_required'), 'error');
+        showToast(() => __('chat.name_required'), 'error');
         return;
     }
     try {
         if (channelFormMode === 'create') {
             await createConsoleChatChannelFn({ name, description, departments, postLevel });
-            showToast(__('chat.created'), 'success');
+            showToast(() => __('chat.created'), 'success');
         } else {
             await updateConsoleChatChannelFn({ channelId: currentChannelId, name, description, departments, postLevel, pinned: el('chat-form-pin').checked });
-            showToast(__('chat.updated'), 'success');
+            showToast(() => __('chat.updated'), 'success');
         }
         closeChannelForm();
         await loadChannels();
     } catch (error) {
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(() => userErrorMessage(error), 'error');
     }
 }
 
@@ -322,13 +322,13 @@ async function deleteCurrentChannel() {
     if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('chat.delete_channel_confirm')}))) return;
     try {
         await deleteConsoleChatChannelFn({ channelId: currentChannelId });
-        showToast(__('chat.deleted'), 'success');
+        showToast(() => __('chat.deleted'), 'success');
         closeChannelForm();
         currentChannelId = null;
         lastMessagesKey = '';
         await loadChannels();
     } catch (error) {
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(() => userErrorMessage(error), 'error');
     }
 }
 
@@ -449,7 +449,7 @@ export function initConsoleChat() {
             deleteConsoleChatMessageFn({ channelId: currentChannelId, messageId: del.dataset.del })
                 .then(() => loadMessages(false))
                 .catch((error) => {
-                    showToast(`${__('system.error')}: ${error.message}`, 'error');
+                    showToast(() => userErrorMessage(error), 'error');
                     del.disabled = false;
                 });
             return;
@@ -462,7 +462,7 @@ export function initConsoleChat() {
             messageId: btn.dataset.task,
             status: btn.dataset.status
         }).then(() => loadMessages()).catch((error) => {
-            showToast(`${__('system.error')}: ${error.message}`, 'error');
+            showToast(() => userErrorMessage(error), 'error');
             btn.disabled = false;
         });
     });

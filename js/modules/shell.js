@@ -389,7 +389,10 @@ export function confirmDialog(options = {}) {
 function syncTopbarTitle() {
     const activeBtn = document.querySelector('.dock-btn.active');
     const title = document.querySelector('.topbar-page-title');
-    if (activeBtn && title) title.textContent = activeBtn.querySelector('.dock-label')?.textContent || '';
+    if (activeBtn && title) {
+        title.textContent = activeBtn.querySelector('.dock-label')?.textContent || '';
+        document.title = title.textContent ? `${title.textContent} · ${__('page.title')}` : __('page.title');
+    }
 }
 
 function expandModule(module, expanded) {

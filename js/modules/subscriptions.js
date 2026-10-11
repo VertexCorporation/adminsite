@@ -2,7 +2,7 @@ import { confirmDialog } from './shell.js';
 import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../utils/loading.js';
 // js/modules/subscriptions.js
 
-import { showToast, __, getLang, onLangChange, sanitizeHTML } from '../utils/ui.js';
+import { userErrorMessage, showToast, __, getLang, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
 import { removeUserSubscriptionFn, listUserSubscriptionsFn } from '../core/firebase.js';
 import { grantPremium, grantPremiumBulk } from './admin.js';
@@ -119,7 +119,7 @@ async function loadSubscriptions() {
     } catch (error) {
         finishLoading();
         console.error('[CLIENT] Error loading subscriptions:', error);
-        container.innerHTML = `<p class="form-hint dept-list-message">${__('subs.load_error')}</p>`;
+        container.innerHTML = `<p class="form-hint dept-list-message" data-i18n="subs.load_error">${__('subs.load_error')}</p>`;
     } finally {
         finishLoading();
         button.disabled = false;
@@ -136,30 +136,30 @@ async function handleAssignSubmit(e) {
 
     if (!email || !tier || isNaN(expiresAt)) return;
     if (expiresAt <= now) {
-        showToast(__('subs.expires_past'), 'error');
+        showToast(() => __('subs.expires_past'), 'error');
         return;
     }
     if (expiresAt.getTime() - maxExpiryFrom(now).getTime() > MAX_DURATION_TOLERANCE_MS) {
-        showToast(__('subs.max_one_year'), 'error');
+        showToast(() => __('subs.max_one_year'), 'error');
         return;
     }
 
     const btn = document.getElementById('assign-subscription-btn');
     btn.disabled = true;
-    btn.innerHTML = `<span>${__('subs.assigning')}</span>`;
+    btn.innerHTML = `<span data-i18n="subs.assigning">${__('subs.assigning')}</span>`;
 
     try {
         const data = await grantPremium({ email, displayName, tier, expiresAt: expiresAt.toISOString() });
-        showToast(data.message || __('subs.assign_success'), 'success');
+        showToast(() => __('subs.assign_success'), 'success');
         dom.subscriptionForm.reset();
         resetDefaultDates();
         await loadSubscriptions();
     } catch (error) {
         console.error('[CLIENT] Error assigning subscription:', error);
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(() => userErrorMessage(error), 'error');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i class="" data-icon="workspace_premium"></i><span>${__('subs.assign_btn')}</span>`;
+        btn.innerHTML = `<i class="" data-icon="workspace_premium"></i><span data-i18n="subs.assign_btn">${__('subs.assign_btn')}</span>`;
     }
 }
 
@@ -169,11 +169,11 @@ async function handleRemoveSubscription(uid, button) {
     button.textContent = __('subs.removing');
     try {
         const result = await removeUserSubscriptionFn({ uid });
-        showToast(result.data.message || __('subs.remove_success'), 'success');
+        showToast(() => __('subs.remove_success'), 'success');
         await loadSubscriptions();
     } catch (error) {
         console.error('[CLIENT] Error removing subscription:', error);
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(() => userErrorMessage(error), 'error');
         button.disabled = false;
         button.textContent = __('subs.remove_btn');
     }
@@ -222,31 +222,31 @@ async function handleBulkSubmit() {
 
     if (!raw.trim()) return;
     if (isNaN(expiresAt.getTime()) || expiresAt <= now) {
-        showToast(__('subs.expires_past'), 'error');
+        showToast(() => __('subs.expires_past'), 'error');
         return;
     }
     if (expiresAt.getTime() - maxExpiryFrom(now).getTime() > MAX_DURATION_TOLERANCE_MS) {
-        showToast(__('subs.max_one_year'), 'error');
+        showToast(() => __('subs.max_one_year'), 'error');
         return;
     }
 
     const btn = document.getElementById('sub-bulk-submit');
     btn.disabled = true;
-    btn.innerHTML = `<span>${__('subs.bulk_running')}</span>`;
-    showToast(__('subs.bulk_started'), 'info');
+    btn.innerHTML = `<span data-i18n="subs.bulk_running">${__('subs.bulk_running')}</span>`;
+    showToast(() => __('subs.bulk_started'), 'info');
 
     try {
         const data = await grantPremiumBulk({ raw, tier, expiresAt: expiresAt.toISOString() });
         renderBulkResult(data);
-        showToast(`${data.grantedCount} ${__('subs.bulk_granted')} · ${data.failedCount} ${__('subs.bulk_failed')}`,
+        showToast(() => `${data.grantedCount} ${__('subs.bulk_granted')} · ${data.failedCount} ${__('subs.bulk_failed')}`,
             data.failedCount ? 'info' : 'success');
         await loadSubscriptions();
     } catch (error) {
         console.error('[CLIENT] Error bulk assigning subscriptions:', error);
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(() => userErrorMessage(error), 'error');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i class="" data-icon="playlist_add"></i><span>${__('subs.bulk_btn')}</span>`;
+        btn.innerHTML = `<i class="" data-icon="playlist_add"></i><span data-i18n="subs.bulk_btn">${__('subs.bulk_btn')}</span>`;
     }
 }
 

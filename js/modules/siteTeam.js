@@ -9,7 +9,7 @@ import { beginPanelLoading } from '../utils/loading.js';
  * sitedeki Staff kaydırma listesine düşer.
  */
 
-import { showToast, __, escapeHTML } from '../utils/ui.js';
+import { userErrorMessage, showToast, __, escapeHTML } from '../utils/ui.js';
 import { listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn } from '../core/firebase.js';
 
 let mods = [];
@@ -34,7 +34,7 @@ function render() {
     const list = el('team-mod-list');
     if (!list) return;
     if (!mods.length) {
-        list.innerHTML = `<p class="form-hint">${__('team.empty')}</p>`;
+        list.innerHTML = `<p class="form-hint" data-i18n="team.empty">${__('team.empty')}</p>`;
         return;
     }
     list.innerHTML = mods.map(m => {
@@ -64,7 +64,7 @@ async function add() {
     const input = el('team-mod-input');
     const name = input.value.trim();
     if (!name) {
-        showToast(__('team.name_required'), 'error');
+        showToast(() => __('team.name_required'), 'error');
         return;
     }
     const btn = el('team-mod-add');
@@ -72,10 +72,10 @@ async function add() {
     try {
         await setSiteTeamEntryFn({ kind: 'mod', name });
         input.value = '';
-        showToast(__('team.added'), 'success');
+        showToast(() => __('team.added'), 'success');
         await loadTeam();
     } catch (error) {
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(() => userErrorMessage(error), 'error');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -87,16 +87,16 @@ async function rename(id) {
     const input = row && row.querySelector('.team-edit-input');
     const name = input ? input.value.trim() : '';
     if (!name) {
-        showToast(__('team.name_required'), 'error');
+        showToast(() => __('team.name_required'), 'error');
         return;
     }
     try {
         await setSiteTeamEntryFn({ kind: 'mod', name, id });
         editingId = null;
-        showToast(__('team.updated'), 'success');
+        showToast(() => __('team.updated'), 'success');
         await loadTeam();
     } catch (error) {
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(() => userErrorMessage(error), 'error');
     }
 }
 
@@ -106,7 +106,7 @@ async function remove(id) {
         await deleteSiteTeamEntryFn({ id });
         await loadTeam();
     } catch (error) {
-        showToast(`${__('system.error')}: ${error.message}`, 'error');
+        showToast(() => userErrorMessage(error), 'error');
     }
 }
 

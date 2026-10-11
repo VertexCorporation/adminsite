@@ -1,0 +1,20 @@
+{
+  "checks": [
+    "clean profile",
+    "existing session",
+    "tr",
+    "en",
+    "invalid locale",
+    "denied storage",
+    "slow SDK",
+    "SDK failure",
+    "config failure",
+    "initializer exception",
+    "module evaluation failure",
+    "startup timeout",
+    "corrupt cache",
+    "denied session cache",
+    "language change and refresh"
+  ],
+  "passed": 15
+}

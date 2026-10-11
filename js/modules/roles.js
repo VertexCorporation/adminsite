@@ -4,7 +4,7 @@ import { beginPanelLoading } from '../utils/loading.js';
 import { icon } from '../utils/icons.js';
 import { openPopover, closePopover } from './shell.js';
 import { db, saveDepartmentPermissionsFn, getPanelPermissionsFn } from '../core/firebase.js';
-import { showToast, __, onLangChange } from '../utils/ui.js';
+import { userErrorMessage, showToast, __, onLangChange } from '../utils/ui.js';
 
 const TABS = [
     { id: 'contributors', icon: 'group', key: 'nav.contributors' },
@@ -255,7 +255,7 @@ async function readDepartmentPermissions() {
         } catch (fallbackError) {
             console.error('[ROLES] Panel permissions yüklenemedi:', fallbackError);
             departmentPermissions = {};
-            showToast(`${__('system.error')}: ${fallbackError.message}`, 'error');
+            showToast(() => userErrorMessage(fallbackError), 'error');
         }
     }
 }
@@ -266,11 +266,14 @@ export async function saveDepartmentPermissions(permissions) {
         // Acknowledging this snapshot must not overwrite a newer local draft.
     } catch (error) {
         console.error('[ROLES] Failed to save permissions:', error);
-        let message = `${__('perms.failed')}: ${error.message}`;
-        if (error.code === 'internal' || error.code === 'not-found' || error.code === 'unknown' ||
-            /must be an array/i.test(String(error.message))) {
-            message = `${message} — ${__('perms.save_hint')}`;
-        }
+        const message = () => {
+            let text = __('perms.failed');
+            if (error.code === 'internal' || error.code === 'not-found' || error.code === 'unknown' ||
+                /must be an array/i.test(String(error.message))) {
+                text += ` — ${__('perms.save_hint')}`;
+            }
+            return text;
+        };
         showToast(message, 'error');
         throw error;
     }

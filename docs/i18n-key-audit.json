@@ -1,0 +1,172 @@
+{
+  "dictionaryKeys": 712,
+  "staticReferences": 575,
+  "missing": [],
+  "dynamicReferences": [
+    {
+      "file": "js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    }
+  ],
+  "variableOrCatalogueKeys": [
+    "common.unavailable",
+    "system.maintenance_on",
+    "system.live",
+    "system.disable_maint",
+    "system.enable_maint",
+    "system.vertex_enabled",
+    "system.vertex_disabled",
+    "system.vertex_result_unknown",
+    "cert.month",
+    "cert.months",
+    "contributors.col_status",
+    "contributors.applied_at",
+    "dept.core",
+    "dept.senatus",
+    "dept.tensor",
+    "dept.curia",
+    "dept.pulse",
+    "dept.chroma",
+    "dept.catalyst",
+    "dept.envoy",
+    "dept.aero",
+    "dept.array",
+    "panel.contributors.list",
+    "panel.models.manage",
+    "panel.models.library",
+    "panel.news.editor",
+    "panel.news.published",
+    "panel.notifications.sender",
+    "panel.notifications.scheduled",
+    "panel.subscriptions.assign",
+    "panel.subscriptions.list",
+    "panel.system.deptPerms",
+    "panel.system.deptAssign",
+    "panel.system.deptUsers",
+    "panel.system.adminRole",
+    "panel.system.manualVerify",
+    "panel.system.removeAdmin",
+    "panel.system.adminList",
+    "panel.system.teamLog",
+    "panel.system.serverStatus",
+    "panel.system.attributions",
+    "panel.system.exporter",
+    "perms.hidden_contact",
+    "perms.hidden_age",
+    "perms.hidden_links",
+    "perms.hidden_interview",
+    "perms.menu_content",
+    "perms.menu_chips",
+    "subs.plan_plus",
+    "subs.plan_pro",
+    "subs.plan_ultra",
+    "subs.badge_expired",
+    "subs.badge_active",
+    "errors.permission",
+    "errors.auth",
+    "errors.capacity",
+    "errors.validation",
+    "errors.service"
+  ],
+  "unreferencedCandidates": [
+    "lang.name",
+    "lang.flag",
+    "loader.text",
+    "header.brand",
+    "header.system",
+    "contributors.interview_date",
+    "contributors.no_interview",
+    "contributors.loading",
+    "contributors.no_match",
+    "contributors.search_no_match",
+    "contributors.delete_confirm",
+    "models.loading",
+    "dept.desc",
+    "dept.loading",
+    "dept.saved",
+    "dept.select_dept",
+    "dept.essence",
+    "dept.scout",
+    "dept.vertest",
+    "chat.loading",
+    "chat.msg_deleted",
+    "team.staff",
+    "subs.list_loading",
+    "profile.menu_btn",
+    "profile.menu_soon",
+    "profile.menu_1",
+    "profile.menu_2",
+    "profile.menu_3",
+    "profile.menu_4",
+    "profile.menu_5",
+    "profile.menu_6",
+    "profile.menu_7",
+    "profile.menu_8",
+    "profile.perms_title",
+    "auth.not_admin",
+    "auth.enter_credentials",
+    "auth.try_again"
+  ],
+  "note": "Unreferenced candidates may be used through variable keys, panel catalogues or notification template ids; they are not automatically removed."
+}

@@ -185,7 +185,7 @@ async function handleNotificationFormSubmit(e) {
             if (!isScheduled && !['functions/invalid-argument','functions/permission-denied','functions/unauthenticated'].includes(error.code)) deliveryUncertain = true;
             throw error;
         }
-        showToast(__('notif.success'), 'success');
+        showToast(() => __('notif.success'), 'success');
 
         dom.notificationForm.reset();
         handleTargetTypeChange();
@@ -208,13 +208,13 @@ async function handleNotificationFormSubmit(e) {
 async function handleCancelTask(taskId) {
     if(cancellingTasks.has(taskId))return; cancellingTasks.add(taskId);
     if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('notif.cancel_confirm')}))) {cancellingTasks.delete(taskId);return;}
-    showToast(__('notif.cancelling'), 'info');
+    showToast(() => __('notif.cancelling'), 'info');
     try {
         const result = await cancelScheduledNotificationFn({ taskId });
-        showToast(__('notif.cancelled'), 'success');
+        showToast(() => __('notif.cancelled'), 'success');
     } catch (error) {
         console.error(`[CLIENT] Error cancelling task ${taskId}:`, error);
-        showToast(userErrorMessage(error), 'error');
+        showToast(() => userErrorMessage(error), 'error');
     } finally {cancellingTasks.delete(taskId);}
 }
 
@@ -233,7 +233,7 @@ export function listenForScheduledTasks() {
         finishLoading();
             dom.scheduledTasksListContainer.innerHTML = '';
             if (snapshot.empty) {
-                dom.scheduledTasksListContainer.innerHTML = `<p class="form-hint">${__('notif.empty')}</p>`;
+                dom.scheduledTasksListContainer.innerHTML = `<p class="form-hint" data-i18n="notif.empty">${__('notif.empty')}</p>`;
                 return;
             }
             snapshot.forEach(doc => {
@@ -259,7 +259,7 @@ export function listenForScheduledTasks() {
         }, error => {
         finishLoading();
             console.error("[CLIENT] Error listening for scheduled tasks:", error);
-            dom.scheduledTasksListContainer.insertAdjacentHTML('beforeend',`<div class="task-error"><p>${__('notif.tasks_error')}</p><button class="chrome-btn-outline" data-tasks-retry>${__('common.retry')}</button></div>`);
+            dom.scheduledTasksListContainer.insertAdjacentHTML('beforeend',`<div class="task-error"><p data-i18n="notif.tasks_error">${__('notif.tasks_error')}</p><button class="chrome-btn-outline" data-tasks-retry>${__('common.retry')}</button></div>`);
             dom.scheduledTasksListContainer.querySelector('[data-tasks-retry]').onclick=listenForScheduledTasks;
         });
 }

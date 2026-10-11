@@ -285,7 +285,7 @@ function populateModelFormForEdit(modelData) {
 
     // --- Final UI Setup ---
     document.getElementById('model-image').value = '';
-    showToast(__('models.edit_hint'), 'info');
+    showToast(() => __('models.edit_hint'), 'info');
     dom.modelSubmitBtn.textContent = __('models.update_btn');
     dom.modelCancelBtn.style.display = 'inline-block';
     dom.modelForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -305,7 +305,7 @@ async function handleModelFormSubmit(e) {
 
     const modelId = dom.modelIdInput.value.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
     if (!modelId) {
-        showToast(__('models.slug_error'), 'error');
+        showToast(() => __('models.slug_error'), 'error');
         dom.modelSubmitBtn.disabled = false;
         dom.modelSubmitBtn.textContent = currentEditingModelId ? __('models.update_btn') : __('models.save_btn');
         return;
@@ -318,11 +318,11 @@ async function handleModelFormSubmit(e) {
         let imagePath = originalModel ? originalModel.imagePath : null;
 
         if (modelImageFile) {
-            showToast(__('models.upload_link'), 'info');
+            showToast(() => __('models.upload_link'), 'info');
             const modelTypeDir = dom.modelTypeSwitch.checked ? MODEL_TYPE.OFFLINE : MODEL_TYPE.ROLEPLAY;
             const result = await getModelImageUploadUrlFn({ modelId, modelType: modelTypeDir, fileName: modelImageFile.name, contentType: modelImageFile.type });
             imagePath = result.data.filePath;
-            showToast(__('models.upload_image'), 'info');
+            showToast(() => __('models.upload_image'), 'info');
             await fetch(result.data.signedUrl, { method: 'PUT', body: modelImageFile, headers: { 'Content-Type': modelImageFile.type } });
         }
 
@@ -422,7 +422,7 @@ async function handleModelFormSubmit(e) {
 
     } catch (error) {
         console.error("[MODELS] Error saving model:", error);
-        showToast(__('system.error'), 'error');
+        showToast(() => __('system.error'), 'error');
     } finally {
         dom.modelSubmitBtn.disabled = false;
         dom.modelSubmitBtn.textContent=__(currentEditingModelId?'models.update_btn':'models.save_btn');
@@ -490,7 +490,7 @@ function renderManualModelsList() {
 
     dom.manualModelsListContainer.innerHTML = '';
     if (!allManualModels || allManualModels.length === 0) {
-        dom.manualModelsListContainer.innerHTML = `<p class="form-hint">${__('models.no_models')}</p>`;
+        dom.manualModelsListContainer.innerHTML = `<p class="form-hint" data-i18n="models.no_models">${__('models.no_models')}</p>`;
         return;
     }
 
@@ -522,7 +522,7 @@ function renderManualModelsList() {
  */
 function renderAllModelsExplorer() {
     if (!modelsData || !modelsData.producers) {
-        dom.allModelsListContainer.innerHTML = `<p class="form-hint">${__('models.empty_database')}</p>`;
+        dom.allModelsListContainer.innerHTML = `<p class="form-hint" data-i18n="models.empty_database">${__('models.empty_database')}</p>`;
         return;
     }
     let explorerHTML = '';
@@ -635,15 +635,15 @@ export async function fetchFullModelsData() {
     } catch (error) {
         if(request!==modelRequest)return;
         console.error('[MODELS] Critical error fetching models data:', error);
-        showToast(__('models.load_error'), "error");
+        showToast(() => __('models.load_error'), "error");
         if (modelsData) return;
         modelsData = null;
         allManualModels = [];
 
-        const errorHTML = `<p class="form-hint" style="color:var(--error-color);">${__('models.load_error')}</p>`;
+        const errorHTML = `<p class="form-hint" style="color:var(--error-color);" data-i18n="models.load_error">${__('models.load_error')}</p>`;
         dom.manualModelsListContainer.innerHTML = errorHTML;
         dom.allModelsListContainer.innerHTML = errorHTML;
-        [dom.manualModelsListContainer,dom.allModelsListContainer].forEach(container=>{const retry=document.createElement('button');retry.className='chrome-btn-outline';retry.textContent=__('common.retry');retry.onclick=fetchFullModelsData;container.append(retry);});
+        [dom.manualModelsListContainer,dom.allModelsListContainer].forEach(container=>{const retry=document.createElement('button');retry.className='chrome-btn-outline';retry.dataset.i18n='common.retry';retry.textContent=__('common.retry');retry.onclick=fetchFullModelsData;container.append(retry);});
     } finally { finishLoading(); finishDatabase(); }
 }
 
@@ -687,7 +687,7 @@ async function handleSaveSeriesDescription(seriesPath, formElement) {
     });
 
     if (updates.length === 0) {
-        showToast(__('models.no_changes'), "info");
+        showToast(() => __('models.no_changes'), "info");
         saveButton.disabled = false;
         saveButton.textContent = __('models.save_series');
         return;
@@ -725,12 +725,12 @@ async function handleSaveSeriesDescription(seriesPath, formElement) {
             currentRef[parts[parts.length - 1]] = value;
         });
 
-        showToast(__('models.saved_series'), 'success');
+        showToast(() => __('models.saved_series'), 'success');
         closeModal();
         
     } catch (error) {
         console.error('[MODELS_DEBUG] Error:', error);
-        showToast(userErrorMessage(error), 'error');
+        showToast(() => userErrorMessage(error), 'error');
     } finally {
         saveButton.disabled = false;
         saveButton.textContent = __('models.save_series');
@@ -752,7 +752,7 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
 
     const modelVariant = modelsData?.producers?.[pName]?.[sName]?.[vName];
     if (!modelVariant) {
-        showToast(__('models.not_found'), 'error');
+        showToast(() => __('models.not_found'), 'error');
         saveButton.disabled = false;
         return;
     }
@@ -800,7 +800,7 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
     }
 
     if (updates.length === 0) {
-        showToast(__('models.no_changes'), "info");
+        showToast(() => __('models.no_changes'), "info");
         saveButton.disabled = false;
         saveButton.textContent = __('models.save_translations');
         return;
@@ -853,11 +853,11 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
         closeModal();
         
         const count = Math.round(updates.length / 3);
-        showToast(__('models.saved_translations'), 'success');
+        showToast(() => __('models.saved_translations'), 'success');
 
     } catch (error) {
         console.error('[MODELS_DEBUG] Error:', error);
-        showToast(userErrorMessage(error), 'error');
+        showToast(() => userErrorMessage(error), 'error');
     } finally {
         saveButton.disabled = false;
         saveButton.textContent = __('models.save_translations');
@@ -871,7 +871,7 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
 function openDescriptionEditor(seriesPath) {
     const { pName, sName } = seriesPath;
     const seriesObj = modelsData?.producers?.[pName]?.[sName];
-    if (!seriesObj) return showToast(__('models.not_found'), "error");
+    if (!seriesObj) return showToast(() => __('models.not_found'), "error");
 
     const descObj = seriesObj.series_description || {};
     let modalOverlay;
@@ -910,7 +910,7 @@ async function handleDeleteModel(id) {
     const modelToDelete = allManualModels.find(m => m.id === id);
     if (!modelToDelete || !await confirmDialog(()=>({title:__('common.delete'),body:__('models.delete_confirm')}))) return;
 
-    showToast(__('models.deleting'), 'info');
+    showToast(() => __('models.deleting'), 'info');
     try {
         const token = await getAuthToken(auth);
         const response = await fetch(`${CURATOR_API_URL}/${id}`, {
@@ -929,11 +929,11 @@ async function handleDeleteModel(id) {
         }
 
         if (currentEditingModelId === id) resetModelForm();
-        showToast(__('models.deleted'), 'success');
+        showToast(() => __('models.deleted'), 'success');
         await fetchFullModelsData();
     } catch (error) {
         console.error(`[MODELS] Error deleting model ${id}:`, error);
-        showToast(userErrorMessage(error), 'error');
+        showToast(() => userErrorMessage(error), 'error');
     }
 }
 
@@ -944,14 +944,14 @@ async function handleDeleteModel(id) {
 async function handleBlockOnlineModel(modelId) {
     if (!canEditModels("models.library")) return;
     if (!await confirmDialog(()=>({title:__('models.block'),body:__('models.block_confirm')}))) return;
-    showToast(__('models.blocking'), 'info');
+    showToast(() => __('models.blocking'), 'info');
     try {
         const result = await blockOnlineModelFn({ modelId });
         showToast(result.data.message, 'success');
         await fetchFullModelsData();
     } catch (error) {
         console.error(`[MODELS] Error blocking model ${modelId}:`, error);
-        showToast(userErrorMessage(error), 'error');
+        showToast(() => userErrorMessage(error), 'error');
     }
 }
 
@@ -965,7 +965,7 @@ async function updateSeriesProperty(seriesPath, property, value) {
     if (!canEditModels("models.library")) return;
     const { pName, sName } = seriesPath;
     const action = property === 'hidden' ? (value ? 'Hiding' : 'Unhiding') : 'Updating';
-    showToast(__('models.series_updating'), 'info');
+    showToast(() => __('models.series_updating'), 'info');
 
     try {
         const token = await getAuthToken(auth);
@@ -977,11 +977,11 @@ async function updateSeriesProperty(seriesPath, property, value) {
         });
         if (!response.ok) throw new Error((await response.json()).error || 'Failed to update series property.');
 
-        showToast(__('models.series_updated'), 'success');
+        showToast(() => __('models.series_updated'), 'success');
         await fetchFullModelsData();
     } catch (error) {
         console.error(`[MODELS] Error ${action.toLowerCase()} series ${sName}:`, error);
-        showToast(userErrorMessage(error), 'error');
+        showToast(() => userErrorMessage(error), 'error');
     }
 }
 
@@ -992,7 +992,7 @@ async function updateSeriesProperty(seriesPath, property, value) {
 function openTranslationEditor(modelPath) {
     const { pName, sName, vName } = modelPath;
     const modelObj = modelsData?.producers?.[pName]?.[sName]?.[vName];
-    if (!modelObj) return showToast(__('models.not_found'), "error");
+    if (!modelObj) return showToast(() => __('models.not_found'), "error");
 
     let englishDetails, detailsObject, translatableFields;
     if (modelObj.source === 'manual' && modelObj.details) {
@@ -1004,7 +1004,7 @@ function openTranslationEditor(modelPath) {
         englishDetails = { description: modelObj.description.en };
         translatableFields = [{ k: 'description', t: 'textarea' }];
     } else {
-        return showToast(__('models.no_translations'), "info");
+        return showToast(() => __('models.no_translations'), "info");
     }
 
     let modalOverlay;
@@ -1067,7 +1067,7 @@ export function initModelsModule() {
             handleDeleteModel(id);
         } else if (target.classList.contains('translations-btn')) {
             if (!modelsData?.producers) {
-                showToast(__('models.load_error'), 'error');
+                showToast(() => __('models.load_error'), 'error');
                 return;
             }
             let opened = false;
@@ -1081,7 +1081,7 @@ export function initModelsModule() {
                     }
                 }
             }
-            if (!opened) showToast(__('models.no_translations'), 'info');
+            if (!opened) showToast(() => __('models.no_translations'), 'info');
         }
     });
 
@@ -1146,10 +1146,10 @@ function initModelWorkspace(){
     const card=document.getElementById('model-manager');card.hidden=true;
     const heading=document.querySelector('#tab-models .panel-section-title');const toolbar=document.createElement('div');toolbar.className='model-workspace-actions';heading.append(toolbar);
     function paint(){
-        toolbar.innerHTML=`<button type="button" class="chrome-btn-outline" data-model-refresh>${icon('refresh')}<span>${__('common.refresh')}</span></button>${canEditModels('models.manage')?`<button type="button" class="chrome-btn-primary" data-model-create>${icon('plus')}<span>${__('models.add')}</span></button>`:''}${isPanelAdmin()?`<button type="button" class="chrome-btn-outline" data-model-publish>${icon('device-floppy')}<span>${__('models.publish')}</span></button>`:''}`;
+        toolbar.innerHTML=`<button type="button" class="chrome-btn-outline" data-model-refresh>${icon('refresh')}<span data-i18n="common.refresh">${__('common.refresh')}</span></button>${canEditModels('models.manage')?`<button type="button" class="chrome-btn-primary" data-model-create>${icon('plus')}<span data-i18n="models.add">${__('models.add')}</span></button>`:''}${isPanelAdmin()?`<button type="button" class="chrome-btn-outline" data-model-publish>${icon('device-floppy')}<span data-i18n="models.publish">${__('models.publish')}</span></button>`:''}`;
         toolbar.querySelector('[data-model-refresh]').onclick=fetchFullModelsData;
         const create=toolbar.querySelector('[data-model-create]');if(create)create.onclick=()=>{resetModelForm();openModelEditor();};
-        const publish=toolbar.querySelector('[data-model-publish]');if(publish)publish.onclick=async()=>{if(!isPanelAdmin()||publish.disabled)return;const approved=await confirmDialog(()=>({title:__('models.publish'),body:__('models.publish_confirm')}));if(!approved)return;publish.disabled=true;try{await updateModelsListFn({});await fetchFullModelsData();showToast(__('models.published'),'success');}catch(error){showToast(error.message,'error');}finally{publish.disabled=false;}};
+        const publish=toolbar.querySelector('[data-model-publish]');if(publish)publish.onclick=async()=>{if(!isPanelAdmin()||publish.disabled)return;const approved=await confirmDialog(()=>({title:__('models.publish'),body:__('models.publish_confirm')}));if(!approved)return;publish.disabled=true;try{await updateModelsListFn({});await fetchFullModelsData();showToast(() => __('models.published'),'success');}catch(error){showToast(error.message,'error');}finally{publish.disabled=false;}};
     }
     onLangChange(()=>{dom.modelSubmitBtn.textContent=__(dom.modelSubmitBtn.disabled?'system.saving':currentEditingModelId?'models.update_btn':'models.save_btn');document.querySelectorAll('[data-language-name]').forEach(label=>{label.textContent=new Intl.DisplayNames([getLang()],{type:'language'}).of(label.dataset.languageName);});paint();if(modelsData){renderManualModelsList();renderAllModelsExplorer();}});document.addEventListener('vertex:departments',paint);paint();
 }

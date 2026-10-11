@@ -1,106 +1,69 @@
-import { __ } from '../lang.js';
-// js/core/initializer.js
+import { translationsReady, translatePage } from '../lang.js';
 
-import { startApp } from '../main.js';
-
-/**
- * Vertex Admin Panel - Secure Initializer v4.0 (Modular)
- *
- * This script implements a robust, asynchronous startup sequence:
- * 1. Dynamically loads all required Firebase SDKs from the CDN.
- * 2. Fetches the Firebase configuration from a secure Cloud Function (`getConfig`).
- * 3. Initializes the main, default Firebase application only *after* receiving
- *    the secure configuration.
- * 4. Hides the loading spinner and starts the main application logic.
- *
- * This pattern prevents API key exposure, ensures all dependencies are loaded
- * before use, and provides a clean, fault-tolerant user experience on startup.
- */
-(async () => {
-    // Wait for the DOM to be fully loaded before doing anything.
-    await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
-    const appLoader = document.getElementById('app-loader');
-
-    const loadScript = (url) => {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = url;
-            script.async = true;
-            script.onload = resolve;
-            script.onerror = () => reject(new Error(`Failed to load script: ${url}`));
-            document.head.appendChild(script);
-        });
-    };
-
-    try {
-        // --- DEBUG TOKEN SETUP (Must be before SDK load) ---
-        if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-            self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-        }
-
-        console.log('[INIT] Stage 1: Loading Core Firebase SDK...');
-        await loadScript("https://www.gstatic.com/firebasejs/11.0.0/firebase-app-compat.js");
-
-        if (typeof firebase === 'undefined') {
-            throw new Error("Firebase core SDK (app-compat) failed to load.");
-        }
-        console.log('[INIT] Stage 1a complete: Core Firebase SDK loaded.');
-
-        console.log('[INIT] Stage 1b: Loading dependent Firebase service SDKs...');
-
-        await Promise.all([
-            loadScript("https://www.gstatic.com/firebasejs/11.0.0/firebase-auth-compat.js"),
-            loadScript("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore-compat.js"),
-            loadScript("https://www.gstatic.com/firebasejs/11.0.0/firebase-storage-compat.js"),
-            loadScript("https://www.gstatic.com/firebasejs/11.0.0/firebase-functions-compat.js"),
-            loadScript("https://www.gstatic.com/firebasejs/11.0.0/firebase-app-check-compat.js")
-        ]);
-        console.log('[INIT] Stage 1b complete: All dependent Firebase SDKs loaded.');
-
-        // --- Caching Logic ---
-        console.log('[INIT] Stage 2: Retrieving server configuration...');
-        let firebaseConfig;
-        const cachedConfig = sessionStorage.getItem('firebaseConfig');
-
-        if (cachedConfig) {
-            console.log('[INIT] Configuration loaded from session cache.');
-            firebaseConfig = JSON.parse(cachedConfig);
-        } else {
-            console.log('[INIT] No cache found. Fetching configuration from server...');
-            const configUrl = "https://getappconfig-o5h7dmtija-ew.a.run.app";
-            const response = await fetch(configUrl);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to fetch config. Server responded with ${response.status}. Body: ${errorText}`);
-            }
-
-            firebaseConfig = await response.json();
-
-            sessionStorage.setItem('firebaseConfig', JSON.stringify(firebaseConfig));
-            console.log('[INIT] Configuration fetched and cached for the session.');
-        }
-
-        if (!firebaseConfig || !firebaseConfig.apiKey) {
-            sessionStorage.removeItem('firebaseConfig');
-            throw new Error("Invalid or missing configuration received.");
-        }
-        console.log('[INIT] Stage 2 complete: Configuration successfully retrieved.');
-
-        console.log('[INIT] Stage 3: Initializing main application...');
-
-        if (typeof firebase.functions !== 'function') {
-            throw new Error("Firebase Functions SDK did not attach to the firebase object correctly.");
-        }
-
-        // Pass the config to the main app function
-        startApp(firebaseConfig);
-
-    } catch (error) {
-        console.error("CRITICAL [INIT]: Application failed to initialize.", error);
-        if (appLoader) {
-            appLoader.innerHTML = `<div class="state-block"><strong>${__('init.error')}</strong><p>${__('init.retry')}</p><button class="chrome-btn-outline" data-startup-retry>${__('common.retry')}</button></div>`;
-            appLoader.querySelector('[data-startup-retry]').onclick=()=>location.reload();
-        }
+// Localization is ready before any network or feature initialization begins.
+await translationsReady;
+const STARTUP_TIMEOUT = 30000;
+let startupFailed = false;
+const showFailure = error => {
+    if (startupFailed) return;
+    startupFailed = true;
+    document.documentElement.dataset.startupFailed = 'true';
+    console.error('[INIT] Application failed to initialize.', error);
+    document.querySelectorAll('#login-container,#admin-panel').forEach(el => { el.style.display = 'none'; });
+    let loader = document.getElementById('app-loader');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'app-loader';
+        loader.className = 'vx-app-loader';
+        document.body.appendChild(loader);
     }
-})();
+    loader.classList.remove('is-leaving');
+    loader.setAttribute('role', 'alert');
+    loader.setAttribute('data-i18n-aria-label', 'init.error');
+    loader.innerHTML = '<div class="state-block"><strong data-i18n="init.error"></strong><p data-i18n="init.retry"></p><button class="chrome-btn-outline" data-i18n="common.retry" data-startup-retry></button></div>';
+    translatePage();
+    loader.querySelector('[data-startup-retry]').onclick = () => location.reload();
+    loader.querySelector('[data-startup-retry]').focus();
+};
+// Also bound authentication/feature startup: a silent dependency must not leave an endless sweep.
+const deadline = setTimeout(() => showFailure(new Error('Startup timed out')), STARTUP_TIMEOUT);
+const observer = new MutationObserver(() => {
+    if (!document.getElementById('app-loader') || document.getElementById('app-loader').classList.contains('is-leaving')) {
+        clearTimeout(deadline);
+        observer.disconnect();
+    }
+});
+observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+const loadScript = url => new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    const timer = setTimeout(() => { script.remove(); reject(new Error('SDK load timed out')); }, 10000);
+    script.src = url;
+    script.async = true;
+    script.onload = () => { clearTimeout(timer); resolve(); };
+    script.onerror = () => { clearTimeout(timer); reject(new Error('SDK could not load')); };
+    document.head.appendChild(script);
+});
+try {
+    if (['localhost', '127.0.0.1'].includes(location.hostname)) self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    await loadScript('https://www.gstatic.com/firebasejs/11.0.0/firebase-app-compat.js');
+    if (typeof firebase === 'undefined') throw new Error('Firebase core SDK unavailable');
+    await Promise.all(['auth', 'firestore', 'storage', 'functions', 'app-check'].map(service =>
+        loadScript(`https://www.gstatic.com/firebasejs/11.0.0/firebase-${service}-compat.js`)));
+    let config;
+    try { config = JSON.parse(sessionStorage.getItem('firebaseConfig')); } catch { /* Cache is optional. */ }
+    if (!config?.apiKey) {
+        const response = await fetch('https://getappconfig-o5h7dmtija-ew.a.run.app', { signal: AbortSignal.timeout(10000) });
+        if (!response.ok) throw new Error(`Configuration request failed (${response.status})`);
+        config = await response.json();
+        if (!config?.apiKey) throw new Error('Invalid application configuration');
+        try { sessionStorage.setItem('firebaseConfig', JSON.stringify(config)); } catch { /* Cache is optional. */ }
+    }
+    if (typeof firebase.functions !== 'function') throw new Error('Firebase Functions SDK unavailable');
+    // Keep feature module fetch/evaluation errors inside the bootstrap error boundary.
+    const { startApp } = await import('../main.js');
+    if (!startupFailed) await startApp(config);
+} catch (error) {
+    clearTimeout(deadline);
+    observer.disconnect();
+    showFailure(error);
+}
