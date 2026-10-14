@@ -43,7 +43,7 @@ async function callCallable(name, data) {
     const idToken=user?await user.getIdToken():null;
     const appToken=user?await getAttestationToken():undefined;
     let res;try{res=await fetch(`https://${name.toLowerCase()}-o5h7dmtija-ew.a.run.app`,{
-        method:'POST',headers:{'Content-Type':'application/json',...(idToken?{Authorization:'Bearer '+idToken}:{}),...(appToken?{'X-Firebase-AppCheck':appToken}:{})},body:JSON.stringify({data:data??{}}),signal:AbortSignal.timeout(20000)
+        method:'POST',headers:{'Content-Type':'application/json',...(idToken?{Authorization:'Bearer '+idToken}:{}),...(appToken?{'X-Firebase-AppCheck':appToken}:{})},body:JSON.stringify({data:data??{}}),signal:AbortSignal.timeout(['previewVertexRoster','applyVertexRoster'].includes(name)?540000:20000)
     });}catch(error){const e=new Error('Callable transport failed');e.code=error.name==='TimeoutError'?'functions/deadline-exceeded':'functions/unavailable';throw e;}
     let json;try{json=await res.json();}catch{json=null;}
     if(!res.ok||json?.error||!json||!Object.hasOwn(json,'result')){
@@ -191,3 +191,9 @@ export const getVertexCertificateDetailsFn = callable('getVertexCertificateDetai
 export const revokeVertexCertificateFn = callable('revokeVertexCertificate');
 
 export const setVertexContributorJoiningDateFn = callable('setVertexContributorJoiningDate');
+
+export const previewVertexRosterFn = callable('previewVertexRoster');
+export const applyVertexRosterFn = callable('applyVertexRoster');
+export const setVertexMembershipFn = callable('setVertexMembership');
+
+export const getVertexRosterApprovalFn = callable('getVertexRosterApproval');

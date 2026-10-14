@@ -93,9 +93,9 @@ function renderSubscriptions() {
                     <span class="dept-badge sub-tier-badge">${sanitizeHTML(planLabel(sub.tier))}</span>
                     <span class="dept-badge sub-status-${status.badge}">${__(status.key)}</span>
                 </div>
-                <span class="sub-dates">${__('subs.end_label_short')}: ${formatDate(sub.expiresAt)}</span>
+                <span class="sub-dates">${sub.source === 'vertex' ? (getLang()==='tr'?'Vertex sponsorluğu · Üyelik sürdükçe':'Vertex sponsorship · While membership is active') : `${__('subs.end_label_short')}: ${formatDate(sub.expiresAt)}`}</span>
             </div>
-            ${getEffectivePanelLevel('subscriptions.list') === 'write' ? `<button type="button" class="dept-user-edit cancel-task-btn" data-uid="${sanitizeHTML(sub.uid)}">${__('subs.remove_btn')}</button>` : ''}
+            ${getEffectivePanelLevel('subscriptions.list') === 'write' && sub.source !== 'vertex' ? `<button type="button" class="dept-user-edit cancel-task-btn" data-uid="${sanitizeHTML(sub.uid)}">${__('subs.remove_btn')}</button>` : ''}
         </div>`;
     }).join('');
 }
@@ -112,6 +112,7 @@ async function loadSubscriptions() {
             email: String(sub.email || ''),
             displayName: String(sub.displayName || ''),
             tier: String(sub.tier || ''),
+            source: String(sub.source || ''),
             expiresAt: sub.expiresAt || null
         })).filter(sub => sub.uid);
         subscriptions.sort((a, b) => new Date(b.expiresAt || 0) - new Date(a.expiresAt || 0));

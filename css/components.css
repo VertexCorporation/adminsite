@@ -704,3 +704,11 @@ body:has(.vx-modal) #toast-container{z-index:139;pointer-events:none}body:has(.v
 .scroll-fog[data-fog-top="true"]{--fog-top:26px}.scroll-fog[data-fog-bottom="true"]{--fog-bottom:26px}
 .contributor-edit-form .form-group-field{display:flex;flex-direction:column;gap:8px}.contributor-edit-grid{display:grid;gap:20px}.contributor-edit-form{gap:20px}
 .admin-user-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 12px;border-bottom:1px solid var(--border-subtle);min-height:64px}.admin-user-row>div{min-width:0}.admin-user-row strong{overflow-wrap:anywhere}.admin-user-row small{display:block;color:var(--text-secondary)}
+
+/* Existing applications drawer: private roster preview. */
+.vertex-roster-body { display:flex; flex-direction:column; gap:12px; min-width:0; }
+.vertex-roster-body textarea { width:100%; min-height:140px; box-sizing:border-box; }
+.vertex-roster-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.vertex-roster-digest,.vertex-roster-row p { overflow-wrap:anywhere; font-size:12px; }
+.vertex-roster-row { border-bottom:1px solid var(--border-color, #8884); padding:12px 0; }
+.vertex-roster-row summary { cursor:pointer; }

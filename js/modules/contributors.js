@@ -1,3 +1,4 @@
+import { initVertexRoster, refreshRosterAccess } from './vertex-roster.js';
 import { displayDepartmentName, canonicalDepartment } from '../utils/departments.js';
 import { icon } from '../utils/icons.js';
 import { openDrawer, closeDrawer, confirmDialog, openPopover, closePopover } from './shell.js';
@@ -7,7 +8,7 @@ import { openCertificates } from './certificates.js';
 // js/modules/contributors.js
 
 import { showToast, userErrorMessage, __, onLangChange, sanitizeHTML, escapeHTML } from '../utils/ui.js';
-import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn, toggleVertexStatusFn, auth } from '../core/firebase.js';
+import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn, setVertexMembershipFn, auth } from '../core/firebase.js';
 import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS, isPanelAdmin, getHiddenFieldsFor } from './roles.js';
 
 const editIcon = icon('pencil');
@@ -23,6 +24,7 @@ let refreshBtn;
 
 export function initContributorsModule() {
     document.addEventListener('vertex:certificate-selector',openCertificateSelector);
+    initVertexRoster(fetchContributorsData);
     listContainer = document.getElementById('contributors-list-container');
     listContainer.replaceChildren();
     loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows(),skeletonDelay:0});
@@ -82,6 +84,7 @@ async function loadContributors() {
 }
 
 function renderContributors(contributors) {
+    refreshRosterAccess();
     const query = document.getElementById('contributor-search')?.value.toLowerCase().trim() || '';
     const hidden = new Set(getHiddenFieldsFor('contributors.list'));
     contributors = contributors.filter(p => {
@@ -245,7 +248,7 @@ async function toggleMembership(person,button) {
     try {
         const confirmed=await confirmDialog(()=>({title:__('subnav.vertex_status'),warning:__('contributors.vertex_confirm'),rows:[{label:__('contributors.field_email'),value:escapeHTML(person.email)},{label:'UID',value:escapeHTML(person.membership.uid)}]}));
         if(!confirmed)return;
-        const {data}=await toggleVertexStatusFn({targetUid:person.membership.uid,contributorId:person.id,expectedStatus:person.membership.isVertex});
+        const {data}=await setVertexMembershipFn({targetUid:person.membership.uid,contributorId:person.id,isVertex:!person.membership.isVertex,expectedStatus:person.membership.isVertex});
         if(typeof data.isVertex!=='boolean')throw new Error('Invalid membership response');
         person.membership.isVertex=data.isVertex;showToast(()=>__(data.isVertex?'system.vertex_enabled':'system.vertex_disabled'),'success');
         renderContributors(window.loadedContributors||[]);
