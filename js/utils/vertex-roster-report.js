@@ -13,3 +13,8 @@ export function rosterCSV(plan) {
     for(const p of plan.activeOutside)rows.push(['','',p.email,'','','','','','','','','','Aktif','','','Referans liste dışında; işlem yapılmadı',p.uid]);
     return [headers,...rows].map(row=>row.map(cell).join(',')).join('\r\n');
 }
+
+export function contributorRosterCSV(plan) {
+    const headers=['Telefon','Ad soyad','E-posta','Başvuru','Contributor ID','Departman','Alan yolu','Önce isVertex','Sonra isVertex','Eşleşme yöntemi','İşlem sonucu','Neden'];
+    return [headers,...plan.rows.map(r=>[r.phone,r.name,r.email,r.application?'Bulundu':'Bulunamadı',r.contributorId,r.department,r.path,r.application?(r.before?.fieldExists?String(r.before.isVertex):'Alan eksik'):'Başvuru yok',r.result==='successful'||r.result==='unchanged'?'true':r.after?.isVertex??'',r.method,r.result,r.reasons.join('; ')])].map(row=>row.map(cell).join(',')).join('\r\n');
+}

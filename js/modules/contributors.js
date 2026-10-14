@@ -8,7 +8,7 @@ import { openCertificates } from './certificates.js';
 // js/modules/contributors.js
 
 import { showToast, userErrorMessage, __, onLangChange, sanitizeHTML, escapeHTML } from '../utils/ui.js';
-import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn, setVertexMembershipFn, auth } from '../core/firebase.js';
+import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn, setContributorVertexStatusFn, auth } from '../core/firebase.js';
 import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS, isPanelAdmin, getHiddenFieldsFor } from './roles.js';
 
 const editIcon = icon('pencil');
@@ -246,11 +246,11 @@ async function toggleMembership(person,button) {
     if(!isPanelAdmin() || person?.membership?.status!=='matched'||membershipPending.has(person.id))return;
     membershipPending.add(person.id);setButtonLoading(button,true);
     try {
-        const confirmed=await confirmDialog(()=>({title:__('subnav.vertex_status'),warning:__('contributors.vertex_confirm'),rows:[{label:__('contributors.field_email'),value:escapeHTML(person.email)},{label:'UID',value:escapeHTML(person.membership.uid)}]}));
+        const confirmed=await confirmDialog(()=>({title:__('subnav.vertex_status'),warning:__('contributors.vertex_confirm'),rows:[{label:__('contributors.field_email'),value:escapeHTML(person.email)},{label:'Contributor',value:escapeHTML(person.id)}]}));
         if(!confirmed)return;
-        const {data}=await setVertexMembershipFn({targetUid:person.membership.uid,contributorId:person.id,isVertex:!person.membership.isVertex,expectedStatus:person.membership.isVertex});
+        const {data}=await setContributorVertexStatusFn({contributorId:person.id,isVertex:!person.membership.isVertex,expectedStatus:person.membership.isVertex,expectedFieldExists:person.membership.fieldExists});
         if(typeof data.isVertex!=='boolean')throw new Error('Invalid membership response');
-        person.membership.isVertex=data.isVertex;showToast(()=>__(data.isVertex?'system.vertex_enabled':'system.vertex_disabled'),'success');
+        person.isVertex=data.isVertex;person.membership.fieldExists=true;person.membership.isVertex=data.isVertex;showToast(()=>__(data.isVertex?'system.vertex_enabled':'system.vertex_disabled'),'success');
         renderContributors(window.loadedContributors||[]);
     } catch(error){showToast(()=>userErrorMessage(error),'error');}
     finally{membershipPending.delete(person.id);setButtonLoading(button,false);renderContributors(window.loadedContributors||[]);}

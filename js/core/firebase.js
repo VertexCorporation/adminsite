@@ -197,3 +197,7 @@ export const applyVertexRosterFn = callable('applyVertexRoster');
 export const setVertexMembershipFn = callable('setVertexMembership');
 
 export const getVertexRosterApprovalFn = callable('getVertexRosterApproval');
+
+export const previewContributorRosterFn = callable('previewContributorRoster');
+export const applyContributorRosterFn = callable('applyContributorRoster');
+export const setContributorVertexStatusFn = callable('setContributorVertexStatus');
