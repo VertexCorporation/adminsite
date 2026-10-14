@@ -1,3 +1,13 @@
+# Adminsite production rollout
+
+This adminsite-only release reads the root Contributor `isVertex` flag for both the active filter and icon brightness, even when the legacy server response contains missing or contradictory account membership metadata. True flags are bright, false flags are dim, and absent/invalid flags remain unknown. Read permissions are unchanged.
+
+Fulcrum #15 and Cortex #31 remain Draft and have not been merged or deployed. `js/core/deployment-capabilities.js` therefore disables the new Contributor write button and hides the roster drawer in production. No fallback to the legacy account activation endpoint or direct client Firestore writes is permitted. A future release may enable the controls only after backend deployment and verification. These flags coordinate rollout; server authorization remains mandatory.
+
+The existing feature source and tests are preserved; tests explicitly mock future deployed capabilities for the planned write workflow, while the production compatibility test uses the real disabled capabilities and the old server response shape. This release makes no personnel, account, role, subscription or membership data changes. Private email reports stay outside Git.
+
+---
+
 # Contributor membership and roster migration
 
 The applications screen uses flat `contributors/{documentId}` documents. Production inspection found root `phone`, `name`, `email`, `department` and `createdAt` fields; there was no nested `applications` field or subcollection. A Contributor document is the application record. `interviewBookingUid` identifies an interview booking and must not be treated as a user UID.

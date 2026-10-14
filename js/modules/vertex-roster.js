@@ -1,3 +1,4 @@
+import { deploymentCapabilities } from '../core/deployment-capabilities.js';
 import { previewContributorRosterFn, applyContributorRosterFn } from '../core/firebase.js';
 import { isPanelAdmin } from './roles.js';
 import { openDrawer, confirmDialog } from './shell.js';
@@ -9,12 +10,12 @@ const labels = {
 };
 const text = key => labels[getLang()==='tr'?'tr':'en'][key];
 let launch;
-export function refreshRosterAccess() { if (launch) launch.hidden = !isPanelAdmin(); }
+export function refreshRosterAccess() { if (launch) launch.hidden = !isPanelAdmin() || !deploymentCapabilities.contributorRoster; }
 export function initVertexRoster(refresh) {
     launch = document.createElement('button'); launch.type='button'; launch.className='chrome-btn-outline'; launch.id='vertex-roster-launch';
     const translate=()=>{launch.textContent=text('title');}; translate(); onLangChange(translate);
     document.getElementById('refresh-contributors-btn')?.after(launch); refreshRosterAccess();
-    launch.onclick=()=>{ if(isPanelAdmin()) openRoster(refresh); };
+    launch.onclick=()=>{ if(isPanelAdmin() && deploymentCapabilities.contributorRoster) openRoster(refresh); };
 }
 function openRoster(refresh) {
     const body=openDrawer({title:text('title')});
