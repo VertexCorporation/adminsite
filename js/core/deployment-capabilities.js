@@ -4,6 +4,7 @@ export const deploymentCapabilities = Object.freeze({
     contributorMembershipWrites: false,
     contributorRoster: false,
     consolePeople: true,
+    consoleAccountActivation: true,
     consoleMembershipWrites: false,
     consolePersonnelWrites: false
 });

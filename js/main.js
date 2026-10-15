@@ -117,7 +117,7 @@ export function startApp(firebaseConfig) {
                     ? idTokenResult.claims.departments
                     : (idTokenResult.claims.department ? [idTokenResult.claims.department] : []);
 
-                if(deploymentCapabilities.consolePeople&&!isAdmin){const profile=(await db.collection('users').doc(user.uid).get()).data()||{};if(profile.contributorId||profile.personnelManaged){const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;if(typeof access?.isAdmin!=='boolean'||!Array.isArray(access.departments))throw new Error('Invalid access response');isAdmin=access.isAdmin;departments=access.departments;}}
+                if(deploymentCapabilities.consolePeople&&!isAdmin){const profile=(await db.collection('users').doc(user.uid).get()).data()||{};if(profile.contributorId||profile.personnelManaged){if(deploymentCapabilities.consoleAccountActivation&&profile.personnelOwnership==='pending'&&user.emailVerified){await consolePeopleCall('completePersonnelActivation',{});await user.getIdToken(true);}const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;if(typeof access?.isAdmin!=='boolean'||!Array.isArray(access.departments))throw new Error('Invalid access response');isAdmin=access.isAdmin;departments=access.departments;}}
                 if(epoch!==authEpoch)return;
                 if (!isAdmin && !departments.length) {
                     const denied=new Error('Console access denied');denied.code='auth/insufficient-permission';throw denied;
