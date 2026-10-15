@@ -415,7 +415,7 @@ export function initAdminModule() {
         renderDepartmentOptions();
         updateMaintenanceUI();updateAttributionsUI();
         const grant=document.getElementById('grant-admin-btn');grant.textContent=__(grant.disabled?'admin.granting':'admin.grant_btn');
-        const vertex=document.getElementById('toggle-vertex-btn');vertex.textContent=__(vertexPending?'system.saving':'panel.contributors.vertexStatus');
+        const vertex=document.getElementById('toggle-vertex-btn');if(vertex)vertex.textContent=__(vertexPending?'system.saving':'panel.contributors.vertexStatus');
         updateVertexResult();
         if (departmentUsers.length) renderDepartmentUsers();
     });

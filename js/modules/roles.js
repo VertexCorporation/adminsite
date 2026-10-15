@@ -32,7 +32,8 @@ const DEPARTMENTS = [
 export const PANELS = {
     contributors: [
         { id: 'list', key: 'panel.contributors.list', icon: 'group_work' },
-        { id: 'vertexStatus', key: 'panel.contributors.vertexStatus', icon: 'verified_user' }
+        { id: 'vertexStatus', key: 'panel.contributors.vertexStatus', icon: 'verified_user' },
+        { id: 'users', key: 'people.users', icon: 'group' }
     ],
     models: [
         { id: 'manage', key: 'panel.models.manage', icon: 'add_circle' },
@@ -136,6 +137,7 @@ export function isPanelAdmin() {
 
 export function getEffectivePanelLevel(panelKey) {
     if (currentUser.isAdmin) return 'write';
+    if (['contributors.users','contributors.vertexStatus'].includes(panelKey)) return 'none';
     if (!departmentPermissions) return 'none';
     return bestLevel(panelKey, currentUser.departments);
 }
@@ -404,6 +406,7 @@ function renderPanelMenuContent() {
     const panelKey=openMenuPanel;
     const {panel}=findPanelMeta(panelKey);
     const options=CONTENT_OPTIONS[panelKey];
+    if(['contributors.users','contributors.vertexStatus'].includes(panelKey)){pop.innerHTML='<h4 class="panel-menu-title">'+__(panel.key)+'</h4><p class="form-hint">'+__('people.admin_only')+'</p>';return;}
     pop.dataset.panel=panelKey;
     let html=`<h4 class="panel-menu-title">${__(panel.key)}</h4><p class="form-hint">${__('perms.panel_desc')}</p><div class="panel-menu-section-title">${__('perms.menu_access')}</div>`;
     DEPARTMENTS.forEach(dept=>{

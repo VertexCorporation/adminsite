@@ -1,3 +1,4 @@
+import { initPeopleModule } from './modules/people.js';
 import { initScrollEdges } from './utils/scrollEdges.js';
 import { displayDepartmentName } from './utils/departments.js';
 import { initSystemSections } from './modules/system.js';
@@ -5,7 +6,8 @@ import { initIcons } from './utils/icons.js';
 import { initShell, refreshNavigation, closePopover, closeDrawer, closeModal } from './modules/shell.js';
 // js/main.js
 
-import { initFirebase, auth } from './core/firebase.js';
+import { deploymentCapabilities } from './core/deployment-capabilities.js';
+import { initFirebase, auth, db, consolePeopleCall } from './core/firebase.js';
 import * as dom from './utils/dom.js';
 import { userErrorMessage, showToast, __, getLang, setLang, translatePage, onLangChange } from './utils/ui.js';
 
@@ -36,6 +38,7 @@ export function startApp(firebaseConfig) {
     // These listeners are safe to add now, as they are attached to elements
     // that are always present in the DOM.
     initAdminModule();
+    initPeopleModule();
     initModelsModule(); // CORRECTED: Calls the new unified initializer
     initNewsModule();
     initNotificationModule();
@@ -100,20 +103,22 @@ export function startApp(firebaseConfig) {
     });
     // --- Step 3: Set up the Core Authentication State Listener ---
     // This is the central control point that reacts to user login/logout.
-    let authEpoch=0;
+    let authEpoch=0,personnelUnsubscribe=null;
     auth.onAuthStateChanged(async (user) => {
-        const epoch=++authEpoch;
+        const epoch=++authEpoch;personnelUnsubscribe?.();personnelUnsubscribe=null;
         if(document.documentElement.dataset.startupFailed === 'true') return;
         if (user) {
             console.log(`[AUTH] User signed in: ${user.email}`);
             try {
                 const idTokenResult = await user.getIdTokenResult(true);
                 if(epoch!==authEpoch || document.documentElement.dataset.startupFailed === 'true')return;
-                const isAdmin = idTokenResult.claims.admin === true;
-                const departments = Array.isArray(idTokenResult.claims.departments)
+                let isAdmin = idTokenResult.claims.admin === true;
+                let departments = Array.isArray(idTokenResult.claims.departments)
                     ? idTokenResult.claims.departments
                     : (idTokenResult.claims.department ? [idTokenResult.claims.department] : []);
 
+                if(deploymentCapabilities.consolePeople&&!isAdmin){const profile=(await db.collection('users').doc(user.uid).get()).data()||{};if(profile.contributorId||profile.personnelManaged){const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;if(typeof access?.isAdmin!=='boolean'||!Array.isArray(access.departments))throw new Error('Invalid access response');isAdmin=access.isAdmin;departments=access.departments;}}
+                if(epoch!==authEpoch)return;
                 if (!isAdmin && !departments.length) {
                     const denied=new Error('Console access denied');denied.code='auth/insufficient-permission';throw denied;
                 }
@@ -143,6 +148,16 @@ export function startApp(firebaseConfig) {
                     applyChipVisibility();
 
                     document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
+                }
+
+                if(deploymentCapabilities.consolePeople){
+                  let revision=null;
+                  personnelUnsubscribe=db.collection('users').doc(user.uid).onSnapshot(async snapshot=>{
+                    const profile=snapshot.data()||{};if(!profile.contributorId&&!profile.personnelManaged)return;
+                    const next=profile.authzVersion||0;if(next===revision)return;revision=next;
+                    try{const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;if(epoch!==authEpoch)return;if(!access.isAdmin&&!access.departments.length){await auth.signOut();return;}setCurrentUser(access.isAdmin,access.departments);if(access.isAdmin)resetTabFilter();else{await loadDepartmentPermissions();applyTabFilter(getAccessibleTabs(access.departments));}applyPanelGate(access.isAdmin);applyChipVisibility();renderProfile(user,access.isAdmin,access.departments,true);document.dispatchEvent(new CustomEvent('vertex:departments',{detail:access.departments}));}
+                    catch(error){if(epoch===authEpoch&&error.code==='functions/permission-denied')auth.signOut();}
+                  },error=>console.warn('[PERSONNEL] Access subscription unavailable',error.code));
                 }
 
             } catch (error) {

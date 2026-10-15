@@ -201,3 +201,5 @@ export const getVertexRosterApprovalFn = callable('getVertexRosterApproval');
 export const previewContributorRosterFn = callable('previewContributorRoster');
 export const applyContributorRosterFn = callable('applyContributorRoster');
 export const setContributorVertexStatusFn = callable('setContributorVertexStatus');
+
+export const consolePeopleCall = (name, data) => callCallable(name, data);
