@@ -203,3 +203,7 @@ export const applyContributorRosterFn = callable('applyContributorRoster');
 export const setContributorVertexStatusFn = callable('setContributorVertexStatus');
 
 export const consolePeopleCall = (name, data) => callCallable(name, data);
+
+export const getVertexCertificateEmailTemplatesFn = callable('getVertexCertificateEmailTemplates');
+export const saveVertexCertificateEmailTemplateFn = callable('saveVertexCertificateEmailTemplate');
+export const previewVertexCertificateEmailTemplateFn = callable('previewVertexCertificateEmailTemplate');

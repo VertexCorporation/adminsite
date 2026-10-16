@@ -1,3 +1,4 @@
+import { openCertificateEmailTemplates } from './certificateEmailTemplates.js';
 import { setVertexContributorJoiningDateFn, issueVertexCertificateFn, getVertexCertificateDetailsFn, revokeVertexCertificateFn } from '../core/firebase.js';
 import { escapeHTML as esc, showToast, userErrorMessage, __, getLang, onLangChange } from '../utils/ui.js';
 import { icon } from '../utils/icons.js';
@@ -44,7 +45,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
         const e=details.eligibility || {};
         setTitle('cert.title');back(options.onBack ? ()=>{dispose();options.onBack();}:null);
         loader.success(`<div class="cert-recipient"><strong>${esc(person.name)}</strong><small>${esc(person.email)}</small></div><dl class="cert-facts"><div><dt>${__('cert.joined')}</dt><dd>${esc(formatCertificateDate(e.joinedAt))}</dd></div><div><dt>${__('cert.participation')}</dt><dd>${e.participationDays===undefined?'—':esc(e.participationDays)}</dd></div></dl><p class="cert-notice">${esc(eligibilityText())}</p><div class="cert-options">${awards.map(a=>`<button type="button" class="cert-option ${selected===a.type?'is-selected':''}" data-award="${a.type}" aria-pressed="${selected===a.type}" ${blocked(a.type)?'disabled':''}>${icon(a.icon)}<span class="cert-option-main"><strong>${esc(typeName(a.type,details.types))}</strong></span><span class="cert-option-tenure">${a.months} ${__(a.months===1?'cert.month':'cert.months')}</span><span class="cert-option-check">${icon('check')}</span></button>`).join('')}</div>`);
-        footer.innerHTML=`<button class="chrome-btn-primary" data-review ${!selected||blocked(selected)?'disabled':''}>${__('cert.review')}</button><div class="cert-secondary-actions"><button class="chrome-btn-outline" data-date>${__('cert.date_edit')}</button><button class="chrome-btn-outline" data-history>${__('cert.history')}</button></div>`;
+        footer.innerHTML=`<button class="chrome-btn-primary" data-review ${!selected||blocked(selected)?'disabled':''}>${__('cert.review')}</button><div class="cert-secondary-actions"><button class="chrome-btn-outline" data-date>${__('cert.date_edit')}</button><button class="chrome-btn-outline" data-history>${__('cert.history')}</button></div><button class="chrome-btn-outline" data-email-templates>${__('email_templates.title')}</button>`;
         pop.querySelectorAll('[data-award]').forEach(b=>b.onclick=()=>{
             selected=b.dataset.award;
             // Keep card nodes alive: the check's opacity/scale transition must run.
@@ -54,6 +55,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
         footer.querySelector('[data-review]').onclick=()=>review(selected,false,footer.querySelector('[data-review]'));
         footer.querySelector('[data-date]').onclick=editDate;
         footer.querySelector('[data-history]').onclick=history;
+        footer.querySelector('[data-email-templates]').onclick=openCertificateEmailTemplates;
         if(focusedAward)pop.querySelector(`[data-award="${focusedAward}"]`)?.focus({preventScroll:true});
         else if(!root.contains(document.activeElement)&&!document.querySelector('.vx-modal'))pop.querySelector('[data-award]:not([disabled])')?.focus({preventScroll:true});
     }

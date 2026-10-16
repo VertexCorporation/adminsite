@@ -1,4 +1,5 @@
 import { translationsReady, translatePage } from '../lang.js';
+import { fetchFirebaseConfig } from './appConfig.js';
 
 // Localization is ready before any network or feature initialization begins.
 await translationsReady;
@@ -52,10 +53,7 @@ try {
     let config;
     try { config = JSON.parse(sessionStorage.getItem('firebaseConfig')); } catch { /* Cache is optional. */ }
     if (!config?.apiKey) {
-        const response = await fetch('https://getappconfig-o5h7dmtija-ew.a.run.app', { signal: AbortSignal.timeout(10000) });
-        if (!response.ok) throw new Error(`Configuration request failed (${response.status})`);
-        config = await response.json();
-        if (!config?.apiKey) throw new Error('Invalid application configuration');
+        config = await fetchFirebaseConfig();
         try { sessionStorage.setItem('firebaseConfig', JSON.stringify(config)); } catch { /* Cache is optional. */ }
     }
     if (typeof firebase.functions !== 'function') throw new Error('Firebase Functions SDK unavailable');

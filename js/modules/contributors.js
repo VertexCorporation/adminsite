@@ -1,3 +1,4 @@
+import { openCertificateEmailTemplates } from './certificateEmailTemplates.js';
 import { deploymentCapabilities } from '../core/deployment-capabilities.js';
 import { isActiveContributor, contributorState } from '../utils/contributor-state.js';
 import { initVertexRoster, refreshRosterAccess } from './vertex-roster.js';
@@ -33,6 +34,9 @@ export function initContributorsModule() {
     window.filterContributors = filter => { activeFilter=filter; renderContributors(window.loadedContributors || []); };
     window.searchContributorsLocal = () => renderContributors(window.loadedContributors || []);
     refreshBtn = document.getElementById('refresh-contributors-btn');
+    if(refreshBtn&&!document.getElementById('certificate-email-templates-btn')){
+        const button=document.createElement('button');button.id='certificate-email-templates-btn';button.type='button';button.className='chrome-btn-outline';button.dataset.i18n='email_templates.title';button.textContent=__('email_templates.title');button.style.display=isPanelAdmin()?'':'none';button.onclick=openCertificateEmailTemplates;refreshBtn.before(button);refreshBtn.parentElement.classList.add('certificate-template-entry-row');
+    }
     onLangChange(() => { const headers=['name','department','age','status','applied','actions']; document.querySelectorAll('.contributor-table-head span').forEach((el,i)=>el.textContent=__('contributors.col_'+headers[i])); if(window.loadedContributors) renderContributors(window.loadedContributors); });
 
     if (refreshBtn) {
@@ -43,6 +47,7 @@ export function initContributorsModule() {
 
 /** Rank bazli gizlenen filtre ciplerini uygula (adminler hepsini gorur). */
 export function applyChipVisibility() {
+    const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry)templateEntry.style.display=isPanelAdmin()?'':'none';
     const hidden = new Set(getHiddenChipsFor('contributors.list'));
     document.querySelectorAll('#tab-contributors .filter-chip').forEach(chip => {
         const filter = chip.getAttribute('data-filter');
@@ -51,6 +56,7 @@ export function applyChipVisibility() {
 }
 
 export function fetchContributorsData() {
+    const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry)templateEntry.style.display=isPanelAdmin()?'':'none';
     if(getEffectivePanelLevel('contributors.list')==='none')return Promise.resolve();
     const context=JSON.stringify([auth.currentUser?.uid,isPanelAdmin(),getHiddenFieldsFor('contributors.list')]);
     if(inFlight&&inFlightContext===context)return inFlight;
@@ -96,6 +102,7 @@ function renderContributors(contributors) {
     document.querySelectorAll('#tab-contributors .filter-chip').forEach(b=>b.classList.toggle('active',b.dataset.filter===activeFilter));
     const canWrite = getEffectivePanelLevel('contributors.list')==='write';
     const admin = isPanelAdmin();
+    const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry){templateEntry.style.display=admin?'':'none';templateEntry.textContent=__('email_templates.title');}
     const headers = ['name','department','age','status','applied','actions'];
     loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(p.age??'—')}</span><span class="contributor-cell-status status-badge">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${contributorState(p)==='active'?'is-active':contributorState(p)==='unknown'?'is-unknown':''}" data-membership="${escapeHTML(p.id)}" title="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-label="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-pressed="${isActiveContributor(p)}" data-vertex-state="${contributorState(p)}" ${!deploymentCapabilities.contributorMembershipWrites||p.membership?.source!=='contributors'||p.membership?.status!=='matched'||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`));
     listContainer.querySelectorAll('[data-membership]').forEach(b=>b.onclick=()=>toggleMembership(contributors.find(p=>p.id===b.dataset.membership),b));
@@ -268,7 +275,8 @@ function openCertificateSelector() {
         root.classList.remove('certificate-drawer');root.querySelector('[data-cert-back]')?.remove();root.querySelector('.vx-drawer-footer')?.remove();
         root.querySelector('.vx-drawer-title').textContent=__('cert.select_person');root.setAttribute('aria-label',__('cert.select_person'));
         body.classList.add('certificate-selector-body');
-        body.innerHTML=`<div class="certificate-person-search"><label for="certificate-person-search">${__('cert.search_person')}</label><div class="search-field">${icon('search')}<input id="certificate-person-search" type="search" placeholder="${__('cert.search_person')}" value="${escapeHTML(query)}"></div></div><div class="certificate-person-list"></div>`;
+        body.innerHTML=`<button type="button" class="chrome-btn-outline template-manage-entry" data-email-templates>${__('email_templates.title')}</button><div class="certificate-person-search"><label for="certificate-person-search">${__('cert.search_person')}</label><div class="search-field">${icon('search')}<input id="certificate-person-search" type="search" placeholder="${__('cert.search_person')}" value="${escapeHTML(query)}"></div></div><div class="certificate-person-list"></div>`;
+        body.querySelector('[data-email-templates]').onclick=openCertificateEmailTemplates;
         const search=body.querySelector('input'),list=body.querySelector('.certificate-person-list');
         function results(){
             if(!body.classList.contains('certificate-selector-body'))return;
