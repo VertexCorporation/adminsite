@@ -2,17 +2,12 @@ import { confirmDialog } from './shell.js';
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/siteTeam.js
 
-/**
- * Sistem > Ekip Kaydı paneli: public site (vertexishere.com) Moderatörler
- * listesini yönetir (ekle / sil / yeniden adlandır). Staff listesi panelde
- * yönetilmez — onaylı adaylar (contributors.hasVerified) otomatik olarak
- * sitedeki Staff kaydırma listesine düşer.
- */
+/** Sistem > Onur Tablosu: kamu sitesindeki onur isimlerini yönetir. */
 
 import { userErrorMessage, showToast, __, escapeHTML } from '../utils/ui.js';
 import { listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn } from '../core/firebase.js';
 
-let mods = [];
+let honors = [];
 let editingId = null;
 
 const el = (id) => document.getElementById(id);
@@ -21,8 +16,8 @@ async function loadTeam() {
     if (!el('team-mod-list')) return;
     const finishLoading=beginPanelLoading(el('team-mod-list'));
     try {
-        const result = await listSiteTeamFn({});
-        mods = (result.data && result.data.mods) || [];
+        const result = await listSiteTeamFn({ manage: true });
+        honors = (result.data && result.data.honors) || [];
         render();
     } catch (error) {
         const list = el('team-mod-list');
@@ -33,24 +28,24 @@ async function loadTeam() {
 function render() {
     const list = el('team-mod-list');
     if (!list) return;
-    if (!mods.length) {
+    if (!honors.length) {
         list.innerHTML = `<p class="form-hint" data-i18n="team.empty">${__('team.empty')}</p>`;
         return;
     }
-    list.innerHTML = mods.map(m => {
+    list.innerHTML = honors.map(m => {
         if (editingId === m.id) {
             return `
-            <div class="team-entry-row team-entry-editing" data-id="${m.id}">
+            <div class="team-entry-row team-entry-editing" data-id="${escapeHTML(m.id)}">
                 <input type="text" class="team-edit-input" value="${escapeHTML(m.name)}" maxlength="60">
-                <button type="button" class="team-entry-save" data-save="${m.id}" title="${__('team.save')}"><i class="" data-icon="check"></i></button>
+                <button type="button" class="team-entry-save" data-save="${escapeHTML(m.id)}" title="${__('team.save')}"><i class="" data-icon="check"></i></button>
                 <button type="button" class="team-entry-cancel" data-cancel="1" title="${__('team.cancel')}"><i class="" data-icon="close"></i></button>
             </div>`;
         }
         return `
-        <div class="team-entry-row" data-id="${m.id}">
+        <div class="team-entry-row" data-id="${escapeHTML(m.id)}">
             <span class="team-entry-name">${escapeHTML(m.name)}</span>
-            <button type="button" class="team-entry-edit" data-edit="${m.id}" title="${__('team.edit')}"><i class="" data-icon="edit"></i></button>
-            <button type="button" class="team-entry-del" data-id="${m.id}" title="${__('team.remove')}"><i class="" data-icon="close"></i></button>
+            <button type="button" class="team-entry-edit" data-edit="${escapeHTML(m.id)}" title="${__('team.edit')}"><i class="" data-icon="edit"></i></button>
+            <button type="button" class="team-entry-del" data-id="${escapeHTML(m.id)}" title="${__('team.remove')}"><i class="" data-icon="close"></i></button>
         </div>`;
     }).join('');
     const editing = list.querySelector('.team-edit-input');
@@ -70,7 +65,7 @@ async function add() {
     const btn = el('team-mod-add');
     if (btn) btn.disabled = true;
     try {
-        await setSiteTeamEntryFn({ kind: 'mod', name });
+        await setSiteTeamEntryFn({ kind: 'honor', name });
         input.value = '';
         showToast(() => __('team.added'), 'success');
         await loadTeam();
@@ -91,7 +86,7 @@ async function rename(id) {
         return;
     }
     try {
-        await setSiteTeamEntryFn({ kind: 'mod', name, id });
+        await setSiteTeamEntryFn({ kind: 'honor', name, id });
         editingId = null;
         showToast(() => __('team.updated'), 'success');
         await loadTeam();
