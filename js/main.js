@@ -1,4 +1,6 @@
 import { initEventsModule } from './modules/events.js';
+import { initPeopleModule } from './modules/people.js';
+import { initHomeModule, updateHome } from './modules/home.js';
 import { initScrollEdges } from './utils/scrollEdges.js';
 import { displayDepartmentName } from './utils/departments.js';
 import { initSystemSections } from './modules/system.js';
@@ -6,7 +8,8 @@ import { initIcons } from './utils/icons.js';
 import { initShell, refreshNavigation, closePopover, closeDrawer, closeModal } from './modules/shell.js';
 // js/main.js
 
-import { initFirebase, auth } from './core/firebase.js';
+import { deploymentCapabilities } from './core/deployment-capabilities.js';
+import { initFirebase, auth, db, consolePeopleCall } from './core/firebase.js';
 import * as dom from './utils/dom.js';
 import { userErrorMessage, showToast, __, getLang, setLang, translatePage, onLangChange } from './utils/ui.js';
 
@@ -39,6 +42,7 @@ export function startApp(firebaseConfig) {
     // These listeners are safe to add now, as they are attached to elements
     // that are always present in the DOM.
     initAdminModule();
+    initPeopleModule();
     initModelsModule(); // CORRECTED: Calls the new unified initializer
     initNewsModule();
     initEventsModule();
@@ -54,6 +58,7 @@ export function startApp(firebaseConfig) {
     initTeamCardsPanel();
 
     initShell();
+    initHomeModule();
     initSystemSections();
     initIcons();
     updateGridVisibleCounts();
@@ -106,23 +111,26 @@ export function startApp(firebaseConfig) {
     });
     // --- Step 3: Set up the Core Authentication State Listener ---
     // This is the central control point that reacts to user login/logout.
-    let authEpoch=0;
+    let authEpoch=0,personnelUnsubscribe=null,hadAuthorizedSession=false;
     auth.onAuthStateChanged(async (user) => {
-        const epoch=++authEpoch;
+        const epoch=++authEpoch;personnelUnsubscribe?.();personnelUnsubscribe=null;
         if(document.documentElement.dataset.startupFailed === 'true') return;
         if (user) {
             console.log(`[AUTH] User signed in: ${user.email}`);
             try {
                 const idTokenResult = await user.getIdTokenResult(true);
                 if(epoch!==authEpoch || document.documentElement.dataset.startupFailed === 'true')return;
-                const isAdmin = idTokenResult.claims.admin === true;
-                const departments = Array.isArray(idTokenResult.claims.departments)
+                let isAdmin = idTokenResult.claims.admin === true;
+                let departments = Array.isArray(idTokenResult.claims.departments)
                     ? idTokenResult.claims.departments
                     : (idTokenResult.claims.department ? [idTokenResult.claims.department] : []);
 
+                if(deploymentCapabilities.consolePeople&&!isAdmin){const profile=(await db.collection('users').doc(user.uid).get()).data()||{};if(profile.contributorId||profile.personnelManaged){if(deploymentCapabilities.consoleAccountActivation&&profile.personnelOwnership==='pending'&&user.emailVerified){await consolePeopleCall('completePersonnelActivation',{});await user.getIdToken(true);}const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;if(typeof access?.isAdmin!=='boolean'||!Array.isArray(access.departments))throw new Error('Invalid access response');isAdmin=access.isAdmin;departments=access.departments;}}
+                if(epoch!==authEpoch)return;
                 if (!isAdmin && !departments.length) {
                     const denied=new Error('Console access denied');denied.code='auth/insufficient-permission';throw denied;
                 }
+                hadAuthorizedSession=true;
                 setCurrentUser(isAdmin, departments);
                 document.body.classList.toggle('admin-mode', isAdmin);
                 document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
@@ -151,6 +159,17 @@ export function startApp(firebaseConfig) {
                     document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
                 }
 
+                updateHome(user, isAdmin, departments);
+                if(deploymentCapabilities.consolePeople){
+                  let revision=null;
+                  personnelUnsubscribe=db.collection('users').doc(user.uid).onSnapshot(async snapshot=>{
+                    const profile=snapshot.data()||{};if(!profile.contributorId&&!profile.personnelManaged)return;
+                    const next=profile.authzVersion||0;if(next===revision)return;revision=next;
+                    try{const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;if(epoch!==authEpoch)return;if(!access.isAdmin&&!access.departments.length){await auth.signOut();return;}setCurrentUser(access.isAdmin,access.departments);if(access.isAdmin)resetTabFilter();else{await loadDepartmentPermissions();applyTabFilter(getAccessibleTabs(access.departments));}applyPanelGate(access.isAdmin);applyChipVisibility();renderProfile(user,access.isAdmin,access.departments,true);updateHome(user,access.isAdmin,access.departments);document.dispatchEvent(new CustomEvent('vertex:departments',{detail:access.departments}));}
+                    catch(error){if(epoch===authEpoch&&error.code==='functions/permission-denied')auth.signOut();}
+                  },error=>console.warn('[PERSONNEL] Access subscription unavailable',error.code));
+                }
+
             } catch (error) {
                 console.error("[AUTH] Access check failed:", error.message);
                 if(epoch!==authEpoch)return;showToast(() => userErrorMessage(error), 'error');
@@ -159,7 +178,9 @@ export function startApp(firebaseConfig) {
         } else {
             // --- User is LOGGED OUT ---
             document.title = __('page.title');
-            loadedWorkspaces.clear();setCurrentUser(false,[]);document.dispatchEvent(new CustomEvent('vertex:close-navigation'));document.body.classList.remove('admin-mode');
+            loadedWorkspaces.clear();setCurrentUser(false,[]);updateHome(null,false,[]);
+            if(hadAuthorizedSession){history.replaceState({vertexRoute:{panel:'home',action:''}},'',location.pathname+'?panel=home&view=');hadAuthorizedSession=false;}
+            document.dispatchEvent(new CustomEvent('vertex:close-navigation'));document.body.classList.remove('admin-mode');
             closePopover({restoreFocus:false});closeModal();closeDrawer(false);
             console.log("[AUTH] No user signed in. Displaying login page.");
             dom.loginContainer.style.display = 'flex';
@@ -250,12 +271,12 @@ function resetTabFilter() {
         element.style.display = '';
         element.classList.remove('active');
     });
-    document.querySelector('[data-target="tab-contributors"]').classList.add('active');
-    document.getElementById('tab-contributors').classList.add('active');
+    document.querySelector('[data-target="tab-home"]').classList.add('active');
+    document.getElementById('tab-home').classList.add('active');
 }
 
 function applyTabFilter(allowedTabs) {
-    const visibleTabs = new Set([...allowedTabs, 'profile', 'chat']);
+    const visibleTabs = new Set([...allowedTabs, 'home', 'profile', 'chat']);
     const dockButtons = document.querySelectorAll('.dock-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
 
@@ -280,7 +301,7 @@ function applyTabFilter(allowedTabs) {
         }
     });
 
-    const firstTab = allowedTabs[0] || 'profile';
+    const firstTab = 'home';
     const firstBtn = document.querySelector(`.dock-btn[data-target="tab-${firstTab}"]`);
     const firstPanel = document.getElementById(`tab-${firstTab}`);
     if (firstBtn && firstPanel) {

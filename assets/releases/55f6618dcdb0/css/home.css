@@ -1,0 +1,57 @@
+
+/* Vertex Konsol / Ev — scoped design, shared theme tokens */
+#tab-home { max-width: 1360px; margin: 0 auto; padding-bottom: 28px; }
+#tab-home .home-eyebrow { display:block; font-size:11px; line-height:1.5; font-weight:650; letter-spacing:.13em; color:var(--text-muted); }
+#tab-home .home-hero { position:relative; overflow:hidden; display:grid; grid-template-columns:minmax(0,1.45fr) minmax(250px,.75fr); gap:24px; min-height:395px; border:1px solid var(--border-strong); border-radius:24px; background:var(--bg-surface); }
+#tab-home .home-hero-copy { position:relative; z-index:1; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; padding:clamp(28px,5vw,68px); }
+#tab-home .home-title { margin:25px 0 18px; font-size:clamp(32px,3.85vw,56px); font-weight:650; letter-spacing:-.052em; line-height:1.09; overflow-wrap:anywhere; color:var(--text-primary); }
+#tab-home .home-lead { margin:0; max-width:710px; font-size:clamp(15px,1.25vw,17px); line-height:1.8; color:var(--text-secondary); }
+#tab-home .home-identity { display:flex; flex-wrap:wrap; gap:8px; margin:25px 0 0; }
+#tab-home .home-identity:empty { display:none; }
+#tab-home .home-identity-chip { display:inline-flex; align-items:center; gap:8px; max-width:100%; padding:8px 11px; border:1px solid var(--border-strong); border-radius:999px; font-size:12px; line-height:1.4; color:var(--text-secondary); overflow-wrap:anywhere; }
+#tab-home .home-identity-chip svg { flex-shrink:0; }
+#tab-home .home-start-note { margin:20px 0 0; max-width:660px; color:var(--text-muted); font-size:13px; line-height:1.75; }
+#tab-home .home-hero-art { position:relative; isolation:isolate; min-height:320px; display:grid; place-items:center; overflow:hidden; background:radial-gradient(circle at 50% 42%,var(--bg-elevated),transparent 68%); }
+#tab-home .home-hero-emblem { display:grid; place-items:center; width:152px; height:152px; border-radius:38px; border:1px solid var(--border-strong); background:var(--bg-elevated); box-shadow:0 12px 70px rgba(0,0,0,.12); transform:rotate(-8deg); }
+#tab-home .home-hero-emblem img { width:92px; height:92px; object-fit:contain; opacity:.96; }
+#tab-home .home-orbit { position:absolute; width:290px; height:290px; border:1px solid var(--border-strong); border-radius:50%; opacity:.55; pointer-events:none; }
+#tab-home .home-orbit-two { width:420px; height:420px; opacity:.35; }
+#tab-home .home-art-word { position:absolute; bottom:32px; right:38px; display:flex; flex-direction:column; align-items:end; gap:4px; color:var(--text-muted); font-weight:700; letter-spacing:.20em; font-size:12px; }
+#tab-home .home-art-word span { font-size:10px; font-weight:500; }
+#tab-home .home-section { margin:clamp(54px,7vw,94px) 0 0; }
+#tab-home .home-heading { max-width:1000px; margin:14px 0 24px; font-size:clamp(27px,2.65vw,40px); line-height:1.19; font-weight:630; letter-spacing:-.043em; color:var(--text-primary); }
+#tab-home .home-prose { max-width:940px; display:grid; gap:19px; }
+#tab-home .home-prose p,#tab-home .home-section-intro,#tab-home .home-ecosystem-text p,#tab-home .home-culture-item p { margin:0; color:var(--text-secondary); font-size:15px; line-height:1.92; }
+#tab-home .home-section-intro { max-width:920px; margin-bottom:28px; }
+#tab-home .home-module-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+#tab-home .home-module-card { position:relative; min-height:214px; display:flex; flex-direction:column; align-items:flex-start; text-align:left; padding:23px; color:var(--text-primary); border:1px solid var(--border-subtle); border-radius:17px; background:var(--bg-surface); transition:transform var(--motion-normal) var(--ease-standard),background-color var(--motion-normal) var(--ease-standard),border-color var(--motion-normal) var(--ease-standard); }
+#tab-home .home-module-card:hover { background:var(--bg-hover); border-color:var(--border-strong); transform:translateY(-2px); }
+#tab-home .home-module-card:focus-visible { outline:2px solid var(--action-primary); outline-offset:3px; }
+#tab-home .home-module-icon { display:grid; place-items:center; height:42px; width:42px; margin-bottom:20px; border:1px solid var(--border-strong); background:var(--bg-elevated); border-radius:12px; }
+#tab-home .home-module-name { font-size:17px; font-weight:630; letter-spacing:-.02em; }
+#tab-home .home-module-description { margin:10px 24px 0 0; color:var(--text-secondary); font-size:13px; line-height:1.7; }
+#tab-home .home-module-arrow { position:absolute; right:21px; bottom:21px; color:var(--text-muted); }
+#tab-home .home-muted { color:var(--text-muted); font-size:14px; }
+#tab-home .home-ecosystem-stack { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+#tab-home .home-ecosystem-card { padding:clamp(22px,3vw,34px); border:1px solid var(--border-subtle); border-radius:18px; background:var(--bg-surface); min-width:0; }
+#tab-home .home-ecosystem-card:first-child { grid-column:1/-1; }
+#tab-home .home-ecosystem-header { display:flex; align-items:flex-start; gap:19px; margin-bottom:23px; }
+#tab-home .home-ecosystem-index { font-size:12px; font-family:var(--font-mono); color:var(--text-muted); padding-top:5px; }
+#tab-home .home-ecosystem-type { font-size:10px; letter-spacing:.12em; font-weight:600; color:var(--text-muted); }
+#tab-home .home-ecosystem-name { margin:6px 0 0; font-size:clamp(18px,1.7vw,24px); line-height:1.25; font-weight:630; letter-spacing:-.03em; }
+#tab-home .home-ecosystem-text { display:grid; gap:17px; }
+#tab-home .home-ecosystem-text p { font-size:14px; line-height:1.84; }
+#tab-home .home-culture-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+#tab-home .home-culture-item { border-top:1px solid var(--border-strong); padding:24px 0 6px; }
+#tab-home .home-culture-number { display:block; font-family:var(--font-mono); color:var(--text-muted); font-size:12px; margin-bottom:14px; }
+#tab-home .home-closing { margin-top:clamp(64px,9vw,120px); padding:clamp(30px,5vw,65px); border:1px solid var(--border-strong); border-radius:22px; background:var(--bg-surface); }
+#tab-home .home-closing p { max-width:900px; margin:0 0 24px; font-size:clamp(16px,1.8vw,21px); line-height:1.7; letter-spacing:-.013em; color:var(--text-secondary); }
+#tab-home .home-closing .home-final-line { font-size:clamp(24px,3vw,35px); letter-spacing:-.035em; font-weight:650; color:var(--text-primary); }
+#tab-home .home-signature { margin-top:54px; border-top:1px solid var(--border-subtle); padding-top:23px; display:flex; gap:11px; align-items:center; color:var(--text-muted); font-size:12px; }
+#tab-home .home-signature img { width:24px; height:24px; object-fit:contain; }
+html[data-theme="light"] #tab-home .home-hero-emblem img,html[data-theme="light"] #tab-home .home-signature img,[data-theme="system"] #tab-home .home-hero-emblem img,[data-theme="system"] #tab-home .home-signature img { filter:brightness(0); }
+@media(prefers-color-scheme:dark){[data-theme="system"] #tab-home .home-hero-emblem img,[data-theme="system"] #tab-home .home-signature img{filter:none}}
+@media(max-width:1100px){#tab-home .home-hero{grid-template-columns:minmax(0,1fr) 250px}#tab-home .home-module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){#tab-home .home-hero{display:block}#tab-home .home-hero-copy{padding:32px 25px}#tab-home .home-hero-art{min-height:160px}#tab-home .home-hero-emblem{width:90px;height:90px;border-radius:24px}#tab-home .home-hero-emblem img{width:57px;height:57px}#tab-home .home-orbit{width:190px;height:190px}#tab-home .home-orbit-two{width:270px;height:270px}#tab-home .home-art-word{bottom:19px;right:22px}#tab-home .home-module-grid,#tab-home .home-ecosystem-stack,#tab-home .home-culture-grid{grid-template-columns:1fr}#tab-home .home-ecosystem-card:first-child{grid-column:auto}#tab-home .home-module-card{min-height:175px}}
+@media(max-width:420px){#tab-home .home-hero-copy{padding:26px 20px}#tab-home .home-title{font-size:32px}#tab-home .home-module-card{padding:19px}#tab-home .home-ecosystem-card{padding:20px}#tab-home .home-closing{padding:26px 21px}}
+@media(prefers-reduced-motion:reduce){#tab-home .home-module-card{transition:none}#tab-home .home-module-card:hover{transform:none}}
