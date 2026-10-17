@@ -6,6 +6,10 @@ export function showWorkspace(tab, keys) {
     const cards=[...tab.querySelectorAll('.panel-card[data-panel]')];
     const selected=keys.filter(key=>getEffectivePanelLevel(key)!=='none');
     const next = selected.join(',');
+    const host = tab.querySelector('.grid-layout');
+    const isSwitchingTab = tab.classList.contains('ui-tab-entering');
+    const animateWorkspace = !!host && !!tab.dataset.workspace &&
+        tab.dataset.workspace !== next && !isSwitchingTab;
     const update = () => {
         for (const card of cards) {
             const show = selected.includes(card.dataset.panel) && card.style.display !== 'none';
@@ -13,14 +17,16 @@ export function showWorkspace(tab, keys) {
             card.hidden = !show;
             if (show && was) {
                 card.classList.remove('workspace-enter');
-                card.classList.add('workspace-enter');
+                if (!animateWorkspace && !isSwitchingTab) {
+                    void card.offsetWidth;
+                    card.classList.add('workspace-enter');
+                }
             }
         }
         updateGridVisibleCounts(tab);
     };
     // Preserve live DOM, listeners, focus and form state. Crossfade is visual-only.
-    const host = tab.querySelector('.grid-layout');
-    if (host && tab.dataset.workspace && tab.dataset.workspace !== next) crossfade(host, update, {duration:180});
+    if (animateWorkspace) crossfade(host, update, {duration:180});
     else update();
     tab.dataset.workspace = next;
     document.dispatchEvent(new CustomEvent('vertex:workspace',{detail:{keys:selected}}));

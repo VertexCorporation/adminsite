@@ -57,13 +57,17 @@ const viewAnimations = new WeakMap();
 export function animateViewEntry(view) {
     if (!view?.isConnected || reducedMotion()) return;
     viewAnimations.get(view)?.cancel();
+    view.classList.add('ui-tab-entering');
     const animation = view.animate(
         [{opacity:0.35, transform:'translateY(4px)'},{opacity:1, transform:'translateY(0)'}],
         {duration:190, easing:'cubic-bezier(.2,.8,.2,1)'}
     );
     viewAnimations.set(view, animation);
     animation.finished.catch(()=>{}).finally(()=>{
-        if (viewAnimations.get(view)===animation)viewAnimations.delete(view);
+        if (viewAnimations.get(view)===animation) {
+            viewAnimations.delete(view);
+            view.classList.remove('ui-tab-entering');
+        }
     });
 }
 

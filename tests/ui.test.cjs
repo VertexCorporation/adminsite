@@ -103,3 +103,12 @@ test('retry states keep stale business data and never display raw server message
  }
  assert.doesNotMatch(read('js/modules/siteTeam.js'),/escapeHTML\(error\.message\)/);
 });
+
+test('navigation and workspace do not run competing opacity animations',()=>{
+ assert.doesNotMatch(read('css/layout.css'),/\.tab-panel\s*\{[^}]*animation:/);
+ const nav=read('js/ui/transition.js');
+ assert.match(nav,/ui-tab-entering/);
+ const views=read('js/modules/views.js');
+ assert.match(views,/!isSwitchingTab/);
+ assert.match(views,/if \(animateWorkspace\) crossfade/);
+});
