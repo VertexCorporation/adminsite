@@ -1,3 +1,4 @@
+import { showLoadError } from '../ui/states.js';
 import { crossfade } from '../ui/transition.js';
 import { displayDepartmentName } from '../utils/departments.js';
 import { confirmDialog } from './shell.js';
@@ -96,7 +97,7 @@ async function loadChannels() {
     } catch (error) {
         console.error('[CHAT] Kanallar yüklenemedi:', error);
         const msg = userErrorMessage(error);
-        el('chat-channel-list').innerHTML = `<p class="form-hint chat-hint">${escapeHTML(msg)}</p>`;
+        showLoadError(el('chat-channel-list'),msg,loadChannels,{staleSelector:'.chat-channel-item'});
     } finally { finishLoading(); }
 }
 

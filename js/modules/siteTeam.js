@@ -1,3 +1,4 @@
+import { showLoadError } from '../ui/states.js';
 import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from './shell.js';
 import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
@@ -28,7 +29,7 @@ async function loadTeam() {
         render();
     } catch (error) {
         const list = el('team-mod-list');
-        if (list) list.innerHTML = `<p class="form-hint">${escapeHTML(error.message)}</p>`;
+        showLoadError(list,()=>userErrorMessage(error),loadTeam,{staleSelector:'.team-list-row'});
     } finally { finishLoading(); }
 }
 

@@ -91,3 +91,15 @@ test('overlay and confirm dialog styles live in one sheet with correct stacking'
  assert.doesNotMatch(components,/\.confirm-dialog-footer/);
  assert.doesNotMatch(modules,/\.vx-drawer-footer:has\(\[data-more\]\)/);
 });
+
+test('retry states keep stale business data and never display raw server messages',()=>{
+ const states=read('js/ui/states.js');
+ assert.match(states,/staleSelector/);
+ assert.match(states,/textContent/);
+ assert.match(states,/setButtonState\(button,'loading'\)/);
+ for(const name of ['admin','subscriptions','siteTeam','consoleChat','news']){
+  const src=read('js/modules/'+name+'.js');
+  assert.match(src,/showLoadError\(/,name);
+ }
+ assert.doesNotMatch(read('js/modules/siteTeam.js'),/escapeHTML\(error\.message\)/);
+});

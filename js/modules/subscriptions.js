@@ -1,3 +1,4 @@
+import { showLoadError } from '../ui/states.js';
 import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from './shell.js';
 import { beginPanelLoading, skeletonListItem, skeletonChatMessage, setButtonLoading } from '../utils/loading.js';
@@ -122,7 +123,7 @@ async function loadSubscriptions() {
     } catch (error) {
         finishLoading();
         console.error('[CLIENT] Error loading subscriptions:', error);
-        container.innerHTML = `<p class="form-hint dept-list-message" data-i18n="subs.load_error">${__('subs.load_error')}</p>`;
+        showLoadError(container,()=>__('subs.load_error'),loadSubscriptions,{staleSelector:'.dept-user-row'});
     } finally {
         finishLoading();
         setButtonLoading(button,false);

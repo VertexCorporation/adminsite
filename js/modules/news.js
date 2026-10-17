@@ -1,3 +1,4 @@
+import { showLoadError } from '../ui/states.js';
 import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from './shell.js';
 import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
@@ -119,7 +120,7 @@ export function listenForArticles() {
     }, error => {
         finishLoading();
         console.error("[CLIENT] Error listening for article updates:", error);
-        showToast(() => __('news.load_error'), 'error');
+        showLoadError(dom.articlesListContainer,()=>__('news.load_error'),listenForArticles,{staleSelector:'.article-item'});
     });
 }
 

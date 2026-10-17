@@ -1,3 +1,4 @@
+import { showLoadError } from '../ui/states.js';
 import { icon } from '../utils/icons.js';
 import { confirmDialog } from './shell.js';
 import { displayDepartmentName } from '../utils/departments.js';
@@ -152,7 +153,7 @@ async function loadDepartmentUsers() {
     } catch (error) {
         finishLoading();
         console.error('[CLIENT] Error loading department users:', error);
-        container.innerHTML = `<div class="state-block"><p data-i18n="dept.load_error">${__('dept.load_error')}</p><button type="button" class="chrome-btn-outline" data-i18n="common.retry">${__('common.retry')}</button></div>`;container.querySelector('button').onclick=loadDepartmentUsers;
+        showLoadError(container,()=>__('dept.load_error'),loadDepartmentUsers,{staleSelector:'.dept-user-row'});
     } finally {
         finishLoading();
         setButtonLoading(button,false);
