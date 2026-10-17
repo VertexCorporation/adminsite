@@ -17,3 +17,11 @@
 @media (prefers-reduced-motion: reduce) {
     .scroll-fog,.scroll-fog-x { transition: none; }
 }
+
+/* Horizontal scroll and vertical scroll can coincide in a large table. */
+.scroll-fog.scroll-fog-x {
+    mask-image:
+        linear-gradient(to right,transparent,#000 var(--fog-left),#000 calc(100% - var(--fog-right)),transparent),
+        linear-gradient(to bottom,transparent,#000 var(--fog-top),#000 calc(100% - var(--fog-bottom)),transparent);
+    mask-composite: intersect;
+}

@@ -248,3 +248,8 @@ input[type="checkbox"]:checked::after { opacity: 1; transform: rotate(-45deg) sc
 @media (prefers-reduced-motion: reduce) {
     input[type="checkbox"], input[type="checkbox"]::after { transition: none; }
 }
+
+/* Loading, success and failure affordances remain dimensionally stable. */
+:where(button).button-pending { cursor: progress; }
+:where(button)[data-state="success"] { border-color: var(--status-success); }
+:where(button)[data-state="error"] { border-color: var(--status-error); }
