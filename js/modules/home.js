@@ -146,6 +146,33 @@ function addModuleCards(target, t) {
     if (!grid.children.length) paragraph(target, t.noModules, 'home-muted');
     else target.append(grid);
 }
+// Concise orientation, not a task tracker. Tasks remain in the team's own system.
+const DEPARTMENT_GUIDANCE = {
+    tr: {
+        Core: 'Organizasyonun genel koordinasyonu, kararların takibi ve departmanlar arası uyum.',
+        Senatus: 'Yönetişim, toplantı kararları ve kurumsal süreçlerin takibi.',
+        Tensor: 'Yapay zekâ, mühendislik ve teknik geliştirme süreçlerine katkı.',
+        Curia: 'Kurumsal süreçlerin, belgelerin ve düzenlemelerin koordinasyonu.',
+        Pulse: 'İletişim ve topluluk çalışmalarının planlanması.',
+        Chroma: 'Tasarım, içerik ve görsel iletişim çalışmalarının yürütülmesi.',
+        Catalyst: 'İş birlikleri ve büyüme fırsatlarının değerlendirilmesi.',
+        Envoy: 'Temsilcilik ve dış ilişkiler çalışmalarının koordinasyonu.',
+        Aero: 'Etkinlik ve organizasyon hazırlıklarına destek.',
+        Array: 'Veri, planlama ve ekipler arası operasyon süreçlerine katkı.'
+    },
+    en: {
+        Core: 'Coordinate the organization, follow up on decisions, and align departments.',
+        Senatus: 'Follow governance, meeting decisions, and organizational processes.',
+        Tensor: 'Contribute to engineering, AI, and technical development.',
+        Curia: 'Coordinate internal processes, documents, and organizational policies.',
+        Pulse: 'Plan communication and community activities.',
+        Chroma: 'Develop design, content, and visual communication.',
+        Catalyst: 'Explore partnerships and opportunities for growth.',
+        Envoy: 'Coordinate ambassador and external relations activities.',
+        Aero: 'Support event and organizational preparations.',
+        Array: 'Support data, planning, and cross-team operations.'
+    }
+};
 function renderHome() {
     const root = document.getElementById('home-root');
     if (!root) return;
@@ -173,6 +200,14 @@ function renderHome() {
         identity.append(department);
     }
     heroCopy.append(identity);
+    if (context.departments.length) {
+        const guidance = DEPARTMENT_GUIDANCE[getLang()==='tr'?'tr':'en'];
+        const details=context.departments.map(name=>{
+            const description=guidance[name];
+            return description?displayDepartmentName(name)+': '+description:null;
+        }).filter(Boolean);
+        if(details.length)paragraph(heroCopy, details.join(' '), 'home-start-note');
+    }
     paragraph(heroCopy, t.howStart, 'home-start-note');
     hero.append(heroCopy);
     // A lightweight, decorative motion study: no logo, canvas loop or runtime animation.
