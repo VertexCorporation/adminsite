@@ -227,6 +227,11 @@ function openContributorEditor(contributor) {
             if(drawer.classList.contains('is-open'))closeDrawer();
             return;
         }
+        // datetime-local values are in the operator's timezone; preserve the
+        // selected instant when saving to the server.
+        for(const field of ['applicationDate','interviewDate']){
+            if(updates[field])updates[field]=new Date(updates[field]).toISOString();
+        }
         try{
             const {data}=await updateContributorApplicationFn({contributorId:contributor.id,...updates});
             if(data?.success!==true)throw new Error('Application update not confirmed.');
