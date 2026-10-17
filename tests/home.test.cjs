@@ -28,7 +28,7 @@ test('home links obey effective module permissions and existing navigation', () 
 test('home preserves router history and mobile access', () => {
   const shell = read('js/modules/shell.js');
   assert.match(shell, /route.panel === 'home'/);
-  assert.match(shell, /navPanel:'home'/);
+  assert.match(shell, /panel:'home'/);
   assert.match(shell, /\['home','contributors','models'/);
   assert.match(read('css/home.css'), /@media\(max-width:760px\)/);
 });
