@@ -368,10 +368,13 @@
                             <button class="filter-chip" data-filter="interview" onclick="filterContributors('interview')" data-i18n="contributors.filter.interview">Mülakatlılar</button>
                         </div>
 
-                        <!-- Arama Kutusu -->
-                        <div class="search-input-field">
-                            <i class=" search-icon" data-icon="search"></i>
-                            <input type="text" id="contributor-search" data-i18n-placeholder="contributors.search" placeholder="Listede isim, e-posta veya biyografi ara..." oninput="searchContributorsLocal()">
+                        <!-- Applicant search and manual entry. Add is restricted to panel writers. -->
+                        <div class="contributor-search-toolbar">
+                            <div class="search-input-field">
+                                <i class=" search-icon" data-icon="search"></i>
+                                <input type="text" id="contributor-search" data-i18n-placeholder="contributors.search" placeholder="Listede isim, e-posta veya biyografi ara..." oninput="searchContributorsLocal()">
+                            </div>
+                            <button type="button" id="add-manual-application" class="chrome-btn-outline contributor-add-btn" aria-label="Manuel başvuru ekle" title="Manuel başvuru ekle" data-i18n-aria-label="manual_application.add" data-i18n-title="manual_application.add" hidden><i data-icon="plus"></i></button>
                         </div>
 
                         <div id="contributors-list-container" class="scrollable-list-box">
