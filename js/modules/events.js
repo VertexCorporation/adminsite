@@ -180,6 +180,10 @@ export function initEventsModule() {
  document.getElementById('events-refresh').onclick=()=>refresh().catch(fail);
  const uploadStatus=document.createElement('p');uploadStatus.className='form-hint';uploadStatus.setAttribute('aria-live','polite');
  document.getElementById('event-gallery-upload').closest('.form-group-field')?.append(uploadStatus);
+ const uploadPreviews=document.createElement('div');uploadPreviews.className='ui-event-grid';
+ const uploadRetry=document.createElement('button');uploadRetry.type='button';uploadRetry.className='chrome-btn-outline';
+ uploadRetry.textContent=tr('Yüklemeyi yeniden dene','Retry upload');uploadRetry.hidden=true;
+ document.getElementById('event-gallery-upload').closest('.form-group-field')?.append(uploadPreviews,uploadRetry);
  const upload=async (file,onProgress=()=>{})=>{
   if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error(tr('JPEG, PNG veya WebP kullanın.','Use JPEG, PNG or WebP.'));
   if(file.size>10*1024*1024)throw Error(tr('En fazla 10 MB','Maximum 10 MB'));
@@ -197,17 +201,25 @@ export function initEventsModule() {
  };
  const uploadFiles=async(files,cover=false)=>{
   const coverInput=document.getElementById('event-upload'),galleryInput=document.getElementById('event-gallery-upload');
-  coverInput.disabled=galleryInput.disabled=true;
+  coverInput.disabled=galleryInput.disabled=true;uploadRetry.hidden=true;
+  let index=0;
   try{
-   for(let index=0;index<files.length;index++){
+   for(;index<files.length;index++){
     const file=files[index];
     const url=await upload(file,p=>{uploadStatus.textContent=`${index+1}/${files.length} · ${file.name} · %${p}`;});
-    if(cover)form.elements.cover.value=url;
+    if(cover){form.elements.cover.value=url;uploadPreviews.replaceChildren();}
     else form.elements.images.value=[form.elements.images.value.trim(),url].filter(Boolean).join('\n');
+    const image=document.createElement('img');image.src=url;image.alt=file.name;image.loading='lazy';
+    image.className='ui-event-thumb';uploadPreviews.append(image);
     markDirty();
    }
    uploadStatus.textContent=tr('Görseller yüklendi. Değişiklikleri kaydet.','Images uploaded. Save your changes.');
-  }catch(error){uploadStatus.textContent=tr('Yükleme başarısız. Yeniden deneyin.','Upload failed. Please retry.');fail(error);}
+  }catch(error){
+   uploadStatus.textContent=tr('Yükleme başarısız. Yeniden deneyin.','Upload failed. Please retry.');
+   const pending=files.slice(index);uploadRetry.hidden=false;
+   uploadRetry.onclick=()=>void uploadFiles(pending,cover);
+   fail(error);
+  }
   finally{coverInput.disabled=galleryInput.disabled=false;coverInput.value='';galleryInput.value='';}
  };
  document.getElementById('event-upload').onchange=e=>{if(e.target.files?.length)void uploadFiles([...e.target.files],true);};
