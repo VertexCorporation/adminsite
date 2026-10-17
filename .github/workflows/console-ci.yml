@@ -1,0 +1,45 @@
+name: Console UI CI and release assets
+on:
+  push:
+    branches:
+      - fix/console-operations-20261017
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: console-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Build immutable source-aligned release
+        run: node scripts/release.cjs
+      - name: Check JavaScript regression suite
+        run: npm test
+      - name: Audit translations
+        run: npm run audit:i18n
+      - name: Install browser runtime
+        run: npx playwright install --with-deps chromium
+      - name: Run browser regression suite
+        run: npm run test:browser
+      - name: Commit verified release assets to feature branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/console-operations-20261017'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html assets/releases/
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: refresh verified console release assets"
+            git push
+          fi
