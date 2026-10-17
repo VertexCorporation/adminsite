@@ -1,3 +1,4 @@
+import { setButtonLoading } from '../utils/loading.js';
 import { showLoadError } from '../ui/states.js';
 import { crossfade } from '../ui/transition.js';
 import { displayDepartmentName } from '../utils/departments.js';
@@ -229,9 +230,9 @@ function renderMessages(messages, channel, animate = true) {
 async function sendMessage() {
     const input = el('chat-input');
     const text = input.value.trim();
-    if (!text || !currentChannelId) return;
+    if (!text || !currentChannelId || el('chat-send').disabled) return;
     const asTask = el('chat-as-task').checked;
-    el('chat-send').disabled = true;
+    setButtonLoading(el('chat-send'),true);
     input.disabled = true;
     try {
         await postConsoleChatMessageFn({ channelId: currentChannelId, text, asTask });
@@ -241,7 +242,7 @@ async function sendMessage() {
     } catch (error) {
         showToast(() => userErrorMessage(error), 'error');
     } finally {
-        el('chat-send').disabled = false;
+        setButtonLoading(el('chat-send'),false);
         input.disabled = false;
         input.focus();
     }
@@ -446,26 +447,24 @@ export function initConsoleChat() {
         const del = e.target.closest('.chat-msg-del');
         if (del && !del.disabled) {
             if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('chat.msg_delete_confirm')}))) return;
-            del.disabled = true;
+            setButtonLoading(del,true);
             deleteConsoleChatMessageFn({ channelId: currentChannelId, messageId: del.dataset.del })
                 .then(() => loadMessages(false))
                 .catch((error) => {
                     showToast(() => userErrorMessage(error), 'error');
-                    del.disabled = false;
-                });
+                }).finally(()=>setButtonLoading(del,false));
             return;
         }
         const btn = e.target.closest('.chat-task-toggle-btn');
         if (!btn || btn.disabled) return;
-        btn.disabled = true;
+        setButtonLoading(btn,true);
         updateConsoleChatTaskStatusFn({
             channelId: currentChannelId,
             messageId: btn.dataset.task,
             status: btn.dataset.status
         }).then(() => loadMessages()).catch((error) => {
             showToast(() => userErrorMessage(error), 'error');
-            btn.disabled = false;
-        });
+        }).finally(()=>setButtonLoading(btn,false));
     });
     el('chat-form-delete').addEventListener('click', deleteCurrentChannel);
     el('chat-form-cancel').addEventListener('click', closeChannelForm);
