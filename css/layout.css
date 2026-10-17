@@ -237,6 +237,12 @@
 .col-span-8 { grid-column: span 8; }
 .col-span-12 { grid-column: span 12; }
 
+/* When the honor roll is the only visible card in its grid, use all available width.
+   Access-control hiding uses inline display:none, so check both hidden mechanisms. */
+.grid-layout:not(:has(> .panel-card:not(#team-log-manager):not([hidden]):not([style*="display: none"]))) > #team-log-manager:not([hidden]) {
+    grid-column: 1 / -1;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1023px) {
     :root { --content-pad-x: 20px; }
