@@ -98,7 +98,7 @@ for(const width of [360,390,768,1024,1440,1920]){
 note('8 navigation tabs, light/dark, 6 viewport widths, popover bounds');
 await page.setViewportSize({width:1440,height:900});
 await selectTab('system');
-await page.evaluate(()=>document.dispatchEvent(new CustomEvent('vertex:system-page',{detail:'verification'})));
+await page.evaluate(()=>document.dispatchEvent(new CustomEvent('vertex:system-section',{detail:'verification'})));
 await page.waitForSelector('#team-mod-list .team-list-row');
 assert.equal(await page.locator('#team-mod-list .team-list-name').first().innerText(),'Example Honoree');
 note('Honor roll reads managed records instead of legacy moderator list');
