@@ -11,9 +11,9 @@
 //  - Mustafa Çakı yönetici profili ve Weekly Stars yönetimi aynı alanda bulunur
 
 import {
-    listTeamCardsFn,
-    setTeamCardFn,
-    deleteTeamCardFn,
+    listSiteTeamFn,
+    setSiteTeamEntryFn,
+    deleteSiteTeamEntryFn,
     getTeamProfileFn,
     setTeamProfileFn,
     getWeeklyStarsFn,
@@ -24,14 +24,14 @@ import { icon } from '../utils/icons.js';
 import { openDrawer, closeDrawer, confirmDialog } from './shell.js';
 import { createLoadingController, setButtonLoading, skeletonRows } from '../utils/loading.js';
 import { isPanelAdmin } from './roles.js';
+import { MAX_TEAM_CARDS, BOARD_POSITIONS, normalizeSiteTeamCard, createSiteTeamPayload } from '../utils/teamCards.mjs';
 import { getISOWeek } from '../utils/isoWeek.mjs';
 
-export const POSITIONS = Object.freeze([
-    'CEO', 'CTO', 'COO', 'CFO', 'CMO', 'CDO', 'CHRO', 'CCO', 'CLO', 'CITO'
-]);
+export const POSITIONS = BOARD_POSITIONS;
 
 let teamCards = [];
 let cardsLoading = false;
+let cardsLoadError = null;
 
 /**
  * Ekip kartları listesini Firestore'dan çeker ve ekrana çizer.
@@ -45,10 +45,13 @@ export async function loadTeamCards() {
     const emptyEl = document.getElementById('team-cards-empty');
 
     try {
-        const { data } = await listTeamCardsFn({});
-        teamCards = Array.isArray(data?.cards) ? data.cards : [];
+        const { data } = await listSiteTeamFn({ manage: true });
+        if (!Array.isArray(data?.cards)) throw new Error('Invalid team card response');
+        teamCards = data.cards.map(normalizeSiteTeamCard);
+        cardsLoadError = null;
     } catch (err) {
-        console.warn('[TEAM_CARDS] Could not fetch cards from backend, using current state:', err);
+        cardsLoadError = err;
+        console.warn('[TEAM_CARDS] Could not fetch cards from backend, keeping previous data:', err);
     } finally {
         cardsLoading = false;
     }
@@ -56,7 +59,7 @@ export async function loadTeamCards() {
     renderTeamCardsList();
 
     if (addBtn) {
-        const isFull = teamCards.length >= 10;
+        const isFull = teamCards.length >= MAX_TEAM_CARDS;
         addBtn.disabled = isFull;
         addBtn.title = isFull ? __('team_cards.all_filled') : __('team_cards.add_btn');
     }
@@ -67,16 +70,18 @@ function renderTeamCardsList() {
     const emptyEl = document.getElementById('team-cards-empty');
     if (!listEl) return;
 
+    const errorNotice = cardsLoadError ? `<div class="state-block" role="alert">${__('team_cards.fetch_error')}: ${escapeHTML(userErrorMessage(cardsLoadError))} <button type="button" class="chrome-btn-outline" data-retry-team-cards>${__('team_cards.retry')}</button></div>` : '';
     if (!teamCards.length) {
-        listEl.innerHTML = '';
-        if (emptyEl) emptyEl.hidden = false;
+        listEl.innerHTML = errorNotice;
+        if (emptyEl) emptyEl.hidden = Boolean(cardsLoadError);
+        listEl.querySelector('[data-retry-team-cards]')?.addEventListener('click', loadTeamCards);
         return;
     }
 
     if (emptyEl) emptyEl.hidden = true;
     listEl.className = 'team-list';
 
-    listEl.innerHTML = teamCards.map(card => {
+    listEl.innerHTML = errorNotice + teamCards.map(card => {
         const currentLang = getLang() || 'tr';
         const localizedTitle = card.titles?.[currentLang] || card.position;
         const avatarSrc = card.photoUrl
@@ -106,6 +111,8 @@ function renderTeamCardsList() {
         </div>`;
     }).join('');
 
+    listEl.querySelector('[data-retry-team-cards]')?.addEventListener('click', loadTeamCards);
+
     // Eylemleri bağla
     listEl.querySelectorAll('[data-edit-card]').forEach(btn => {
         btn.onclick = () => {
@@ -127,14 +134,14 @@ function renderTeamCardsList() {
             if (!confirmed) return;
 
             try {
-                await deleteTeamCardFn({ id: cardId });
+                await deleteSiteTeamEntryFn({ kind: 'card', id: cardId });
                 teamCards = teamCards.filter(c => c.id !== cardId);
                 renderTeamCardsList();
                 showToast(() => __('team_cards.deleted'), 'success');
                 const addBtn = document.getElementById('add-team-card-btn');
                 if (addBtn) {
-                    addBtn.disabled = teamCards.length >= 10;
-                    addBtn.title = teamCards.length >= 10 ? __('team_cards.all_filled') : __('team_cards.add_btn');
+                    addBtn.disabled = teamCards.length >= MAX_TEAM_CARDS;
+                    addBtn.title = teamCards.length >= MAX_TEAM_CARDS ? __('team_cards.all_filled') : __('team_cards.add_btn');
                 }
             } catch (err) {
                 showToast(() => userErrorMessage(err), 'error');
@@ -195,18 +202,33 @@ export function openTeamCardDrawer(cardToEdit = null) {
                 <select id="team-card-position" required>
                     <option value="" disabled ${!isEdit ? 'selected' : ''}>${__('team_cards.position_select')}</option>
                     ${POSITIONS.map(pos => {
-                        const occupiedCard = teamCards.find(c => c.position === pos && c.id !== cardToEdit?.id);
-                        const isSelected = cardToEdit?.position === pos;
+                        const occupiedCard = teamCards.find(c => c.boardPosition === pos && c.id !== cardToEdit?.id);
+                        const isSelected = cardToEdit?.boardPosition === pos;
                         const disabledAttr = occupiedCard ? 'disabled' : '';
                         const labelSuffix = occupiedCard ? ` (${__('team_cards.position_occupied')} - ${occupiedCard.name})` : '';
                         return `<option value="${pos}" ${isSelected ? 'selected' : ''} ${disabledAttr}>${pos}${labelSuffix}</option>`;
                     }).join('')}
+                    <option value="custom" ${isEdit && !cardToEdit?.boardPosition ? 'selected' : ''}>${__('team_cards.custom_position')}</option>
                 </select>
+            </div>
+            <div class="form-grid two-col">
+                <div class="form-group-field">
+                    <label for="team-card-title-tr">${__('team_cards.title_tr')}</label>
+                    <input type="text" id="team-card-title-tr" maxlength="160" required value="${escapeHTML(cardToEdit?.positions?.tr || '')}">
+                </div>
+                <div class="form-group-field">
+                    <label for="team-card-title-en">${__('team_cards.title_en')}</label>
+                    <input type="text" id="team-card-title-en" maxlength="160" required value="${escapeHTML(cardToEdit?.positions?.en || '')}">
+                </div>
+            </div>
+            <div class="form-group-field">
+                <label for="team-card-order">${__('team_cards.order_label')}</label>
+                <input type="number" id="team-card-order" min="1" max="1000" required value="${escapeHTML(cardToEdit?.order ?? teamCards.length + 1)}">
             </div>
 
             <!-- Sosyal Medya Bağlantıları -->
             <div class="form-section">
-                <div class="form-section-title">Sosyal Ağ Bağlantıları</div>
+                <div class="form-section-title">${__('team_cards.social_links')}</div>
                 <div class="form-group-field">
                     <label for="team-card-linkedin">${__('team_cards.linkedin_label')}</label>
                     <input type="url" id="team-card-linkedin" placeholder="https://www.linkedin.com/in/..." value="${escapeHTML(cardToEdit?.socialLinks?.linkedin || '')}">
@@ -218,6 +240,15 @@ export function openTeamCardDrawer(cardToEdit = null) {
             </div>
         </form>
     `;
+
+    const positionSelect = drawerBody.querySelector('#team-card-position');
+    const titles = [drawerBody.querySelector('#team-card-title-tr'), drawerBody.querySelector('#team-card-title-en')];
+    const syncPosition = () => {
+        const isBoard = POSITIONS.includes(positionSelect.value);
+        titles.forEach(input => { input.disabled = isBoard; if (isBoard) input.value = positionSelect.value; });
+    };
+    positionSelect.addEventListener('change', syncPosition);
+    syncPosition();
 
     // Fotoğraf seçimi ve validasyonu
     const photoInput = drawerBody.querySelector('#team-card-photo-input');
@@ -267,6 +298,9 @@ export function openTeamCardDrawer(cardToEdit = null) {
         const position = drawerBody.querySelector('#team-card-position').value;
         const linkedin = drawerBody.querySelector('#team-card-linkedin').value.trim();
         const instagram = drawerBody.querySelector('#team-card-instagram').value.trim();
+        const titleTr = drawerBody.querySelector('#team-card-title-tr').value.trim();
+        const titleEn = drawerBody.querySelector('#team-card-title-en').value.trim();
+        const order = Number(drawerBody.querySelector('#team-card-order').value);
 
         if (!name || !position) return;
 
@@ -275,18 +309,20 @@ export function openTeamCardDrawer(cardToEdit = null) {
         setButtonLoading(submitBtn, true);
 
         try {
-            const payload = {
-                id: cardToEdit?.id,
-                name,
-                position,
-                photoUrl: selectedPhoto,
-                socialLinks: {
-                    linkedin: linkedin || undefined,
-                    instagram: instagram || undefined
-                }
-            };
-
-            await setTeamCardFn(payload);
+            let imageUrl = selectedPhoto;
+            if (selectedPhoto.startsWith('data:')) {
+                const photo = selectedPhoto.match(/^data:(image\\/(?:jpeg|png|webp));base64,([a-z0-9+/=]+)$/i);
+                if (!photo) throw new Error(__('team_cards.photo_type_error'));
+                const result = await setSiteTeamEntryFn({ kind: 'photo', imageData: photo[2], contentType: photo[1] });
+                imageUrl = result.data?.imageUrl || '';
+            }
+            if (!imageUrl || !imageUrl.startsWith('https://')) {
+                photoError.textContent = __('team_cards.photo_required');
+                photoError.hidden = false;
+                return;
+            }
+            const payload = createSiteTeamPayload({ existing: cardToEdit, name, position, titleTr, titleEn, imageUrl, order, linkedin, instagram });
+            await setSiteTeamEntryFn(payload);
             closeDrawer();
             showToast(() => __('team_cards.saved'), 'success');
             await loadTeamCards();
