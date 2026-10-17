@@ -59,6 +59,9 @@ await page.route('**/*',async route=>{
 });
 
 console.log("Starting page");await page.goto(`http://127.0.0.1:${server.address().port}`,{waitUntil:"domcontentloaded",timeout:15000});console.log("Page loaded");
+// Contributors are loaded lazily when their workspace becomes active.
+await page.waitForFunction(()=>document.getElementById('admin-panel')?.style.display==='grid');
+await page.locator('[data-target="tab-contributors"]').click();
 try { await page.waitForSelector('.certificate-manage-btn'); }
 catch(error) {
  console.error('BROWSER STARTUP DIAGNOSTICS',JSON.stringify({
