@@ -33,3 +33,5 @@
 .ui-news-history-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border:1px solid var(--border-subtle,rgba(120,120,120,.24));border-radius:10px;min-width:0;}
 .ui-news-history-row span{overflow-wrap:anywhere;font-size:.875rem;}
 @media(max-width:600px){.ui-news-history-row{align-items:flex-start;flex-direction:column;}}
+
+.chat-mentions{font-size:.72rem;padding:2px 6px;border:1px solid var(--border-subtle,rgba(120,120,120,.32));border-radius:999px;font-weight:600;}
