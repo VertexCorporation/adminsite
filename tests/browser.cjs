@@ -9,6 +9,7 @@ const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=tru
 
 let failMembership=false,failAdmin=false;
 let siteCards=[{id:'board-1',kind:'card',name:'Example Director',positions:{en:'CEO',tr:'CEO'},imageUrl:'https://static.example.invalid/team.webp',order:1,links:[{label:'linkedin',url:'https://www.linkedin.com/in/example'}]}];
+let backupFixture={status:'healthy',healthy:true,configured:true,checkedAt:'2026-10-17T12:00:00Z',lastBackupDate:'2026-10-17T11:00:00Z',sizeBytes:1024,restoreStatus:'unknown',evidence:{verified:false}};
 let honors=[{id:'honor-1',name:'Example Honoree'}];let adminRoster=[{uid:'admin',email:'admin@example.invalid'},{uid:'other-admin',email:'other@example.invalid'}];
 const person={membership:{status:'matched',uid:'auth-person',isVertex:true},id:'person',name:'Example Participant',email:'person@example.invalid',language:'en',hasVerified:false,createdAt:{_seconds:1767272400},department:'Core',interviewDate:'2026-10-10',about:'Local test fixture'};
 const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet'},constancy:{en:'Constancy',tr:'Metanet'},nobility:{en:'Nobility',tr:'Azamet'},majesty:{en:'Majesty',tr:'Asalet'}};
@@ -37,6 +38,7 @@ await page.route('**/*',async route=>{
   if(name==='togglecontributorverification'&&failVerify)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture verification unavailable'}})});
   let result={};
   if(name==='getserverstatus')result={isUnderMaintenance:maintenanceState};
+  if(name==='getbackuphealthstatus')result=backupFixture;
   if(name==='setserverstatus'){maintenanceState=route.request().postDataJSON().data.maintenanceEnabled;result={success:true};}
   if(name==='togglevertexstatus'){if(failMembership)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});const data=route.request().postDataJSON().data;const next=typeof data.expectedStatus==='boolean'?!data.expectedStatus:true;if(data.contributorId){const target=(people||[person]).find(p=>p.id===data.contributorId);if(target)target.membership.isVertex=next;}result={isVertex:next};}
   if(name==='savedepartmentpermissions' && failPermissionSave)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture permission rejection'}})});
@@ -97,6 +99,14 @@ for(const width of [360,390,768,1024,1440,1920]){
 note('8 navigation tabs, light/dark, 6 viewport widths, popover bounds');
 await page.setViewportSize({width:1440,height:900});
 await selectTab('system');
+await page.evaluate(()=>document.dispatchEvent(new CustomEvent('vertex:system-section',{detail:'server'})));
+await page.locator('#refresh-backup-btn').click();
+await page.waitForFunction(()=>/Doğrulanamıyor|Cannot Be Verified/.test(document.querySelector('#gcs-backup-badge')?.textContent||''));
+backupFixture={...backupFixture,evidence:{verified:true}};
+await page.locator('#refresh-backup-btn').click();
+await page.waitForFunction(()=>/Sağlıklı|Healthy/.test(document.querySelector('#gcs-backup-badge')?.textContent||''));
+note('Backup health requires positive completion evidence, not old endpoint flags');
+await page.evaluate(()=>document.dispatchEvent(new CustomEvent('vertex:system-section',{detail:'verification'})));
 await page.evaluate(()=>document.dispatchEvent(new CustomEvent('vertex:system-page',{detail:'verification'})));
 await page.waitForSelector('#team-mod-list .team-list-row');
 assert.equal(await page.locator('#team-mod-list .team-list-name').first().innerText(),'Example Honoree');

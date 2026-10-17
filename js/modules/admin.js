@@ -285,7 +285,7 @@ export async function loadBackupHealthStatus() {
         };
         const fields = [];
         fields.push(__('system.backup_checked') + ' ' + date(data.checkedAt));
-        if (data.lastBackupDate) fields.push(__('system.backup_last_success') + ' ' + date(data.lastBackupDate));
+        if (data.lastBackupDate) fields.push(__(verified ? 'system.backup_last_success' : 'system.backup_last_observed') + ' ' + date(data.lastBackupDate));
         if (Number.isFinite(data.sizeBytes)) fields.push(__('system.backup_size') + ' ' + Math.round(data.sizeBytes / 1024) + ' KB');
         fields.push(__('system.backup_restore') + ' ' + (data.restoreStatus === 'verified' ? __('system.backup_restore_verified') : __('system.backup_restore_unknown')));
         if (status === 'unverifiable' || status === 'empty' || status === 'unconfigured')
