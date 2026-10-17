@@ -11,7 +11,7 @@ let verifyUserEmailFn;
 let updateContributorApplicationFn;
 let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
 let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn, previewBulkUserSubscriptionsFn;
-let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn;
+let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn, markConsoleChatReadFn;
 let getPanelPermissionsFn;
 let listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn;
 
@@ -133,6 +133,7 @@ function initFirebase(firebaseConfig) {
     deleteConsoleChatMessageFn = callable('deleteConsoleChatMessage');
     deleteConsoleChatChannelFn = callable('deleteConsoleChatChannel');
     listConsoleChatDirectoryFn = callable('listConsoleChatDirectory');
+    markConsoleChatReadFn = callable('markConsoleChatRead');
     listSiteTeamFn = callable('listSiteTeam');
     setSiteTeamEntryFn = callable('setSiteTeamEntry');
     deleteSiteTeamEntryFn = callable('deleteSiteTeamEntry');
@@ -190,6 +191,7 @@ export {
     deleteConsoleChatMessageFn,
     deleteConsoleChatChannelFn,
     listConsoleChatDirectoryFn,
+    markConsoleChatReadFn,
     listSiteTeamFn,
     setSiteTeamEntryFn,
     deleteSiteTeamEntryFn,
