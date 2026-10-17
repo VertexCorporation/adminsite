@@ -60,3 +60,28 @@
     :where(.panel-card) { padding: var(--space-4); }
     :where(.panel-card) :is(.form-hint,.field-help) { overflow-wrap: anywhere; }
 }
+
+
+/* Responsive panel contract shared across management modules. */
+:where(.grid-layout,.panel-card,.form-stack,.form-group-field,.form-grid,.toolbar) > * {
+    min-width:0;
+}
+:where(.panel-card,.vx-drawer-body,.vx-modal-body) :is(table,pre,code) {
+    max-width:100%;
+}
+:where(.vx-drawer-body,.vx-modal-body,.panel-card) :is(.form-hint,.field-error-msg,.state-block) {
+    overflow-wrap:anywhere;
+    line-height:var(--lh-normal);
+}
+:where(.panel-card,.vx-drawer-body,.vx-modal-body) .state-block h4 {
+    font-size:var(--fs-component-title);
+}
+:where(.panel-card,.vx-drawer-body,.vx-modal-body) .state-block p {
+    font-size:var(--fs-secondary);
+}
+@media (max-width:430px) {
+    :where(.panel-card) { padding:var(--space-3); }
+    :where(.vx-drawer-body,.vx-modal-body) { padding:var(--space-3); }
+    :where(.form-submit-row) { flex-wrap:wrap; }
+    :where(.form-submit-row) > button { flex:1 1 140px; min-height:var(--touch-target); }
+}

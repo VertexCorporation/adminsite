@@ -40,3 +40,16 @@ test('action state module supports loading, success and failure',()=>{
  for(const state of ['idle','loading','success','error'])assert.ok(src.includes("'"+state+"'"));
  assert.match(read('js/utils/loading.js'),/setButtonState\(btn/);
 });
+
+test('navigation and scroll enhancements preserve all module families',()=>{
+ const main=read('js/main.js');
+ assert.match(main,/initUiFeedback\(\)/);
+ const nav=read('js/modules/shell.js');
+ assert.match(nav,/lockScroll\('navigation'\)/);
+ assert.match(nav,/unlockScroll\('navigation'\)/);
+ assert.match(nav,/animateViewEntry\(target\)/);
+ const scroller=read('js/utils/scrollEdges.js');
+ for(const selector of ['chat-messages','people-table-wrap','dept-perms-table','sidebar-scroll','vx-modal-body'])
+    assert.ok(scroller.includes(selector),selector);
+ assert.match(read('css/ui/scroll.css'),/-webkit-mask-composite:source-in/);
+});

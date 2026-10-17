@@ -48,3 +48,29 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
     running.set(container, cancel);
     Promise.allSettled([outgoing.finished,...incoming.map(anim => anim.finished)]).then(cleanup);
 }
+
+
+// For navigation panels, keep the *real* DOM and its focus/listeners intact.
+// Crossfade is reserved for replaced content; navigation uses a cheap native
+// opacity entrance after the old panel becomes hidden.
+const viewAnimations = new WeakMap();
+export function animateViewEntry(view) {
+    if (!view?.isConnected || reducedMotion()) return;
+    viewAnimations.get(view)?.cancel();
+    const animation = view.animate(
+        [{opacity:0.35, transform:'translateY(4px)'},{opacity:1, transform:'translateY(0)'}],
+        {duration:190, easing:'cubic-bezier(.2,.8,.2,1)'}
+    );
+    viewAnimations.set(view, animation);
+    animation.finished.catch(()=>{}).finally(()=>{
+        if (viewAnimations.get(view)===animation)viewAnimations.delete(view);
+    });
+}
+
+export function animateContent(container) {
+    if (!container?.isConnected || reducedMotion()) return;
+    // Animate a host rather than cloning controls or rewriting their values.
+    container.animate([{opacity:0.55},{opacity:1}], {
+        duration:180, easing:'cubic-bezier(.2,.8,.2,1)'
+    });
+}

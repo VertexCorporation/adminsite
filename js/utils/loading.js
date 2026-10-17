@@ -1,5 +1,5 @@
 import { escapeHTML, showToast } from './ui.js';
-import { crossfade } from '../ui/transition.js';
+import { crossfade, animateContent } from '../ui/transition.js';
 import { setButtonState } from '../ui/controls.js';
 import { icon } from './icons.js';
 // js/utils/loading.js
@@ -208,8 +208,9 @@ export function beginPanelLoading(container, rowFactory = skeletonListItem) {
         container.classList.remove('is-refreshing');
         if (shown) {
             if (container.querySelector('.skeleton')) container.innerHTML = current;
-            // Existing callers may have rendered their result before this callback.
-            // Do not replace that content or steal focus just to animate it.
+            else animateContent(container);
+        } else if (stale && container.innerHTML !== current) {
+            animateContent(container);
         }
     };
 }

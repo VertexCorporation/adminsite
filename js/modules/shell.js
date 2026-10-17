@@ -1,6 +1,7 @@
 import { showWorkspace } from './views.js';
 import { afterMotion } from '../ui/motion.js';
 import { lockScroll, unlockScroll } from '../ui/overlay.js';
+import { animateViewEntry } from '../ui/transition.js';
 // js/modules/shell.js
 //
 // Uygulama kabuğu ve yükseltilmiş yüzey altyapısı:
@@ -563,6 +564,7 @@ function initNavigation() {
         toggle?.setAttribute('aria-expanded', 'false');
         if (sidebar) sidebar.inert = mobile();
         sidebar?.removeAttribute('aria-modal'); sidebar?.removeAttribute('role');
+        unlockScroll('navigation');
         if (restore && mobileTrigger?.isConnected) mobileTrigger.focus({preventScroll:true});
     };
     const activateTab = button => {
@@ -571,6 +573,7 @@ function initNavigation() {
         const changed = !target.classList.contains('active');
         document.querySelectorAll('.tab-panel,.dock-btn').forEach(el => el.classList.remove('active'));
         target.classList.add('active'); button.classList.add('active');
+        if (changed) animateViewEntry(target);
 
         refreshNavigation();
         if(target.id==='tab-chat')document.dispatchEvent(new CustomEvent('vertex:workspace',{detail:{keys:['chat.channels']}}));
@@ -654,6 +657,7 @@ function initNavigation() {
     toggle?.addEventListener('click', () => {
         if (sidebar.classList.contains('open')) { closeSidebarDrawer(true); return; }
         mobileTrigger = document.activeElement;
+        lockScroll('navigation');
         sidebar.inert = false; sidebar.classList.add('open'); scrim.classList.add('is-open');
         document.querySelectorAll('.app-main,.app-header,.mobile-bottom-dock').forEach(el => {el.inert=true;});
         sidebar.setAttribute('role','dialog'); sidebar.setAttribute('aria-modal','true'); sidebar.setAttribute('aria-label',__('navgroup.workspace'));
@@ -745,9 +749,13 @@ export function initShell() {
    YÜZEN YÜZEY KAYIT YÖNETİMİ (tek seferde tek yüzey)
    ================================================================== */
 
-const openSurfaces = new Set();
-function registerSurface(id) { openSurfaces.add(id); }
-function unregisterSurface(id) { openSurfaces.delete(id); }
+const openSurfaces = new Map();
+function registerSurface(id) { openSurfaces.set(id, (openSurfaces.get(id) || 0) + 1); }
+function unregisterSurface(id) {
+    const count = openSurfaces.get(id) || 0;
+    if (count <= 1) openSurfaces.delete(id);
+    else openSurfaces.set(id, count - 1);
+}
 
 /** Açık yüzey var mı? */
 export function hasOpenSurface() { return openSurfaces.size > 0; }

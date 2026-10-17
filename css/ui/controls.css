@@ -257,3 +257,42 @@ input[type="checkbox"]:checked::after { opacity: 1; transform: rotate(-45deg) sc
 input[type="checkbox"][role="switch"]:checked::after {
     transform: translateX(14px); border: 0; background: var(--action-primary-text);
 }
+
+
+/* Extended shared form and action states: applies to all console modules. */
+:is(.chrome-btn-primary,.chrome-btn-accent,.chrome-btn-outline,.chrome-social-btn,.btn-refresh,.icon-action-btn,.icon-btn,.menu-item,.dock-btn,.filter-chip) {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+:is(.chrome-btn-primary,.chrome-btn-accent,.chrome-btn-outline,.btn-refresh,.icon-action-btn,.icon-btn,.menu-item,.dock-btn,.filter-chip):focus-visible {
+    outline: 2px solid var(--action-primary);
+    outline-offset: 2px;
+}
+:where(.panel-card,.vx-drawer,.vx-modal) :is(input:not([type="checkbox"]),select,textarea) {
+    max-width:100%; min-width:0; box-sizing:border-box;
+    accent-color:var(--action-primary);
+}
+:where(.panel-card,.vx-drawer,.vx-modal) :is(input,select,textarea):disabled {
+    cursor:not-allowed;
+    opacity:.62;
+}
+:where(.panel-card,.vx-drawer,.vx-modal) :is(input,select,textarea)[aria-invalid="true"] {
+    border-color:var(--status-error);
+    box-shadow:0 0 0 1px var(--status-error);
+}
+:where(.panel-card,.vx-drawer,.vx-modal) :is(label,legend) {
+    line-height:var(--lh-normal);
+}
+:is(.chrome-btn-primary,.chrome-btn-accent,.chrome-btn-outline,.btn-refresh,.icon-action-btn,.icon-btn,.menu-item,.dock-btn)[aria-expanded="true"] {
+    background:var(--bg-elevated);
+    border-color:var(--border-strong);
+}
+:is(.chrome-btn-primary,.chrome-btn-accent,.chrome-btn-outline,.btn-refresh,.icon-action-btn,.icon-btn,.menu-item,.dock-btn)[aria-busy="true"] {
+    cursor:progress;
+}
+:is(.menu-item,.icon-btn,.icon-action-btn):disabled { pointer-events:none; opacity:.46; transform:none; }
+:where(input[type="checkbox"]):disabled { opacity:.45; cursor:not-allowed; }
+:where(input[type="checkbox"]):active:not(:disabled) { transform:scale(.92); }
+@media (prefers-reduced-motion:reduce) {
+    :where(input[type="checkbox"]):active:not(:disabled) { transform:none; }
+}
