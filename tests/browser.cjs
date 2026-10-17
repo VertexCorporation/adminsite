@@ -120,6 +120,9 @@ await selectTab('chat');await page.locator('#chat-input').fill('Mock message');a
 await selectTab('system');assert.equal(await page.locator('[data-section]').count(),7);await page.locator('[data-section=export]').dispatchEvent('click');assert(await page.locator('#data-exporter-manager').isVisible());note('7 functional System sections');
 await selectTab('contributors');
 }
+// Functional regressions are run without transient visual clones. Dedicated UI
+// smoke tests separately assert animated crossfades and reduced-motion behavior.
+await page.emulateMedia({reducedMotion:'reduce'});
 if(process.env.VERTEX_STABILIZATION_ONLY)await require('./stabilization.cjs')({page,selectTab,note,calls,payloads,person,setPeople:value=>{people=value;},failMembership:value=>{failMembership=value;},failAdmin:value=>{failAdmin=value;},setAdmins:value=>{adminRoster=value;},setContributorDelay:value=>{contributorDelay=value;},failContributors:value=>{failContributors=value;},setHistory:value=>{history=value;}});
 if(process.env.VERTEX_COMPLETE_ONLY)await require('./complete-polish.cjs')({page,selectTab,note,calls,payloads,person,setPeople:value=>{people=value;},failMembership:value=>{failMembership=value;},failAdmin:value=>{failAdmin=value;},setAdmins:value=>{adminRoster=value;},setContributorDelay:value=>{contributorDelay=value;},failContributors:value=>{failContributors=value;},setHistory:value=>{history=value;}});
 if(!process.env.VERTEX_COMPLETE_ONLY&&!process.env.VERTEX_STABILIZATION_ONLY)await require('./final-polish.cjs')({page,selectTab,note,calls,payloads,setPeople:value=>{people=value;},person,failMaintenance:value=>{failMaintenance=value;},failVerify:value=>{failVerify=value;}});
