@@ -107,7 +107,7 @@ export function listenForArticles() {
         dom.articlesListContainer.innerHTML = '';
         if (snapshot.empty) {
             window.loadedArticles = [];
-            dom.articlesListContainer.innerHTML = `<p class="form-hint" data-i18n="news.empty">${__('news.empty')}</p>`;
+            renderArticleList();
             return;
         }
         const articles = snapshot.docs.map(doc=>({id:doc.id,...doc.data()}));
@@ -123,7 +123,6 @@ export function listenForArticles() {
 function renderArticleList(){
     const root=dom.articlesListContainer;
     const all=window.loadedArticles||[];
-    root.replaceChildren();
     let toolbar=document.getElementById('news-search');
     if(!toolbar){
        toolbar=document.createElement('input');toolbar.id='news-search';
@@ -131,7 +130,9 @@ function renderArticleList(){
        toolbar.placeholder=getLang()==='tr'?'Haberlerde ara':'Search articles';
        toolbar.addEventListener('input',()=>{articleSearch=toolbar.value.trim().toLocaleLowerCase();renderArticleList();});
     }
-    toolbar.value=articleSearch;root.append(toolbar);
+    toolbar.value=articleSearch;
+    if(toolbar.parentElement!==root.parentElement)root.parentElement.insertBefore(toolbar,root);
+    root.replaceChildren();
     const articles=all.filter(a=>[a.id,a.translations?.en?.title,a.translations?.tr?.title,...(a.tags||[])]
       .some(x=>String(x||'').toLocaleLowerCase().includes(articleSearch)));
     if(!articles.length){
