@@ -1,5 +1,6 @@
 import { confirmDialog } from './shell.js';
 import { beginPanelLoading } from '../utils/loading.js';
+import { renderPager } from '../ui/pager.js';
 // js/modules/news.js
 
 import { db, createNewsArticleFn, updateNewsArticleFn, listNewsRevisionsFn, restoreNewsRevisionFn, deleteNewsArticleFn, getCoverUploadUrlFn } from '../core/firebase.js';
@@ -9,6 +10,8 @@ import { userErrorMessage, __, showToast, getLang, onLangChange, escapeHTML } fr
 let unsubscribeFromArticles = null;
 let editingArticle = null;
 let articleSearch = '';
+let articlePage = 1;
+const NEWS_PAGE_SIZE = 20;
 
 /**
  * Handles the submission of the news article creation form.
@@ -130,7 +133,7 @@ function renderArticleList(){
        toolbar=document.createElement('input');toolbar.id='news-search';
        toolbar.type='search';toolbar.className='search-input-field';
        toolbar.placeholder=getLang()==='tr'?'Haberlerde ara':'Search articles';
-       toolbar.addEventListener('input',()=>{articleSearch=toolbar.value.trim().toLocaleLowerCase();renderArticleList();});
+       toolbar.addEventListener('input',()=>{articleSearch=toolbar.value.trim().toLocaleLowerCase();articlePage=1;renderArticleList();});
     }
     toolbar.value=articleSearch;
     if(toolbar.parentElement!==root.parentElement)root.parentElement.insertBefore(toolbar,root);
@@ -142,7 +145,8 @@ function renderArticleList(){
        empty.textContent=getLang()==='tr'?'Eşleşen haber yok.':'No matching articles.';
        root.append(empty);return;
     }
-    for(const article of articles){
+    articlePage=Math.min(articlePage,Math.max(1,Math.ceil(articles.length/NEWS_PAGE_SIZE)));
+    for(const article of articles.slice((articlePage-1)*NEWS_PAGE_SIZE,articlePage*NEWS_PAGE_SIZE)){
        const item=document.createElement('div');item.className='article-item';
        const details=document.createElement('div');details.className='item-details';
        const name=document.createElement('strong');name.className='item-title';
@@ -158,6 +162,8 @@ function renderArticleList(){
           button.dataset.slug=article.id;button.dataset.action=action;button.textContent=label;actions.append(button);
        }item.append(actions);root.append(item);
     }
+    renderPager(root,{page:articlePage,total:articles.length,pageSize:NEWS_PAGE_SIZE,
+      language:getLang(),onChange:next=>{articlePage=next;renderArticleList();}});
 }
 async function showNewsHistory(slug){
  const root=document.getElementById('news-history')||document.createElement('div');
