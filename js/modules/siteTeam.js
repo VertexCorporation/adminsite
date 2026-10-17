@@ -4,10 +4,8 @@ import { icon } from '../utils/icons.js';
 // js/modules/siteTeam.js
 
 /**
- * Sistem > Ekip Kaydı paneli: public site (vertexishere.com) Moderatörler
- * listesini yönetir (ekle / sil / yeniden adlandır). Staff listesi panelde
- * yönetilmez — onaylı adaylar (contributors.hasVerified) otomatik olarak
- * sitedeki Staff kaydırma listesine düşer.
+ * Sistem > Onur Tablosu: Fulcrum siteTeam service's kind=honor entries.
+ * Public personnel and staff remain server-controlled and are not editable here.
  */
 
 import { userErrorMessage, showToast, __, escapeHTML } from '../utils/ui.js';
@@ -22,12 +20,21 @@ async function loadTeam() {
     if (!el('team-mod-list')) return;
     const finishLoading = beginPanelLoading(el('team-mod-list'));
     try {
-        const result = await listSiteTeamFn({});
-        mods = (result.data && result.data.mods) || [];
+        const {data} = await listSiteTeamFn({manage:true});
+        if(!Array.isArray(data?.honors))throw Object.assign(new Error('Invalid honor roll response'),{code:'functions/internal'});
+        mods = data.honors;
         render();
     } catch (error) {
         const list = el('team-mod-list');
-        if (list) list.innerHTML = `<p class="form-hint">${escapeHTML(error.message)}</p>`;
+        if(list){
+            if(mods.length)render();
+            else list.replaceChildren();
+            const notice=document.createElement('div');
+            notice.className='state-block';notice.setAttribute('role','alert');
+            notice.innerHTML=`<p>${escapeHTML(userErrorMessage(error))}</p><button class="chrome-btn-outline" type="button">${__('common.retry')}</button>`;
+            notice.querySelector('button').onclick=loadTeam;
+            list.prepend(notice);
+        }
     } finally { finishLoading(); }
 }
 
@@ -42,13 +49,13 @@ function render() {
     list.innerHTML = mods.map(m => {
         if (editingId === m.id) {
             return `
-            <div class="team-list-row team-list-row--editing" data-id="${m.id}">
+            <div class="team-list-row team-list-row--editing" data-id="${escapeHTML(m.id)}">
                 <div class="team-edit-row">
                     <input type="text" class="team-edit-input" value="${escapeHTML(m.name)}" maxlength="60"
                            aria-label="${escapeHTML(m.name)}">
                 </div>
                 <div class="team-list-actions">
-                    <button type="button" class="icon-btn team-entry-save" data-save="${m.id}" title="${__('team.save')}">
+                    <button type="button" class="icon-btn team-entry-save" data-save="${escapeHTML(m.id)}" title="${__('team.save')}">
                         ${icon('check')}
                     </button>
                     <button type="button" class="icon-btn team-entry-cancel" data-cancel="1" title="${__('team.cancel')}">
@@ -58,15 +65,15 @@ function render() {
             </div>`;
         }
         return `
-        <div class="team-list-row" data-id="${m.id}">
+        <div class="team-list-row" data-id="${escapeHTML(m.id)}">
             <div class="team-list-info">
                 <span class="team-list-name">${escapeHTML(m.name)}</span>
             </div>
             <div class="team-list-actions">
-                <button type="button" class="icon-btn team-entry-edit" data-edit="${m.id}" title="${__('team.edit')}">
+                <button type="button" class="icon-btn team-entry-edit" data-edit="${escapeHTML(m.id)}" title="${__('team.edit')}">
                     ${icon('pencil')}
                 </button>
-                <button type="button" class="icon-btn danger team-entry-del" data-id="${m.id}" title="${__('team.remove')}">
+                <button type="button" class="icon-btn danger team-entry-del" data-id="${escapeHTML(m.id)}" title="${__('team.remove')}">
                     ${icon('trash')}
                 </button>
             </div>
@@ -89,7 +96,7 @@ async function add() {
     const btn = el('team-mod-add');
     if (btn) btn.disabled = true;
     try {
-        await setSiteTeamEntryFn({ kind: 'mod', name });
+        await setSiteTeamEntryFn({ kind: 'honor', name });
         input.value = '';
         showToast(() => __('team.added'), 'success');
         await loadTeam();
@@ -110,7 +117,7 @@ async function rename(id) {
         return;
     }
     try {
-        await setSiteTeamEntryFn({ kind: 'mod', name, id });
+        await setSiteTeamEntryFn({ kind: 'honor', name, id });
         editingId = null;
         showToast(() => __('team.updated'), 'success');
         await loadTeam();
@@ -128,7 +135,7 @@ async function remove(id) {
         danger: true
     }))) return;
     try {
-        await deleteSiteTeamEntryFn({ id });
+        await deleteSiteTeamEntryFn({ kind:'honor', id });
         showToast(() => __('team.removed'), 'success');
         await loadTeam();
     } catch (error) {
