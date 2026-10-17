@@ -86,11 +86,14 @@ export function openCertificateEmailTemplates() {
     }
     async function save(restoreDefaults){
         if(busy)return;busy=true;status();
+        let saved=false;
         try{
             const {data}=await saveVertexCertificateEmailTemplateFn({certificateType:type,language,...draft,expectedRevision:current.revision,restoreDefaults});
             if(!alive)return;templates[templates.indexOf(current)]=data;current=data;draft={subject:data.subject,html:data.html};dirty=false;showToast(()=>__('email_templates.save_success'),'success');
+            saved=true;
+            if(root.classList.contains('is-open'))closeDrawer();
         }catch(e){if(alive){const error=body.querySelector('.template-error');error.textContent=e.code==='functions/aborted'?__('email_templates.conflict'):e.code==='functions/invalid-argument'?e.message:userErrorMessage(e);error.hidden=false;}}
-        finally{busy=false;if(alive){status();if(!dirty)paint();}}
+        finally{busy=false;if(alive&&!saved){status();if(!dirty)paint();}}
     }
     async function load(){
         loader.start();footer.hidden=true;

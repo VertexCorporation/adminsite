@@ -1,6 +1,7 @@
 import { openCertificateEmailTemplates } from './certificateEmailTemplates.js';
 import { deploymentCapabilities } from '../core/deployment-capabilities.js';
 import { isActiveContributor, contributorState } from '../utils/contributor-state.js';
+import { changedContributorFields } from '../utils/contributor-edit.js';
 import { initVertexRoster, refreshRosterAccess } from './vertex-roster.js';
 import { displayDepartmentName, canonicalDepartment } from '../utils/departments.js';
 import { icon } from '../utils/icons.js';
@@ -195,28 +196,39 @@ function openContributorEditor(contributor) {
         const submitBtn = card.closest('.vx-drawer').querySelector('button[type="submit"]');
         submitBtn.disabled = true;
 
-        const updates = {
-            name: card.querySelector('#ce-name').value.trim(),
-            email: card.querySelector('#ce-email').value.trim(),
-            phone: card.querySelector('#ce-phone').value.trim(),
-            age: card.querySelector('#ce-age').value,
-            department: card.querySelector('#ce-dept').value,
-            language: card.querySelector('#ce-lang').value,
-            linkedin: card.querySelector('#ce-linkedin').value.trim(),
-            github: card.querySelector('#ce-github').value.trim(),
-            interviewDate: card.querySelector('#ce-interview').value,
-            about: card.querySelector('#ce-about').value.trim()
-        };
-
-        try {
-            await updateContributorApplicationFn({ contributorId: contributor.id, ...updates });
-            closeDrawer();
-            showToast(() => __('contributors.edit_updated'), 'success');
-            fetchContributorsData();
-        } catch (error) {
-            console.error('[CONTRIBUTORS] Edit failed:', error);
-            showToast(() => userErrorMessage(error), 'error');
-            submitBtn.disabled = false;
+        // Submit the actual delta, not every field from the edit form.
+        const drawer=card.closest('.vx-drawer');
+        const updates=changedContributorFields(contributor,{
+            name:card.querySelector('#ce-name').value,
+            email:card.querySelector('#ce-email').value,
+            phone:card.querySelector('#ce-phone').value,
+            age:card.querySelector('#ce-age').value,
+            department:card.querySelector('#ce-dept').value,
+            language:card.querySelector('#ce-lang').value,
+            linkedin:card.querySelector('#ce-linkedin').value,
+            github:card.querySelector('#ce-github').value,
+            interviewDate:card.querySelector('#ce-interview').value,
+            about:card.querySelector('#ce-about').value
+        },{department:originalDepartment,interviewDate:toDatetimeLocalValue(contributor.interviewDate)});
+        if(!Object.keys(updates).length){
+            if(drawer.classList.contains('is-open'))closeDrawer();
+            return;
+        }
+        try{
+            const {data}=await updateContributorApplicationFn({contributorId:contributor.id,...updates});
+            if(data?.success!==true)throw new Error('Application update not confirmed.');
+            Object.assign(contributor,updates);
+            const cached=(window.loadedContributors||[]).find(p=>p.id===contributor.id);
+            if(cached&&cached!==contributor)Object.assign(cached,updates);
+            if(window.loadedContributors)renderContributors(window.loadedContributors);
+            // Do not inadvertently dismiss a newer drawer.
+            if(drawer.classList.contains('is-open'))closeDrawer();
+            showToast(()=>__('contributors.edit_updated'),'success');
+            void fetchContributorsData();
+        }catch(error){
+            console.error('[CONTRIBUTORS] Edit failed:',error);
+            showToast(()=>userErrorMessage(error),'error');
+            submitBtn.disabled=false;
         }
     });
 }
