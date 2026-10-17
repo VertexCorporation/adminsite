@@ -22,6 +22,7 @@ import {
     deleteConsoleChatMessageFn,
     deleteConsoleChatChannelFn,
     listConsoleChatDirectoryFn,
+    markConsoleChatReadFn,
     auth
 } from '../core/firebase.js';
 
@@ -41,6 +42,52 @@ let mentionActive = -1;
 const drafts = new Map();
 let lastRenderedChannel = null;
 let pollPending = false;
+const readSequences=new Map();
+let lastSavedDraftUser=null;
+let lastVisibleMessages=[];
+function draftsKey(){return myUid?'vertex:chat:drafts:'+myUid:null;}
+function restoreDrafts(){
+ if(myUid===lastSavedDraftUser)return;
+ drafts.clear();lastSavedDraftUser=myUid;
+ try{const saved=JSON.parse(sessionStorage.getItem(draftsKey())||'{}');
+   for(const [id,value]of Object.entries(saved))if(typeof value?.text==='string'&&value.text.length<5000)drafts.set(id,value);
+ }catch{}
+}
+function persistDrafts(){
+ try{if(draftsKey())sessionStorage.setItem(draftsKey(),JSON.stringify(Object.fromEntries(drafts)));}catch{}
+}
+function rememberDraft(){
+ if(!currentChannelId)return;
+ const input=el('chat-input');
+ drafts.set(currentChannelId,{text:input?.value||'',asTask:!!el('chat-as-task')?.checked});
+ persistDrafts();
+}
+async function markRead(sequence){
+ const channelId=currentChannelId;
+ if(!channelId||!Number.isSafeInteger(sequence)||sequence<=0||
+   (readSequences.get(channelId)||0)>=sequence)return;
+ try{
+   await markConsoleChatReadFn({channelId,sequence});
+   readSequences.set(channelId,sequence);
+   const channel=channels.find(ch=>ch.id===channelId);
+   if(channel){channel.unreadCount=0;lastChannelsKey='';renderChannelList();}
+ }catch(error){console.warn('[CHAT] Could not save read receipt',error.code||'unavailable');}
+}
+function updateNewIndicator(show){
+ const container=el('chat-messages');if(!container)return;
+ let indicator=el('chat-new-indicator');
+ if(!indicator){
+   indicator=document.createElement('button');indicator.type='button';
+   indicator.id='chat-new-indicator';indicator.className='chrome-btn-outline chat-new-indicator';
+   indicator.textContent=getLang()==='tr'?'Yeni mesajlar ↓':'New messages ↓';
+   indicator.onclick=()=>{
+     container.scrollTo({top:container.scrollHeight,behavior:'smooth'});
+     indicator.hidden=true;
+   };
+   container.insertAdjacentElement('afterend',indicator);
+ }
+ indicator.hidden=!show;
+}
 
 const el = (id) => document.getElementById(id);
 
@@ -83,7 +130,8 @@ async function loadChannels() {
     try {
         const result = await listConsoleChatChannelsFn();
         channels = (result.data.channels || []).slice().sort((a, b) => (b.pinned === true) - (a.pinned === true));
-        myUid = auth && auth.currentUser ? auth.currentUser.uid : null;
+        const nextUid=auth?.currentUser?.uid||null;
+        if(myUid!==nextUid){myUid=nextUid;restoreDrafts();} 
         isAdmin = result.data.isAdmin || isPanelAdmin();
         const createBtn = el('chat-create-btn');
         if (createBtn) createBtn.style.display = isAdmin ? 'inline-flex' : 'none';
@@ -111,13 +159,14 @@ function renderChannelList() {
         return;
     }
     // Poll yenilemelerinde icerik degismemisse DOM'a dokunma (titreme fix).
-    const key = JSON.stringify([isAdmin, currentChannelId, channels.map(c => [c.id, c.name, !!c.pinned, c.postLevel, !!c.departments?.length])]);
+    const key = JSON.stringify([isAdmin, currentChannelId, channels.map(c => [c.id, c.name, !!c.pinned, c.postLevel, !!c.departments?.length,c.unreadCount||0])]);
     if (key === lastChannelsKey) return;
     lastChannelsKey = key;
     container.innerHTML = channels.map(ch => `
         <button type="button" class="chat-channel-item ${ch.id === currentChannelId ? 'active' : ''}" data-channel="${ch.id}">
             <i class="" data-icon="${ch.departments?.length ? 'lock' : 'tag'}"></i>
             <span class="chat-channel-name">${escapeHTML(ch.name)}</span>
+            ${ch.unreadCount?'<span class="chat-unread">'+Math.min(ch.unreadCount,99)+(ch.unreadCount>99?'+':'')+'</span>':''}
             ${ch.pinned ? `<i class=" chat-pin-flag" title="${__('chat.pin')}" data-icon="push_pin"></i>` : ''}
             ${ch.postLevel === 'admins' ? `<i class=" chat-channel-lock" title="${__('chat.admin_channel')}" data-icon="shield"></i>` : ''}
         </button>
@@ -128,11 +177,12 @@ function renderChannelList() {
 function selectChannel(channelId) {
     if(channelId===currentChannelId)return;
     const input=el('chat-input'),asTask=el('chat-as-task');
-    if(currentChannelId && input) drafts.set(currentChannelId,{text:input.value,asTask:!!asTask?.checked});
+    if(currentChannelId && input) rememberDraft();
     currentChannelId=channelId;
     const draft=drafts.get(channelId);
     if(input)input.value=draft?.text||'';
     if(asTask)asTask.checked=!!draft?.asTask;
+    updateNewIndicator(false);
     closeMentionPop();
     lastMessagesKey='';
     lastRenderedChannel=null;
@@ -151,6 +201,7 @@ async function loadMessages(animate = true) {
         if (currentChannelId !== channel.id) { finishLoading(); return; }
         const messages = result.data.messages || [];
         cachedMessages=messages;cachedChannelId=channel.id;
+        lastVisibleMessages=messages;
         const key = JSON.stringify(messages.map(m => [m.id,m.taskStatus,m.text,m.createdAt,m.authorName,m.authorDepartments]));
         if (!animate && key === lastMessagesKey) { finishLoading(); return; } // degisiklik yoksa DOM'a dokunma
         lastMessagesKey = key;
@@ -232,8 +283,14 @@ function renderMessages(messages, channel, animate = true) {
     const previousScrollTop = container.scrollTop;
     const previousScrollHeight = container.scrollHeight;
     container.innerHTML = html;
-    if(stickToBottom)container.scrollTop = container.scrollHeight;
-    else container.scrollTop = Math.max(0,previousScrollTop+(container.scrollHeight-previousScrollHeight));
+    if(stickToBottom) {
+       container.scrollTop=container.scrollHeight;
+       updateNewIndicator(false);
+       void markRead(messages.at(-1)?.sequence||0);
+    }else{
+       container.scrollTop=Math.max(0,previousScrollTop+(container.scrollHeight-previousScrollHeight));
+       updateNewIndicator(messages.length>0);
+    }
     lastRenderedChannel=currentChannelId;
 
     const pending = container.querySelector('.chat-task-toggle-btn');
@@ -252,7 +309,7 @@ async function sendMessage() {
     input.disabled = true;
     try {
         await postConsoleChatMessageFn({ channelId: sendChannel, text, asTask });
-        drafts.delete(sendChannel);
+        drafts.delete(sendChannel);persistDrafts();
         if(currentChannelId===sendChannel) {
             input.value = '';
             el('chat-as-task').checked = false;
