@@ -43,7 +43,7 @@ async function callCallable(name, data) {
     const idToken=user?await user.getIdToken():null;
     const appToken=user?await getAttestationToken():undefined;
     let res;try{res=await fetch(`https://${name.toLowerCase()}-o5h7dmtija-ew.a.run.app`,{
-        method:'POST',headers:{'Content-Type':'application/json',...(idToken?{Authorization:'Bearer '+idToken}:{}),...(appToken?{'X-Firebase-AppCheck':appToken}:{})},body:JSON.stringify({data:data??{}}),signal:AbortSignal.timeout(['previewVertexRoster','applyVertexRoster'].includes(name)?540000:20000)
+        method:'POST',headers:{'Content-Type':'application/json',...(idToken?{Authorization:'Bearer '+idToken}:{}),...(appToken?{'X-Firebase-AppCheck':appToken}:{})},body:JSON.stringify({data:data??{}}),signal:AbortSignal.timeout(20000)
     });}catch(error){const e=new Error('Callable transport failed');e.code=error.name==='TimeoutError'?'functions/deadline-exceeded':'functions/unavailable';throw e;}
     let json;try{json=await res.json();}catch{json=null;}
     if(!res.ok||json?.error||!json||!Object.hasOwn(json,'result')){
@@ -192,18 +192,22 @@ export const revokeVertexCertificateFn = callable('revokeVertexCertificate');
 
 export const setVertexContributorJoiningDateFn = callable('setVertexContributorJoiningDate');
 
-export const previewVertexRosterFn = callable('previewVertexRoster');
-export const applyVertexRosterFn = callable('applyVertexRoster');
-export const setVertexMembershipFn = callable('setVertexMembership');
+export const getVertexCertificateEmailTemplatesFn = callable('getVertexCertificateEmailTemplates');
+export const saveVertexCertificateEmailTemplateFn = callable('saveVertexCertificateEmailTemplate');
+export const previewVertexCertificateEmailTemplateFn = callable('previewVertexCertificateEmailTemplate');
 
-export const getVertexRosterApprovalFn = callable('getVertexRosterApproval');
+export const listTeamCardsFn = callable('listTeamCards');
+export const setTeamCardFn = callable('setTeamCard');
+export const deleteTeamCardFn = callable('deleteTeamCard');
+export const getTeamProfileFn = callable('getTeamProfile');
+export const setTeamProfileFn = callable('setTeamProfile');
+export const getWeeklyStarsFn = callable('getWeeklyStars');
+export const setWeeklyStarsFn = callable('setWeeklyStars');
+export const getBackupHealthStatusFn = callable('getBackupHealthStatus');
 
 export const previewContributorRosterFn = callable('previewContributorRoster');
 export const applyContributorRosterFn = callable('applyContributorRoster');
 export const setContributorVertexStatusFn = callable('setContributorVertexStatus');
 
 export const consolePeopleCall = (name, data) => callCallable(name, data);
-
-export const getVertexCertificateEmailTemplatesFn = callable('getVertexCertificateEmailTemplates');
-export const saveVertexCertificateEmailTemplateFn = callable('saveVertexCertificateEmailTemplate');
-export const previewVertexCertificateEmailTemplateFn = callable('previewVertexCertificateEmailTemplate');
+export const eventCallable = (name, data) => callCallable(name, data);

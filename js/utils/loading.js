@@ -112,7 +112,7 @@ export function createLoadingController(container, opts = {}) {
         if (timer) { clearTimeout(timer); timer = null; }
     }
 
-    /** Veri geldi: iskeleti kaldır, içeriği fade ile bas. */
+    /** Veri geldi: iskeleti kaldır, içeriği yumuşak 250ms fade ile bas. */
     function success(renderHTML) {
         cancelTimer();
         const wasSkeleton = skeletonShown || !!container.querySelector('.skeleton');
@@ -120,8 +120,11 @@ export function createLoadingController(container, opts = {}) {
         container.removeAttribute('aria-busy');
         container.innerHTML = renderHTML;
         if (wasSkeleton) {
-            container.classList.add('content-fade-in');
-            requestAnimationFrame(() => setTimeout(() => container.classList.remove('content-fade-in'), 200));
+            const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+            if (!prefersReduced) {
+                container.classList.add('content-entering');
+                setTimeout(() => container.classList.remove('content-entering'), 260);
+            }
         }
     }
 
@@ -191,5 +194,16 @@ export function beginPanelLoading(container, rowFactory = skeletonListItem) {
     const stale = container.children.length && !container.querySelector('.form-hint,.state-block,.skeleton');
     let shown=false;
     const timer=setTimeout(()=>{if(!stale){shown=true;container.innerHTML=skeletonRows(5,rowFactory);}},150);
-    return () => {clearTimeout(timer);container.removeAttribute('aria-busy');if(shown){if(container.querySelector('.skeleton'))container.innerHTML=current;container.classList.add('content-fade-in');setTimeout(()=>container.classList.remove('content-fade-in'),200);}};
+    return () => {
+        clearTimeout(timer);
+        container.removeAttribute('aria-busy');
+        if (shown) {
+            if (container.querySelector('.skeleton')) container.innerHTML = current;
+            const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+            if (!prefersReduced) {
+                container.classList.add('content-entering');
+                setTimeout(() => container.classList.remove('content-entering'), 260);
+            }
+        }
+    };
 }

@@ -1,0 +1,10 @@
+{
+  "tr": {
+    "subject": "{{NAME}}, Vertex'e hoş geldin!",
+    "html": "<p>Esenlikler <strong>\n\n{{NAME}}</strong>,</p>\n<p>Vertex'e hoş geldin!</p>\n<p>Aramıza katıldığını söylemekten mutluluk duyarız, ekteki PDF dosyasında Liyakat Sertifikanı bulabilirsin; bu sertifika, Vertex'e özel olarak seçilmiş olduğun bir kanıtıdır.</p>\n<p>Hep beraber, zirveye!</p>\n<p>Saygılarımızla,</p>"
+  },
+  "en": {
+    "subject": "{{NAME}}, welcome to Vertex!",
+    "html": "<p>Greetings <strong>\n\n{{NAME}}</strong>,</p>\n<p>Welcome to Vertex!</p>\n<p>We are delighted to welcome you to our team, you can find your Merit Certificate in the attached PDF file; this certificate stands as a testament to your exclusive selection to Vertex.</p>\n<p>Together, to the peak!</p>\n<p>Best regards,</p>"
+  }
+}

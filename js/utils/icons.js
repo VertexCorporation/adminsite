@@ -86,9 +86,12 @@ const PATHS = {
   "user-plus": "\n  <path d=\"M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0\" />\n  <path d=\"M16 19h6\" />\n  <path d=\"M19 16v6\" />\n  <path d=\"M6 21v-2a4 4 0 0 1 4 -4h4\" />\n",
   "arrow-right": "\n  <path d=\"M5 12l14 0\" />\n  <path d=\"M13 18l6 -6\" />\n  <path d=\"M13 6l6 6\" />\n",
   "at": "\n  <path d=\"M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0\" />\n  <path d=\"M16 12v1.5a2.5 2.5 0 0 0 5 0v-1.5a9 9 0 1 0 -5.5 8.28\" />\n",
-  "help-circle": "\n  <path d=\"M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0\" />\n  <path d=\"M12 16v.01\" />\n  <path d=\"M12 13a2 2 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483\" />\n"
+  "help-circle": "\n  <path d=\"M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0\" />\n  <path d=\"M12 16v.01\" />\n  <path d=\"M12 13a2 2 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483\" />\n",
+  "upload": "\n  <path d=\"M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2\" />\n  <path d=\"M7 9l5 -5l5 5\" />\n  <path d=\"M12 4l0 12\" />\n"
 };
 const FILLED_PATHS = {"award":"\n  <path d=\"M19.496 13.983l1.966 3.406a1.001 1.001 0 0 1 -.705 1.488l-.113 .011l-.112 -.001l-2.933 -.19l-1.303 2.636a1.001 1.001 0 0 1 -1.608 .26l-.082 -.094l-.072 -.11l-1.968 -3.407a8.994 8.994 0 0 0 6.93 -3.999z\" />\n  <path d=\"M11.43 17.982l-1.966 3.408a1.001 1.001 0 0 1 -1.622 .157l-.076 -.1l-.064 -.114l-1.304 -2.635l-2.931 .19a1.001 1.001 0 0 1 -1.022 -1.29l.04 -.107l.05 -.1l1.968 -3.409a8.994 8.994 0 0 0 6.927 4.001z\" />\n  <path d=\"M12 2l.24 .004a7 7 0 0 1 6.76 6.996l-.003 .193l-.007 .192l-.018 .245l-.026 .242l-.024 .178a6.985 6.985 0 0 1 -.317 1.268l-.116 .308l-.153 .348a7.001 7.001 0 0 1 -12.688 -.028l-.13 -.297l-.052 -.133l-.08 -.217l-.095 -.294a6.96 6.96 0 0 1 -.093 -.344l-.06 -.271l-.049 -.271l-.02 -.139l-.039 -.323l-.024 -.365l-.006 -.292a7 7 0 0 1 6.76 -6.996l.24 -.004z\" />\n"};
+
+const LEGACY_NAMES = {"user":"user-circle","expand_more":"chevron-down","content_copy":"copy","groups":"users-group","group":"users-group","smart_toy":"robot","newspaper":"news","notifications_active":"bell","settings_ethernet":"settings","group_work":"users-group","shield_person":"shield-lock","mail":"mail","admin_panel_settings":"shield-lock","verified_user":"shield-lock","badge":"id","swap_vert":"switch-vertical","add_circle":"plus","list_alt":"list","database":"database","post_add":"plus","campaign":"bell","calendar_month":"calendar","cloud_done":"check","person_remove":"user-minus","dns":"server","sync":"refresh","download_for_offline":"download","edit":"pencil","delete":"trash","close":"x","restart_alt":"refresh","block":"circle-off","visibility":"eye","tune":"adjustments","save":"device-floppy","workspace_premium":"crown","playlist_add":"plus","forum":"messages","person":"user-circle","dark_mode":"moon","light_mode":"sun","push_pin":"pin","tag":"hash","alternate_email":"at","keyboard_arrow_down":"chevron-down","keyboard_arrow_up":"chevron-up","assignment_ind":"id","logout":"logout","settings":"settings","check":"check","shield":"shield","search":"search","refresh":"refresh","article":"article","add":"plus","person_add":"user-plus","account_circle":"user-circle","diversity_3":"users-group","apps":"dots","menu":"menu-2","help":"help-circle","visibility_off":"eye-off","arrow_forward":"arrow-right","info":"info-circle","warning":"alert-triangle","error":"alert-circle"};
 
 /**
  * İsim → inline SVG string üretir.
@@ -97,14 +100,15 @@ const FILLED_PATHS = {"award":"\n  <path d=\"M19.496 13.983l1.966 3.406a1.001 1.
  * @returns {string} inline `<svg>` HTML'i.
  */
 export function icon(name, opts = {}) {
+    const resolvedName = LEGACY_NAMES[name] || name;
     const size = opts.size || 18;
     const cls = opts.cls ? ` ${opts.cls}` : '';
     const strokeWidth = opts.strokeWidth || 1.8;
     const title = opts.title
         ? `<title>${String(opts.title).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</title>`
         : '';
-    const filled = opts.filled ? FILLED_PATHS[name] : null;
-    const paths = filled || PATHS[name];
+    const filled = opts.filled ? FILLED_PATHS[resolvedName] : null;
+    const paths = filled || PATHS[resolvedName];
     if (!paths) {
         console.warn(`[ICONS] Bilinmeyen ikon: "${name}"`);
         return `<span class="icon-missing${cls}" style="width:${size}px;height:${size}px" aria-hidden="true"></span>`;
@@ -121,8 +125,6 @@ export function iconLabel(name, label, opts = {}) {
 }
 
 export const ICON_NAMES = Object.keys(PATHS);
-
-const LEGACY_NAMES = {"expand_more":"chevron-down","content_copy":"copy","groups":"users-group","group":"users-group","smart_toy":"robot","newspaper":"news","notifications_active":"bell","settings_ethernet":"settings","group_work":"users-group","shield_person":"shield-lock","mail":"mail","admin_panel_settings":"shield-lock","verified_user":"shield-lock","badge":"id","swap_vert":"switch-vertical","add_circle":"plus","list_alt":"list","database":"database","post_add":"plus","campaign":"bell","calendar_month":"calendar","cloud_done":"check","person_remove":"user-minus","dns":"server","sync":"refresh","download_for_offline":"download","edit":"pencil","delete":"trash","close":"x","restart_alt":"refresh","block":"circle-off","visibility":"eye","tune":"adjustments","save":"device-floppy","workspace_premium":"crown","playlist_add":"plus","forum":"messages","person":"user-circle","dark_mode":"moon","light_mode":"sun","push_pin":"pin","tag":"hash","alternate_email":"at","keyboard_arrow_down":"chevron-down","keyboard_arrow_up":"chevron-up","assignment_ind":"id","logout":"logout","settings":"settings","check":"check","shield":"shield","search":"search","refresh":"refresh","article":"article","add":"plus","person_add":"user-plus","account_circle":"user-circle","diversity_3":"users-group","apps":"dots","menu":"menu-2","help":"help-circle","visibility_off":"eye-off","arrow_forward":"arrow-right","info":"info-circle","warning":"alert-triangle","error":"alert-circle"};
 export function hydrateIcons(root = document) {
     root.querySelectorAll("[data-icon]").forEach(el => {
         const name = LEGACY_NAMES[el.dataset.icon] || el.dataset.icon;

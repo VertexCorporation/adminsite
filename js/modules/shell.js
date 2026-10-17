@@ -299,7 +299,7 @@ export function openModal(opts = {}) {
     const overlay = document.createElement('div');
     overlay.className = 'vx-overlay';
     const root = document.createElement('div');
-    root.className = 'vx-modal';
+    root.className = `vx-modal${opts.size === 'large' ? ' vx-modal--large' : ''}`;
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     root.setAttribute('aria-label', opts.title || '');
@@ -348,6 +348,8 @@ export function openModal(opts = {}) {
     const focusable = root.querySelector(FOCUSABLE);
     (focusable || root).focus({ preventScroll: true });
 
+
+
     opts.onOpen?.(body);
     return body;
 }
@@ -356,33 +358,138 @@ export function openModal(opts = {}) {
 /**
  * Onay diyaloğu (yıkıcı işlemler / sertifika gönderimi).
  * resolve(true) yalnızca açık onayda döner.
- * @param {object} opts { title, rows:[{label,value}], warning, confirmLabel, cancelLabel, danger, async }
+ * @param {(() => { title, body?, warning?, rows?, confirmLabel?, cancelLabel?, danger? }) | object} options
  * @returns {Promise<boolean>}
  */
 export function confirmDialog(options = {}) {
     return new Promise(resolve => {
-        let body;
-        const getOptions=()=>typeof options==='function'?options():options;
-        function paint(){
-            if(!body?.isConnected)return;
-            const opts=getOptions();
-            const root=body.parentElement;
-            root.querySelector('.vx-modal-title').textContent=opts.title || __('common.confirm');
-            root.setAttribute('aria-label',opts.title || __('common.confirm'));
-            const rows=(opts.rows || []).map(row=>`<div class="confirm-row"><dt>${row.label}</dt><dd>${row.value}</dd></div>`).join('');
-            body.innerHTML=`${rows?`<dl class="confirm-list">${rows}</dl>`:''}${opts.warning?`<div class="confirm-warn">${icon('alert-triangle')}<span>${opts.warning}</span></div>`:''}`;
-            if (opts.body) { const message = document.createElement('p'); message.textContent = opts.body; body.prepend(message); }
-            root.querySelector('.confirm-ok').textContent=opts.confirmLabel || __('common.confirm');
-            root.querySelector('.confirm-cancel').textContent=opts.cancelLabel || __('common.cancel');
+        document.querySelectorAll('.vx-modal[aria-hidden=true],.vx-modal.confirm-dialog-modal,.vx-overlay.is-closing').forEach(s => s.remove());
+        const getOptions = () => typeof options === 'function' ? options() : options;
+
+        // Oluşturulan dialog elementi (overlay + root ayrıca eklenir)
+        const previouslyFocused = document.activeElement;
+        const overlay = document.createElement('div');
+        overlay.className = 'vx-overlay';
+        const root = document.createElement('div');
+        root.className = 'vx-modal confirm-dialog-modal';
+        root.setAttribute('role', 'alertdialog');
+        root.setAttribute('aria-modal', 'true');
+
+        document.body.append(overlay, root);
+        document.body.style.overflow = 'hidden';
+        registerSurface('modal');
+
+        let resolved = false;
+        function finish(result) {
+            if (resolved) return;
+            resolved = true;
+            cleanup();
+            root.querySelectorAll('.confirm-ok, .confirm-cancel, .cancel-btn').forEach(b => {
+                b.classList.remove('confirm-ok', 'confirm-cancel');
+                b.disabled = true;
+            });
+            root.classList.remove('is-open');
+            overlay.classList.remove('is-open');
+            overlay.classList.add('is-closing');
+            root.setAttribute('aria-hidden', 'true');
+            root.inert = true;
+            root.style.pointerEvents = 'none';
+            overlay.style.pointerEvents = 'none';
+            const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 190;
+            setTimeout(() => { root.remove(); overlay.remove(); }, delay);
+            document.body.style.overflow = '';
+            unregisterSurface('modal');
+            if (previouslyFocused && document.contains(previouslyFocused)) {
+                previouslyFocused.focus({ preventScroll: true });
+            }
+            resolve(result);
         }
-        const unsubscribe=onLangChange(paint);
-        body=openModal({title:getOptions().title || __('common.confirm'),footerHTML:'<button type="button" class="chrome-btn-outline confirm-cancel"></button><button type="button" class="chrome-btn-primary confirm-ok"></button>',onAfterClose:()=>{unsubscribe();resolve(false);}});
+
+        function paint() {
+            if (!root.isConnected) return;
+            const opts = getOptions();
+            const isDanger = !!opts.danger;
+
+            const dangerIconHTML = isDanger
+                ? `<div class="confirm-dialog-icon danger">${icon('alert-triangle', { size: 28 })}</div>`
+                : `<div class="confirm-dialog-icon">${icon('help-circle', { size: 28 })}</div>`;
+
+            const bodyHTML = opts.body
+                ? `<p class="confirm-dialog-desc">${opts.body}</p>`
+                : '';
+
+            const warningHTML = opts.warning
+                ? `<div class="confirm-dialog-warning">${icon('alert-triangle')}<span>${opts.warning}</span></div>`
+                : '';
+
+            const rowsHTML = (opts.rows || []).length
+                ? `<dl class="confirm-dialog-rows">${(opts.rows).map(row =>
+                    `<div class="confirm-dialog-row"><dt>${row.label}</dt><dd>${row.value}</dd></div>`
+                  ).join('')}</dl>`
+                : '';
+
+            const confirmLabel = opts.confirmLabel || __('common.confirm');
+            const cancelLabel  = opts.cancelLabel  || __('common.cancel');
+            const dangerClass  = isDanger ? ' chrome-btn-danger' : '';
+
+            root.innerHTML = `
+                <div class="confirm-dialog-body vx-modal-body">
+                    ${dangerIconHTML}
+                    <h2 class="confirm-dialog-title vx-modal-title"></h2>
+                    ${bodyHTML}
+                    ${warningHTML}
+                    ${rowsHTML}
+                </div>
+                <div class="confirm-dialog-footer">
+                    <button type="button" class="chrome-btn-outline cancel-btn confirm-cancel"></button>
+                    <button type="button" class="chrome-btn-primary${dangerClass} confirm-ok"></button>
+                </div>`;
+
+            root.querySelector('.confirm-dialog-title').textContent = opts.title || __('common.confirm');
+            root.setAttribute('aria-label', opts.title || __('common.confirm'));
+            root.querySelector('.confirm-ok').textContent  = confirmLabel;
+            root.querySelector('.cancel-btn').textContent  = cancelLabel;
+
+            root.querySelector('.confirm-ok').onclick  = () => finish(true);
+            root.querySelector('.cancel-btn').onclick  = () => finish(false);
+        }
+
+        const unsubscribeLang = onLangChange(paint);
         paint();
-        const root=body.parentElement;
-        root.querySelector('.confirm-ok').onclick=()=>{resolve(true);closeModal();};
-        root.querySelector('.confirm-cancel').onclick=()=>closeModal();
+
+        requestAnimationFrame(() => {
+            if (!root.isConnected) return;
+            overlay.classList.add('is-open');
+            root.classList.add('is-open');
+        });
+
+        // Focus tuzağı + Escape / dış tıklama → false
+        const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        const trapFocus = (e) => {
+            if (e.key !== 'Tab') return;
+            const items = [...root.querySelectorAll(FOCUSABLE)];
+            if (!items.length) return;
+            const first = items[0], last = items[items.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        };
+        const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); finish(false); } };
+        overlay.addEventListener('mousedown', () => finish(false));
+        document.addEventListener('keydown', trapFocus);
+        document.addEventListener('keydown', onKey);
+
+        function cleanup() {
+            unsubscribeLang();
+            document.removeEventListener('keydown', trapFocus);
+            document.removeEventListener('keydown', onKey);
+        }
+
+        // İlk odak: Onayla butonu (tehlikeli işlemlerde Cancel daha güvenli olabilir ama standart UX)
+        const focusTarget = root.querySelector(FOCUSABLE);
+        (focusTarget || root).focus({ preventScroll: true });
     });
 }
+
 
 /* ==================================================================
    UYGULAMA KABUĞU BAŞLATMA

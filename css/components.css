@@ -705,10 +705,321 @@ body:has(.vx-modal) #toast-container{z-index:139;pointer-events:none}body:has(.v
 .contributor-edit-form .form-group-field{display:flex;flex-direction:column;gap:8px}.contributor-edit-grid{display:grid;gap:20px}.contributor-edit-form{gap:20px}
 .admin-user-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 12px;border-bottom:1px solid var(--border-subtle);min-height:64px}.admin-user-row>div{min-width:0}.admin-user-row strong{overflow-wrap:anywhere}.admin-user-row small{display:block;color:var(--text-secondary)}
 
-/* Existing applications drawer: private roster preview. */
-.vertex-roster-body { display:flex; flex-direction:column; gap:12px; min-width:0; }
-.vertex-roster-body textarea { width:100%; min-height:140px; box-sizing:border-box; }
-.vertex-roster-actions { display:flex; gap:8px; flex-wrap:wrap; }
-.vertex-roster-digest,.vertex-roster-row p { overflow-wrap:anywhere; font-size:12px; }
-.vertex-roster-row { border-bottom:1px solid var(--border-color, #8884); padding:12px 0; }
-.vertex-roster-row summary { cursor:pointer; }
+
+/* ================================================================
+   VERTEX KONSOL — ORTAK FORM & EKİP BİLEŞEN SİSTEMİ
+   Madde 2, 3, 7, 8, 12 için ortak sınıflar.
+   ================================================================ */
+
+/* ---------- Form Stack ---------- */
+:root {
+    --form-gap: var(--space-4);
+    --form-section-gap: var(--space-6);
+    --card-pad: var(--space-5);
+    --icon-btn-size: 32px;
+    --icon-btn-size-sm: 28px;
+}
+
+.form-stack { display: flex; flex-direction: column; gap: var(--form-gap); }
+.form-section { display: flex; flex-direction: column; gap: var(--space-3); }
+.form-section-title {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-4);
+}
+.form-grid.two-col { grid-template-columns: 1fr 1fr; }
+@media (max-width: 720px) {
+    .form-grid, .form-grid.two-col { grid-template-columns: 1fr; }
+}
+
+/* ---------- Input durum geliştirmeleri ---------- */
+.form-group-field.has-error input,
+.form-group-field.has-error select,
+.form-group-field.has-error textarea {
+    border-color: var(--status-error);
+    background: var(--status-error-soft);
+}
+.form-group-field.has-error input:focus,
+.form-group-field.has-error select:focus,
+.form-group-field.has-error textarea:focus {
+    box-shadow: 0 0 0 2px var(--bg-app), 0 0 0 4px var(--status-error);
+}
+.field-error-msg {
+    font-size: var(--fs-metadata);
+    color: var(--status-error);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+.form-group-field input:not(:disabled):not(:read-only):hover,
+.form-group-field select:not(:disabled):hover,
+.form-group-field textarea:not(:disabled):not(:read-only):hover {
+    border-color: var(--border-strong);
+}
+
+/* Textarea otomatik yükseklik */
+.auto-resize-textarea {
+    resize: none;
+    overflow: hidden;
+    min-height: 84px;
+    max-height: 300px;
+}
+
+/* ---------- Referans metin alanı (çeviri kaynağı) ---------- */
+.reference-text-field {
+    padding: var(--space-3);
+    background: var(--bg-app);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-secondary);
+    color: var(--text-secondary);
+    line-height: var(--lh-normal);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.reference-label {
+    font-size: var(--fs-metadata);
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-2);
+    display: block;
+}
+
+/* ---------- İkon Butonu — tek boyut, iki durum ---------- */
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--icon-btn-size);
+    height: var(--icon-btn-size);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    transition: background-color var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard);
+    flex-shrink: 0;
+}
+.icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.icon-btn:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+.icon-btn:disabled { opacity: 0.4; pointer-events: none; }
+.icon-btn.danger:hover { background: var(--status-error-soft); color: var(--status-error); }
+.icon-btn .icon { width: 16px; height: 16px; }
+.icon-btn > svg { width: 16px; height: 16px; }
+
+/* ---------- Ekip Liste Satırı (Onur Tablosu + Ekip Kartları) ---------- */
+.team-list { display: flex; flex-direction: column; }
+
+.team-list-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 52px;
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background-color var(--motion-fast) var(--ease-standard);
+}
+.team-list-row:last-child { border-bottom: 0; }
+.team-list-row:hover { background: var(--bg-hover); }
+
+.team-list-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    overflow: hidden;
+}
+.team-list-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.team-list-info { flex: 1; min-width: 0; }
+.team-list-name {
+    font-size: var(--fs-body);
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+.team-list-meta {
+    font-size: var(--fs-metadata);
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.team-list-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+/* Satır içi düzenleme alanı */
+.team-edit-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    min-width: 0;
+    animation: teamEditIn var(--motion-fast) var(--ease-out);
+}
+.team-edit-row input {
+    flex: 1;
+    min-width: 0;
+    height: 34px;
+    padding: 0 var(--space-3);
+    background: var(--bg-app);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: var(--fs-body);
+    font-family: inherit;
+    transition: box-shadow var(--motion-fast) var(--ease-standard);
+}
+.team-edit-row input:focus { outline: none; box-shadow: var(--focus-ring); }
+@keyframes teamEditIn {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Pozisyon badgesi */
+.position-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* ---------- Çeviri Modal Yardımcıları ---------- */
+.vx-modal--large { max-width: min(720px, calc(100vw - 32px)); }
+
+.translation-modal-body { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-5); overflow-y: auto; max-height: 70dvh; }
+
+.translation-langs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--space-3);
+}
+@media (max-width: 600px) {
+    .translation-langs-grid { grid-template-columns: 1fr; }
+}
+
+.translation-lang-card {
+    padding: var(--space-4);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    background: var(--bg-elevated);
+}
+.translation-lang-header {
+    font-size: var(--fs-secondary);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* ---------- Skeleton yavaş geçiş ---------- */
+@keyframes contentFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.content-entering {
+    animation: contentFadeIn 250ms var(--ease-out) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+    .content-entering { animation: none; }
+}
+
+/* ---------- Confirm dialog stilleri ---------- */
+.confirm-dialog-body {
+    padding: var(--space-5);
+}
+.confirm-dialog-icon {
+    width: 40px; height: 40px;
+    border-radius: var(--radius-full);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: var(--space-4);
+    background: var(--bg-elevated); color: var(--text-muted);
+}
+.confirm-dialog-icon.danger {
+    background: var(--status-error-soft);
+    color: var(--status-error);
+}
+.confirm-dialog-title {
+    font-size: var(--fs-section-title);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+.confirm-dialog-desc {
+    font-size: var(--fs-body);
+    color: var(--text-secondary);
+    line-height: var(--lh-normal);
+}
+.confirm-dialog-warning {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    background: var(--status-error-soft);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-secondary);
+    color: var(--status-error);
+    line-height: var(--lh-normal);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+}
+.confirm-dialog-warning > .icon { flex-shrink: 0; margin-top: 1px; }
+.confirm-dialog-rows {
+    margin-top: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+.confirm-dialog-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    font-size: var(--fs-secondary);
+}
+.confirm-dialog-row dt { color: var(--text-muted); flex-shrink: 0; }
+.confirm-dialog-row dd { color: var(--text-primary); text-align: right; word-break: break-all; }
+.confirm-dialog-footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border-subtle);
+}
+/* İptal sol, Onayla sağ */
+.confirm-dialog-footer .cancel-btn { margin-right: auto; }

@@ -871,35 +871,97 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
 function openDescriptionEditor(seriesPath) {
     const { pName, sName } = seriesPath;
     const seriesObj = modelsData?.producers?.[pName]?.[sName];
-    if (!seriesObj) return showToast(() => __('models.not_found'), "error");
+    if (!seriesObj) return showToast(() => __('models.not_found'), 'error');
 
     const descObj = seriesObj.series_description || {};
-    let modalOverlay;
 
-    let formHTML = `<div class="modal-content"><button class="modal-close-btn">×</button><h2>${__('models.edit_desc')} · ${sanitizeHTML(sName)}</h2><form id="series-desc-form">`;
-    formHTML += `<div class="translation-field-group"><h4 data-i18n="models.description_texts">${__('models.description_texts')}</h4>`;
+    const modalOverlay = openModal({
+        title: `${__('models.edit_desc')} · ${sanitizeHTML(sName)}`,
+        titleKey: 'models.edit_desc',
+        titleSuffix: sName,
+        size: 'large',
+        render(body) {
+            body.className = 'translation-modal-body';
+            const form = document.createElement('form');
+            form.className = 'form-stack';
+            form.id = 'series-desc-form';
 
-    const englishValue = descObj.en || '';
-    formHTML += `<label for="trans-en-description" data-i18n="models.source_en">${__('models.source_en')}</label><textarea id="trans-en-description" name="trans-en-description" rows="3">${sanitizeHTML(englishValue)}</textarea>`;
+            // Bölüm başlığı
+            const sectionTitle = document.createElement('div');
+            sectionTitle.className = 'form-section-title';
+            sectionTitle.textContent = __('models.description_texts');
+            form.append(sectionTitle);
 
-    TARGET_LANGUAGES.forEach(lang => {
-        const langName = new Intl.DisplayNames([getLang()], { type: 'language' }).of(lang);
-        const currentValue = descObj[lang] || '';
-        formHTML += `<label for="trans-${lang}-description" data-language-name="${lang}">${sanitizeHTML(langName)}</label><textarea id="trans-${lang}-description" name="trans-${lang}-description" rows="3">${sanitizeHTML(currentValue)}</textarea>`;
+            // İngilizce kaynak (düzenlenebilir — kaynak dil)
+            const enGroup = document.createElement('div');
+            enGroup.className = 'form-group-field';
+            const enLabel = document.createElement('label');
+            enLabel.htmlFor = 'trans-en-description';
+            enLabel.textContent = __('models.source_en');
+            const enTextarea = document.createElement('textarea');
+            enTextarea.id = 'trans-en-description';
+            enTextarea.name = 'trans-en-description';
+            enTextarea.rows = 3;
+            enTextarea.value = descObj.en || '';
+            enGroup.append(enLabel, enTextarea);
+            form.append(enGroup);
+
+            // Diğer diller için kartlar
+            const langsGrid = document.createElement('div');
+            langsGrid.className = 'translation-langs-grid';
+
+            TARGET_LANGUAGES.forEach(lang => {
+                const val = descObj[lang] || '';
+                const id = `trans-${lang}-description`;
+                const langName = new Intl.DisplayNames([getLang()], { type: 'language' }).of(lang);
+
+                const card = document.createElement('div');
+                card.className = 'translation-lang-card';
+
+                const header = document.createElement('div');
+                header.className = 'translation-lang-header';
+                header.textContent = langName;
+
+                const fieldGroup = document.createElement('div');
+                fieldGroup.className = 'form-group-field';
+
+                const textarea = document.createElement('textarea');
+                textarea.id = id;
+                textarea.name = id;
+                textarea.rows = 3;
+                textarea.textContent = val;
+                textarea.className = 'auto-resize-textarea';
+                textarea.addEventListener('input', () => {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = Math.min(textarea.scrollHeight, 300) + 'px';
+                });
+
+                fieldGroup.append(textarea);
+                card.append(header, fieldGroup);
+                langsGrid.append(card);
+            });
+
+            form.append(langsGrid);
+
+            const submitBtn = document.createElement('button');
+            submitBtn.type = 'submit';
+            submitBtn.className = 'chrome-btn-primary';
+            submitBtn.textContent = __('models.save_series');
+            form.append(submitBtn);
+
+            form.addEventListener('submit', e => {
+                e.preventDefault();
+                handleSaveSeriesDescription(seriesPath, e.currentTarget);
+            });
+
+            body.append(form);
+        }
     });
 
-    formHTML += `</div><button type="submit" data-i18n="models.save_series">${__('models.save_series')}</button></form></div>`;
-    const content=document.createElement('div');content.innerHTML=formHTML;
-    const title=content.querySelector('h2').textContent;
-    content.querySelector('h2').remove();content.querySelector('.modal-close-btn').remove();
-    modalOverlay=openModal({title,titleKey:'models.edit_desc',titleSuffix:sName,render:body=>{body.append(content.querySelector('.modal-content'));}});
-    modalOverlay.id='translation-modal-overlay';
-    modalOverlay.querySelector('form').addEventListener('submit', e => {
-        e.preventDefault();
-        handleSaveSeriesDescription(seriesPath, e.currentTarget);
-    });
-
+    modalOverlay.id = 'translation-modal-overlay';
+    return modalOverlay;
 }
+
 
 /**
  * Handles the deletion of a manual model via the Curator API.
@@ -998,7 +1060,12 @@ function openTranslationEditor(modelPath) {
     if (modelObj.source === 'manual' && modelObj.details) {
         detailsObject = modelObj.details;
         englishDetails = modelObj.details.en;
-        translatableFields = [{ k: 'title' }, { k: 'summary' }, { k: 'description', t: 'textarea' }, { k: 'role', t: 'textarea' }];
+        translatableFields = [
+            { k: 'title' },
+            { k: 'summary' },
+            { k: 'description', t: 'textarea' },
+            { k: 'role', t: 'textarea' }
+        ];
     } else if (modelObj.description) {
         detailsObject = modelObj.description;
         englishDetails = { description: modelObj.description.en };
@@ -1007,31 +1074,100 @@ function openTranslationEditor(modelPath) {
         return showToast(() => __('models.no_translations'), "info");
     }
 
-    let modalOverlay;
-    let formHTML = `<div class="modal-content"><button class="modal-close-btn">×</button><h2>${__('models.translations_for')} · ${sanitizeHTML(vName)}</h2><form>`;
-    translatableFields.forEach(field => {
-        if (!englishDetails[field.k]) return;
-        formHTML += `<div class="translation-field-group"><h4><span data-i18n="models.field_${field.k}">${__('models.field_'+field.k)}</span> · <span data-i18n="models.source_en">${__('models.source_en')}</span></h4><p class="source-text">${sanitizeHTML(englishDetails[field.k])}</p>`;
-        TARGET_LANGUAGES.forEach(lang => {
-            const val = (typeof detailsObject[lang] === 'object' ? detailsObject[lang][field.k] : detailsObject[lang]) || '';
-            const id = `trans-${lang}-${field.k}`;
-            const langName = new Intl.DisplayNames([getLang()], { type: 'language' }).of(lang);
-            formHTML += `<label for="${id}" data-language-name="${lang}">${sanitizeHTML(langName)}</label>`;
-            formHTML += field.t === 'textarea' ? `<textarea id="${id}" name="${id}">${sanitizeHTML(val)}</textarea>` : `<input type="text" id="${id}" name="${id}" value="${sanitizeHTML(val)}">`;
-        });
-        formHTML += `</div>`;
-    });
-    formHTML += `<button type="submit" data-i18n="models.save_translations">${__('models.save_translations')}</button></form></div>`;
-    const content=document.createElement('div');content.innerHTML=formHTML;
-    const title=content.querySelector('h2').textContent;
-    content.querySelector('h2').remove();content.querySelector('.modal-close-btn').remove();
-    modalOverlay=openModal({title,titleKey:'models.translations_for',titleSuffix:vName,render:body=>{body.append(content.querySelector('.modal-content'));}});
-    modalOverlay.id='translation-modal-overlay';
-    modalOverlay.querySelector('form').addEventListener('submit', e => {
-        e.preventDefault();
-        handleSaveTranslations(modelPath, e.currentTarget, modelObj.source);
+    const modalOverlay = openModal({
+        title: `${__('models.translations_for')} · ${sanitizeHTML(vName)}`,
+        titleKey: 'models.translations_for',
+        titleSuffix: vName,
+        size: 'large',
+        render(body) {
+            body.className = 'translation-modal-body';
+            const form = document.createElement('form');
+            form.className = 'form-stack';
+            form.id = 'translation-editor-form';
+
+            translatableFields.forEach(field => {
+                if (!englishDetails?.[field.k]) return;
+
+                const section = document.createElement('div');
+                section.className = 'form-section';
+
+                const sectionTitle = document.createElement('div');
+                sectionTitle.className = 'form-section-title';
+                sectionTitle.textContent = __('models.field_' + field.k);
+                section.append(sectionTitle);
+
+                const refLabel = document.createElement('div');
+                refLabel.className = 'reference-label';
+                refLabel.textContent = `${__('models.source_en')} (${__('common.source_reference') || 'English Reference'})`;
+                const refText = document.createElement('div');
+                refText.className = 'reference-text-field';
+                refText.textContent = englishDetails[field.k];
+                section.append(refLabel, refText);
+
+                const langsGrid = document.createElement('div');
+                langsGrid.className = 'translation-langs-grid';
+
+                TARGET_LANGUAGES.forEach(lang => {
+                    const val = (typeof detailsObject[lang] === 'object'
+                        ? detailsObject[lang]?.[field.k]
+                        : detailsObject[lang]) || '';
+                    const id = `trans-${lang}-${field.k}`;
+                    const langName = new Intl.DisplayNames([getLang()], { type: 'language' }).of(lang);
+
+                    const card = document.createElement('div');
+                    card.className = 'translation-lang-card';
+
+                    const header = document.createElement('div');
+                    header.className = 'translation-lang-header';
+                    header.textContent = langName;
+
+                    const fieldGroup = document.createElement('div');
+                    fieldGroup.className = 'form-group-field';
+
+                    let input;
+                    if (field.t === 'textarea') {
+                        input = document.createElement('textarea');
+                        input.rows = 3;
+                        input.className = 'auto-resize-textarea';
+                        input.value = val;
+                        input.addEventListener('input', () => {
+                            input.style.height = 'auto';
+                            input.style.height = Math.min(input.scrollHeight, 320) + 'px';
+                        });
+                    } else {
+                        input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = val;
+                    }
+                    input.id = id;
+                    input.name = id;
+
+                    fieldGroup.append(input);
+                    card.append(header, fieldGroup);
+                    langsGrid.append(card);
+                });
+
+                section.append(langsGrid);
+                form.append(section);
+            });
+
+            const submitBtn = document.createElement('button');
+            submitBtn.type = 'submit';
+            submitBtn.className = 'chrome-btn-primary';
+            submitBtn.textContent = __('models.save_translations');
+            form.append(submitBtn);
+
+            form.addEventListener('submit', e => {
+                e.preventDefault();
+                handleSaveTranslations(modelPath, e.currentTarget, modelObj.source);
+            });
+
+            body.append(form);
+        }
     });
 
+    modalOverlay.id = 'translation-modal-overlay';
+    return modalOverlay;
 }
 
 // ===================================================================================

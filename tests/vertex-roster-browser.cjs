@@ -25,7 +25,7 @@ await page.route('**/*',async route=>{
  if(url.hostname.endsWith('cloudfunctions.net')) return route.fulfill({contentType:'application/json',body:JSON.stringify(verificationValid ? {valid:true,name:'Example Participant',language:'en',certificateType:'tenacity',formattedDate:'01/01/2026'} : {valid:false})});
  if(url.hostname==='127.0.0.1'){
   if(url.pathname.startsWith('/verify/'))return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.resolve(root,'../vertexite/verify.html'),'utf8')});
-  if(url.pathname.endsWith('/js/core/deployment-capabilities.js'))return route.fulfill({contentType:'text/javascript',body:'export const deploymentCapabilities={contributorMembershipWrites:true,contributorRoster:true};'});
+  if(url.pathname.endsWith('/js/core/deployment-capabilities.js'))return route.fulfill({contentType:'text/javascript',body:'export const deploymentCapabilities={contributorMembershipWrites:false,contributorRoster:true};'});
   if(url.pathname.endsWith('/js/core/initializer.js'))return route.fulfill({contentType:'text/javascript',body:"import {startApp} from '../main.js'; startApp({apiKey:'test'});"});
   return route.continue();
  }
@@ -85,9 +85,8 @@ assert.equal(payloads.find(p=>p.name==='applycontributorroster').data.digest,'a'
 await page.locator('#vertex-roster-phones').fill(phones+'\n');assert.equal(await page.locator('.vertex-roster-row').count(),0);
 assert(await page.getByRole('button',{name:'Download CSV report',exact:true}).isDisabled());
 await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
-await page.locator('[data-membership="person"]').click();await page.locator('.confirm-ok').click();await page.waitForTimeout(300);
-const membershipPayload=payloads.find(p=>p.name==='setcontributorvertexstatus').data;assert.equal(membershipPayload.contributorId,'person');assert.equal(membershipPayload.expectedFieldExists,false);assert(!('targetUid' in membershipPayload));
-assert(!calls.includes('setvertexmembership'));assert(!calls.includes('togglevertexstatus'));
+assert.equal(await page.locator('[data-membership="person"]').count(),0);
+assert(!calls.includes('setcontributorvertexstatus'));assert(!calls.includes('togglevertexstatus'));
 const child=page.locator('[data-nav-panel="subscriptions.list"][data-nav-action=""]'),main=child.locator('xpath=ancestor::div[contains(@class,"nav-module")]').locator('.dock-btn');if(await main.getAttribute('aria-expanded')==='false')await main.click();await child.click();
 await page.getByText('Vertex sponsorship · While membership is active',{exact:true}).waitFor();
 const sponsorRow=page.locator('.dept-user-row').filter({hasText:'Sponsor member'});assert.equal(await sponsorRow.locator('button[data-uid]').count(),0);

@@ -11,6 +11,7 @@ const TABS = [
     { id: 'models', icon: 'smart_toy', key: 'nav.models' },
     { id: 'news', icon: 'newspaper', key: 'nav.news' },
     { id: 'notifications', icon: 'notifications_active', key: 'nav.notifications' },
+    { id: 'events', icon: 'calendar_month', key: 'nav.events' },
     { id: 'subscriptions', icon: 'workspace_premium', key: 'nav.subscriptions' },
     { id: 'system', icon: 'settings_ethernet', key: 'nav.system' }
 ];
@@ -46,6 +47,11 @@ export const PANELS = {
     notifications: [
         { id: 'sender', key: 'panel.notifications.sender', icon: 'campaign' },
         { id: 'scheduled', key: 'panel.notifications.scheduled', icon: 'calendar_month' }
+    ],
+    events: [
+        {id:'list',key:'panel.events.list',icon:'list_alt'},
+        {id:'editor',key:'panel.events.editor',icon:'post_add'},
+        {id:'registrations',key:'panel.events.registrations',icon:'group'}
     ],
     subscriptions: [
         { id: 'assign', key: 'panel.subscriptions.assign', icon: 'workspace_premium' },

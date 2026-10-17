@@ -5,7 +5,7 @@ import { icon } from '../utils/icons.js';
 import { openDrawer, confirmDialog } from './shell.js';
 import { createLoadingController, skeletonRows, skeletonCertificate, setButtonLoading } from '../utils/loading.js';
 import { isPanelAdmin } from './roles.js';
-const awards = [{type:'tenacity',months:1,icon:'award',tr:'Dirayet',en:'Tenacity'},{type:'constancy',months:3,icon:'shield',tr:'Metanet',en:'Constancy'},{type:'majesty',months:6,icon:'diamond',tr:'Azamet',en:'Majesty'},{type:'nobility',months:12,icon:'crown',tr:'Asalet',en:'Nobility'}];
+const awards = [{type:'tenacity',months:1,icon:'award',tr:'Dirayet',en:'Tenacity'},{type:'constancy',months:3,icon:'shield',tr:'Metanet',en:'Constancy'},{type:'nobility',months:6,icon:'diamond',tr:'Azamet',en:'Nobility'},{type:'majesty',months:12,icon:'crown',tr:'Asalet',en:'Majesty'}];
 const pending = new Set();
 const unresolved = new Set();
 export function formatCertificateDate(value) {
@@ -20,7 +20,7 @@ function dateValue(value) {
     return new Date((value._seconds ?? value.seconds)*1000).toISOString().slice(0,10);
 }
 function typeName(type, types) { return types?.[type]?.[getLang()] || awards.find(a=>a.type===type)?.[getLang()] || __('cert.status_unknown'); }
-function statusName(status) { if(status==='succeeded')return __('cert.success');if(status==='pending')return __('cert.processing');return ['processing','failed','revoked','delivered'].includes(status) ? __('cert.'+status) : status==='uncertain' ? __('cert.status_uncertain') : __('cert.status_unknown'); }
+function statusName(status) { if(status==='succeeded')return __('cert.success');if(status==='submitted')return __('cert.submitted');if(status==='pending')return __('cert.processing');return ['processing','failed','revoked','delivered'].includes(status) ? __('cert.'+status) : status==='uncertain' ? __('cert.status_uncertain') : __('cert.status_unknown'); }
 
 export function openCertificates(person, refresh, anchor = document.activeElement, options = {}) {
     if (!isPanelAdmin() || !person) return;
@@ -112,7 +112,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
         function paint(){
             if(!body?.isConnected)return;
             setTitle('cert.history');back(()=>{historyOpen=false;unsubscribeHistory();render();});footer.innerHTML='';
-            body.innerHTML=`<div class="cert-history-list">${(details.history || []).map(job=>`<article class="cert-history-item"><div class="cert-history-head"><strong>${esc(typeName(job.certificateType,details.types))}</strong><span class="status-badge is-${esc(job.status)}">${esc(statusName(job.status))}</span></div><small>${esc(formatCertificateDate(job.issuedAt || job.createdAt))}</small><a class="cert-history-link" href="https://vertexishere.com/verify/${encodeURIComponent(job.id)}" target="_blank" rel="noopener">${__('cert.verify')}</a>${job.status==='uncertain'?`<p>${__('cert.uncertain')}</p>`:''}${job.status==='failed'&&!job.retrySafe?`<p>${__('cert.retry_block')}</p>`:''}<details><summary>${__('cert.attempts')}</summary>${(job.attempts || []).map(a=>`<p>${esc(a.id)} · ${esc(statusName(a.status))} · ${esc(formatCertificateDate(a.createdAt || a.startedAt))}</p>`).join('')}</details><div class="cert-history-actions">${job.status==='failed'&&job.retrySafe?`<button class="chrome-btn-outline" data-retry="${esc(job.certificateType)}">${__('common.retry')}</button>`:''}${job.status!=='revoked'?`<button class="chrome-btn-outline" data-revoke="${esc(job.id)}">${__('cert.revoke')}</button>`:''}</div></article>`).join('') || `<p class="state-block">${__('cert.empty')}</p>`}</div>`;
+            body.innerHTML=`<div class="cert-history-list">${(details.history || []).map(job=>`<article class="cert-history-item"><div class="cert-history-head"><strong>${esc(job.certificateName || typeName(job.certificateType,details.types))}</strong><span class="status-badge is-${esc(job.status)}">${esc(statusName(job.status))}</span></div><small>${esc(formatCertificateDate(job.issuedAt || job.createdAt))}</small><a class="cert-history-link" href="https://vertexishere.com/verify/${encodeURIComponent(job.id)}" target="_blank" rel="noopener">${__('cert.verify')}</a>${job.status==='uncertain'?`<p>${__('cert.uncertain')}</p>`:''}${job.status==='failed'&&!job.retrySafe?`<p>${__('cert.retry_block')}</p>`:''}<details><summary>${__('cert.attempts')}</summary>${(job.attempts || []).map(a=>`<p>${esc(a.id)} · ${esc(statusName(a.status))} · ${esc(formatCertificateDate(a.createdAt || a.startedAt))}</p>`).join('')}</details><div class="cert-history-actions">${job.status==='failed'&&job.retrySafe?`<button class="chrome-btn-outline" data-retry="${esc(job.certificateType)}">${__('common.retry')}</button>`:''}${job.status!=='revoked'?`<button class="chrome-btn-outline" data-revoke="${esc(job.id)}">${__('cert.revoke')}</button>`:''}</div></article>`).join('') || `<p class="state-block">${__('cert.empty')}</p>`}</div>`;
             body.querySelectorAll('[data-retry]').forEach(b=>b.onclick=async()=>{await review(b.dataset.retry,true,b);paint();});
             body.querySelectorAll('[data-revoke]').forEach(b=>b.onclick=async()=>{
                 if(b.disabled)return;

@@ -1,4 +1,4 @@
-import { initPeopleModule } from './modules/people.js';
+import { initEventsModule } from './modules/events.js';
 import { initScrollEdges } from './utils/scrollEdges.js';
 import { displayDepartmentName } from './utils/departments.js';
 import { initSystemSections } from './modules/system.js';
@@ -6,8 +6,7 @@ import { initIcons } from './utils/icons.js';
 import { initShell, refreshNavigation, closePopover, closeDrawer, closeModal } from './modules/shell.js';
 // js/main.js
 
-import { deploymentCapabilities } from './core/deployment-capabilities.js';
-import { initFirebase, auth, db, consolePeopleCall } from './core/firebase.js';
+import { initFirebase, auth } from './core/firebase.js';
 import * as dom from './utils/dom.js';
 import { userErrorMessage, showToast, __, getLang, setLang, translatePage, onLangChange } from './utils/ui.js';
 
@@ -20,6 +19,8 @@ import { initContributorsModule, fetchContributorsData, applyChipVisibility } fr
 import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscriptions.js';
 import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, PANELS } from './modules/roles.js';
 import { initSiteTeamPanel } from './modules/siteTeam.js';
+import { initTeamCardsPanel, loadTeamCards } from './modules/teamCards.js';
+import { updateGridVisibleCounts } from './modules/views.js';
 import { initUserMenu } from './modules/userMenu.js';
 import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
 
@@ -38,9 +39,9 @@ export function startApp(firebaseConfig) {
     // These listeners are safe to add now, as they are attached to elements
     // that are always present in the DOM.
     initAdminModule();
-    initPeopleModule();
     initModelsModule(); // CORRECTED: Calls the new unified initializer
     initNewsModule();
+    initEventsModule();
     initNotificationModule();
     initContributorsModule();
     initSubscriptionsModule();
@@ -50,10 +51,12 @@ export function startApp(firebaseConfig) {
     // genislik yazip titreme/taşmaya yol açiyordu (kullanicinin istedigi kaldirim).
     initProfileMenu();
     initSiteTeamPanel();
+    initTeamCardsPanel();
 
     initShell();
     initSystemSections();
     initIcons();
+    updateGridVisibleCounts();
     const readOnlyObserver = new MutationObserver(records => {
         const panels = new Set();
         for(const record of records) for(const node of record.addedNodes) {
@@ -96,29 +99,27 @@ export function startApp(firebaseConfig) {
     document.addEventListener('vertex:workspace',event=>{
         if(!auth.currentUser || dom.adminPanel.style.display==='none')return;
         const keys=event.detail.keys;
-        const tasks=[['contributors.list',fetchContributorsData],['models.library',fetchFullModelsData],['models.manage',fetchFullModelsData],['news.published',listenForArticles],['news.editor',listenForArticles],['notifications.scheduled',listenForScheduledTasks],['subscriptions.list',refreshSubscriptions],['system.deptUsers',refreshDepartmentUsers],['system.adminList',loadAdminsList],['system.serverStatus',initializeMaintenanceStatus],['system.deptPerms',loadRolesWorkspace],['chat.channels',refreshConsoleChat]];
+        const tasks=[['contributors.list',fetchContributorsData],['models.library',fetchFullModelsData],['models.manage',fetchFullModelsData],['news.published',listenForArticles],['news.editor',listenForArticles],['notifications.scheduled',listenForScheduledTasks],['subscriptions.list',refreshSubscriptions],['system.deptUsers',refreshDepartmentUsers],['system.adminList',loadAdminsList],['system.serverStatus',initializeMaintenanceStatus],['system.teamLog',loadTeamCards],['system.deptPerms',loadRolesWorkspace],['chat.channels',refreshConsoleChat]];
         for(const [key,load] of tasks)if(keys.includes(key)&&(key==='chat.channels'||getEffectivePanelLevel(key)!=='none')&&!loadedWorkspaces.has(load)){
             loadedWorkspaces.add(load);try{Promise.resolve(load()).catch(error=>console.error('[WORKSPACE] Load failed',key,error.code));}catch(error){console.error('[WORKSPACE] Load failed',key,error.code);}
         }
     });
     // --- Step 3: Set up the Core Authentication State Listener ---
     // This is the central control point that reacts to user login/logout.
-    let authEpoch=0,personnelUnsubscribe=null;
+    let authEpoch=0;
     auth.onAuthStateChanged(async (user) => {
-        const epoch=++authEpoch;personnelUnsubscribe?.();personnelUnsubscribe=null;
+        const epoch=++authEpoch;
         if(document.documentElement.dataset.startupFailed === 'true') return;
         if (user) {
             console.log(`[AUTH] User signed in: ${user.email}`);
             try {
                 const idTokenResult = await user.getIdTokenResult(true);
                 if(epoch!==authEpoch || document.documentElement.dataset.startupFailed === 'true')return;
-                let isAdmin = idTokenResult.claims.admin === true;
-                let departments = Array.isArray(idTokenResult.claims.departments)
+                const isAdmin = idTokenResult.claims.admin === true;
+                const departments = Array.isArray(idTokenResult.claims.departments)
                     ? idTokenResult.claims.departments
                     : (idTokenResult.claims.department ? [idTokenResult.claims.department] : []);
 
-                if(deploymentCapabilities.consolePeople&&!isAdmin){const profile=(await db.collection('users').doc(user.uid).get()).data()||{};if(profile.contributorId||profile.personnelManaged){if(deploymentCapabilities.consoleAccountActivation&&profile.personnelOwnership==='pending'&&user.emailVerified){await consolePeopleCall('completePersonnelActivation',{});await user.getIdToken(true);}const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;if(typeof access?.isAdmin!=='boolean'||!Array.isArray(access.departments))throw new Error('Invalid access response');isAdmin=access.isAdmin;departments=access.departments;}}
-                if(epoch!==authEpoch)return;
                 if (!isAdmin && !departments.length) {
                     const denied=new Error('Console access denied');denied.code='auth/insufficient-permission';throw denied;
                 }
@@ -148,16 +149,6 @@ export function startApp(firebaseConfig) {
                     applyChipVisibility();
 
                     document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
-                }
-
-                if(deploymentCapabilities.consolePeople){
-                  let revision=null;
-                  personnelUnsubscribe=db.collection('users').doc(user.uid).onSnapshot(async snapshot=>{
-                    const profile=snapshot.data()||{};if(!profile.contributorId&&!profile.personnelManaged)return;
-                    const next=profile.authzVersion||0;if(next===revision)return;revision=next;
-                    try{const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;if(epoch!==authEpoch)return;if(!access.isAdmin&&!access.departments.length){await auth.signOut();return;}setCurrentUser(access.isAdmin,access.departments);if(access.isAdmin)resetTabFilter();else{await loadDepartmentPermissions();applyTabFilter(getAccessibleTabs(access.departments));}applyPanelGate(access.isAdmin);applyChipVisibility();renderProfile(user,access.isAdmin,access.departments,true);document.dispatchEvent(new CustomEvent('vertex:departments',{detail:access.departments}));}
-                    catch(error){if(epoch===authEpoch&&error.code==='functions/permission-denied')auth.signOut();}
-                  },error=>console.warn('[PERSONNEL] Access subscription unavailable',error.code));
                 }
 
             } catch (error) {
@@ -401,7 +392,7 @@ function renderPermSummary() {
 
 function disableReadOnlyControls(panel) {
     panel.querySelectorAll('input,textarea,select,button').forEach(control => {
-        if(control.id.includes('search') || control.matches('.btn-refresh,.filter-chip,.contributor-cell-name,.retry-btn'))return;
+        if(control.id.includes('search') || control.matches('.btn-refresh,.filter-chip,.contributor-cell-name,.retry-btn,[data-read-action]'))return;
         if(!control.disabled)control.dataset.roleDisabled='true';
         control.disabled=true;
     });

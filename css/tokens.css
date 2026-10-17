@@ -243,3 +243,14 @@ html.theme-anim .panel-card {
 @media(prefers-color-scheme:light){[data-theme="system"]{--bg-nav-parent:#eaeaea;--bg-nav-child:#dedede}}
 
 :root{--toast-success-border:rgba(64,184,116,.55);--toast-success-bg:rgba(34,110,65,.12);--toast-error-border:rgba(230,87,87,.58);--toast-error-bg:rgba(130,35,35,.13)}
+
+/* ---------- Form & Layout Spacing Tokens (A2) ---------- */
+:root {
+    --form-gap: var(--space-4);           /* form elemanları arası */
+    --form-section-gap: var(--space-6);   /* form bölümleri arası */
+    --card-pad: var(--space-5);           /* panel-card iç boşluğu */
+    --card-gap: var(--space-4);           /* grid-layout paneller arası */
+    --list-row-pad: var(--space-3) var(--space-3); /* liste satır padding */
+    --icon-btn-size: 32px;                /* ikon buton boyutu */
+    --icon-btn-size-sm: 28px;             /* küçük ikon buton */
+}

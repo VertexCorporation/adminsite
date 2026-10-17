@@ -6,7 +6,7 @@ import { beginPanelLoading, skeletonListItem, skeletonChatMessage, setButtonLoad
 
 import { showToast, userErrorMessage, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
-import { auth, addAdminRoleFn, getServerStatusFn, setServerStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, setUserSubscriptionFn, bulkSetUserSubscriptionsFn } from '../core/firebase.js';
+import { auth, addAdminRoleFn, getServerStatusFn, setServerStatusFn, getBackupHealthStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, setUserSubscriptionFn, bulkSetUserSubscriptionsFn } from '../core/firebase.js';
 import { DEPARTMENTS, getEffectivePanelLevel, isPanelAdmin } from './roles.js';
 
 // --- Module state for attributions ---
@@ -166,31 +166,146 @@ async function loadDepartmentUsers() {
 let maintenanceState = null;
 let maintenancePending = false;
 function updateMaintenanceUI(isEnabled = maintenanceState) {
-    maintenanceState=isEnabled;
-    const button=dom.maintenanceActionBtn;
-    dom.maintenanceStatusIndicator.querySelector('.status-dot').className='status-dot '+(isEnabled===null?'status-pending':isEnabled?'status-on':'status-off');
-    dom.maintenanceStatusIndicator.querySelector('.status-text').textContent=__(isEnabled===null?'system.status_unavailable':isEnabled?'system.maintenance_on':'system.live');
-    button.classList.add('chrome-btn-outline');button.classList.remove('secondary-btn');
-    button.classList.toggle('is-maintenance-active',isEnabled===true);button.classList.toggle('is-pending',maintenancePending);
-    button.classList.toggle('retry-btn',isEnabled===null);
-    button.disabled=maintenancePending||(isEnabled!==null&&getEffectivePanelLevel('system.serverStatus')!=='write');button.textContent=__(maintenancePending?'system.saving':isEnabled===null?'common.retry':isEnabled?'system.disable_maint':'system.enable_maint');
+    maintenanceState = isEnabled;
+    const button = dom.maintenanceActionBtn;
+    if (!button || !dom.maintenanceStatusIndicator) return;
+
+    dom.maintenanceStatusIndicator.querySelector('.status-dot').className =
+        'status-dot ' + (isEnabled === null ? 'status-pending' : isEnabled ? 'status-on' : 'status-off');
+    dom.maintenanceStatusIndicator.querySelector('.status-text').textContent =
+        __(isEnabled === null ? 'system.status_unavailable' : isEnabled ? 'system.maintenance_on' : 'system.live');
+
+    button.classList.add('chrome-btn-outline');
+    button.classList.remove('secondary-btn');
+    button.classList.toggle('is-maintenance-active', isEnabled === true);
+    button.classList.toggle('is-pending', maintenancePending);
+    button.classList.toggle('retry-btn', isEnabled === null);
+    button.disabled = maintenancePending || (isEnabled !== null && getEffectivePanelLevel('system.serverStatus') !== 'write');
+    button.textContent = __(maintenancePending ? 'system.saving' : isEnabled === null ? 'common.retry' : isEnabled ? 'system.disable_maint' : 'system.enable_maint');
+
+    // Bakım modu açıkken panelde belirgin ve açık uyarı kutusu göster
+    const panel = document.getElementById('server-status-manager');
+    if (panel) {
+        let warningBox = panel.querySelector('#maintenance-warning-box');
+        if (isEnabled === true) {
+            if (!warningBox) {
+                warningBox = document.createElement('div');
+                warningBox.id = 'maintenance-warning-box';
+                warningBox.className = 'confirm-dialog-warning';
+                warningBox.style.marginTop = '12px';
+                warningBox.setAttribute('role', 'alert');
+                panel.querySelector('.status-action-box')?.after(warningBox);
+            }
+            warningBox.innerHTML = `<strong>${icon('alert-triangle', { size: 16 })}</strong> <span>${__('system.maintenance_warning_banner')}</span>`;
+            warningBox.hidden = false;
+        } else if (warningBox) {
+            warningBox.hidden = true;
+        }
+    }
 }
+
 export async function initializeMaintenanceStatus() {
-    if(maintenancePending)return;maintenancePending=true;updateMaintenanceUI();
-    try {const result=await getServerStatusFn();maintenanceState=typeof result.data.isUnderMaintenance==='boolean'?result.data.isUnderMaintenance:null;}
-    catch {maintenanceState=null;showToast(() => __('system.status_unavailable'),'error');}
-    finally{maintenancePending=false;updateMaintenanceUI();}
+    if (maintenancePending) return;
+    maintenancePending = true;
+    updateMaintenanceUI();
+    try {
+        const result = await getServerStatusFn();
+        maintenanceState = typeof result?.data?.isUnderMaintenance === 'boolean' ? result.data.isUnderMaintenance : null;
+    } catch {
+        maintenanceState = null;
+        showToast(() => __('system.status_unavailable'), 'error');
+    } finally {
+        maintenancePending = false;
+        updateMaintenanceUI();
+    }
 }
+
 async function handleMaintenanceToggle() {
-    if(maintenancePending)return;
-    if(maintenanceState===null)return initializeMaintenanceStatus();
-    if(getEffectivePanelLevel('system.serverStatus')!=='write')return;
-    if(!await confirmDialog(()=>({title:__('system.maintenance'),body:__('system.maintenance_confirm')})))return;
-    if(maintenancePending)return;
-    const next=!maintenanceState;maintenancePending=true;updateMaintenanceUI();
-    try{await setServerStatusFn({maintenanceEnabled:next});maintenanceState=next;showToast(() => __('system.maint_updated'),'success');}
-    catch{maintenanceState=null;showToast(() => __('system.error'),'error');}
-    finally{maintenancePending=false;updateMaintenanceUI();}
+    if (maintenancePending) return;
+    if (maintenanceState === null) return initializeMaintenanceStatus();
+    if (getEffectivePanelLevel('system.serverStatus') !== 'write') return;
+
+    const next = !maintenanceState;
+    const confirmed = await confirmDialog(() => ({
+        title: next ? __('system.enable_maint') : __('system.disable_maint'),
+        body: next ? __('system.maintenance_confirm') : __('system.disable_maint_confirm'),
+        confirmLabel: next ? __('system.enable_maint') : __('system.disable_maint'),
+        danger: next // Bakım modunu açmak tehlikeli (girişleri durdurur)
+    }));
+    if (!confirmed) return;
+
+    const button = dom.maintenanceActionBtn;
+    maintenancePending = true;
+    updateMaintenanceUI();
+    setButtonLoading(button, true);
+
+    try {
+        await setServerStatusFn({ maintenanceEnabled: next });
+        maintenanceState = next;
+        showToast(() => __('system.maint_updated'), 'success');
+    } catch (err) {
+        // Hata durumunda durum bozulmaz; kullanıcıya gerçek hata bildirilir
+        showToast(() => userErrorMessage(err), 'error');
+    } finally {
+        maintenancePending = false;
+        setButtonLoading(button, false);
+        updateMaintenanceUI();
+    }
+}
+
+/**
+ * GCS Yedekleme Sağlık Kontrolü (Madde 14)
+ * Yapılandırma varlığı ile gerçek yedekleme sağlığını ayırır.
+ */
+export async function loadBackupHealthStatus() {
+    const card = document.getElementById('gcs-backup-status');
+    if (!card) return;
+
+    const descEl = document.getElementById('gcs-backup-desc');
+    const badgeEl = document.getElementById('gcs-backup-badge');
+    const refreshBtn = document.getElementById('refresh-backup-btn');
+
+    if (refreshBtn) setButtonLoading(refreshBtn, true);
+
+    try {
+        const { data } = await getBackupHealthStatusFn({});
+        if (data?.healthy) {
+            if (badgeEl) {
+                badgeEl.className = 'status-badge status-badge--success';
+                badgeEl.textContent = __('system.backup_healthy');
+            }
+            if (descEl) {
+                const dateStr = data.lastBackupDate ? new Date(data.lastBackupDate).toLocaleString() : '';
+                descEl.textContent = `${__('system.backup_last_success')} ${dateStr} (${Math.round((data.sizeBytes || 0) / 1024)} KB)`;
+            }
+        } else if (data?.status === 'stale') {
+            if (badgeEl) {
+                badgeEl.className = 'status-badge status-badge--warning';
+                badgeEl.textContent = __('system.backup_stale');
+            }
+            if (descEl) {
+                descEl.textContent = data.error || __('system.backup_unknown');
+            }
+        } else {
+            if (badgeEl) {
+                badgeEl.className = 'status-badge';
+                badgeEl.textContent = __('system.backup_configured');
+            }
+            if (descEl) {
+                descEl.textContent = data?.error || __('system.backup_unknown');
+            }
+        }
+    } catch (err) {
+        if (badgeEl) {
+            badgeEl.className = 'status-badge';
+            badgeEl.textContent = __('cert.status_unknown');
+        }
+        if (descEl) {
+            descEl.textContent = userErrorMessage(err);
+        }
+    } finally {
+        if (refreshBtn) setButtonLoading(refreshBtn, false);
+    }
 }
 
 /**
@@ -459,9 +574,17 @@ export function initAdminModule() {
         refreshAdminsBtn.addEventListener('click', loadAdminsList);
     }
     
+    const refreshBackupBtn = document.getElementById('refresh-backup-btn');
+    if (refreshBackupBtn) {
+        refreshBackupBtn.addEventListener('click', loadBackupHealthStatus);
+    }
+
     const deptAssignForm = document.getElementById('dept-assign-form');
     if (deptAssignForm) deptAssignForm.addEventListener('submit', handleDeptAssignSubmit);
     
     // Load admins list initially (giris oncesi cagrilmaz; login akisi yeniden cagirir)
-    if (auth && auth.currentUser) loadAdminsList();
+    if (auth && auth.currentUser) {
+        loadAdminsList();
+        loadBackupHealthStatus();
+    }
 }

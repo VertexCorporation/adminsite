@@ -8,7 +8,7 @@
     "denied storage",
     "slow SDK",
     "SDK failure",
-    "config failure",
+    "configuration fallback",
     "initializer exception",
     "module evaluation failure",
     "startup timeout",

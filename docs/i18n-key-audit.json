@@ -1,620 +1,1565 @@
 {
-  "dictionaryKeys": 733,
-  "staticReferences": 578,
+  "dictionaryKeys": 907,
+  "staticReferences": 702,
   "missing": [],
   "dynamicReferences": [
     {
-      "file": "assets/releases/012d84bec118/js/main.js",
+      "file": "assets/releases/0d0d0a3b7784/js/main.js",
       "expression": "__(`nav.${tabId}`",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/012d84bec118/js/modules/certificates.js",
+      "file": "assets/releases/0d0d0a3b7784/js/modules/certificates.js",
       "expression": "__('cert.'+",
       "prefix": "cert."
     },
     {
-      "file": "assets/releases/012d84bec118/js/modules/contributors.js",
+      "file": "assets/releases/0d0d0a3b7784/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/012d84bec118/js/modules/contributors.js",
+      "file": "assets/releases/0d0d0a3b7784/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/012d84bec118/js/modules/models.js",
+      "file": "assets/releases/0d0d0a3b7784/js/modules/models.js",
       "expression": "__('models.field_'+",
       "prefix": "models.field_"
     },
     {
-      "file": "assets/releases/012d84bec118/js/modules/roles.js",
+      "file": "assets/releases/0d0d0a3b7784/js/modules/roles.js",
       "expression": "__('perms.level_' +",
       "prefix": "perms.level_"
     },
     {
-      "file": "assets/releases/012d84bec118/js/modules/roles.js",
+      "file": "assets/releases/0d0d0a3b7784/js/modules/roles.js",
       "expression": "__('perms.' +",
       "prefix": "perms."
     },
     {
-      "file": "assets/releases/012d84bec118/js/modules/roles.js",
+      "file": "assets/releases/0d0d0a3b7784/js/modules/roles.js",
       "expression": "__('dept.group_' +",
       "prefix": "dept.group_"
     },
     {
-      "file": "assets/releases/012d84bec118/js/modules/roles.js",
+      "file": "assets/releases/0d0d0a3b7784/js/modules/roles.js",
       "expression": "__('perms.preset_'+",
       "prefix": "perms.preset_"
     },
     {
-      "file": "assets/releases/012d84bec118/js/modules/roles.js",
+      "file": "assets/releases/0d0d0a3b7784/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/012d84bec118/js/modules/shell.js",
+      "file": "assets/releases/0d0d0a3b7784/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/0d0d0a3b7784/js/modules/shell.js",
       "expression": "__(`theme.${getThemeMode()}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/012d84bec118/js/modules/shell.js",
+      "file": "assets/releases/0d0d0a3b7784/js/modules/shell.js",
       "expression": "__(`theme.${m}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/012d84bec118/js/modules/system.js",
+      "file": "assets/releases/0d0d0a3b7784/js/modules/system.js",
       "expression": "__('system.'+",
       "prefix": "system."
     },
     {
-      "file": "assets/releases/042af4fefe72/js/main.js",
+      "file": "assets/releases/268307a15f84/js/main.js",
       "expression": "__(`nav.${tabId}`",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/certificates.js",
+      "file": "assets/releases/268307a15f84/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.'+",
+      "prefix": "email_templates."
+    },
+    {
+      "file": "assets/releases/268307a15f84/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.placeholder_'+",
+      "prefix": "email_templates.placeholder_"
+    },
+    {
+      "file": "assets/releases/268307a15f84/js/modules/certificates.js",
       "expression": "__('cert.'+",
       "prefix": "cert."
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/contributors.js",
+      "file": "assets/releases/268307a15f84/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/contributors.js",
+      "file": "assets/releases/268307a15f84/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/models.js",
-      "expression": "__('models.field_'+",
+      "file": "assets/releases/268307a15f84/js/modules/models.js",
+      "expression": "__('models.field_' +",
       "prefix": "models.field_"
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/roles.js",
+      "file": "assets/releases/268307a15f84/js/modules/people.js",
+      "expression": "__('people.'+",
+      "prefix": "people."
+    },
+    {
+      "file": "assets/releases/268307a15f84/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/268307a15f84/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/268307a15f84/js/modules/people.js",
+      "expression": "__('people.link_'+",
+      "prefix": "people.link_"
+    },
+    {
+      "file": "assets/releases/268307a15f84/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/268307a15f84/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/268307a15f84/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/268307a15f84/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/268307a15f84/js/modules/roles.js",
       "expression": "__('perms.level_' +",
       "prefix": "perms.level_"
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/roles.js",
+      "file": "assets/releases/268307a15f84/js/modules/roles.js",
       "expression": "__('perms.' +",
       "prefix": "perms."
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/roles.js",
+      "file": "assets/releases/268307a15f84/js/modules/roles.js",
       "expression": "__('dept.group_' +",
       "prefix": "dept.group_"
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/roles.js",
+      "file": "assets/releases/268307a15f84/js/modules/roles.js",
       "expression": "__('perms.preset_'+",
       "prefix": "perms.preset_"
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/roles.js",
+      "file": "assets/releases/268307a15f84/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/roles.js",
+      "file": "assets/releases/268307a15f84/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/shell.js",
+      "file": "assets/releases/268307a15f84/js/modules/shell.js",
       "expression": "__(`theme.${getThemeMode()}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/shell.js",
+      "file": "assets/releases/268307a15f84/js/modules/shell.js",
       "expression": "__(`theme.${m}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/042af4fefe72/js/modules/system.js",
+      "file": "assets/releases/268307a15f84/js/modules/system.js",
       "expression": "__('system.'+",
       "prefix": "system."
     },
     {
-      "file": "assets/releases/215904ea5e40/js/main.js",
+      "file": "assets/releases/2d9ff1364a36/js/main.js",
       "expression": "__(`nav.${tabId}`",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/certificates.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.'+",
+      "prefix": "email_templates."
+    },
+    {
+      "file": "assets/releases/2d9ff1364a36/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.placeholder_'+",
+      "prefix": "email_templates.placeholder_"
+    },
+    {
+      "file": "assets/releases/2d9ff1364a36/js/modules/certificates.js",
       "expression": "__('cert.'+",
       "prefix": "cert."
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/contributors.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/contributors.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/models.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/models.js",
       "expression": "__('models.field_'+",
       "prefix": "models.field_"
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/roles.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/people.js",
+      "expression": "__('people.'+",
+      "prefix": "people."
+    },
+    {
+      "file": "assets/releases/2d9ff1364a36/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/2d9ff1364a36/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/2d9ff1364a36/js/modules/people.js",
+      "expression": "__('people.link_'+",
+      "prefix": "people.link_"
+    },
+    {
+      "file": "assets/releases/2d9ff1364a36/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/2d9ff1364a36/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/2d9ff1364a36/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/2d9ff1364a36/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/2d9ff1364a36/js/modules/roles.js",
       "expression": "__('perms.level_' +",
       "prefix": "perms.level_"
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/roles.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/roles.js",
       "expression": "__('perms.' +",
       "prefix": "perms."
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/roles.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/roles.js",
       "expression": "__('dept.group_' +",
       "prefix": "dept.group_"
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/roles.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/roles.js",
       "expression": "__('perms.preset_'+",
       "prefix": "perms.preset_"
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/roles.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/roles.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/shell.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/shell.js",
       "expression": "__(`theme.${getThemeMode()}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/shell.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/shell.js",
       "expression": "__(`theme.${m}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/215904ea5e40/js/modules/system.js",
+      "file": "assets/releases/2d9ff1364a36/js/modules/system.js",
       "expression": "__('system.'+",
       "prefix": "system."
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/main.js",
+      "file": "assets/releases/303fa2c746c2/js/main.js",
       "expression": "__(`nav.${tabId}`",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/certificates.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/certificates.js",
       "expression": "__('cert.'+",
       "prefix": "cert."
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/contributors.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/contributors.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/models.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/models.js",
       "expression": "__('models.field_'+",
       "prefix": "models.field_"
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/roles.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/people.js",
+      "expression": "__('people.'+",
+      "prefix": "people."
+    },
+    {
+      "file": "assets/releases/303fa2c746c2/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/303fa2c746c2/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/303fa2c746c2/js/modules/people.js",
+      "expression": "__('people.link_'+",
+      "prefix": "people.link_"
+    },
+    {
+      "file": "assets/releases/303fa2c746c2/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/303fa2c746c2/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/303fa2c746c2/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/303fa2c746c2/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/303fa2c746c2/js/modules/roles.js",
       "expression": "__('perms.level_' +",
       "prefix": "perms.level_"
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/roles.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/roles.js",
       "expression": "__('perms.' +",
       "prefix": "perms."
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/roles.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/roles.js",
       "expression": "__('dept.group_' +",
       "prefix": "dept.group_"
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/roles.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/roles.js",
       "expression": "__('perms.preset_'+",
       "prefix": "perms.preset_"
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/roles.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/roles.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/shell.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/shell.js",
       "expression": "__(`theme.${getThemeMode()}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/shell.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/shell.js",
       "expression": "__(`theme.${m}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/3bcc256cc829/js/modules/system.js",
+      "file": "assets/releases/303fa2c746c2/js/modules/system.js",
       "expression": "__('system.'+",
       "prefix": "system."
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/main.js",
+      "file": "assets/releases/30e1d789d5aa/js/main.js",
       "expression": "__(`nav.${tabId}`",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/certificates.js",
+      "file": "assets/releases/30e1d789d5aa/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.'+",
+      "prefix": "email_templates."
+    },
+    {
+      "file": "assets/releases/30e1d789d5aa/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.placeholder_'+",
+      "prefix": "email_templates.placeholder_"
+    },
+    {
+      "file": "assets/releases/30e1d789d5aa/js/modules/certificates.js",
       "expression": "__('cert.'+",
       "prefix": "cert."
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/contributors.js",
+      "file": "assets/releases/30e1d789d5aa/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/contributors.js",
+      "file": "assets/releases/30e1d789d5aa/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/models.js",
-      "expression": "__('models.field_'+",
+      "file": "assets/releases/30e1d789d5aa/js/modules/models.js",
+      "expression": "__('models.field_' +",
       "prefix": "models.field_"
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/roles.js",
+      "file": "assets/releases/30e1d789d5aa/js/modules/people.js",
+      "expression": "__('people.'+",
+      "prefix": "people."
+    },
+    {
+      "file": "assets/releases/30e1d789d5aa/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/30e1d789d5aa/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/30e1d789d5aa/js/modules/people.js",
+      "expression": "__('people.link_'+",
+      "prefix": "people.link_"
+    },
+    {
+      "file": "assets/releases/30e1d789d5aa/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/30e1d789d5aa/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/30e1d789d5aa/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/30e1d789d5aa/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/30e1d789d5aa/js/modules/roles.js",
       "expression": "__('perms.level_' +",
       "prefix": "perms.level_"
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/roles.js",
+      "file": "assets/releases/30e1d789d5aa/js/modules/roles.js",
       "expression": "__('perms.' +",
       "prefix": "perms."
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/roles.js",
+      "file": "assets/releases/30e1d789d5aa/js/modules/roles.js",
       "expression": "__('dept.group_' +",
       "prefix": "dept.group_"
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/roles.js",
+      "file": "assets/releases/30e1d789d5aa/js/modules/roles.js",
       "expression": "__('perms.preset_'+",
       "prefix": "perms.preset_"
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/roles.js",
+      "file": "assets/releases/30e1d789d5aa/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/roles.js",
+      "file": "assets/releases/30e1d789d5aa/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/shell.js",
+      "file": "assets/releases/30e1d789d5aa/js/modules/shell.js",
       "expression": "__(`theme.${getThemeMode()}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/shell.js",
+      "file": "assets/releases/30e1d789d5aa/js/modules/shell.js",
       "expression": "__(`theme.${m}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/3deeb5d4fba7/js/modules/system.js",
+      "file": "assets/releases/30e1d789d5aa/js/modules/system.js",
       "expression": "__('system.'+",
       "prefix": "system."
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/main.js",
+      "file": "assets/releases/62de5181bbbf/js/main.js",
       "expression": "__(`nav.${tabId}`",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/certificates.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/certificates.js",
       "expression": "__('cert.'+",
       "prefix": "cert."
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/contributors.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/contributors.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/models.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/models.js",
       "expression": "__('models.field_'+",
       "prefix": "models.field_"
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/roles.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/people.js",
+      "expression": "__('people.'+",
+      "prefix": "people."
+    },
+    {
+      "file": "assets/releases/62de5181bbbf/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/62de5181bbbf/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/62de5181bbbf/js/modules/people.js",
+      "expression": "__('people.link_'+",
+      "prefix": "people.link_"
+    },
+    {
+      "file": "assets/releases/62de5181bbbf/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/62de5181bbbf/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/62de5181bbbf/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/62de5181bbbf/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/62de5181bbbf/js/modules/roles.js",
       "expression": "__('perms.level_' +",
       "prefix": "perms.level_"
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/roles.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/roles.js",
       "expression": "__('perms.' +",
       "prefix": "perms."
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/roles.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/roles.js",
       "expression": "__('dept.group_' +",
       "prefix": "dept.group_"
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/roles.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/roles.js",
       "expression": "__('perms.preset_'+",
       "prefix": "perms.preset_"
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/roles.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/roles.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/shell.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/shell.js",
       "expression": "__(`theme.${getThemeMode()}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/shell.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/shell.js",
       "expression": "__(`theme.${m}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/620ced0e70d7/js/modules/system.js",
+      "file": "assets/releases/62de5181bbbf/js/modules/system.js",
       "expression": "__('system.'+",
       "prefix": "system."
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/main.js",
+      "file": "assets/releases/652fbc7debb4/js/main.js",
       "expression": "__(`nav.${tabId}`",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/modules/certificates.js",
+      "file": "assets/releases/652fbc7debb4/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.'+",
+      "prefix": "email_templates."
+    },
+    {
+      "file": "assets/releases/652fbc7debb4/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.placeholder_'+",
+      "prefix": "email_templates.placeholder_"
+    },
+    {
+      "file": "assets/releases/652fbc7debb4/js/modules/certificates.js",
       "expression": "__('cert.'+",
       "prefix": "cert."
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/modules/contributors.js",
+      "file": "assets/releases/652fbc7debb4/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/modules/contributors.js",
+      "file": "assets/releases/652fbc7debb4/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/modules/models.js",
-      "expression": "__('models.field_'+",
+      "file": "assets/releases/652fbc7debb4/js/modules/models.js",
+      "expression": "__('models.field_' +",
       "prefix": "models.field_"
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/modules/roles.js",
+      "file": "assets/releases/652fbc7debb4/js/modules/people.js",
+      "expression": "__('people.'+",
+      "prefix": "people."
+    },
+    {
+      "file": "assets/releases/652fbc7debb4/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/652fbc7debb4/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/652fbc7debb4/js/modules/people.js",
+      "expression": "__('people.link_'+",
+      "prefix": "people.link_"
+    },
+    {
+      "file": "assets/releases/652fbc7debb4/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/652fbc7debb4/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/652fbc7debb4/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/652fbc7debb4/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/652fbc7debb4/js/modules/roles.js",
       "expression": "__('perms.level_' +",
       "prefix": "perms.level_"
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/modules/roles.js",
+      "file": "assets/releases/652fbc7debb4/js/modules/roles.js",
       "expression": "__('perms.' +",
       "prefix": "perms."
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/modules/roles.js",
+      "file": "assets/releases/652fbc7debb4/js/modules/roles.js",
       "expression": "__('dept.group_' +",
       "prefix": "dept.group_"
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/modules/roles.js",
+      "file": "assets/releases/652fbc7debb4/js/modules/roles.js",
       "expression": "__('perms.preset_'+",
       "prefix": "perms.preset_"
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/modules/roles.js",
+      "file": "assets/releases/652fbc7debb4/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/modules/shell.js",
+      "file": "assets/releases/652fbc7debb4/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/652fbc7debb4/js/modules/shell.js",
       "expression": "__(`theme.${getThemeMode()}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/modules/shell.js",
+      "file": "assets/releases/652fbc7debb4/js/modules/shell.js",
       "expression": "__(`theme.${m}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/a9bc8ee3679d/js/modules/system.js",
+      "file": "assets/releases/652fbc7debb4/js/modules/system.js",
       "expression": "__('system.'+",
       "prefix": "system."
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/main.js",
+      "file": "assets/releases/7189f9b53e36/js/main.js",
       "expression": "__(`nav.${tabId}`",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/certificates.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/certificates.js",
       "expression": "__('cert.'+",
       "prefix": "cert."
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/contributors.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/contributors.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/models.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/models.js",
       "expression": "__('models.field_'+",
       "prefix": "models.field_"
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/roles.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/roles.js",
       "expression": "__('perms.level_' +",
       "prefix": "perms.level_"
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/roles.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/roles.js",
       "expression": "__('perms.' +",
       "prefix": "perms."
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/roles.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/roles.js",
       "expression": "__('dept.group_' +",
       "prefix": "dept.group_"
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/roles.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/roles.js",
       "expression": "__('perms.preset_'+",
       "prefix": "perms.preset_"
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/roles.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/roles.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/shell.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/shell.js",
       "expression": "__(`theme.${getThemeMode()}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/shell.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/shell.js",
       "expression": "__(`theme.${m}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/f17c3f6e2fa1/js/modules/system.js",
+      "file": "assets/releases/7189f9b53e36/js/modules/system.js",
       "expression": "__('system.'+",
       "prefix": "system."
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/main.js",
+      "file": "assets/releases/7196c8eb54ec/js/main.js",
       "expression": "__(`nav.${tabId}`",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/modules/certificates.js",
+      "file": "assets/releases/7196c8eb54ec/js/modules/certificates.js",
       "expression": "__('cert.'+",
       "prefix": "cert."
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/modules/contributors.js",
+      "file": "assets/releases/7196c8eb54ec/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/modules/contributors.js",
+      "file": "assets/releases/7196c8eb54ec/js/modules/contributors.js",
       "expression": "__('contributors.col_'+",
       "prefix": "contributors.col_"
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/modules/models.js",
+      "file": "assets/releases/7196c8eb54ec/js/modules/models.js",
       "expression": "__('models.field_'+",
       "prefix": "models.field_"
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/modules/roles.js",
+      "file": "assets/releases/7196c8eb54ec/js/modules/people.js",
+      "expression": "__('people.'+",
+      "prefix": "people."
+    },
+    {
+      "file": "assets/releases/7196c8eb54ec/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/7196c8eb54ec/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/7196c8eb54ec/js/modules/people.js",
+      "expression": "__('people.link_'+",
+      "prefix": "people.link_"
+    },
+    {
+      "file": "assets/releases/7196c8eb54ec/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/7196c8eb54ec/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/7196c8eb54ec/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/7196c8eb54ec/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/7196c8eb54ec/js/modules/roles.js",
       "expression": "__('perms.level_' +",
       "prefix": "perms.level_"
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/modules/roles.js",
+      "file": "assets/releases/7196c8eb54ec/js/modules/roles.js",
       "expression": "__('perms.' +",
       "prefix": "perms."
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/modules/roles.js",
+      "file": "assets/releases/7196c8eb54ec/js/modules/roles.js",
       "expression": "__('dept.group_' +",
       "prefix": "dept.group_"
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/modules/roles.js",
+      "file": "assets/releases/7196c8eb54ec/js/modules/roles.js",
       "expression": "__('perms.preset_'+",
       "prefix": "perms.preset_"
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/modules/roles.js",
+      "file": "assets/releases/7196c8eb54ec/js/modules/roles.js",
       "expression": "__('nav.'+",
       "prefix": "nav."
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/modules/shell.js",
+      "file": "assets/releases/7196c8eb54ec/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/7196c8eb54ec/js/modules/shell.js",
       "expression": "__(`theme.${getThemeMode()}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/modules/shell.js",
+      "file": "assets/releases/7196c8eb54ec/js/modules/shell.js",
       "expression": "__(`theme.${m}`",
       "prefix": "theme."
     },
     {
-      "file": "assets/releases/fd8940f2a015/js/modules/system.js",
+      "file": "assets/releases/7196c8eb54ec/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.'+",
+      "prefix": "email_templates."
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.placeholder_'+",
+      "prefix": "email_templates.placeholder_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/models.js",
+      "expression": "__('models.field_' +",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/people.js",
+      "expression": "__('people.'+",
+      "prefix": "people."
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/people.js",
+      "expression": "__('people.link_'+",
+      "prefix": "people.link_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/750f6643f3cc/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.'+",
+      "prefix": "email_templates."
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.placeholder_'+",
+      "prefix": "email_templates.placeholder_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/models.js",
+      "expression": "__('models.field_' +",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/people.js",
+      "expression": "__('people.'+",
+      "prefix": "people."
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/people.js",
+      "expression": "__('people.link_'+",
+      "prefix": "people.link_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/7b12950fbe85/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/88c80c25297f/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/people.js",
+      "expression": "__('people.'+",
+      "prefix": "people."
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/people.js",
+      "expression": "__('people.link_'+",
+      "prefix": "people.link_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/8c36a245e781/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/ce998dbebb0b/js/modules/system.js",
+      "expression": "__('system.'+",
+      "prefix": "system."
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/main.js",
+      "expression": "__(`nav.${tabId}`",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.'+",
+      "prefix": "email_templates."
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.placeholder_'+",
+      "prefix": "email_templates.placeholder_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/certificates.js",
+      "expression": "__('cert.'+",
+      "prefix": "cert."
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/contributors.js",
+      "expression": "__('contributors.col_'+",
+      "prefix": "contributors.col_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/models.js",
+      "expression": "__('models.field_'+",
+      "prefix": "models.field_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/people.js",
+      "expression": "__('people.'+",
+      "prefix": "people."
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/people.js",
+      "expression": "__('people.link_'+",
+      "prefix": "people.link_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/roles.js",
+      "expression": "__('perms.level_' +",
+      "prefix": "perms.level_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/roles.js",
+      "expression": "__('perms.' +",
+      "prefix": "perms."
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/roles.js",
+      "expression": "__('dept.group_' +",
+      "prefix": "dept.group_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/roles.js",
+      "expression": "__('perms.preset_'+",
+      "prefix": "perms.preset_"
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/roles.js",
+      "expression": "__('nav.'+",
+      "prefix": "nav."
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/shell.js",
+      "expression": "__(`theme.${getThemeMode()}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/shell.js",
+      "expression": "__(`theme.${m}`",
+      "prefix": "theme."
+    },
+    {
+      "file": "assets/releases/dbea46957879/js/modules/system.js",
       "expression": "__('system.'+",
       "prefix": "system."
     },
@@ -622,6 +1567,16 @@
       "file": "js/main.js",
       "expression": "__(`nav.${tabId}`",
       "prefix": "nav."
+    },
+    {
+      "file": "js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.'+",
+      "prefix": "email_templates."
+    },
+    {
+      "file": "js/modules/certificateEmailTemplates.js",
+      "expression": "__('email_templates.placeholder_'+",
+      "prefix": "email_templates.placeholder_"
     },
     {
       "file": "js/modules/certificates.js",
@@ -640,8 +1595,48 @@
     },
     {
       "file": "js/modules/models.js",
-      "expression": "__('models.field_'+",
+      "expression": "__('models.field_' +",
       "prefix": "models.field_"
+    },
+    {
+      "file": "js/modules/people.js",
+      "expression": "__('people.'+",
+      "prefix": "people."
+    },
+    {
+      "file": "js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "js/modules/people.js",
+      "expression": "__('people.link_'+",
+      "prefix": "people.link_"
+    },
+    {
+      "file": "js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "js/modules/people.js",
+      "expression": "__('people.role_'+",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
+    },
+    {
+      "file": "js/modules/people.js",
+      "expression": "__('people.preview_'+",
+      "prefix": "people.preview_"
     },
     {
       "file": "js/modules/roles.js",
@@ -693,8 +1688,6 @@
     "common.unavailable",
     "system.maintenance_on",
     "system.live",
-    "system.disable_maint",
-    "system.enable_maint",
     "system.vertex_enabled",
     "system.vertex_disabled",
     "system.vertex_result_unknown",
@@ -746,17 +1739,29 @@
     "subs.plan_ultra",
     "subs.badge_expired",
     "subs.badge_active",
-    "errors.permission",
     "auth.denied",
-    "errors.auth",
     "errors.capacity",
     "errors.validation",
     "errors.precondition",
-    "errors.not_found",
     "errors.network",
-    "auth.credentials"
+    "auth.credentials",
+    "email_templates.saving",
+    "email_templates.unsaved",
+    "email_templates.saved",
+    "people.verified",
+    "people.not_verified",
+    "people.deactivate",
+    "people.activate",
+    "people.users"
   ],
   "unreferencedCandidates": [
+    "team.cards",
+    "team.cards_desc",
+    "team.card_new",
+    "team.card_language",
+    "team.card_position",
+    "team.card_image",
+    "team.card_order",
     "admin.revoke_blocked",
     "lang.name",
     "lang.flag",
@@ -780,9 +1785,11 @@
     "dept.scout",
     "dept.vertest",
     "contributors.field_interview_details",
+    "chat.login_hint",
     "chat.loading",
     "chat.msg_deleted",
     "team.staff",
+    "weekly_stars.current",
     "subs.list_loading",
     "profile.menu_btn",
     "profile.menu_soon",
