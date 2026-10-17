@@ -35,6 +35,7 @@ await page.route('**/*',async route=>{
   if(name==='togglecontributorverification'&&failVerify)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture verification unavailable'}})});
   let result={};
   if(name==='previewnotificationaudience')result={users:1,devices:1,approximate:true};
+  if(name==='schedulenotification')result={success:true,queued:true,status:'SCHEDULED'};
   if(name==='getnotificationdeliverystatus')result={status:'QUEUED'};
   if(name==='getserverstatus')result={isUnderMaintenance:maintenanceState};
   if(name==='setserverstatus'){maintenanceState=route.request().postDataJSON().data.maintenanceEnabled;result={success:true};}
