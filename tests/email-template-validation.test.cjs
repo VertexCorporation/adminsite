@@ -5,7 +5,7 @@ const base={subject:'Merhaba {{recipientName}}',html:'<p>Merhaba {{recipientName
 test('default template and common contenteditable HTML do not produce 400 preflight',()=>{
  assert.equal(validate(base),null);
  assert.equal(validate({...base,html:'<div>Merhaba&nbsp;{{recipientName}}</div><div><br></div>'}),null);
- assert.equal(validate({...base,html:'<a href=\\'https://vertexishere.com\\'>Link</a>'}),null);
+ assert.equal(validate({...base,html:"<a href=\'https://vertexishere.com\'>Link</a>"}),null);
 });
 test('insecure links are caught locally instead of hitting the callable',()=>{
  for(const html of ['<a href="http://vertexishere.com">bad</a>','<a href="javascript:alert(1)">bad</a>','<a href="//vertexishere.com">bad</a>'])
