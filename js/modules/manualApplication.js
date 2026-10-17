@@ -16,8 +16,15 @@ const input = (id,label,type,extra='')=>'<div class="form-group-field"><label fo
 export function initManualApplication({onCreated}={}){
     const button=document.getElementById('add-manual-application');
     if(!button)return;
-    const updateAccess=()=>{button.hidden=getEffectivePanelLevel('contributors.list')!=='write';};
+    // Applicant loading and permission resolution are separate. Update the
+    // action as soon as the authenticated user's access is established, rather
+    // than waiting for the contributors list to finish loading.
+    const updateAccess=()=>{
+        button.hidden=!auth.currentUser || getEffectivePanelLevel('contributors.list')!=='write';
+    };
     updateAccess();
+    document.addEventListener('vertex:departments',updateAccess);
+    document.addEventListener('vertex:close-navigation',updateAccess);
     document.addEventListener('vertex:roles-updated',updateAccess);
     button.addEventListener('click',()=>{
         if(!auth.currentUser || getEffectivePanelLevel('contributors.list')!=='write')return;
