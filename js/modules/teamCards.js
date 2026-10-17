@@ -11,9 +11,9 @@
 //  - Mustafa Çakı yönetici profili ve Weekly Stars yönetimi aynı alanda bulunur
 
 import {
-    listTeamCardsFn,
-    setTeamCardFn,
-    deleteTeamCardFn,
+    listSiteTeamFn,
+    setSiteTeamEntryFn,
+    deleteSiteTeamEntryFn,
     getTeamProfileFn,
     setTeamProfileFn,
     getWeeklyStarsFn,
@@ -44,10 +44,16 @@ export async function loadTeamCards() {
     const emptyEl = document.getElementById('team-cards-empty');
 
     try {
-        const { data } = await listTeamCardsFn({});
-        teamCards = Array.isArray(data?.cards) ? data.cards : [];
+        const { data } = await listSiteTeamFn({manage:true});
+        if (!Array.isArray(data?.cards)) throw Object.assign(new Error('Invalid team card response'),{code:'functions/internal'});
+        teamCards = data.cards.map(card => ({...card,position:card.positions?.en || card.positions?.tr || '',titles:card.positions || {},photoUrl:card.imageUrl || '',socialLinks:Object.fromEntries((card.links || []).filter(link => ['linkedin','instagram'].includes(link.label?.toLowerCase())).map(link => [link.label.toLowerCase(),link.url]))}));
     } catch (err) {
-        console.warn('[TEAM_CARDS] Could not fetch cards from backend, using current state:', err);
+        console.warn('[TEAM_CARDS] Could not fetch cards from backend:', err.code || 'unknown');
+        listEl.innerHTML = `<div class="state-block" role="alert"><p>${escapeHTML(userErrorMessage(err))}</p><button type="button" class="chrome-btn-outline" data-team-retry>${__('common.retry')}</button></div>`;
+        listEl.querySelector('[data-team-retry]').onclick = loadTeamCards;
+        if (emptyEl) emptyEl.hidden = true;
+        cardsLoading = false;
+        return;
     } finally {
         cardsLoading = false;
     }
@@ -55,7 +61,7 @@ export async function loadTeamCards() {
     renderTeamCardsList();
 
     if (addBtn) {
-        const isFull = teamCards.length >= 10;
+        const isFull = teamCards.length >= 40;
         addBtn.disabled = isFull;
         addBtn.title = isFull ? __('team_cards.all_filled') : __('team_cards.add_btn');
     }
@@ -126,13 +132,13 @@ function renderTeamCardsList() {
             if (!confirmed) return;
 
             try {
-                await deleteTeamCardFn({ id: cardId });
+                await deleteSiteTeamEntryFn({ kind:'card', id: cardId });
                 teamCards = teamCards.filter(c => c.id !== cardId);
                 renderTeamCardsList();
                 showToast(() => __('team_cards.deleted'), 'success');
                 const addBtn = document.getElementById('add-team-card-btn');
                 if (addBtn) {
-                    addBtn.disabled = teamCards.length >= 10;
+                    addBtn.disabled = teamCards.length >= 40;
                     addBtn.title = teamCards.length >= 10 ? __('team_cards.all_filled') : __('team_cards.add_btn');
                 }
             } catch (err) {
@@ -148,6 +154,7 @@ function renderTeamCardsList() {
 export function openTeamCardDrawer(cardToEdit = null) {
     const isEdit = Boolean(cardToEdit);
     let selectedPhoto = cardToEdit?.photoUrl || '';
+    let selectedPhotoBytes = null;
     let isSaving = false;
 
     const drawerBody = openDrawer({
@@ -251,6 +258,7 @@ export function openTeamCardDrawer(cardToEdit = null) {
         const reader = new FileReader();
         reader.onload = e => {
             selectedPhoto = e.target.result;
+            selectedPhotoBytes = selectedPhoto;
             photoPreview.innerHTML = `<img src="${selectedPhoto}" alt="Preview">`;
         };
         reader.readAsDataURL(file);
@@ -274,18 +282,19 @@ export function openTeamCardDrawer(cardToEdit = null) {
         setButtonLoading(submitBtn, true);
 
         try {
+            let imageUrl = selectedPhoto;
+            if (selectedPhotoBytes) {
+                const {data:photo}=await setSiteTeamEntryFn({kind:'photo',photoData:selectedPhotoBytes});
+                imageUrl=photo?.imageUrl;
+            }
+            if (!imageUrl?.startsWith('https://')) throw Object.assign(new Error('A hosted HTTPS image is required'),{code:'functions/invalid-argument'});
             const payload = {
-                id: cardToEdit?.id,
-                name,
-                position,
-                photoUrl: selectedPhoto,
-                socialLinks: {
-                    linkedin: linkedin || undefined,
-                    instagram: instagram || undefined
-                }
+                kind:'card',id:cardToEdit?.id,name,imageUrl,
+                positions:{...(cardToEdit?.titles||{}),en:position,tr:position},
+                order:cardToEdit?.order || teamCards.length+1,
+                links:[{label:'linkedin',url:linkedin},{label:'instagram',url:instagram}].filter(link=>link.url)
             };
-
-            await setTeamCardFn(payload);
+            await setSiteTeamEntryFn(payload);
             closeDrawer();
             showToast(() => __('team_cards.saved'), 'success');
             await loadTeamCards();
