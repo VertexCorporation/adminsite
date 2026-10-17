@@ -122,14 +122,47 @@ export function initEventsModule() {
  document.getElementById('events-preview').onclick=()=>{
   try{
    const event=collect(),box=document.getElementById('events-preview-content');box.hidden=false;box.replaceChildren();
-   const article=document.createElement('article');article.className='panel-card';article.style.maxWidth='680px';
-   const add=(tag,value)=>{const node=document.createElement(tag);node.textContent=value||'';article.append(node);return node;};
-   if(event.cover&&/^https:\/\//.test(event.cover)){const img=document.createElement('img');img.src=event.cover;img.alt=event.title;img.style.cssText='width:100%;max-height:280px;object-fit:cover;border-radius:12px;margin-bottom:16px';article.append(img);}
-   add('h2',event.title);add('p',`${event.date||'—'} · ${event.timeZone||'—'}`);
-   add('p',event.desc);add('p',event.detailDesc);add('p',event.location);
-   if(event.speakers?.length)add('p',event.speakers.map(v=>v.name).filter(Boolean).join(', '));
-   if(event.ticketCategories?.length)add('p',event.ticketCategories.map(v=>`${v.name}: ${v.price} ${v.currency||''}`).join(' · '));
-   box.append(article);
+   const lang=document.createElement('select');lang.setAttribute('aria-label',tr('Önizleme dili','Preview language'));
+   for(const value of ['tr','en']){const option=document.createElement('option');option.value=value;option.textContent=value.toUpperCase();lang.append(option);}
+   lang.value=getLang()==='tr'?'tr':'en';box.append(lang);
+   const article=document.createElement('article');article.className='ui-event-preview';
+   const add=(parent,tag,value,className='')=>{const node=document.createElement(tag);node.textContent=String(value||'');if(className)node.className=className;parent.append(node);return node;};
+   const paint=()=>{
+    article.replaceChildren();const language=lang.value;
+    const local=(key)=>language==='en'?(event[key+'_en']||event[key]):event[key];
+    if(event.cover&&/^https:\/\//.test(event.cover)){
+     const img=document.createElement('img');img.className='ui-event-cover';
+     img.src=event.cover;img.alt=local('title')||event.title;img.loading='lazy';article.append(img);
+    }
+    const content=document.createElement('div');content.className='ui-event-content';article.append(content);
+    add(content,'span',event.status==='published'?tr('Yayımlanmış','Published'):event.status==='draft'?tr('Taslak','Draft'):tr('İptal','Cancelled'),'form-hint');
+    add(content,'h2',local('title')||event.title);
+    let formatted=event.date||'—';
+    if(event.startsAt)try{formatted=new Intl.DateTimeFormat(language,{dateStyle:'long',timeStyle:'short',timeZone:event.timeZone}).format(new Date(event.startsAt));}catch{}
+    add(content,'p',formatted+' · '+(event.timeZone||'—'),'form-hint');
+    add(content,'p',local('location')||'—');
+    add(content,'p',local('desc'));
+    if(local('detailDesc'))add(content,'p',local('detailDesc'),'ui-event-description');
+    if(event.speakers?.length){
+     add(content,'h3',language==='tr'?'Konuşmacılar':'Speakers');
+     const grid=document.createElement('div');grid.className='ui-event-grid';content.append(grid);
+     for(const speaker of event.speakers){
+      const card=document.createElement('div');card.className='ui-event-card';grid.append(card);
+      add(card,'strong',speaker.name);add(card,'p',language==='en'?(speaker.role_en||speaker.role):speaker.role,'form-hint');
+     }
+    }
+    if(event.ticketCategories?.length){
+     add(content,'h3',language==='tr'?'Biletler':'Tickets');
+     const grid=document.createElement('div');grid.className='ui-event-grid';content.append(grid);
+     for(const ticket of event.ticketCategories){
+      const card=document.createElement('div');card.className='ui-event-card';grid.append(card);
+      add(card,'strong',ticket.name);
+      add(card,'p',ticket.price?String(ticket.price)+' '+(ticket.currency||'TRY'):(language==='tr'?'Ücretsiz':'Free'));
+      if(ticket.description)add(card,'p',ticket.description,'form-hint');
+     }
+    }
+   };
+   lang.addEventListener('change',paint);paint();box.append(article);
   }catch(e){fail(e);}
  };
  document.getElementById('events-new').onclick=async()=>{
