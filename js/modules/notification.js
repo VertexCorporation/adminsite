@@ -2,7 +2,7 @@ import { confirmDialog } from './shell.js';
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/notification.js
 
-import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn, auth } from '../core/firebase.js';
+import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn, previewNotificationAudienceFn, auth } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
 import { showToast, userErrorMessage, __, getLang, onLangChange, escapeHTML } from '../utils/ui.js';
 
@@ -261,10 +261,28 @@ async function handleNotificationFormSubmit(e) {
             const localTimeValue = document.getElementById('notification-schedule-time').value;
             if (!localTimeValue) throw new Error(__('notif.time_required'));
             const scheduledDate = new Date(localTimeValue);
-            if (scheduledDate <= new Date()) throw new Error(__('notif.time_future'));
+            if (!Number.isFinite(scheduledDate.getTime()) || scheduledDate.getTime() <= Date.now()+60000) throw new Error(__('notif.time_future'));
             scheduleTimeISO = scheduledDate.toISOString();
         }
 
+        const placeholders=Object.values(dataPayload).filter(value=>typeof value==='string'&&/^ENTER_[A-Z_]+$/.test(value));
+        if(placeholders.length)throw new Error(ntr('Şablon değişkenlerini doldurun.','Fill in template placeholders.'));
+        const estimate=(await previewNotificationAudienceFn({target,payload})).data;
+        const zone=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
+        const time=isScheduled?new Intl.DateTimeFormat(getLang()==='tr'?'tr-TR':'en-US',
+           {dateStyle:'medium',timeStyle:'short',timeZone:zone}).format(new Date(scheduleTimeISO)):ntr('Şimdi','Now');
+        const confirmed=await confirmDialog(()=>({
+            title:ntr('Bildirimi onayla','Confirm notification'),
+            body:ntr('Kullanıcı ve cihaz sayıları tahminidir. Cihazda görünme garantisi yoktur.','Counts are estimates, not proof of display on devices.'),
+            rows:[
+                {label:ntr('Hedef','Audience'),value:target.type==='ALL_USERS'?ntr('Tüm kullanıcılar','All users'):target.type==='SINGLE_USER'?target.uid:target.tier},
+                {label:ntr('Kullanıcı','Users'),value:String(estimate.users)},
+                {label:ntr('Cihaz tokenı','Device tokens'),value:String(estimate.devices)},
+                {label:ntr('Başlık','Title'),value:payload.notification?.title||payload.notification_title_key||'—'},
+                {label:ntr('Zaman','Time'),value:time+' · '+zone}
+            ]
+        }));
+        if(!confirmed)return;
         const apiPayload = { payload, target, scheduleTime: scheduleTimeISO };
         const apiFunction = isScheduled ? scheduleNotificationFn : sendTargetedNotificationFn;
         if (!isScheduled) {
