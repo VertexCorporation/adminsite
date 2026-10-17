@@ -29,8 +29,8 @@ jobs:
           npm ci --no-audit --no-fund
       - name: Build immutable source-aligned release
         run: node scripts/release.cjs
-      - name: Check JavaScript regression suite
-        run: npm test
+      - name: Check standalone JavaScript regression suite
+        run: node scripts/tests.cjs
       - name: Audit translations
         run: npm run audit:i18n
       - name: Install browser runtime
