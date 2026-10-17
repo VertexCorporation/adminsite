@@ -71,7 +71,18 @@ await page.route('**/*',async route=>{
 });
 
 console.log("Starting page");await page.goto(`http://127.0.0.1:${server.address().port}`,{waitUntil:"domcontentloaded",timeout:15000});console.log("Page loaded");
-await page.waitForSelector('.certificate-manage-btn');
+await page.waitForSelector('.certificate-manage-btn').catch(async error=>{
+ console.error('BOOT_DIAGNOSTICS',JSON.stringify(await page.evaluate(()=>({
+  readyState:document.readyState,language:document.documentElement.lang,
+  adminDisplay:document.querySelector('#admin-panel')?.style.display,
+  loginDisplay:document.querySelector('#login-container')?.style.display,
+  contributorTab:document.querySelector('#tab-contributors')?.className,
+  contributorRows:document.querySelectorAll('.contributor-row').length,
+  visibleErrors:[...document.querySelectorAll('[role=alert],.state-block')].map(e=>e.textContent?.trim().slice(0,160)).slice(0,8),
+  moduleScripts:[...document.querySelectorAll('script[type=module]')].map(e=>e.src).slice(0,6)
+ }))),{errors,consoleErrors,calls});
+ throw error;
+});
 assert.equal(errors.length,0);
 const checks=[];
 const note=x=>{checks.push(x);console.log('PASS',x);};
