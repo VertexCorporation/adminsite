@@ -122,6 +122,42 @@ function handleTargetTypeChange() {
     dom.targetLevelInput.style.display = (selectedType === 'SUBSCRIPTION_LEVEL') ? 'block' : 'none';
 }
 
+function updateTemplatePreview(){
+ const host=document.getElementById('notification-template-preview');if(!host)return;
+ const title=document.getElementById('notification-title').value.trim()
+    ||document.getElementById('notification-title-key').value.trim();
+ const body=document.getElementById('notification-body').value.trim()
+    ||document.getElementById('notification-body-key').value.trim();
+ host.replaceChildren();
+ const heading=document.createElement('strong');
+ heading.textContent=title||ntr('Bildirim başlığı','Notification title');
+ const copy=document.createElement('p');copy.textContent=body||ntr('Bildirim metni','Notification body');
+ host.append(heading,copy);
+ const hint=document.createElement('small');hint.className='form-hint';
+ hint.textContent=ntr('Anahtarlar cihazda kullanıcının dilinde çözümlenir.','Localization keys resolve on the recipient device.');
+ host.append(hint);
+}
+function renderTemplateParameters(){
+ const source=document.getElementById('notification-data-payload');
+ const host=document.getElementById('notification-template-parameters');if(!host)return;
+ host.replaceChildren();
+ let values;
+ try{values=JSON.parse(source.value||'{}');}catch{return;}
+ if(!values||typeof values!=='object'||Array.isArray(values))return;
+ for(const [key,value]of Object.entries(values)){
+    if(typeof value==='object')continue;
+    const label=document.createElement('label');label.className='form-group-field';label.textContent=key;
+    const input=document.createElement('input');input.type='text';input.value=String(value??'');
+    input.setAttribute('aria-label',key);
+    input.addEventListener('input',()=>{
+       values[key]=input.value;
+       source.value=JSON.stringify(values,null,2);
+    });
+    label.append(input);host.append(label);
+ }
+ updateTemplatePreview();
+}
+
 /**
  * Auto-fills the form based on a selected notification template.
  * Updated to include all keys from extrovert.dart
@@ -202,12 +238,15 @@ function handleTemplateSelection() {
         // If the payload has keys, show them pretty-printed, otherwise empty string
         const hasPayloadKeys = Object.keys(template.payload).length > 0;
         payloadInput.value = hasPayloadKeys ? JSON.stringify(template.payload, null, 2) : '';
+        renderTemplateParameters();
     } else {
         // Clear if nothing selected
         titleKeyInput.value = '';
         bodyKeyInput.value = '';
         payloadInput.value = '';
+        renderTemplateParameters();
     }
+    updateTemplatePreview();
 }
 
 /**
@@ -410,6 +449,18 @@ export function initNotificationModule() {
     dom.notificationScheduleSwitch.addEventListener('change', handleScheduleSwitchChange);
     dom.notificationTargetType.addEventListener('change', handleTargetTypeChange);
     dom.notificationTemplateSelector.addEventListener('change', handleTemplateSelection);
+    const payloadElement=document.getElementById('notification-data-payload');
+    const parent=payloadElement.closest('.form-group-field')||payloadElement.parentElement;
+    const parameters=document.createElement('div');parameters.id='notification-template-parameters';
+    parameters.className='form-grid';parent.append(parameters);
+    const preview=document.createElement('div');preview.id='notification-template-preview';
+    preview.className='ui-notification-preview';preview.setAttribute('aria-live','polite');
+    parent.append(preview);
+    payloadElement.addEventListener('input',renderTemplateParameters);
+    for(const name of ['notification-title','notification-body','notification-title-key','notification-body-key']){
+        document.getElementById(name)?.addEventListener('input',updateTemplatePreview);
+    }
+    renderTemplateParameters();updateTemplatePreview();
 
     dom.scheduledTasksListContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('cancel-task-btn')) {
