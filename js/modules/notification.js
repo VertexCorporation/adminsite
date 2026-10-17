@@ -4,12 +4,23 @@ import { renderPager } from '../ui/pager.js';
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/notification.js
 
-import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn, previewNotificationAudienceFn, auth } from '../core/firebase.js';
+import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn, previewNotificationAudienceFn, listScheduledNotificationsFn, auth } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
 import { showToast, userErrorMessage, __, getLang, onLangChange, escapeHTML } from '../utils/ui.js';
 
 let unsubscribeFromScheduledTasks = null;
 let scheduledRecords=[];
+let liveScheduledRecords=[];
+let olderScheduledRecords=[];
+let olderCursor=null;
+let historyLoading=false;
+function mergeScheduledRecords() {
+    const combined=new Map([...olderScheduledRecords,...liveScheduledRecords].map(item=>[item.id,item]));
+    scheduledRecords=[...combined.values()].sort((a,b)=>{
+        const time=item=>item.task?.scheduleTime?.toMillis?.()||Number(item.task?.scheduleTime)||0;
+        return time(b)-time(a);
+    });
+}
 let scheduledSearch='';
 let scheduledFilter='all';
 let scheduledPage=1;
@@ -522,15 +533,38 @@ function renderScheduledTasks(){
  }
  renderPager(container,{page:scheduledPage,total:matches.length,pageSize,language:getLang(),
    onChange:next=>{scheduledPage=next;renderScheduledTasks();}});
+ if(olderCursor){
+    const older=document.createElement('button');older.type='button';older.className='chrome-btn-outline';
+    older.textContent=historyLoading?ntr('Geçmiş yükleniyor…','Loading history…'):ntr('Daha eski bildirimler','Load older notifications');
+    older.disabled=historyLoading;
+    older.onclick=async()=>{
+        if(historyLoading||!olderCursor)return;
+        const requested=olderCursor;historyLoading=true;renderScheduledTasks();
+        try{
+            const result=(await listScheduledNotificationsFn({cursor:requested,pageSize:100})).data;
+            olderScheduledRecords.push(...(result.tasks||[]));
+            olderCursor=result.nextCursor||null;
+            mergeScheduledRecords();
+        }catch(error){showToast(()=>userErrorMessage(error),'error');}
+        finally{historyLoading=false;renderScheduledTasks();}
+    };
+    container.append(older);
+ }
 }
 export function listenForScheduledTasks(){
  const finishLoading=beginPanelLoading(dom.scheduledTasksListContainer);
  if(unsubscribeFromScheduledTasks)unsubscribeFromScheduledTasks();
  unsubscribeFromScheduledTasks=db.collection('scheduledNotifications')
-    .orderBy('scheduleTime','desc').limit(500).onSnapshot(snapshot=>{
+    .orderBy('scheduleTime','desc').limit(100).onSnapshot(snapshot=>{
        finishLoading();
-       scheduledRecords=snapshot.docs.filter(doc=>doc.data().kind!=='IMMEDIATE')
+       liveScheduledRecords=snapshot.docs.filter(doc=>doc.data().kind!=='IMMEDIATE')
           .map(doc=>({id:doc.id,task:doc.data()}));
+       if(!olderCursor && !olderScheduledRecords.length && snapshot.docs.length===100){
+          const last=snapshot.docs.at(-1);
+          const at=last.data().scheduleTime?.toMillis?.();
+          if(Number.isSafeInteger(at))olderCursor={id:last.id,at};
+       }
+       mergeScheduledRecords();
        renderScheduledTasks();
     },error=>{
        finishLoading();console.error('[NOTIFICATIONS] Scheduled task listener failed',error.code||'unknown');
@@ -545,6 +579,7 @@ export function listenForScheduledTasks(){
  * Detaches the real-time listener for scheduled tasks.
  */
 export function stopListeningForScheduledTasks() {
+    liveScheduledRecords=[];olderScheduledRecords=[];scheduledRecords=[];olderCursor=null;
     if (unsubscribeFromScheduledTasks) {
         unsubscribeFromScheduledTasks();
         unsubscribeFromScheduledTasks = null;
