@@ -39,7 +39,7 @@ export function initContributorsModule() {
     if(refreshBtn&&!document.getElementById('certificate-email-templates-btn')){
         const button=document.createElement('button');button.id='certificate-email-templates-btn';button.type='button';button.className='chrome-btn-outline';button.dataset.i18n='email_templates.title';button.textContent=__('email_templates.title');button.style.display=isPanelAdmin()?'':'none';button.onclick=openCertificateEmailTemplates;refreshBtn.before(button);refreshBtn.parentElement.classList.add('certificate-template-entry-row');
     }
-    onLangChange(() => { const headers=['name','department','age','status','applied','actions']; document.querySelectorAll('.contributor-table-head span').forEach((el,i)=>el.textContent=__('contributors.col_'+headers[i])); if(window.loadedContributors) renderContributors(window.loadedContributors); });
+    onLangChange(() => { const headers=['name','department','age','status','applied','actions']; document.querySelectorAll('.contributor-table-head > span').forEach((el,i)=>el.textContent=__('contributors.col_'+headers[i])); if(window.loadedContributors) renderContributors(window.loadedContributors); });
 
     if (refreshBtn) {
         refreshBtn.addEventListener('click', fetchContributorsData);
