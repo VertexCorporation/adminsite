@@ -34,6 +34,12 @@ await page.route('**/*',async route=>{
   if(name==='getserverstatus'&&failMaintenance)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture maintenance unavailable'}})});
   if(name==='togglecontributorverification'&&failVerify)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture verification unavailable'}})});
   let result={};
+  if(name==='togglecontributorverification'){
+    const request=route.request().postDataJSON().data;
+    const target=(people||[person]).find(p=>p.id===request.contributorId);
+    if(target){target.hasVerified=request.hasVerified;target.certificateDeliveryStatus=request.hasVerified?'succeeded':'revoked';}
+    result={hasVerified:request.hasVerified,status:request.hasVerified?'succeeded':'revoked'};
+  }
   if(name==='getserverstatus')result={isUnderMaintenance:maintenanceState};
   if(name==='setserverstatus'){maintenanceState=route.request().postDataJSON().data.maintenanceEnabled;result={success:true};}
   if(name==='togglevertexstatus'){if(failMembership)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});const data=route.request().postDataJSON().data;const next=typeof data.expectedStatus==='boolean'?!data.expectedStatus:true;if(data.contributorId){const target=(people||[person]).find(p=>p.id===data.contributorId);if(target)target.membership.isVertex=next;}result={isVertex:next};}
@@ -59,6 +65,8 @@ await page.route('**/*',async route=>{
 });
 
 console.log("Starting page");await page.goto(`http://127.0.0.1:${server.address().port}`,{waitUntil:"domcontentloaded",timeout:15000});console.log("Page loaded");
+// Home is the default workspace. Open contributors before waiting for its lazy controls.
+await page.locator('.dock-btn[data-target="tab-contributors"]').click();
 await page.waitForSelector('.certificate-manage-btn');
 assert.equal(errors.length,0);
 const checks=[];
@@ -87,9 +95,10 @@ for(const width of [360,390,768,1024,1440,1920]){
 note('8 navigation tabs, light/dark, 6 viewport widths, popover bounds');
 await page.setViewportSize({width:1440,height:900});
 await page.locator('[data-details]').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Contributor drawer');
-await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());assert.equal(await page.locator('.contributor-row').count(),0);
-await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));assert.equal(await page.locator('.contributor-row').count(),1);
-await page.evaluate(()=>window.filterContributors('verified'));assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
+const waitCrossfade = () => page.waitForFunction(() => !document.querySelector('.ui-crossfade-ghost'));
+await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);
+await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),1);
+await page.evaluate(()=>window.filterContributors('verified'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
 await openCert();assert.deepEqual(await page.locator('[data-award]').evaluateAll(es=>es.map(e=>e.dataset.award)),['tenacity','constancy','nobility','majesty']);
 await page.locator('[data-award=tenacity]').click();assert.equal(issueCount(),0);await page.locator('[data-review]').click();await page.waitForSelector('.confirm-ok');assert.equal(issueCount(),0);
 await page.locator('.confirm-ok').focus();await page.keyboard.press('Tab');assert(await page.locator('.confirm-cancel').evaluate(el=>el===document.activeElement));await page.keyboard.press('Shift+Tab');assert(await page.locator('.confirm-ok').evaluate(el=>el===document.activeElement));await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('tr');});assert.equal(await page.locator('.vx-modal-title').innerText(),'Sertifikayı İncele');await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('en');});await page.locator('.confirm-cancel').click();assert.equal(issueCount(),0);note('Selection and cancellation never issue certificates; confirmation focus trap and live language');
@@ -117,6 +126,9 @@ await selectTab('chat');await page.locator('#chat-input').fill('Mock message');a
 await selectTab('system');assert.equal(await page.locator('[data-section]').count(),7);await page.locator('[data-section=export]').dispatchEvent('click');assert(await page.locator('#data-exporter-manager').isVisible());note('7 functional System sections');
 await selectTab('contributors');
 }
+// Functional regressions are run without transient visual clones. Dedicated UI
+// smoke tests separately assert animated crossfades and reduced-motion behavior.
+await page.emulateMedia({reducedMotion:'reduce'});
 if(process.env.VERTEX_STABILIZATION_ONLY)await require('./stabilization.cjs')({page,selectTab,note,calls,payloads,person,setPeople:value=>{people=value;},failMembership:value=>{failMembership=value;},failAdmin:value=>{failAdmin=value;},setAdmins:value=>{adminRoster=value;},setContributorDelay:value=>{contributorDelay=value;},failContributors:value=>{failContributors=value;},setHistory:value=>{history=value;}});
 if(process.env.VERTEX_COMPLETE_ONLY)await require('./complete-polish.cjs')({page,selectTab,note,calls,payloads,person,setPeople:value=>{people=value;},failMembership:value=>{failMembership=value;},failAdmin:value=>{failAdmin=value;},setAdmins:value=>{adminRoster=value;},setContributorDelay:value=>{contributorDelay=value;},failContributors:value=>{failContributors=value;},setHistory:value=>{history=value;}});
 if(!process.env.VERTEX_COMPLETE_ONLY&&!process.env.VERTEX_STABILIZATION_ONLY)await require('./final-polish.cjs')({page,selectTab,note,calls,payloads,setPeople:value=>{people=value;},person,failMaintenance:value=>{failMaintenance=value;},failVerify:value=>{failVerify=value;}});
@@ -124,7 +136,7 @@ if(!process.env.VERTEX_COMPLETE_ONLY&&!process.env.VERTEX_STABILIZATION_ONLY)awa
 await selectTab('contributors');
 // Authorization is tested against the same UI, with backend calls still mocked.
 await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.setCurrentUser(false,['Senatus']);await roles.loadDepartmentPermissions();const permissions=roles.getDepartmentPermissions();permissions.Senatus.hiddenFields={'contributors.list':['contact','age','links','interview']};permissions.Senatus.hiddenChips={'contributors.list':['github']};roles.getAccessibleTabs(['Senatus']);await (await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.certificate-manage-btn').count(),0);assert.equal(await page.locator('.edit-contributor-btn').count(),0);assert.equal(await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');return roles.getEffectivePanelLevel('contributors.list');}),'read');assert.equal(await page.locator('.contributor-cell-age').innerText(),'—');await page.locator('#contributor-search').fill('person@example.invalid');assert.equal(await page.locator('.contributor-row').count(),0);await page.locator('#contributor-search').fill('Local test fixture');assert.equal(await page.locator('.contributor-row').count(),1);await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.getDepartmentPermissions().Senatus.hiddenFields['contributors.list'].push('about');await(await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.contributor-row').count(),0);await page.locator('#contributor-search').fill('');await page.locator('[data-details]').click();assert.equal(await page.locator('.vx-drawer-body').innerText().then(s=>s.includes('person@example.invalid')),false);await page.keyboard.press('Escape');note('Department read-only actions and hidden field policies');
-await page.locator('[data-details]').click();await page.waitForSelector('.vx-drawer');await page.evaluate(()=>document.getElementById('logout-btn').click());await page.waitForSelector('.vx-drawer',{state:'detached'});await page.waitForSelector('#login-container',{state:'visible'});assert.equal(await page.locator('#admin-panel').isVisible(),false);await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('.certificate-manage-btn');note('Logout and admin login auth state');
+await page.locator('[data-details]').click();await page.waitForSelector('.vx-drawer');await page.evaluate(()=>document.getElementById('logout-btn').click());await page.waitForSelector('.vx-drawer',{state:'detached'});await page.waitForSelector('#login-container',{state:'visible'});assert.equal(await page.locator('#admin-panel').isVisible(),false);await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('#admin-panel',{state:'visible'});await selectTab('contributors');await page.waitForSelector('.certificate-manage-btn');note('Logout and admin login auth state');
 for(const claims of [{admin:false,departments:['Senatus']},{admin:false,departments:['Aero']}]) {
  const before=calls.filter(name=>name==='savedepartmentpermissions').length;
  await page.evaluate(async value=>{window.__testClaims=value;await window.firebase.auth().signOut();},claims);
@@ -138,7 +150,7 @@ for(const claims of [{admin:false,departments:['Senatus']},{admin:false,departme
  assert.equal(calls.filter(name=>name==='savedepartmentpermissions').length,before);
 }
 await page.evaluate(async()=>{window.__testClaims={admin:true};await window.firebase.auth().signOut();});
-await page.waitForSelector('#login-container',{state:'visible'});await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('.certificate-manage-btn');
+await page.waitForSelector('#login-container',{state:'visible'});await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('#admin-panel',{state:'visible'});await selectTab('contributors');await page.waitForSelector('.certificate-manage-btn');
 note('Real auth flow hides inaccessible submenus for read-only and contributor-only departments without saving defaults');
 await page.emulateMedia({reducedMotion:'reduce'});assert(await page.locator('.tab-panel.active').evaluate(el=>parseFloat(getComputedStyle(el).animationDuration)<0.001));note('Reduced motion removes transitions and animations');assert.equal(await page.locator('.material-symbols-rounded').count(),0);assert.equal(errors.length,0,errors.join('\n'));assert.deepEqual(consoleErrors,[]);
 const report={suite:process.env.VERTEX_STABILIZATION_ONLY?'stabilization':'regression',browser:process.env.VERTEX_BROWSER||'chromium',checks,uncaughtErrors:errors,unexpectedConsoleErrors:consoleErrors,viewportWidths:process.env.VERTEX_QUICK?[390]:process.env.VERTEX_STABILIZATION_ONLY?[320,360,375,390,430,768,1024,1440,1920]:process.env.VERTEX_COMPLETE_ONLY?[390,768,1440,1920]:[320,360,390,768,1024,1440,1920],themes:['light','dark','system'],mockCalls:calls.length};fs.mkdirSync(path.join(root,'tests/results'),{recursive:true});fs.writeFileSync(path.join(root,'tests/results/'+(process.env.VERTEX_BROWSER||'chromium')+(process.env.VERTEX_STABILIZATION_ONLY?'-stabilization':'')+'-browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));if(process.env.VERTEX_TRACE)await page.context().tracing.stop({path:path.join(root,'tests/results/precision-trace.zip')});await browser.close();server.close();

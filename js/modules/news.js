@@ -1,5 +1,7 @@
+import { showLoadError } from '../ui/states.js';
+import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from './shell.js';
-import { beginPanelLoading } from '../utils/loading.js';
+import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
 // js/modules/news.js
 
 import { db, createNewsArticleFn, deleteNewsArticleFn, getCoverUploadUrlFn } from '../core/firebase.js';
@@ -16,7 +18,7 @@ async function handleNewsFormSubmit(e) {
     e.preventDefault();
     const submitBtn = document.getElementById('submit-btn');
     if(submitBtn.disabled)return;
-    submitBtn.disabled = true;
+    setButtonLoading(submitBtn,true);
     submitBtn.textContent = __('news.publishing');
 
     const titleEN = document.getElementById('title-en').value;
@@ -24,7 +26,7 @@ async function handleNewsFormSubmit(e) {
 
     if (!cleanSlug) {
         showToast(() => __('news.slug_invalid'), 'error');
-        submitBtn.disabled = false;
+        setButtonLoading(submitBtn,false);
         submitBtn.textContent = __('news.publish_btn');
         return;
     }
@@ -61,7 +63,7 @@ async function handleNewsFormSubmit(e) {
         console.error("[CLIENT] An error occurred during news submission:", error);
         showToast(()=>userErrorMessage(error), 'error');
     } finally {
-        submitBtn.disabled = false;
+        setButtonLoading(submitBtn,false);
         submitBtn.textContent = __('news.publish_btn');
     }
 }
@@ -92,13 +94,14 @@ export function listenForArticles() {
     console.log("[CLIENT] Attaching real-time listener for 'news' collection.");
     unsubscribeFromArticles = db.collection('news').orderBy('publishedAt', 'desc').onSnapshot(snapshot => {
         finishLoading();
-        dom.articlesListContainer.innerHTML = '';
+        const container = dom.articlesListContainer;
         if (snapshot.empty) {
             window.loadedArticles = [];
-            dom.articlesListContainer.innerHTML = `<p class="form-hint" data-i18n="news.empty">${__('news.empty')}</p>`;
+            crossfade(container, () => { container.innerHTML = `<p class="form-hint" data-i18n="news.empty">${__('news.empty')}</p>`; });
             return;
         }
         const articles = [];
+        const fragment=document.createDocumentFragment();
         snapshot.forEach(doc => {
             articles.push({ id: doc.id, ...doc.data() });
             const item = document.createElement('div');
@@ -110,13 +113,14 @@ export function listenForArticles() {
                 <div class="item-actions">
                     <button class="delete-btn" data-slug="${escapeHTML(doc.id)}">${__('common.delete')}</button>
                 </div>`;
-            dom.articlesListContainer.appendChild(item);
+            fragment.appendChild(item);
         });
+        crossfade(container, () => container.replaceChildren(fragment));
         window.loadedArticles = articles;
     }, error => {
         finishLoading();
         console.error("[CLIENT] Error listening for article updates:", error);
-        showToast(() => __('news.load_error'), 'error');
+        showLoadError(dom.articlesListContainer,()=>__('news.load_error'),listenForArticles,{staleSelector:'.article-item'});
     });
 }
 

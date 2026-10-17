@@ -2,6 +2,7 @@ import { initEventsModule } from './modules/events.js';
 import { initPeopleModule } from './modules/people.js';
 import { initHomeModule, updateHome } from './modules/home.js';
 import { initScrollEdges } from './utils/scrollEdges.js';
+import { initUiFeedback } from './ui/feedback.js';
 import { displayDepartmentName } from './utils/departments.js';
 import { initSystemSections } from './modules/system.js';
 import { initIcons } from './utils/icons.js';
@@ -36,6 +37,7 @@ export function startApp(firebaseConfig) {
     // --- Step 1: Initialize Firebase ---
     initFirebase(firebaseConfig);
     initScrollEdges();
+    initUiFeedback();
     console.log('[APP] Main application started.');
 
     // --- Step 2: Initialize All Feature Modules (Bind Static Event Listeners) ---

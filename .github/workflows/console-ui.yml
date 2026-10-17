@@ -1,0 +1,47 @@
+name: console ui verification
+on:
+  push:
+    branches:
+      - fix/console-ui-unification-51-75
+  pull_request:
+    paths:
+      - 'css/**'
+      - 'js/**'
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/console-ui.yml'
+jobs:
+  ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      # The existing lockfile contains stale registry integrity values.
+      - run: npm install --no-package-lock
+      # Generate the immutable release in CI's temporary checkout only.
+      # Never push the generated assets or deploy the website.
+      - run: node scripts/release.cjs
+      # GitHub's adminsite runner cannot read the private Fulcrum repository.
+      # Its four real-contract tests run separately in an isolated private
+      # Fulcrum workflow with both repositories checked out (no copied backend).
+      # Every other original unit test is mandatory here; no error masking.
+      - name: General repository-local regression tests
+        shell: bash
+        run: |
+          mapfile -t testfiles < <(find tests -maxdepth 1 -name '*.test.cjs' \
+            ! -name 'certificate-owner-policy.test.cjs' \
+            ! -name 'zapier-delivery-replay.test.cjs' \
+            ! -name 'zapier-preparation.test.cjs' \
+            ! -name 'zapier-real-delivery.test.cjs' | sort)
+          node --test "${testfiles[@]}"
+      - run: node --test tests/ui.test.cjs
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/ui-browser.cjs
+      - name: Full legacy application browser regression
+        run: npm run test:browser
+        env:
+          VERTEX_BROWSER: chromium

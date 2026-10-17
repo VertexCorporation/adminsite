@@ -1,3 +1,4 @@
+import { showLoadError } from '../ui/states.js';
 import { icon } from '../utils/icons.js';
 import { confirmDialog } from './shell.js';
 import { displayDepartmentName } from '../utils/departments.js';
@@ -152,7 +153,7 @@ async function loadDepartmentUsers() {
     } catch (error) {
         finishLoading();
         console.error('[CLIENT] Error loading department users:', error);
-        container.innerHTML = `<div class="state-block"><p data-i18n="dept.load_error">${__('dept.load_error')}</p><button type="button" class="chrome-btn-outline" data-i18n="common.retry">${__('common.retry')}</button></div>`;container.querySelector('button').onclick=loadDepartmentUsers;
+        showLoadError(container,()=>__('dept.load_error'),loadDepartmentUsers,{staleSelector:'.dept-user-row'});
     } finally {
         finishLoading();
         setButtonLoading(button,false);
@@ -316,7 +317,7 @@ async function handleAdminFormSubmit(e) {
     e.preventDefault();
     const newAdminEmail = document.getElementById('new-admin-email').value;
     const grantBtn = document.getElementById('grant-admin-btn');
-    grantBtn.disabled = true;
+    setButtonLoading(grantBtn,true);
     grantBtn.innerHTML = `<span data-i18n="admin.granting">${__('admin.granting')}</span>`;
 
     try {
@@ -327,7 +328,7 @@ async function handleAdminFormSubmit(e) {
         console.error("[CLIENT] Error granting admin role:", error);
         showToast(() => userErrorMessage(error), 'error');
     } finally {
-        grantBtn.disabled = false;
+        setButtonLoading(grantBtn,false);
         grantBtn.textContent = __('admin.grant_btn');
     }
 }
@@ -405,12 +406,12 @@ async function handleVertexStatusToggle(e) {
     if(button.disabled||getEffectivePanelLevel('contributors.vertexStatus')!=='write')return;
     if(!targetUid||targetUid.length>128||/\s/.test(targetUid)){showToast(() => __('system.uid_invalid'),'error');return;}
     if(!await confirmDialog(()=>({title:__('panel.contributors.vertexStatus'),body:__('system.vertex_confirm'),rows:[{label:'UID',value:targetUid}]})))return;
-    vertexPending=true;button.disabled=true;button.textContent=__('system.saving');
+    vertexPending=true;setButtonLoading(button,true);button.textContent=__('system.saving');
     try{const result=await toggleVertexStatusFn({targetUid});
         let output=document.getElementById('vertex-operation-result');if(!output){output=document.createElement('p');output.id='vertex-operation-result';output.className='form-hint';output.setAttribute('role','status');button.after(output);}
         output.dataset.uid=targetUid;output.dataset.state=String(result.data.isVertex);updateVertexResult();
     }catch{showToast(() => __('system.error'),'error');}
-    finally{vertexPending=false;button.disabled=false;button.textContent=__('panel.contributors.vertexStatus');}
+    finally{vertexPending=false;setButtonLoading(button,false);button.textContent=__('panel.contributors.vertexStatus');}
 }
 
 /**
@@ -420,7 +421,7 @@ async function handleManualVerifySubmit(e) {
     e.preventDefault();
     const identifier = document.getElementById('verify-user-id').value;
     const btn = document.querySelector('#verify-user-form button[type="submit"]');
-    btn.disabled = true;
+    setButtonLoading(btn,true);
     btn.innerHTML = `<span data-i18n="system.saving">${__('system.saving')}</span>`;
 
     try {
@@ -431,7 +432,7 @@ async function handleManualVerifySubmit(e) {
         console.error("[CLIENT] Error verifying email:", error);
         showToast(() => userErrorMessage(error), 'error');
     } finally {
-        btn.disabled = false;
+        setButtonLoading(btn,false);
         btn.innerHTML = `<span data-i18n="system.verify_btn">${__('system.verify_btn')}</span>`;
     }
 }

@@ -31,17 +31,18 @@ function openRoster(refresh) {
     const status=document.createElement('p');status.className='form-hint';status.setAttribute('role','status');
     const results=document.createElement('div');
     actions.append(analyze,download,apply);body.append(intro,label,input,actions,status,results);
-    const controls=()=>{analyze.disabled=busy;input.disabled=busy;download.disabled=busy||!preview;apply.disabled=busy||!preview?.rows.some(r=>r.result==='ready');};
+    let pendingAction = null;
+    const controls=()=>{analyze.disabled=busy;input.disabled=busy;download.disabled=busy||!preview;apply.disabled=busy||!preview?.rows.some(r=>r.result==='ready');for(const [action,button] of [['preview',analyze],['apply',apply]]){const pending=busy&&pendingAction===action;button.classList.toggle('button-pending',pending);button.setAttribute('aria-busy',String(pending));}};
     input.oninput=()=>{generation++;preview=null;results.replaceChildren();status.textContent=text('stale');controls();};
     analyze.onclick=async()=>{
         if(busy||!isPanelAdmin())return;
-        busy=true;preview=null;const request=++generation;controls();status.textContent=text('pending');results.replaceChildren();
+        busy=true;pendingAction='preview';preview=null;const request=++generation;controls();status.textContent=text('pending');results.replaceChildren();
         try {
             const {data}=await previewContributorRosterFn({phones:input.value});
             if(!body.isConnected||request!==generation||!isPanelAdmin())return;
             preview=data;paint();status.textContent='';
         } catch(error){if(body.isConnected)status.textContent=userErrorMessage(error);}
-        finally{busy=false;controls();}
+        finally{busy=false;pendingAction=null;controls();}
     };
     function paint() {
         results.replaceChildren();
@@ -64,7 +65,7 @@ function openRoster(refresh) {
     };
     apply.onclick=async()=>{
         if(busy||!preview||!isPanelAdmin())return;
-        busy=true;controls();
+        busy=true;pendingAction='apply';controls();
         try {
             if(!await confirmDialog(()=>({title:text('apply'),body:text('approval')})))return;
             status.textContent=text('pending');
@@ -73,6 +74,6 @@ function openRoster(refresh) {
             preview.rows=preview.rows.map(row=>({...row,result:outcomes.get(row.phone)||row.result}));
             paint();status.textContent=text('done');await refresh();
         }catch(error){status.textContent=userErrorMessage(error);}
-        finally{busy=false;controls();}
+        finally{busy=false;pendingAction=null;controls();}
     };
 }

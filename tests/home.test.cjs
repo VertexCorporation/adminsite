@@ -57,7 +57,10 @@ test('flow artwork respects reduced motion and brand marks are local assets', ()
   assert.match(css, /prefers-reduced-motion:reduce/);
   for (const brand of ['firebase','google-drive','zapier','cal']) {
     assert.ok(fs.existsSync(path.join(root, 'assets','technology',brand+'.svg')), brand);
-    assert.match(read(path.join('assets','technology',brand+'.svg')), /<svg[^>]*fill=/);
+    const artwork=read(path.join('assets','technology',brand+'.svg'));
+    assert.match(artwork, /<svg\b[^>]*>/);
+    assert.match(artwork, /<(?:path|rect|circle|polygon|g)\b/); // SVG paint may inherit currentColor without an explicit fill.
+    assert.doesNotMatch(artwork, /<script\b|onload\s*=/i);
   }
   assert.doesNotMatch(css, /home-hero-emblem|home-orbit/);
 });
