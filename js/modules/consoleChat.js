@@ -44,7 +44,6 @@ let lastRenderedChannel = null;
 let pollPending = false;
 const readSequences=new Map();
 let lastSavedDraftUser=null;
-let lastVisibleMessages=[];
 function draftsKey(){return myUid?'vertex:chat:drafts:'+myUid:null;}
 function restoreDrafts(){
  if(myUid===lastSavedDraftUser)return;
@@ -99,7 +98,7 @@ function linkify(text) {
     // @Departman ve @mail etiketlerini vurgula, satır sonlarını koru
     return escapeHTML(text)
         .replace(/@([\w.+-]+@[\w-]+\.[\w.-]+)/g, '<span class="chat-mention chat-mention-mail">@$1</span>')
-        .replace(new RegExp('@(' + DEPARTMENTS.map(d=>d.id).join('|') + ')(?![\\w-])','g'), '<span class="chat-mention chat-mention-dept">@$1</span>')
+        .replace(new RegExp('@(' + DEPARTMENTS.map(d=>d.id).join('|') + ')(?![\\w-])','gi'), '<span class="chat-mention chat-mention-dept">@$1</span>')
         .replace(/\n/g, '<br>');
 }
 
@@ -201,7 +200,6 @@ async function loadMessages(animate = true) {
         if (currentChannelId !== channel.id) { finishLoading(); return; }
         const messages = result.data.messages || [];
         cachedMessages=messages;cachedChannelId=channel.id;
-        lastVisibleMessages=messages;
         const key = JSON.stringify(messages.map(m => [m.id,m.taskStatus,m.text,m.createdAt,m.authorName,m.authorDepartments]));
         if (!animate && key === lastMessagesKey) { finishLoading(); return; } // degisiklik yoksa DOM'a dokunma
         lastMessagesKey = key;
@@ -550,9 +548,18 @@ export function initConsoleChat() {
     el('chat-form-save').addEventListener('click', submitChannelForm);
     el('chat-send').addEventListener('click', sendMessage);
     el('chat-input').addEventListener('input', () => {
+        rememberDraft();
         updateMentionPop();
         if (caretToken() !== null) ensureDirectory().then(updateMentionPop);
     });
+    el('chat-as-task').addEventListener('change',rememberDraft);
+    el('chat-messages').addEventListener('scroll',()=>{
+        const container=el('chat-messages');
+        if(container.scrollHeight-container.scrollTop-container.clientHeight<70){
+            updateNewIndicator(false);
+            void markRead(cachedMessages.at(-1)?.sequence||0);
+        }
+    },{passive:true});
     el('chat-input').addEventListener('blur', () => setTimeout(closeMentionPop, 150));
     el('chat-input').addEventListener('keydown', (e) => {
         if (mentionPop && mentionMatches.length) {
