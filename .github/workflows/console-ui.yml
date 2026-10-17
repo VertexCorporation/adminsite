@@ -1,0 +1,32 @@
+name: console ui verification
+on:
+  push:
+    branches:
+      - fix/console-ui-unification-51-75
+  pull_request:
+    paths:
+      - 'css/**'
+      - 'js/**'
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/console-ui.yml'
+jobs:
+  ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      # Generate the immutable release in CI's temporary checkout only.
+      # Never push the generated assets or deploy the website.
+      - run: node scripts/release.cjs
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/ui-browser.cjs
+      - run: npm run test:browser
+        env:
+          VERTEX_BROWSER: chromium
