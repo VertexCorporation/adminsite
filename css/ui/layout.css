@@ -19,3 +19,8 @@
 }
 @keyframes ui-refresh { from { transform: translateX(0); } to { transform: translateX(178%); } }
 @media (prefers-reduced-motion: reduce) { .is-refreshing::before { animation: none; width: 100%; } }
+
+.ui-crossfade-ghost {
+    position: absolute; top: 0; left: 0; width: 100%;
+    pointer-events: none; overflow: hidden; z-index: 1;
+}

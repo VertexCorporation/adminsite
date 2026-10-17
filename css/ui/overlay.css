@@ -17,14 +17,14 @@ html[data-theme="light"] .vx-overlay { background: rgba(23, 25, 29, 0.28); }
     z-index: 95;
     min-width: 200px;
     max-width: 400px;
-    background: var(--glass-bg);
+    background: var(--bg-elevated);
     -webkit-backdrop-filter: blur(var(--glass-blur));
     backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-pop);
     opacity: 0;
-    transform: translateY(5px) scale(0.97);
+    transform: translateY(4px) scale(.98);
     transform-origin: top center;
     pointer-events: none;
     transition: opacity var(--motion-popover-close) var(--ease-exit),
@@ -64,7 +64,7 @@ html[data-theme="light"] .vx-overlay { background: rgba(23, 25, 29, 0.28); }
     z-index: 120;
     background: rgba(0, 0, 0, 0.5);
     opacity: 0;
-    transition: opacity var(--motion-drawer) var(--ease-standard);
+    transition: opacity var(--motion-overlay) var(--ease-standard);
 }
 html[data-theme="light"] .vx-drawer-scrim { background: rgba(23, 25, 29, 0.30); }
 .vx-drawer-scrim.is-open { opacity: 1; }
@@ -130,7 +130,7 @@ html[data-theme="light"] .vx-drawer-scrim { background: rgba(23, 25, 29, 0.30); 
     box-shadow: var(--shadow-modal);
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--motion-normal) var(--ease-standard), transform var(--motion-normal) var(--ease-standard);
+    transition: opacity var(--motion-overlay) var(--ease-standard), transform var(--motion-overlay) var(--ease-standard);
 }
 .vx-modal.is-open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
 
@@ -154,29 +154,9 @@ html[data-theme="light"] .vx-drawer-scrim { background: rgba(23, 25, 29, 0.30); 
 }
 
 
-.vx-popover{transform:translateY(4px) scale(.98);background:var(--bg-elevated);backdrop-filter:none;-webkit-backdrop-filter:none}
-.vx-popover.is-open{transform:translateY(0) scale(1)}
 .vx-popover.is-closing{pointer-events:none}
-.vx-drawer[aria-hidden="true"],.vx-modal[aria-hidden="true"]{pointer-events:none}
-.vx-popover.is-open,.vx-drawer{transition-timing-function:var(--ease-out)}
 .vx-popover.drawer-popover{z-index:135}
 
-/* All elevated surfaces use the same easing while retaining direction. */
-.vx-overlay, .vx-drawer-scrim { transition: opacity var(--motion-overlay) var(--ease-standard); }
-.vx-popover {
-    transition: opacity var(--motion-popover-close) var(--ease-exit),
-                transform var(--motion-popover-close) var(--ease-exit);
-}
-.vx-popover.is-open {
-    transition: opacity var(--motion-popover) var(--ease-standard),
-                transform var(--motion-popover) var(--ease-standard);
-}
-.vx-drawer {
-    transition: opacity var(--motion-drawer) var(--ease-standard),
-                transform var(--motion-drawer) var(--ease-standard);
-}
-.vx-modal {
-    transition: opacity var(--motion-overlay) var(--ease-standard),
-                transform var(--motion-overlay) var(--ease-standard);
-}
+/* The backdrop and panel have a single CSS-owned lifecycle. */
+.vx-popover.is-closing, .vx-drawer[aria-hidden="true"], .vx-modal[aria-hidden="true"] { pointer-events: none; }
 .vx-drawer-body, .vx-modal-body { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }

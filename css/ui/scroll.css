@@ -3,6 +3,10 @@
 .scroll-fog[data-fog-top="true"]{--fog-top:26px}.scroll-fog[data-fog-bottom="true"]{--fog-bottom:26px}
 
 
+@property --fog-top { syntax: '<length>'; initial-value: 0px; inherits: false; }
+@property --fog-bottom { syntax: '<length>'; initial-value: 0px; inherits: false; }
+@property --fog-left { syntax: '<length>'; initial-value: 0px; inherits: false; }
+@property --fog-right { syntax: '<length>'; initial-value: 0px; inherits: false; }
 .scroll-fog, .scroll-fog-x { --fog-edge: 24px; }
 .scroll-fog { transition: --fog-top 160ms, --fog-bottom 160ms; }
 .scroll-fog-x {
@@ -24,4 +28,9 @@
         linear-gradient(to right,transparent,#000 var(--fog-left),#000 calc(100% - var(--fog-right)),transparent),
         linear-gradient(to bottom,transparent,#000 var(--fog-top),#000 calc(100% - var(--fog-bottom)),transparent);
     mask-composite: intersect;
+}
+
+.scroll-fog-x {
+    transition: --fog-left var(--motion-normal) var(--ease-standard),
+                --fog-right var(--motion-normal) var(--ease-standard);
 }
