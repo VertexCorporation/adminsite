@@ -1,5 +1,5 @@
 import { confirmDialog } from './shell.js';
-import { beginPanelLoading } from '../utils/loading.js';
+import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
 // js/modules/news.js
 
 import { db, createNewsArticleFn, deleteNewsArticleFn, getCoverUploadUrlFn } from '../core/firebase.js';
@@ -16,7 +16,7 @@ async function handleNewsFormSubmit(e) {
     e.preventDefault();
     const submitBtn = document.getElementById('submit-btn');
     if(submitBtn.disabled)return;
-    submitBtn.disabled = true;
+    setButtonLoading(submitBtn,true);
     submitBtn.textContent = __('news.publishing');
 
     const titleEN = document.getElementById('title-en').value;
@@ -24,7 +24,7 @@ async function handleNewsFormSubmit(e) {
 
     if (!cleanSlug) {
         showToast(() => __('news.slug_invalid'), 'error');
-        submitBtn.disabled = false;
+        setButtonLoading(submitBtn,false);
         submitBtn.textContent = __('news.publish_btn');
         return;
     }
@@ -61,7 +61,7 @@ async function handleNewsFormSubmit(e) {
         console.error("[CLIENT] An error occurred during news submission:", error);
         showToast(()=>userErrorMessage(error), 'error');
     } finally {
-        submitBtn.disabled = false;
+        setButtonLoading(submitBtn,false);
         submitBtn.textContent = __('news.publish_btn');
     }
 }

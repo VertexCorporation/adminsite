@@ -1,5 +1,5 @@
 import { confirmDialog } from './shell.js';
-import { beginPanelLoading } from '../utils/loading.js';
+import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
 // js/modules/notification.js
 
 import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn } from '../core/firebase.js';
@@ -127,7 +127,7 @@ async function handleNotificationFormSubmit(e) {
     if (submissionPending || deliveryUncertain) return;
     submissionPending = true;
     const submitBtn = document.getElementById('submit-notification-btn');
-    submitBtn.disabled = true;
+    setButtonLoading(submitBtn,true);
     submitBtn.textContent = __('notif.submitting');
 
     try {
@@ -195,6 +195,7 @@ async function handleNotificationFormSubmit(e) {
         showToast(()=>deliveryUncertain ? __('notif.uncertain') : userErrorMessage(error), 'error');
     } finally {
         submissionPending = false;
+        setButtonLoading(submitBtn,false);
         submitBtn.disabled = deliveryUncertain;
         handleScheduleSwitchChange();
         if (deliveryUncertain) submitBtn.textContent = __('notif.uncertain_short');

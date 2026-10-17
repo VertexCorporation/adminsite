@@ -1,5 +1,5 @@
 import { confirmDialog } from './shell.js';
-import { beginPanelLoading } from '../utils/loading.js';
+import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
 import { icon } from '../utils/icons.js';
 // js/modules/siteTeam.js
 
@@ -87,7 +87,7 @@ async function add() {
         return;
     }
     const btn = el('team-mod-add');
-    if (btn) btn.disabled = true;
+    setButtonLoading(btn,true);
     try {
         await setSiteTeamEntryFn({ kind: 'mod', name });
         input.value = '';
@@ -96,7 +96,7 @@ async function add() {
     } catch (error) {
         showToast(() => userErrorMessage(error), 'error');
     } finally {
-        if (btn) btn.disabled = false;
+        setButtonLoading(btn,false);
     }
 }
 
@@ -109,6 +109,8 @@ async function rename(id) {
         showToast(() => __('team.name_required'), 'error');
         return;
     }
+    const button=list.querySelector('.team-entry-save[data-save="'+CSS.escape(id)+'"]');
+    setButtonLoading(button,true);
     try {
         await setSiteTeamEntryFn({ kind: 'mod', name, id });
         editingId = null;
@@ -116,7 +118,7 @@ async function rename(id) {
         await loadTeam();
     } catch (error) {
         showToast(() => userErrorMessage(error), 'error');
-    }
+    } finally { setButtonLoading(button,false); }
 }
 
 async function remove(id) {
@@ -127,13 +129,15 @@ async function remove(id) {
         confirmLabel: __('team.remove'),
         danger: true
     }))) return;
+    const button=el('team-mod-list')?.querySelector('.team-entry-del[data-id="'+CSS.escape(id)+'"]');
+    setButtonLoading(button,true);
     try {
         await deleteSiteTeamEntryFn({ id });
         showToast(() => __('team.removed'), 'success');
         await loadTeam();
     } catch (error) {
         showToast(() => userErrorMessage(error), 'error');
-    }
+    } finally { setButtonLoading(button,false); }
 }
 
 export function initSiteTeamPanel() {

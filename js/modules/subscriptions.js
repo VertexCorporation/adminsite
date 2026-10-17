@@ -1,5 +1,5 @@
 import { confirmDialog } from './shell.js';
-import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../utils/loading.js';
+import { beginPanelLoading, skeletonListItem, skeletonChatMessage, setButtonLoading } from '../utils/loading.js';
 // js/modules/subscriptions.js
 
 import { userErrorMessage, showToast, __, getLang, onLangChange, sanitizeHTML } from '../utils/ui.js';
@@ -104,7 +104,7 @@ async function loadSubscriptions() {
     const container = dom.subscriptionsList;
     const button = document.getElementById('refresh-subscriptions-btn');
     const finishLoading = beginPanelLoading(container);
-    button.disabled = true;
+    setButtonLoading(button,true);
     try {
         const result = await listUserSubscriptionsFn();
         subscriptions = (result.data.subscriptions || []).map(sub => ({
@@ -123,7 +123,7 @@ async function loadSubscriptions() {
         container.innerHTML = `<p class="form-hint dept-list-message" data-i18n="subs.load_error">${__('subs.load_error')}</p>`;
     } finally {
         finishLoading();
-        button.disabled = false;
+        setButtonLoading(button,false);
     }
 }
 
@@ -146,8 +146,7 @@ async function handleAssignSubmit(e) {
     }
 
     const btn = document.getElementById('assign-subscription-btn');
-    btn.disabled = true;
-    btn.innerHTML = `<span data-i18n="subs.assigning">${__('subs.assigning')}</span>`;
+    setButtonLoading(btn,true);
 
     try {
         const data = await grantPremium({ email, displayName, tier, expiresAt: expiresAt.toISOString() });
@@ -159,15 +158,13 @@ async function handleAssignSubmit(e) {
         console.error('[CLIENT] Error assigning subscription:', error);
         showToast(() => userErrorMessage(error), 'error');
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<i class="" data-icon="workspace_premium"></i><span data-i18n="subs.assign_btn">${__('subs.assign_btn')}</span>`;
+        setButtonLoading(btn,false);
     }
 }
 
 async function handleRemoveSubscription(uid, button) {
     if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('subs.remove_confirm')}))) return;
-    button.disabled = true;
-    button.textContent = __('subs.removing');
+    setButtonLoading(button,true);
     try {
         const result = await removeUserSubscriptionFn({ uid });
         showToast(() => __('subs.remove_success'), 'success');
@@ -175,8 +172,7 @@ async function handleRemoveSubscription(uid, button) {
     } catch (error) {
         console.error('[CLIENT] Error removing subscription:', error);
         showToast(() => userErrorMessage(error), 'error');
-        button.disabled = false;
-        button.textContent = __('subs.remove_btn');
+        setButtonLoading(button,false);
     }
 }
 
@@ -232,8 +228,7 @@ async function handleBulkSubmit() {
     }
 
     const btn = document.getElementById('sub-bulk-submit');
-    btn.disabled = true;
-    btn.innerHTML = `<span data-i18n="subs.bulk_running">${__('subs.bulk_running')}</span>`;
+    setButtonLoading(btn,true);
     showToast(() => __('subs.bulk_started'), 'info');
 
     try {
@@ -246,8 +241,7 @@ async function handleBulkSubmit() {
         console.error('[CLIENT] Error bulk assigning subscriptions:', error);
         showToast(() => userErrorMessage(error), 'error');
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<i class="" data-icon="playlist_add"></i><span data-i18n="subs.bulk_btn">${__('subs.bulk_btn')}</span>`;
+        setButtonLoading(btn,false);
     }
 }
 
