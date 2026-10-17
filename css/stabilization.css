@@ -16,7 +16,7 @@
 .button-pending svg,.button-pending img,.button-pending [data-icon]{mask-image:linear-gradient(110deg,#0008 35%,#000 50%,#0008 65%);mask-size:250% 100%;animation:iconSweep 820ms ease-in-out infinite}
 .button-pending:not(:has(svg,img,[data-icon])){animation:iconSweep 820ms ease-in-out infinite}
 @keyframes iconSweep{from{mask-position:150% 0;opacity:.75}50%{opacity:1}to{mask-position:-50% 0;opacity:.75}}
-.toast{cursor:pointer}.toast.is-leaving{transform:translateY(10px) scale(.98);transition-duration:180ms}.toast:focus-visible{outline:2px solid var(--text-primary);outline-offset:3px}.toast.warning{border-color:var(--status-warning)}
+
 #contributors-list-container{max-height:none;overflow:visible;mask-image:none!important}.contributor-table-head{position:relative;top:auto;background:var(--bg-surface);z-index:1;overflow-y:auto;scrollbar-gutter:stable}.contributor-table-rows{max-height:420px;overflow-y:auto;scrollbar-gutter:stable}
 .contributor-cell-actions{gap:2px}.contributor-cell-actions>button{flex-shrink:0}.vertex-membership-btn img{opacity:.55}.vertex-membership-btn.is-active img{opacity:1}.vertex-membership-btn.is-unknown{opacity:.65}
 .model-item{min-height:48px;padding:6px 0;gap:12px}.model-item>div{min-width:0}.model-item .item-actions{flex-shrink:0}.model-item strong,.model-item code{overflow-wrap:anywhere}.series-group>summary{min-height:44px;padding:6px 0}
