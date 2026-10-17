@@ -37,6 +37,8 @@ const LANG = {
     "email_templates.error_placeholder": "Geçersiz değişken kullanıldı. Lütfen yalnızca şablonun sunduğu alanları {{çift süslü parantez}} biçiminde ekleyin.",
     "email_templates.error_format": "Desteklenmeyen HTML veya biçimlendirme var. Yalnızca düzenleyicinin biçimlendirme araçlarını kullanın.",
     "email_templates.error_link": "Bağlantılar yalnızca güvenli https:// veya mailto: adresleriyle kullanılabilir.",
+
+    'email_templates.select_text_to_link': 'Önce doğrulama bağlantısı yapmak istediğin metni seç.',
 'people.select_department': 'Departman seçin',
     'people.admin_only': 'Bu çalışma alanı yalnızca mevcut global yöneticilere açıktır. Departman izinleri bu alanın erişimini genişletmez.',
     "people.all_departments": "Tüm departmanlar",
@@ -912,6 +914,8 @@ const LANG = {
     "email_templates.error_placeholder": "Invalid placeholder. Use only the available placeholders with {{double braces}}.",
     "email_templates.error_format": "Unsupported HTML or formatting. Use only the editor's formatting tools.",
     "email_templates.error_link": "Links must use secure https:// or mailto: addresses.",
+
+    'email_templates.select_text_to_link': 'Select the text you want to turn into a verification link first.',
 'people.select_department': 'Select a department',
     'people.admin_only': 'This workspace is restricted to existing global administrators. Department permissions do not expand access.',
     "people.all_departments": "All departments",

@@ -4,6 +4,7 @@ import { openDrawer, closeDrawer, confirmDialog } from './shell.js';
 import { createLoadingController, skeletonRows, setButtonLoading } from '../utils/loading.js';
 import { isPanelAdmin } from './roles.js';
 import { emailTemplateValidationReason } from '../utils/email-template-validation.js';
+import { normalizeVerificationLinks } from '../utils/email-template-links.js';
 
 export function openCertificateEmailTemplates() {
     if (!isPanelAdmin()) return;
@@ -53,7 +54,7 @@ export function openCertificateEmailTemplates() {
     async function change(nextType,nextLanguage){
         if(busy)return;
         if(dirty&&!await confirmDialog(()=>({title:__('email_templates.discard_title'),warning:__('email_templates.discard')}))){paint();return;}
-        type=nextType;language=nextLanguage;current=selected();draft={subject:current.subject,html:current.html};dirty=false;paint();
+        type=nextType;language=nextLanguage;current=selected();draft={subject:current.subject,html:normalizeVerificationLinks(current.html)};dirty=draft.html!==current.html;paint();
     }
     function paint(){
         if(!alive||!current)return;
@@ -69,7 +70,7 @@ export function openCertificateEmailTemplates() {
         html.onpaste=e=>{e.preventDefault();document.execCommand('insertText',false,e.clipboardData.getData('text/plain'));};
         html.ondrop=e=>e.preventDefault();
         html.onkeyup=html.onmouseup=()=>{const selection=window.getSelection();if(selection.rangeCount&&html.contains(selection.anchorNode))savedRange=selection.getRangeAt(0).cloneRange();};
-        for(const field of [subject,html]){field.onfocus=()=>target=field;field.oninput=()=>{draft={subject:subject.value,html:html.innerHTML};dirty=draft.subject!==current.subject||draft.html!==current.html;status();schedulePreview();};}
+        for(const field of [subject,html]){field.onfocus=()=>target=field;field.oninput=()=>{draft={subject:subject.value,html:normalizeVerificationLinks(html.innerHTML)};dirty=draft.subject!==current.subject||draft.html!==current.html;status();schedulePreview();};}
         function insert(before,after=''){
             if(target===subject){
                 const start=target.selectionStart,end=target.selectionEnd;target.setRangeText(before+target.value.slice(start,end)+after,start,end,'end');target.focus();
@@ -82,8 +83,36 @@ export function openCertificateEmailTemplates() {
         }
         body.querySelectorAll('[data-insert],[data-format]').forEach(b=>b.onmousedown=e=>e.preventDefault());
         body.querySelectorAll('[data-insert]').forEach(b=>b.onclick=()=>insert('{{'+b.dataset.insert+'}}'));
+        function linkSelectedText(){
+            target=html;html.focus();
+            const selection=window.getSelection();
+            if(savedRange&&html.contains(savedRange.commonAncestorContainer)){
+                selection.removeAllRanges();selection.addRange(savedRange);
+            }
+            const range=selection.rangeCount?selection.getRangeAt(0):null;
+            if(!range||range.collapsed||!html.contains(range.commonAncestorContainer)||!selection.toString().trim()){
+                showToast(()=>__('email_templates.select_text_to_link'),'info');
+                return;
+            }
+            // Give execCommand a valid absolute URL, then set the stored
+            // href attribute to the literal placeholder (not the DOM .href).
+            const marker='https://vertexishere.com/verify/__vertex_editor_link_marker__';
+            if(!document.execCommand('createLink',false,marker)){
+                showToast(()=>__('email_templates.error_format'),'error');return;
+            }
+            let updated=false;
+            for(const anchor of html.querySelectorAll('a[href]')){
+                if(anchor.getAttribute('href')===marker){
+                    anchor.setAttribute('href','{{verificationUrl}}');updated=true;
+                }
+            }
+            if(!updated){showToast(()=>__('email_templates.error_format'),'error');return;}
+            html.oninput();
+        }
         body.querySelectorAll('[data-format]').forEach(b=>b.onclick=()=>{
-            target=html;const formats={bold:['<strong>','</strong>'],italic:['<em>','</em>'],paragraph:['<p>','</p>'],link:['<a href="{{verificationUrl}}">','</a>'],break:['<br>','']};insert(...formats[b.dataset.format]);
+            const kind=b.dataset.format;
+            if(kind==='link'){linkSelectedText();return;}
+            target=html;const formats={bold:['<strong>','</strong>'],italic:['<em>','</em>'],paragraph:['<p>','</p>'],break:['<br>','']};insert(...formats[kind]);
         });
         footer.querySelector('[data-save]').onclick=()=>save(false);
         footer.querySelector('[data-restore]').onclick=async()=>{
@@ -99,7 +128,7 @@ export function openCertificateEmailTemplates() {
         if(validation){showValidationError(validation);return;}
         section.setAttribute('aria-busy','true');
         try{
-            const {data}=await previewVertexCertificateEmailTemplateFn({certificateType:type,language,...draft});
+            const {data}=await previewVertexCertificateEmailTemplateFn({certificateType:type,language,...draft,html:normalizeVerificationLinks(draft.html)});
             if(!alive||generation!==previewGeneration||selection!==type+'_'+language)return;
             error.hidden=true;body.querySelector('[data-preview-subject]').textContent=data.emailSubject;
             // Backend sanitization plus an inert, network-blocked sandbox: no email is sent.
@@ -117,7 +146,7 @@ export function openCertificateEmailTemplates() {
         busy=true;status();
         let saved=false;
         try{
-            const {data}=await saveVertexCertificateEmailTemplateFn({certificateType:type,language,...draft,expectedRevision:current.revision,restoreDefaults});
+            const {data}=await saveVertexCertificateEmailTemplateFn({certificateType:type,language,...draft,html:normalizeVerificationLinks(draft.html),expectedRevision:current.revision,restoreDefaults});
             if(!alive)return;templates[templates.indexOf(current)]=data;current=data;draft={subject:data.subject,html:data.html};dirty=false;showToast(()=>__('email_templates.save_success'),'success');
             saved=true;
             if(root.classList.contains('is-open'))closeDrawer();
@@ -126,7 +155,7 @@ export function openCertificateEmailTemplates() {
     }
     async function load(){
         loader.start();footer.hidden=true;
-        try{const {data}=await getVertexCertificateEmailTemplatesFn({});if(!alive)return;templates=data.templates;current=selected();draft={subject:current.subject,html:current.html};footer.hidden=false;paint();}
+        try{const {data}=await getVertexCertificateEmailTemplatesFn({});if(!alive)return;templates=data.templates;current=selected();draft={subject:current.subject,html:normalizeVerificationLinks(current.html)};dirty=draft.html!==current.html;footer.hidden=false;paint();}
         catch(e){if(alive)loader.error(userErrorMessage(e),load,__('common.retry'));}
     }
     const unsubscribe=onLangChange(paint);load();
