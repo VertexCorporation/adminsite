@@ -1,5 +1,6 @@
 import { eventLocalTime, eventInstant, eventCandidates } from './eventTime.js';
 import { groupFields } from '../ui/sections.js';
+import { renderPager } from '../ui/pager.js';
 import { mountEventFields } from './eventFields.js';
 import { eventCallable } from '../core/firebase.js';
 import { getEffectivePanelLevel } from './roles.js';
@@ -196,16 +197,44 @@ export function initEventsModule() {
    }
    table.append(head);
    const body=document.createElement('tbody');table.append(body);
+   const actions=document.createElement('div');actions.className='ui-list-actions';
+   const exportButton=document.createElement('button');exportButton.type='button';
+   exportButton.className='chrome-btn-outline';exportButton.textContent=tr('CSV dışa aktar','Export CSV');
+   actions.append(exportButton);box.insertBefore(actions,viewport);
+   let page=1;const pageSize=25;
+   const columns=[['name','Ad','Name'],['email','E-posta','Email'],['status','Durum','Status'],['ticketCategory','Bilet','Ticket'],['createdAt','Kayıt zamanı','Registered at']];
+   const visible=()=>rows.filter(row=>[row.name,row.email,row.status,row.ticketCategory,row.id]
+      .some(v=>String(v||'').toLocaleLowerCase().includes(search.value.toLocaleLowerCase())));
+   const value=(row,key)=>key==='ticketCategory'?(row.ticketCategory||row.category||'—'):String(row[key]??'—');
    const paint=()=>{
     body.replaceChildren();
-    const query=search.value.toLocaleLowerCase();
-    for(const row of rows.filter(r=>[r.name,r.email,r.status,r.ticketCategory,r.id].some(v=>String(v||'').toLocaleLowerCase().includes(query)))){
+    box.querySelector('.ui-pager')?.remove();
+    const matches=visible();page=Math.min(page,Math.max(1,Math.ceil(matches.length/pageSize)));
+    for(const row of matches.slice((page-1)*pageSize,page*pageSize)){
      const trEl=document.createElement('tr');
-     for(const val of [row.name,row.email,row.status,row.ticketCategory||row.category||'—',row.createdAt||'—']){
-      const td=document.createElement('td');td.textContent=String(val||'—');td.style.padding='10px';td.style.borderBottom='1px solid var(--border-subtle)';trEl.append(td);
-     }body.append(trEl);
+     for(const [key]of columns){const td=document.createElement('td');td.textContent=value(row,key);td.style.padding='10px';td.style.borderBottom='1px solid var(--border-subtle)';trEl.append(td);}
+     body.append(trEl);
     }
-   };search.addEventListener('input',paint);paint();
+    renderPager(box,{page,total:matches.length,pageSize,language:getLang(),onChange:next=>{page=next;paint();}});
+   };
+   search.addEventListener('input',()=>{page=1;paint();});
+   exportButton.onclick=async()=>{
+    if(!await confirmDialog({title:tr('Kişisel verileri dışa aktar','Export personal data'),
+      body:tr('Yetkili olduğun etkinlik kayıtları CSV olarak indirilecek.','The visible event registrations will be exported as CSV.')}))return;
+    const escape=value=>{
+     let text=String(value??'');
+     if(/^[=+@-]/.test(text))text="'"+text;
+     return '"'+text.replaceAll('"','""')+'"';
+    };
+    const output=[columns.map(([,trLabel,en])=>getLang()==='tr'?trLabel:en),
+       ...visible().map(row=>columns.map(([key])=>value(row,key)))].map(row=>row.map(escape).join(',')).join('\r\n');
+    const blob=new Blob(['\ufeff',output],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const anchor=document.createElement('a');anchor.href=url;
+    anchor.download='event-registrations.csv';anchor.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+   };
+   paint();
   }catch(e){box.replaceChildren();fail(e);}
  };
  document.addEventListener('vertex:workspace',e=>{if(e.detail.keys.includes('events.list'))refresh().catch(fail);});
