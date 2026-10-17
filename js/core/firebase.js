@@ -4,7 +4,7 @@
 let auth, db, storage, functions, appCheck;
 let sendTargetedNotificationFn, scheduleNotificationFn, listScheduledNotificationsFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn, previewNotificationAudienceFn;
 let cancelScheduledNotificationFn, getServerStatusFn, setServerStatusFn, blockOnlineModelFn;
-let updateModelsListFn, createNewsArticleFn, updateNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn;
+let updateModelsListFn, createNewsArticleFn, updateNewsArticleFn, listNewsRevisionsFn, restoreNewsRevisionFn, deleteNewsArticleFn, addAdminRoleFn;
 let getModelImageUploadUrlFn, getCoverUploadUrlFn, triggerAttributionsUpdateFn;
 let getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn;
 let verifyUserEmailFn;
@@ -101,6 +101,8 @@ function initFirebase(firebaseConfig) {
     updateModelsListFn = callable('updateModelsList');
     createNewsArticleFn = callable('createNewsArticle');
     updateNewsArticleFn = callable('updateNewsArticle');
+    listNewsRevisionsFn = callable('listNewsRevisions');
+    restoreNewsRevisionFn = callable('restoreNewsRevision');
     deleteNewsArticleFn = callable('deleteNewsArticle');
     addAdminRoleFn = callable('addAdminRole');
     getModelImageUploadUrlFn = callable('getModelImageUploadUrl');
@@ -160,6 +162,8 @@ export {
     updateModelsListFn,
     createNewsArticleFn,
     updateNewsArticleFn,
+    listNewsRevisionsFn,
+    restoreNewsRevisionFn,
     deleteNewsArticleFn,
     addAdminRoleFn,
     getModelImageUploadUrlFn,
