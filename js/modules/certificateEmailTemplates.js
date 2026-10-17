@@ -155,7 +155,7 @@ export function openCertificateEmailTemplates() {
     }
     async function load(){
         loader.start();footer.hidden=true;
-        try{const {data}=await getVertexCertificateEmailTemplatesFn({});if(!alive)return;templates=data.templates;current=selected();draft={subject:current.subject,html:normalizeVerificationLinks(current.html)};dirty=draft.html!==current.html;footer.hidden=false;paint();}
+        try{const {data}=await getVertexCertificateEmailTemplatesFn({});if(!alive)return;if(!Array.isArray(data?.templates))throw Object.assign(new Error('Invalid email template response'),{code:'functions/internal'});templates=data.templates;current=selected();if(!current)throw Object.assign(new Error('Requested email template is missing'),{code:'functions/not-found'});draft={subject:current.subject,html:normalizeVerificationLinks(current.html)};dirty=draft.html!==current.html;footer.hidden=false;paint();}
         catch(e){if(alive)loader.error(userErrorMessage(e),load,__('common.retry'));}
     }
     const unsubscribe=onLangChange(paint);load();
