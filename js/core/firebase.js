@@ -2,7 +2,7 @@
 
 // These will be populated by the initFirebase function
 let auth, db, storage, functions, appCheck;
-let sendTargetedNotificationFn, scheduleNotificationFn, listScheduledNotificationsFn;
+let sendTargetedNotificationFn, scheduleNotificationFn, listScheduledNotificationsFn, getNotificationDeliveryStatusFn;
 let cancelScheduledNotificationFn, getServerStatusFn, setServerStatusFn, blockOnlineModelFn;
 let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn;
 let getModelImageUploadUrlFn, getCoverUploadUrlFn, triggerAttributionsUpdateFn;
@@ -89,6 +89,7 @@ function initFirebase(firebaseConfig) {
     // Initialize Cloud Functions with the correct region
     const europeFunctions = firebase.app().functions('europe-west1');
     sendTargetedNotificationFn = callable('sendTargetedNotification');
+    getNotificationDeliveryStatusFn = callable('getNotificationDeliveryStatus');
     scheduleNotificationFn = callable('scheduleNotification');
     listScheduledNotificationsFn = callable('listScheduledNotifications');
     cancelScheduledNotificationFn = callable('cancelScheduledNotification');
@@ -142,6 +143,7 @@ export {
     functions,
     appCheck,
     sendTargetedNotificationFn,
+    getNotificationDeliveryStatusFn,
     scheduleNotificationFn,
     listScheduledNotificationsFn,
     cancelScheduledNotificationFn,
