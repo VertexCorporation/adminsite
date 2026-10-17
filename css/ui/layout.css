@@ -24,3 +24,39 @@
     position: absolute; top: 0; left: 0; width: 100%;
     pointer-events: none; overflow: hidden; z-index: 1;
 }
+
+
+/* Shared panel rhythm. Brand artwork retains its own typography. */
+:where(.grid-layout) { align-items: start; }
+:where(.grid-layout > .panel-card) { height: auto; align-self: start; }
+:where(.panel-card) :is(.panel-header h3,.card-title-row h3) {
+    font-size: var(--fs-section-title);
+    line-height: var(--lh-tight);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+}
+:where(.panel-card,.vx-drawer,.vx-modal) :is(.form-hint,.text-muted,.field-help) {
+    font-size: var(--fs-secondary);
+    line-height: var(--lh-normal);
+    color: var(--text-secondary);
+}
+:where(.panel-card) :is(.form-section,.form-stack) { min-width: 0; }
+:where(.form-stack) { display: flex; flex-direction: column; gap: var(--form-gap); }
+:where(.form-stack > .form-section) { min-width: 0; }
+:where(.team-list,.team-list-row,.team-list-info,.team-list-actions) { min-width: 0; }
+:where(.team-list-name,.team-list-meta,.position-badge) { overflow-wrap: anywhere; }
+:where(.grid-layout > .panel-card:empty) { min-height: 0; padding-block: var(--space-4); }
+
+@media (max-width: 1023px) {
+    :where(.grid-layout) { gap: var(--card-gap); }
+    :where(.form-grid.two-col) { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    :where(.vx-modal,.vx-drawer) { max-width: 100vw; }
+}
+@media (max-width: 720px) {
+    :where(.grid-layout) { gap: var(--space-3); }
+    :where(.form-grid.two-col) { grid-template-columns: minmax(0,1fr); }
+    :where(.vx-drawer-body,.vx-modal-body) { padding: var(--space-4); }
+    :where(.panel-card) { padding: var(--space-4); }
+    :where(.panel-card) :is(.form-hint,.field-help) { overflow-wrap: anywhere; }
+}
