@@ -23,7 +23,7 @@ import {
     deleteConsoleChatChannelFn,
     listConsoleChatDirectoryFn,
     markConsoleChatReadFn,
-    auth
+    db, auth
 } from '../core/firebase.js';
 
 let channels = [];
@@ -42,6 +42,33 @@ let mentionActive = -1;
 const drafts = new Map();
 let lastRenderedChannel = null;
 let pollPending = false;
+let unsubscribeChannelHint = null;
+let hintRefresh = null;
+let latestHintVersion = 0;
+function stopChannelHint() {
+    if(unsubscribeChannelHint){unsubscribeChannelHint();unsubscribeChannelHint=null;}
+    hintRefresh=null;latestHintVersion=0;
+}
+function watchChannelHint(channelId) {
+    stopChannelHint();
+    if(!channelId||!db)return;
+    try {
+        unsubscribeChannelHint=db.collection('chatChannels').doc(channelId).onSnapshot(snapshot=>{
+            if(channelId!==currentChannelId || !snapshot.exists)return;
+            const version=Number(snapshot.data()?.messageVersion||0);
+            if(!Number.isSafeInteger(version)||version<0)return;
+            latestHintVersion=Math.max(version,latestHintVersion);
+            if(cachedMessageVersion>=0 && version>cachedMessageVersion && !hintRefresh) {
+                hintRefresh=loadMessages(false).finally(()=>{hintRefresh=null;});
+            }
+        },error=>{
+            stopChannelHint();
+            if(error.code!=='permission-denied')console.warn('[CHAT] Realtime metadata unavailable',error.code||'unknown');
+            // The existing guarded polling path remains active for older rules.
+        });
+    }catch(error){console.warn('[CHAT] Realtime watcher unavailable',error.code||'unknown');}
+}
+
 let cachedMessageVersion = -1;
 const readSequences=new Map();
 const mentionCounts=new Map();
@@ -145,6 +172,7 @@ async function loadChannels() {
         // Açık kanal hâlâ erişilebilir mi?
         if (currentChannelId && !channels.some(c => c.id === currentChannelId)) {
             currentChannelId = null;
+            stopChannelHint();
             renderMessages([]);
             renderChatHeader();
         }
@@ -191,6 +219,7 @@ function selectChannel(channelId) {
     if(asTask)asTask.checked=!!draft?.asTask;
     updateNewIndicator(false);
     closeMentionPop();
+    watchChannelHint(channelId);
     lastMessagesKey='';
     lastRenderedChannel=null;cachedMessageVersion=-1;
     renderChannelList();
@@ -517,7 +546,7 @@ export function refreshConsoleChat() {
 export function initConsoleChat() {
     if (!el('chat-channel-list')) return;
     isAdmin = isPanelAdmin();
-
+    auth?.onAuthStateChanged(user=>{if(!user){stopChannelHint();drafts.clear();lastSavedDraftUser=null;}});
     el('chat-create-btn').style.display = isAdmin ? 'inline-flex' : 'none';
     el('chat-create-btn').addEventListener('click', () => openChannelForm('create'));
     el('chat-channel-edit').addEventListener('click', () => {
