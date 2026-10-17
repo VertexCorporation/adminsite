@@ -1,4 +1,5 @@
 import { confirmDialog } from './shell.js';
+import { eventCandidates, eventInstant } from './eventTime.js';
 import { renderPager } from '../ui/pager.js';
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/notification.js
@@ -116,6 +117,69 @@ async function checkDeliveryStatus(requestId, continuePolling=false) {
 /**
  * Handles changes in the notification schedule switch.
  */
+// Explicit IANA-zone scheduling avoids the operator's locale silently changing the send time.
+function scheduleZone() {
+    return document.getElementById('notification-schedule-zone')?.value ||
+        Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
+function updateScheduleOptions() {
+    const local=document.getElementById('notification-schedule-time')?.value;
+    const choice=document.getElementById('notification-schedule-offset');
+    const status=document.getElementById('notification-schedule-zone-hint');
+    if(!choice||!status)return;
+    choice.replaceChildren();choice.hidden=true;status.textContent='';
+    if(!local)return;
+    try {
+        const candidates=eventCandidates(local,scheduleZone());
+        if(!candidates.length){
+            status.textContent=ntr('Bu saat seçilen bölgede mevcut değil.','This local time does not exist in the selected zone.');
+            status.dataset.invalid='true';
+            return;
+        }
+        status.dataset.invalid='false';
+        const formatter=new Intl.DateTimeFormat(getLang()==='tr'?'tr-TR':'en-US',
+            {timeZone:scheduleZone(),dateStyle:'medium',timeStyle:'long',timeZoneName:'shortOffset'});
+        if(candidates.length>1){
+            choice.hidden=false;
+            for(const [i,iso] of candidates.entries()){
+                const opt=document.createElement('option');
+                opt.value=i===0?'earlier':'later';
+                opt.textContent=formatter.format(new Date(iso));
+                choice.append(opt);
+            }
+            status.textContent=ntr('Saat iki kez gerçekleşiyor; saat farkını seç.','This time occurs twice. Choose the UTC offset.');
+        } else {
+            status.textContent=formatter.format(new Date(candidates[0]));
+        }
+    } catch {
+        status.dataset.invalid='true';
+        status.textContent=ntr('Tarih veya saat dilimi geçersiz.','Invalid date or time zone.');
+    }
+}
+function initScheduleZone() {
+    const input=document.getElementById('notification-schedule-time');
+    if(!input || document.getElementById('notification-schedule-zone'))return;
+    const wrapper=input.closest('.form-group-field')||input.parentElement;
+    const zone=document.createElement('select');
+    zone.id='notification-schedule-zone';
+    zone.setAttribute('aria-label',ntr('Bildirim saat dilimi','Notification time zone'));
+    const preferred=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
+    const zones=Intl.supportedValuesOf?.('timeZone')||[];
+    for(const name of [...new Set([preferred,'UTC','Europe/Istanbul',...zones])]){
+        const opt=document.createElement('option');opt.value=name;opt.textContent=name;zone.append(opt);
+    }
+    zone.value=preferred;
+    const choice=document.createElement('select');choice.id='notification-schedule-offset';
+    choice.setAttribute('aria-label',ntr('Belirsiz saat seçimi','Ambiguous time selection'));
+    choice.hidden=true;
+    const status=document.createElement('small');status.id='notification-schedule-zone-hint';
+    status.className='form-hint';status.setAttribute('role','status');
+    wrapper.append(zone,choice,status);
+    input.addEventListener('change',updateScheduleOptions);
+    input.addEventListener('input',updateScheduleOptions);
+    zone.addEventListener('change',updateScheduleOptions);
+    updateScheduleOptions();
+}
 function handleScheduleSwitchChange() {
     const isScheduled = dom.notificationScheduleSwitch.checked;
     dom.scheduleDateTimePicker.style.display = isScheduled ? 'block' : 'none';
@@ -309,15 +373,18 @@ async function handleNotificationFormSubmit(e) {
         if (isScheduled) {
             const localTimeValue = document.getElementById('notification-schedule-time').value;
             if (!localTimeValue) throw new Error(__('notif.time_required'));
-            const scheduledDate = new Date(localTimeValue);
-            if (!Number.isFinite(scheduledDate.getTime()) || scheduledDate.getTime() <= Date.now()+60000) throw new Error(__('notif.time_future'));
-            scheduleTimeISO = scheduledDate.toISOString();
+            const zone=scheduleZone();
+            const choice=document.getElementById('notification-schedule-offset')?.value||'earlier';
+            const candidates=eventCandidates(localTimeValue,zone);
+            if(!candidates.length)throw new Error(ntr('Seçilen saat bu saat diliminde mevcut değil.','The chosen time does not exist in that time zone.'));
+            scheduleTimeISO=eventInstant(localTimeValue,zone,choice);
+            if (new Date(scheduleTimeISO).getTime() <= Date.now()+60000) throw new Error(__('notif.time_future'));
         }
 
         const placeholders=Object.values(dataPayload).filter(value=>typeof value==='string'&&/^ENTER_[A-Z_]+$/.test(value));
         if(placeholders.length)throw new Error(ntr('Şablon değişkenlerini doldurun.','Fill in template placeholders.'));
         const estimate=(await previewNotificationAudienceFn({target,payload})).data;
-        const zone=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
+        const zone=isScheduled?scheduleZone():(Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC');
         const time=isScheduled?new Intl.DateTimeFormat(getLang()==='tr'?'tr-TR':'en-US',
            {dateStyle:'medium',timeStyle:'short',timeZone:zone}).format(new Date(scheduleTimeISO)):ntr('Şimdi','Now');
         const confirmed=await confirmDialog(()=>({
@@ -489,6 +556,7 @@ export function stopListeningForScheduledTasks() {
  */
 export function initNotificationModule() {
     dom.notificationForm.addEventListener('submit', handleNotificationFormSubmit);
+    initScheduleZone();
     dom.notificationScheduleSwitch.addEventListener('change', handleScheduleSwitchChange);
     dom.notificationTargetType.addEventListener('change', handleTargetTypeChange);
     dom.notificationTemplateSelector.addEventListener('change', handleTemplateSelection);
