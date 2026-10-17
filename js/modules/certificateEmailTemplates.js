@@ -3,6 +3,7 @@ import { escapeHTML as esc, showToast, userErrorMessage, __, getLang, onLangChan
 import { openDrawer, closeDrawer, confirmDialog } from './shell.js';
 import { createLoadingController, skeletonRows, setButtonLoading } from '../utils/loading.js';
 import { isPanelAdmin } from './roles.js';
+import { emailTemplateValidationReason } from '../utils/email-template-validation.js';
 
 export function openCertificateEmailTemplates() {
     if (!isPanelAdmin()) return;
@@ -19,6 +20,27 @@ export function openCertificateEmailTemplates() {
     root.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.querySelector('.vx-modal'))guardedClose(e);},true);
     root.previousElementSibling.addEventListener('mousedown',guardedClose,true);
     const loader=createLoadingController(body,{skeletonHTML:skeletonRows(5)});
+    function templateErrorMessage(error){
+        const known=['subject','body','placeholder','format','link'];
+        const reason=error?.details?.reason;
+        if(known.includes(reason))return __('email_templates.error_'+reason);
+        // Support existing deployed functions while the backend rollout is pending.
+        // Never display arbitrary backend diagnostics to an end user.
+        const message=String(error?.message||'');
+        if(error?.code==='functions/invalid-argument'){
+            if(/HTTPS or mailto|HTTPS or mailto links/i.test(message))return __('email_templates.error_link');
+            if(/formatting|markup/i.test(message))return __('email_templates.error_format');
+            if(/placeholder/i.test(message))return __('email_templates.error_placeholder');
+            if(/subject/i.test(message))return __('email_templates.error_subject');
+            if(/body|email content/i.test(message))return __('email_templates.error_body');
+        }
+        return userErrorMessage(error);
+    }
+    function showValidationError(reason){
+        const error=body.querySelector('.template-error'),section=body.querySelector('.template-preview');
+        if(error){error.textContent=__('email_templates.error_'+reason);error.hidden=false;}
+        if(section)section.hidden=true;
+    }
     const selected=()=>templates.find(t=>t.certificateType===type&&t.language===language);
     function status(){
         footer.querySelector('[role=status]').textContent=__(busy?'email_templates.saving':dirty?'email_templates.unsaved':'email_templates.saved');
@@ -69,10 +91,12 @@ export function openCertificateEmailTemplates() {
         };
         status();preview();
     }
-    function schedulePreview(){previewGeneration++;clearTimeout(timer);timer=setTimeout(preview,500);}
+    function schedulePreview(){previewGeneration++;clearTimeout(timer);timer=setTimeout(preview,900);}
     async function preview(){
         const generation=++previewGeneration,selection=type+'_'+language;
         const error=body.querySelector('.template-error'),section=body.querySelector('.template-preview');if(!section)return;
+        const validation=emailTemplateValidationReason(draft);
+        if(validation){showValidationError(validation);return;}
         section.setAttribute('aria-busy','true');
         try{
             const {data}=await previewVertexCertificateEmailTemplateFn({certificateType:type,language,...draft});
@@ -81,18 +105,23 @@ export function openCertificateEmailTemplates() {
             // Backend sanitization plus an inert, network-blocked sandbox: no email is sent.
             body.querySelector('iframe').srcdoc=`<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><style>body{font:15px/1.6 Arial,sans-serif;color:#202124;background:#fff;margin:18px;overflow-wrap:anywhere}a{color:#245fc7}</style></head><body>${data.emailHtml}</body></html>`;
             section.hidden=false;
-        }catch(e){if(alive&&generation===previewGeneration){error.textContent=e.code==='functions/invalid-argument'?e.message:userErrorMessage(e);error.hidden=false;section.hidden=true;}}
+        }catch(e){if(alive&&generation===previewGeneration){error.textContent=templateErrorMessage(e);error.hidden=false;section.hidden=true;}}
         finally{if(alive&&generation===previewGeneration)section.removeAttribute('aria-busy');}
     }
     async function save(restoreDefaults){
-        if(busy)return;busy=true;status();
+        if(busy)return;
+        if(!restoreDefaults){
+            const validation=emailTemplateValidationReason(draft);
+            if(validation){showValidationError(validation);return;}
+        }
+        busy=true;status();
         let saved=false;
         try{
             const {data}=await saveVertexCertificateEmailTemplateFn({certificateType:type,language,...draft,expectedRevision:current.revision,restoreDefaults});
             if(!alive)return;templates[templates.indexOf(current)]=data;current=data;draft={subject:data.subject,html:data.html};dirty=false;showToast(()=>__('email_templates.save_success'),'success');
             saved=true;
             if(root.classList.contains('is-open'))closeDrawer();
-        }catch(e){if(alive){const error=body.querySelector('.template-error');error.textContent=e.code==='functions/aborted'?__('email_templates.conflict'):e.code==='functions/invalid-argument'?e.message:userErrorMessage(e);error.hidden=false;}}
+        }catch(e){if(alive){const error=body.querySelector('.template-error');error.textContent=e.code==='functions/aborted'?__('email_templates.conflict'):templateErrorMessage(e);error.hidden=false;}}
         finally{busy=false;if(alive&&!saved){status();if(!dirty)paint();}}
     }
     async function load(){
