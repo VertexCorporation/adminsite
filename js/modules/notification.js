@@ -1,4 +1,5 @@
 import { confirmDialog } from './shell.js';
+import { renderPager } from '../ui/pager.js';
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/notification.js
 
@@ -7,6 +8,10 @@ import * as dom from '../utils/dom.js';
 import { showToast, userErrorMessage, __, getLang, onLangChange, escapeHTML } from '../utils/ui.js';
 
 let unsubscribeFromScheduledTasks = null;
+let scheduledRecords=[];
+let scheduledSearch='';
+let scheduledFilter='all';
+let scheduledPage=1;
 let submissionPending = false;
 let deliveryUncertain = false;
 const cancellingTasks=new Set();
@@ -386,49 +391,83 @@ async function handleCancelTask(taskId) {
 /**
  * Attaches a real-time listener for scheduled notifications.
  */
-export function listenForScheduledTasks() {
-    const finishLoading = beginPanelLoading(dom.scheduledTasksListContainer);
-    if (unsubscribeFromScheduledTasks) unsubscribeFromScheduledTasks();
-
-    unsubscribeFromScheduledTasks = db.collection('scheduledNotifications')
-        .orderBy('scheduleTime', 'asc')
-        .onSnapshot(snapshot => {
-        finishLoading();
-            dom.scheduledTasksListContainer.innerHTML = '';
-            const scheduled=snapshot.docs.filter(doc=>doc.data().kind!=='IMMEDIATE');
-            if (!scheduled.length) {
-                dom.scheduledTasksListContainer.innerHTML = `<p class="form-hint" data-i18n="notif.empty">${__('notif.empty')}</p>`;
-                return;
-            }
-            scheduled.forEach(doc => {
-                const task = doc.data();
-                const scheduleDate = task.scheduleTime?.toDate?.() || new Date();
-                const formattedTime = scheduleDate.toLocaleString(getLang()==='tr'?'tr-TR':'en-US', {
-                    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                });
-
-                const title = task.payload?.notification?.title || task.notification?.title || task.payload?.notification_title_key || __('notif.data_only');
-
-                const item = document.createElement('div');
-                item.className = 'task-item';
-                item.innerHTML = `
-                <div class="task-details">
-                    <span class="task-title" title="${escapeHTML(title)}">${escapeHTML(title)}</span>
-                    <span class="task-time">${__('notif.scheduled_for')}: ${formattedTime}</span>
-                    <span class="task-target">${__('notif.target_label')}: ${__(({ALL_USERS:'notif.target_all',SINGLE_USER:'notif.target_single',SUBSCRIPTION_TIER:'notif.target_level',SUBSCRIPTION_LEVEL:'notif.target_level'})[task.target?.type]||'notif.target_label')}</span>
-                </div>
-                <div class="task-actions">
-                    <span class="form-hint">${escapeHTML(task.status||'SCHEDULED')}</span>
-                    ${task.status==='SCHEDULED'?`<button class="cancel-task-btn chrome-btn-outline" data-task-id="${escapeHTML(doc.id)}">${__('common.cancel')}</button>`:''}
-                </div>`;
-                dom.scheduledTasksListContainer.appendChild(item);
-            });
-        }, error => {
-        finishLoading();
-            console.error("[CLIENT] Error listening for scheduled tasks:", error);
-            dom.scheduledTasksListContainer.insertAdjacentHTML('beforeend',`<div class="task-error"><p data-i18n="notif.tasks_error">${__('notif.tasks_error')}</p><button class="chrome-btn-outline" data-tasks-retry>${__('common.retry')}</button></div>`);
-            dom.scheduledTasksListContainer.querySelector('[data-tasks-retry]').onclick=listenForScheduledTasks;
-        });
+function renderScheduledTasks(){
+ const container=dom.scheduledTasksListContainer;
+ if(!container)return;
+ container.replaceChildren();
+ let controls=document.getElementById('notification-task-controls');
+ if(!controls){
+  controls=document.createElement('div');controls.id='notification-task-controls';controls.className='ui-list-actions';
+  const search=document.createElement('input');search.id='notification-task-search';
+  search.type='search';search.className='search-input-field';
+  search.placeholder=ntr('Bildirimlerde ara','Search notifications');
+  search.addEventListener('input',()=>{scheduledSearch=search.value.toLocaleLowerCase();scheduledPage=1;renderScheduledTasks();});
+  const filter=document.createElement('select');filter.id='notification-task-filter';
+  for(const [value,trLabel,en] of [
+    ['all','Tüm durumlar','All statuses'],['SCHEDULED','Planlanan','Scheduled'],
+    ['PROCESSING','İşleniyor','Processing'],['SENT','Gönderilen','Sent'],
+    ['FAILED','Başarısız','Failed'],['CANCELLED','İptal edilen','Cancelled']
+  ]){const option=document.createElement('option');option.value=value;option.textContent=ntr(trLabel,en);filter.append(option);}
+  filter.addEventListener('change',()=>{scheduledFilter=filter.value;scheduledPage=1;renderScheduledTasks();});
+  controls.append(search,filter);
+  container.parentElement.insertBefore(controls,container);
+ }
+ document.getElementById('notification-task-search').value=scheduledSearch;
+ document.getElementById('notification-task-filter').value=scheduledFilter;
+ const matches=scheduledRecords.filter(({id,task})=>{
+   const state=task.status||'SCHEDULED';
+   const group=['FAILED','FAILED_UNCERTAIN','NO_DELIVERIES','QUEUE_FAILED','QUEUE_UNCERTAIN'].includes(state)?'FAILED':state;
+   const byState=scheduledFilter==='all'||scheduledFilter===state||scheduledFilter===group;
+   const title=task.payload?.notification?.title||task.notification?.title||task.payload?.notification_title_key||'';
+   return byState && (title+' '+id+' '+(task.target?.type||'')).toLocaleLowerCase().includes(scheduledSearch);
+ });
+ const pageSize=25;scheduledPage=Math.min(scheduledPage,Math.max(1,Math.ceil(matches.length/pageSize)));
+ for(const {id,task}of matches.slice((scheduledPage-1)*pageSize,scheduledPage*pageSize)){
+    const time=task.scheduleTime?.toDate?.()||new Date(task.scheduleTime||Date.now());
+    const formatted=time.toLocaleString(getLang()==='tr'?'tr-TR':'en-US',{
+       year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'
+    });
+    const title=task.payload?.notification?.title||task.notification?.title||task.payload?.notification_title_key||__('notif.data_only');
+    const item=document.createElement('div');item.className='task-item';
+    const details=document.createElement('div');details.className='task-details';
+    for(const [className,value]of [
+      ['task-title',title],['task-time',formatted],
+      ['task-target',task.target?.type||'—'],
+      ['form-hint',task.status||'SCHEDULED'],
+      ['form-hint',task.successCount==null?'':ntr('FCM kabulü: ','FCM accepted: ')+task.successCount+
+       ' · '+ntr('Başarısız: ','Failed: ')+(task.failureCount||0)]
+    ]){if(!value)continue;const p=document.createElement('span');p.className=className;p.textContent=String(value);details.append(p);}
+    item.append(details);
+    if(task.status==='SCHEDULED'){
+      const actions=document.createElement('div');actions.className='task-actions';
+      const button=document.createElement('button');button.type='button';button.className='cancel-task-btn chrome-btn-outline';
+      button.dataset.taskId=id;button.textContent=__('common.cancel');actions.append(button);item.append(actions);
+    }
+    container.append(item);
+ }
+ if(!matches.length){
+   const empty=document.createElement('p');empty.className='form-hint';
+   empty.textContent=ntr('Eşleşen bildirim yok.','No matching notifications.');container.append(empty);
+ }
+ renderPager(container,{page:scheduledPage,total:matches.length,pageSize,language:getLang(),
+   onChange:next=>{scheduledPage=next;renderScheduledTasks();}});
+}
+export function listenForScheduledTasks(){
+ const finishLoading=beginPanelLoading(dom.scheduledTasksListContainer);
+ if(unsubscribeFromScheduledTasks)unsubscribeFromScheduledTasks();
+ unsubscribeFromScheduledTasks=db.collection('scheduledNotifications')
+    .orderBy('scheduleTime','desc').limit(500).onSnapshot(snapshot=>{
+       finishLoading();
+       scheduledRecords=snapshot.docs.filter(doc=>doc.data().kind!=='IMMEDIATE')
+          .map(doc=>({id:doc.id,task:doc.data()}));
+       renderScheduledTasks();
+    },error=>{
+       finishLoading();console.error('[NOTIFICATIONS] Scheduled task listener failed',error.code||'unknown');
+       dom.scheduledTasksListContainer.replaceChildren();
+       const button=document.createElement('button');button.type='button';
+       button.className='chrome-btn-outline';button.textContent=__('common.retry');
+       button.onclick=listenForScheduledTasks;dom.scheduledTasksListContainer.append(button);
+    });
 }
 
 /**
@@ -469,7 +508,7 @@ export function initNotificationModule() {
         }
     });
 
-    onLangChange(() => {handleScheduleSwitchChange(); if(unsubscribeFromScheduledTasks)listenForScheduledTasks();});
+    onLangChange(() => {handleScheduleSwitchChange();renderScheduledTasks();});
     // Restore the pending request after navigation or refresh, without submitting it again.
     auth?.onAuthStateChanged(user=>{
         if(!user)return;
