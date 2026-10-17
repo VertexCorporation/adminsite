@@ -1,4 +1,5 @@
-import { eventLocalTime, eventInstant } from './eventTime.js';
+import { eventLocalTime, eventInstant, eventCandidates } from './eventTime.js';
+import { groupFields } from '../ui/sections.js';
 import { mountEventFields } from './eventFields.js';
 import { eventCallable } from '../core/firebase.js';
 import { getEffectivePanelLevel } from './roles.js';
@@ -25,6 +26,48 @@ export function initEventsModule() {
  container.innerHTML=fields.map(([key,a,b,type])=>`<div class="form-group-field"><label for="event-${key}">${escapeHTML(tr(a,b))}</label>${type==='textarea'?`<textarea id="event-${key}" name="${key}" rows="3"></textarea>`:`<input id="event-${key}" name="${key}" type="${type}" ${['id','title','desc','date','timeZone','location'].includes(key)?'required':''}>`}</div>`).join('')+`<div class="form-group-field"><label for="event-status">${tr('Durum','Status')}</label><select id="event-status" name="status"><option value="draft">${tr('Taslak','Draft')}</option><option value="published">${tr('Yayımlanmış','Published')}</option><option value="cancelled">${tr('İptal','Cancelled')}</option></select></div><div class="form-group-field"><label for="event-sales">${tr('Satış durumu','Sales status')}</label><select id="event-sales" name="salesStatus"><option value="closed">${tr('Kapalı','Closed')}</option><option value="open">${tr('Açık','Open')}</option><option value="sold_out">${tr('Tükendi','Sold out')}</option></select></div><div class="form-group-field"><label>${tr('Görsel yükle','Upload image')}<input type="file" id="event-upload" accept="image/jpeg,image/png,image/webp"></label></div><div class="form-group-field"><label>${tr('Galeriye görsel yükle','Upload gallery images')}<input type="file" id="event-gallery-upload" accept="image/jpeg,image/png,image/webp" multiple></label></div>`;
  form.elements.startsAt.onchange=()=>{if(form.elements.startsAt.value)form.elements.date.value=form.elements.startsAt.value.slice(0,10);};
  const refreshFields=mountEventFields(form,tr);
+ groupFields(container,[
+  {label:tr('Genel bilgiler','General information'),keys:['id','title','title_en','desc','desc_en'],open:true},
+  {label:tr('Tarih ve konum','Date and location'),keys:['date','timeZone','startsAt','endsAt','location','location_en','mapUrl']},
+  {label:tr('Görseller','Images'),keys:['cover','images','event-upload','event-gallery-upload']},
+  {label:tr('Biletler','Tickets'),keys:['capacity','price','stripeLink','stripeLinkStandart','stripeLinkSpesiyal','ticketCategories']},
+  {label:tr('Konuşmacılar','Speakers'),keys:['speakers']},
+  {label:tr('Diğer diller','Other languages'),keys:['translations']}
+ ]);
+ const zoneInput=form.elements.timeZone;
+ const zones=document.createElement('datalist');zones.id='event-zones';
+ for(const zone of (Intl.supportedValuesOf?.('timeZone')||['Europe/Istanbul','UTC'])){
+  const option=document.createElement('option');option.value=zone;zones.append(option);
+ }
+ zoneInput.setAttribute('list','event-zones');zoneInput.after(zones);
+ const choices={};
+ const refreshTimes=()=>{
+  for(const key of ['startsAt','endsAt']){
+   const field=form.elements[key],choice=choices[key];
+   try{
+    const candidates=eventCandidates(field.value,zoneInput.value);
+    field.setCustomValidity(field.value&&!candidates.length?tr('Bu yerel saat bulunmuyor.','This local time does not exist.'):'');
+    choice.hidden=candidates.length!==2;
+    if(candidates.length===2){
+     for(const [i,option]of [...choice.options].entries()){
+      const name=new Intl.DateTimeFormat('en',{timeZone:zoneInput.value,timeZoneName:'shortOffset'})
+       .formatToParts(new Date(candidates[i])).find(p=>p.type==='timeZoneName')?.value||'UTC';
+      option.textContent=tr(i===0?'İlk saat':'İkinci saat',i===0?'Earlier':'Later')+' · '+name;
+     }
+    }
+   }catch(e){field.setCustomValidity(tr('Geçerli saat dilimi seçin.','Choose a valid time zone.'));choice.hidden=true;}
+  }
+ };
+ for(const key of ['startsAt','endsAt']){
+  const field=form.elements[key],choice=document.createElement('select');
+  choice.setAttribute('aria-label',tr('Tekrarlanan saati seçin','Select ambiguous time'));
+  for(const [value,label]of [['earlier',tr('İlk saat','Earlier')],['later',tr('İkinci saat','Later')]]){
+   const option=document.createElement('option');option.value=value;option.textContent=label;choice.append(option);
+  }
+  choice.hidden=true;choices[key]=choice;field.after(choice);
+  field.addEventListener('change',refreshTimes);
+ }
+ zoneInput.addEventListener('change',refreshTimes);
  const fail=e=>showToast(e.message,'error');
  const editorStatus=document.createElement('span');
  editorStatus.className='form-hint';
@@ -46,7 +89,7 @@ export function initEventsModule() {
   form.elements.timeZone.value=event?.timeZone||'Europe/Istanbul';form.elements.price.value=event?.price??0;
   form.elements.status.value=event?.status||'draft';form.elements.salesStatus.value=event?.salesStatus||'closed';
   document.getElementById('events-review-label').hidden=!event?.dateReviewRequired;
-  refreshFields();
+  refreshFields();refreshTimes();
   editorDirty=false;editorStatus.textContent='';
   const writable=getEffectivePanelLevel('events.editor')==='write';
   form.querySelectorAll('input,textarea,select,button').forEach(control=>{if(control.id==='events-preview')return;control.disabled=!writable;if(!writable)control.dataset.roleDisabled='true';});
@@ -55,7 +98,7 @@ export function initEventsModule() {
   const value={...current};
   for(const [key] of fields) {const raw=form.elements[key].value.trim();value[key]=key==='images'?raw.split('\n').filter(Boolean):['speakers','ticketCategories','translations'].includes(key)?JSON.parse(raw|| (key==='translations'?'{}':'[]')):raw;}
   if(value.startsAt)value.date=value.startsAt.slice(0,10);
-  for(const key of ['startsAt','endsAt'])value[key]=eventInstant(value[key],value.timeZone);
+  for(const key of ['startsAt','endsAt'])value[key]=eventInstant(value[key],value.timeZone,choices[key].value);
   value.price=value.price!==''&&Number.isFinite(Number(value.price))?Number(value.price):value.price;value.capacity=value.capacity?Number(value.capacity):null;
   value.status=form.elements.status.value;value.salesStatus=form.elements.salesStatus.value;
   if(form.elements.dateReviewed.checked)value.dateReviewRequired=false;
@@ -88,7 +131,18 @@ export function initEventsModule() {
    box.append(article);
   }catch(e){fail(e);}
  };
- document.getElementById('events-new').onclick=()=>fill(null);
+ document.getElementById('events-new').onclick=async()=>{
+  if(editorDirty && !await confirmDialog({title:tr('Değişiklikler kaybolacak','Discard changes?'),body:tr('Kaydedilmemiş değişiklikler kaybolacak.','Unsaved changes will be lost.')}))return;
+  fill(null);
+ };
+ document.addEventListener('click',event=>{
+  if(!editorDirty||!form.offsetParent)return;
+  const link=event.target.closest('[data-nav-panel],[data-target]');
+  if(!link || link.dataset.navPanel==='events.editor')return;
+  event.preventDefault();event.stopImmediatePropagation();
+  void confirmDialog({title:tr('Kaydedilmemiş değişiklikler','Unsaved changes'),body:tr('Bu sayfadan ayrılırsan değişiklikler kaybolacak.','Leaving will discard unsaved changes.')})
+    .then(approved=>{if(approved){editorDirty=false;editorStatus.textContent='';link.click();}});
+ },true);
  document.getElementById('events-refresh').onclick=()=>refresh().catch(fail);
  const uploadStatus=document.createElement('p');uploadStatus.className='form-hint';uploadStatus.setAttribute('aria-live','polite');
  document.getElementById('event-gallery-upload').closest('.form-group-field')?.append(uploadStatus);
