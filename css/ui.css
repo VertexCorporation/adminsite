@@ -6,3 +6,7 @@
 .ui-section>summary:focus-visible{outline:2px solid currentColor;outline-offset:-3px;}
 .ui-section>.form-grid{padding:8px 18px 18px;min-width:0;}
 @media(prefers-reduced-motion:reduce){.ui-section>summary::after{transition:none;}}
+
+.chat-unread{margin-inline-start:auto;min-width:21px;padding:2px 6px;border-radius:999px;background:currentColor;color:inherit;position:relative;font-size:.72rem;font-weight:700;line-height:1.25;border:1px solid currentColor;}
+.chat-new-indicator{display:block;max-width:max-content;margin:8px auto;box-shadow:0 2px 18px rgba(0,0,0,.12);}
+.chat-new-indicator[hidden]{display:none;}
