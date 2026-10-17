@@ -112,18 +112,20 @@ function transitionFilteredContributors() {
     listContainer.classList.add('is-filter-transitioning');
     filterTransitionTimer=setTimeout(()=>{
         if(revision!==filterTransitionRevision)return;
-        renderContributors(window.loadedContributors || []);
+        renderContributors(window.loadedContributors || [],true);
         listContainer.classList.remove('is-filter-transitioning');
         filterHeightTimer=setTimeout(()=>{if(revision===filterTransitionRevision)listContainer.style.minHeight='';},180);
     },110);
 }
 
-function renderContributors(contributors) {
-    ++filterTransitionRevision;
-    clearTimeout(filterTransitionTimer);
-    clearTimeout(filterHeightTimer);
-    listContainer?.classList.remove('is-filter-transitioning');
-    if(listContainer)listContainer.style.minHeight='';
+function renderContributors(contributors, fromFilter=false) {
+    if(!fromFilter){
+        ++filterTransitionRevision;
+        clearTimeout(filterTransitionTimer);
+        clearTimeout(filterHeightTimer);
+        listContainer?.classList.remove('is-filter-transitioning');
+        if(listContainer)listContainer.style.minHeight='';
+    }
     refreshRosterAccess();
     const query = document.getElementById('contributor-search')?.value.toLowerCase().trim() || '';
     const hidden = new Set(getHiddenFieldsFor('contributors.list'));
