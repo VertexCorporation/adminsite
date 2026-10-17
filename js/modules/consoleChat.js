@@ -52,7 +52,7 @@ function linkify(text) {
     // @Departman ve @mail etiketlerini vurgula, satır sonlarını koru
     return escapeHTML(text)
         .replace(/@([\w.+-]+@[\w-]+\.[\w.-]+)/g, '<span class="chat-mention chat-mention-mail">@$1</span>')
-        .replace(/@(Tensor|Curia|Essence|Core|Senatus|Pulse|Chroma|Catalyst|Envoy|Aero|Array|Scout|Vertest)/g, '<span class="chat-mention chat-mention-dept">@$1</span>')
+        .replace(new RegExp('@(' + DEPARTMENTS.map(d=>d.id).join('|') + ')(?![\\w-])','g'), '<span class="chat-mention chat-mention-dept">@$1</span>')
         .replace(/\n/g, '<br>');
 }
 
