@@ -14,6 +14,9 @@ import {
     listSiteTeamFn,
     setSiteTeamEntryFn,
     deleteSiteTeamEntryFn,
+    listTeamCardsFn,
+    setTeamCardFn,
+    deleteTeamCardFn,
     getTeamProfileFn,
     setTeamProfileFn,
     getWeeklyStarsFn,
@@ -33,10 +36,12 @@ let teamCards = [];
 let cardsLoading = false;
 let cardsLoadError = null;
 const MAX_TEAM_CARDS = 40;
+const modernCount = () => teamCards.filter(card=>!card.legacy).length;
+let legacyWarning = false;
 function normalizeCard(card) {
-    const positions = card.positions || {};
-    const position = positions.en || positions.tr || card.position || '';
-    const links = Array.isArray(card.links) ? card.links : [];
+    const positions = card.positions || card.titles || {};
+    const position = card.position || positions.en || positions.tr || '';
+    const links = Array.isArray(card.links) ? card.links : Object.entries(card.socialLinks || {}).filter(([,url])=>url).map(([label,url])=>({label,url}));
     const find = key => links.find(link => link.label?.toLowerCase() === key)?.url || '';
     return {...card, position, titles:positions, imageUrl:card.imageUrl || card.photoUrl || '', photoUrl:card.imageUrl || card.photoUrl || '', socialLinks:{linkedin:find('linkedin'),instagram:find('instagram')}, links, order:card.order};
 }
@@ -53,13 +58,26 @@ export async function loadTeamCards() {
     const emptyEl = document.getElementById('team-cards-empty');
 
     try {
-        const { data } = await listSiteTeamFn({manage:true});
-        if (!Array.isArray(data?.cards)) throw Object.assign(new Error('Invalid team cards response'), {code:'functions/internal'});
-        teamCards = data.cards.map(normalizeCard);
-        cardsLoadError = null;
+        const [modern,legacy] = await Promise.allSettled([
+            listSiteTeamFn({manage:true}), listTeamCardsFn({})
+        ]);
+        if(modern.status!=='fulfilled' || !Array.isArray(modern.value.data?.cards))
+            throw modern.status==='rejected' ? modern.reason : Object.assign(new Error('Invalid team cards response'),{code:'functions/internal'});
+        const current=modern.value.data.cards.map(normalizeCard);
+        legacyWarning=false;
+        if(legacy.status==='fulfilled' && Array.isArray(legacy.value.data?.cards)){
+            const keys=new Set(current.map(card=>(card.name+'|'+card.position).toLowerCase()));
+            const oldCards=legacy.value.data.cards.map(card=>({...normalizeCard(card),legacy:true,legacyId:card.id,id:'legacy:'+card.id})).filter(card=>!keys.has((card.name+'|'+card.position).toLowerCase()));
+            legacyWarning=oldCards.length>0;
+            teamCards=[...current,...oldCards];
+        }else{
+            teamCards=current;
+            cardsLoadError=__('team_cards.legacy_unavailable');
+        }
+        if(legacy.status==='fulfilled')cardsLoadError=null;
     } catch (err) {
-        cardsLoadError = userErrorMessage(err);
-        console.warn('[TEAM_CARDS] Could not fetch cards from backend:', err.code || 'unknown');
+        cardsLoadError=userErrorMessage(err);
+        console.warn('[TEAM_CARDS] Could not fetch cards from backend:',err.code || 'unknown');
     } finally {
         cardsLoading = false;
     }
@@ -67,7 +85,7 @@ export async function loadTeamCards() {
     renderTeamCardsList();
 
     if (addBtn) {
-        const isFull = teamCards.length >= MAX_TEAM_CARDS;
+        const isFull = modernCount() >= MAX_TEAM_CARDS;
         addBtn.disabled = isFull;
         addBtn.title = isFull ? __('team_cards.all_filled') : __('team_cards.add_btn');
     }
@@ -88,7 +106,7 @@ function renderTeamCardsList() {
     }
     listEl.className = 'team-list';
 
-    listEl.innerHTML = (cardsLoadError ? `<div class="state-block" role="alert"><p>${escapeHTML(cardsLoadError)}</p><button type="button" class="chrome-btn-outline" data-retry-cards>${__('common.retry')}</button></div>` : '') + teamCards.map(card => {
+    listEl.innerHTML = (cardsLoadError ? `<div class="state-block" role="alert"><p>${escapeHTML(cardsLoadError)}</p><button type="button" class="chrome-btn-outline" data-retry-cards>${__('common.retry')}</button></div>` : '') + (legacyWarning ? `<p class="form-hint" role="status">${__('team_cards.legacy_pending')}</p>` : '') + teamCards.map(card => {
         const currentLang = getLang() || 'tr';
         const localizedTitle = card.titles?.[currentLang] || card.titles?.en || card.position;
         const avatarSrc = card.photoUrl
@@ -103,7 +121,7 @@ function renderTeamCardsList() {
             <div class="team-list-info">
                 <div style="display:flex;align-items:center;gap:8px;">
                     <span class="team-list-name">${escapeHTML(card.name)}</span>
-                    <span class="position-badge">${escapeHTML(card.position)}</span>
+                    <span class="position-badge">${escapeHTML(card.position)}</span>${card.legacy?`<small class="team-list-meta">${__('team_cards.legacy_label')}</small>`:''}
                 </div>
                 <span class="team-list-meta">${escapeHTML(localizedTitle)}</span>
             </div>
@@ -140,13 +158,14 @@ function renderTeamCardsList() {
             if (!confirmed) return;
 
             try {
-                await deleteSiteTeamEntryFn({ kind:'card', id: cardId });
+                if(card?.legacy)await deleteTeamCardFn({id:card.legacyId});
+                else await deleteSiteTeamEntryFn({ kind:'card', id: cardId });
                 teamCards = teamCards.filter(c => c.id !== cardId);
                 renderTeamCardsList();
                 showToast(() => __('team_cards.deleted'), 'success');
                 const addBtn = document.getElementById('add-team-card-btn');
                 if (addBtn) {
-                    addBtn.disabled = teamCards.length >= MAX_TEAM_CARDS;
+                    addBtn.disabled = modernCount() >= MAX_TEAM_CARDS;
                     addBtn.title = teamCards.length >= MAX_TEAM_CARDS ? __('team_cards.all_filled') : __('team_cards.add_btn');
                 }
             } catch (err) {
@@ -296,11 +315,14 @@ export function openTeamCardDrawer(cardToEdit = null) {
             const existingLinks = Array.isArray(cardToEdit?.links) ? cardToEdit.links.filter(link => !['linkedin','instagram'].includes(link.label?.toLowerCase())) : [];
             const links = [...existingLinks,...(linkedin?[{label:'LinkedIn',url:linkedin}]:[]),...(instagram?[{label:'Instagram',url:instagram}]:[])];
             const payload = {
-                kind:'card', ...(cardToEdit?.id ? {id:cardToEdit.id} : {}),
+                kind:'card', ...(cardToEdit?.id && !cardToEdit?.legacy ? {id:cardToEdit.id} : {}),
                 name, imageUrl, links, order:cardToEdit?.order || (Math.max(0,...teamCards.map(card=>Number(card.order)||0))+1),
                 positions:{...cardToEdit?.titles,tr:position,en:position}
             };
-            await setSiteTeamEntryFn(payload);
+            if(cardToEdit?.legacy) {
+                if(!POSITIONS.includes(position))throw Object.assign(new Error(__('team_cards.position_select')),{code:'functions/invalid-argument'});
+                await setTeamCardFn({id:cardToEdit.legacyId,name,position,photoUrl:imageUrl,socialLinks:{linkedin,instagram}});
+            } else await setSiteTeamEntryFn(payload);
             closeDrawer();
             showToast(() => __('team_cards.saved'), 'success');
             await loadTeamCards();
