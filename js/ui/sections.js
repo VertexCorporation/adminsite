@@ -2,7 +2,7 @@
 export function groupFields(container, groups) {
  const elements=new Map();
  for(const group of groups)for(const name of group.keys){
-  const input=container.querySelector('[name="'+name+'"]');
+  const input=container.querySelector('[name="'+name+'"]')||container.querySelector('#'+name);
   if(input)elements.set(name,input.closest('.form-group-field'));
  }
  for(const group of groups){
@@ -16,7 +16,7 @@ export function groupFields(container, groups) {
  const leftovers=[...container.children].filter(el=>!el.matches('.ui-section'));
  if(leftovers.length){
   const details=document.createElement('details');details.className='ui-section';
-  const summary=document.createElement('summary');summary.textContent='Other';details.append(summary);
+  const summary=document.createElement('summary');summary.textContent=groups.at(-1)?.other||'Other';details.append(summary);
   const grid=document.createElement('div');grid.className='form-grid';
   details.append(grid);leftovers.forEach(el=>grid.append(el));container.append(details);
  }
