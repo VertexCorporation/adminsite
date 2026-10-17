@@ -551,7 +551,11 @@
 .dept-perms-header,.dept-perm-row{min-width:1060px}
 @media(max-width:1280px){.dept-perm-row{min-width:0}}
 
-/* Incoming filtered contributor rows fade in without delaying the latest filter result. */
+/* Filter transitions preserve the old table while fading it out; new rows fade in. */
 @keyframes contributor-filter-enter{from{opacity:0}to{opacity:1}}
-#tab-contributors .contributor-table-rows{animation:contributor-filter-enter 160ms ease-out both}
-@media(prefers-reduced-motion:reduce){#tab-contributors .contributor-table-rows{animation:none}}
+#tab-contributors .contributor-table-rows{animation:contributor-filter-enter 160ms ease-out both;transition:opacity 110ms ease-in}
+#tab-contributors #contributors-list-container.is-filter-transitioning .contributor-table-rows{opacity:0}
+#tab-contributors .contributor-row{cursor:pointer}
+#tab-contributors .contributor-row:focus-visible{outline:2px solid var(--border-strong);outline-offset:2px}
+#dept-options .dept-choice:focus-within{outline:2px solid var(--border-strong);outline-offset:2px;border-radius:6px}
+@media(prefers-reduced-motion:reduce){#tab-contributors .contributor-table-rows{animation:none;transition:none}}
