@@ -1,0 +1,40 @@
+name: console ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+      - 'feat/**'
+      - 'ci/**'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: install dependencies
+        run: npm ci
+      - name: check source syntax
+        run: find js -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+      - name: run unit regressions
+        run: npm test
+      - name: audit translations
+        run: npm run audit:i18n
+      - name: build immutable release
+        run: node scripts/release.cjs
+      - name: verify immutable release
+        run: node scripts/check-release.cjs
+      - name: install browser
+        run: npx playwright install --with-deps chromium
+      - name: run browser regressions
+        run: npm run test:browser
