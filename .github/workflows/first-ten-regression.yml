@@ -24,8 +24,10 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - name: javascript unit tests
-        run: npm test
+      - name: standalone javascript unit tests
+        run: |
+          echo "Backend-linked certificate tests require the private Fulcrum checkout and are not part of this frontend-only job."
+          find tests -maxdepth 1 -name '*.test.cjs' ! -name 'certificate-owner-policy.test.cjs' ! -name 'zapier-*.test.cjs' -print0 | xargs -0 node --test
       - name: translation audit
         run: npm run audit:i18n
       - name: playwright chromium
