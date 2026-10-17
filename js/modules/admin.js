@@ -260,51 +260,43 @@ async function handleMaintenanceToggle() {
 export async function loadBackupHealthStatus() {
     const card = document.getElementById('gcs-backup-status');
     if (!card) return;
-
-    const descEl = document.getElementById('gcs-backup-desc');
-    const badgeEl = document.getElementById('gcs-backup-badge');
-    const refreshBtn = document.getElementById('refresh-backup-btn');
-
-    if (refreshBtn) setButtonLoading(refreshBtn, true);
-
+    const description = document.getElementById('gcs-backup-desc');
+    const badge = document.getElementById('gcs-backup-badge');
+    const refresh = document.getElementById('refresh-backup-btn');
+    if (refresh) setButtonLoading(refresh, true);
     try {
-        const { data } = await getBackupHealthStatusFn({});
-        if (data?.healthy) {
-            if (badgeEl) {
-                badgeEl.className = 'status-badge status-badge--success';
-                badgeEl.textContent = __('system.backup_healthy');
-            }
-            if (descEl) {
-                const dateStr = data.lastBackupDate ? new Date(data.lastBackupDate).toLocaleString() : '';
-                descEl.textContent = `${__('system.backup_last_success')} ${dateStr} (${Math.round((data.sizeBytes || 0) / 1024)} KB)`;
-            }
-        } else if (data?.status === 'stale') {
-            if (badgeEl) {
-                badgeEl.className = 'status-badge status-badge--warning';
-                badgeEl.textContent = __('system.backup_stale');
-            }
-            if (descEl) {
-                descEl.textContent = data.error || __('system.backup_unknown');
-            }
-        } else {
-            if (badgeEl) {
-                badgeEl.className = 'status-badge';
-                badgeEl.textContent = __('system.backup_configured');
-            }
-            if (descEl) {
-                descEl.textContent = data?.error || __('system.backup_unknown');
-            }
+        const {data} = await getBackupHealthStatusFn({});
+        if (!data || typeof data !== 'object') throw Object.assign(new Error('Invalid backup response'), {code:'functions/internal'});
+        // Previous deployed versions only checked object age; never label those verified.
+        const verified = data.healthy === true && data.status === 'healthy' && data.evidence?.verified === true;
+        const status = verified ? 'healthy' : data.configured === false ? 'unconfigured' :
+            data.status === 'stale' ? 'stale' : data.status === 'empty' ? 'empty' : 'unverifiable';
+        const keys = {healthy:'system.backup_healthy',stale:'system.backup_stale',
+            empty:'system.backup_empty',unconfigured:'system.backup_unconfigured',
+            unverifiable:'system.backup_unverifiable'};
+        if (badge) {
+            badge.className = 'status-badge' + (status === 'healthy' ? ' status-badge--success' : status === 'stale' ? ' status-badge--warning' : '');
+            badge.textContent = __(keys[status]);
         }
-    } catch (err) {
-        if (badgeEl) {
-            badgeEl.className = 'status-badge';
-            badgeEl.textContent = __('cert.status_unknown');
-        }
-        if (descEl) {
-            descEl.textContent = userErrorMessage(err);
-        }
+        const locale = document.documentElement.lang === 'tr' ? 'tr-TR' : 'en-GB';
+        const date = value => {
+            const d = value && new Date(value);
+            return d && Number.isFinite(d.getTime()) ? d.toLocaleString(locale) : '—';
+        };
+        const fields = [];
+        fields.push(__('system.backup_checked') + ' ' + date(data.checkedAt));
+        if (data.lastBackupDate) fields.push(__('system.backup_last_success') + ' ' + date(data.lastBackupDate));
+        if (Number.isFinite(data.sizeBytes)) fields.push(__('system.backup_size') + ' ' + Math.round(data.sizeBytes / 1024) + ' KB');
+        fields.push(__('system.backup_restore') + ' ' + (data.restoreStatus === 'verified' ? __('system.backup_restore_verified') : __('system.backup_restore_unknown')));
+        if (status === 'unverifiable' || status === 'empty' || status === 'unconfigured')
+            fields.push(__(keys[status]));
+        if (status === 'stale') fields.push(__('system.backup_stale'));
+        if (description) description.textContent = fields.join(' · ');
+    } catch (error) {
+        if (badge) {badge.className = 'status-badge';badge.textContent = __('system.backup_unverifiable');}
+        if (description) description.textContent = userErrorMessage(error);
     } finally {
-        if (refreshBtn) setButtonLoading(refreshBtn, false);
+        if (refresh) setButtonLoading(refresh, false);
     }
 }
 

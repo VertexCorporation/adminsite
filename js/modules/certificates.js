@@ -61,7 +61,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
     }
     async function load() {
         const token=++generation; setTitle('cert.title'); loader.start();
-        try { const {data}=await getVertexCertificateDetailsFn({contributorId:person.id}); if(!alive||token!==generation)return; if(!data||typeof data!=='object'||!Array.isArray(data.history))throw Object.assign(new Error('Invalid certificate response'),{code:'functions/internal'}); details=data; render(); }
+        try { const {data}=await getVertexCertificateDetailsFn({contributorId:person.id}); if(!alive||token!==generation)return; if(!data||typeof data!=='object'||!Array.isArray(data.history)||!data.types||typeof data.types!=='object'||!data.eligibility||typeof data.eligibility!=='object')throw Object.assign(new Error('Invalid certificate response'),{code:'functions/internal'}); details=data; render(); }
         catch(error) { console.error('[CERTIFICATES] Details failed',{code:error.code,status:error.httpStatus});if(alive&&token===generation){footer.innerHTML='';loader.error(userErrorMessage(error),load,__('common.retry'));} }
     }
     async function execute(type, retry, button) {
