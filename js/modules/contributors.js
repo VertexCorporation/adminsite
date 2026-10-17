@@ -17,11 +17,6 @@ import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexC
 import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS, isPanelAdmin, getHiddenFieldsFor } from './roles.js';
 
 
-function birthAge(birthDate){
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(birthDate||''))return null;
-    const [year,month,day]=birthDate.split('-').map(Number),now=new Date();
-    return now.getFullYear()-year-(now.getMonth()+1<month||(now.getMonth()+1===month&&now.getDate()<day)?1:0);
-}
 function legacyYearRange(person){
     if(Array.isArray(person.estimatedBirthYearRange)&&person.estimatedBirthYearRange.length===2)return person.estimatedBirthYearRange;
     const age=Number(person.age),created=person.createdAt;
