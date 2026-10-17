@@ -59,8 +59,9 @@ await page.route('**/*',async route=>{
 });
 
 console.log("Starting page");await page.goto(`http://127.0.0.1:${server.address().port}`,{waitUntil:"domcontentloaded",timeout:15000});console.log("Page loaded");
-// The default home workspace hides certificate controls until contributors is selected.
-await page.waitForSelector('.certificate-manage-btn', {state:'attached'});
+// Home is the default workspace. Open contributors before waiting for its lazy controls.
+await page.locator('.dock-btn[data-target="tab-contributors"]').click();
+await page.waitForSelector('.certificate-manage-btn');
 assert.equal(errors.length,0);
 const checks=[];
 const note=x=>{checks.push(x);console.log('PASS',x);};
