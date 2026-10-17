@@ -1,4 +1,5 @@
 import { showWorkspace } from './views.js';
+import { afterMotion } from '../ui/motion.js';
 // js/modules/shell.js
 //
 // Uygulama kabuğu ve yükseltilmiş yüzey altyapısı:
@@ -80,7 +81,7 @@ export function closePopover({ restoreFocus = true } = {}) {
     el.classList.add('is-closing');
     el.setAttribute('aria-hidden','true');
     el.inert = true;
-    if (el.isConnected) setTimeout(()=>el.remove(), window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:120);
+    if (el.isConnected) afterMotion(el, () => el.remove(), 'transform');
     anchor?.classList.remove('is-open');
     anchor?.setAttribute('aria-expanded', 'false');
     unregisterSurface('popover');
@@ -189,8 +190,8 @@ export function closeDrawer(restoreFocus = true) {
     root.inert = true;
     scrim.style.pointerEvents = 'none';
     scrim.classList.remove('is-open');
-    setTimeout(() => { root.remove(); scrim.remove(); onAfterClose?.(); }, window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:220);
-    document.body.style.overflow = '';
+    afterMotion(root, () => { root.remove(); scrim.remove(); onAfterClose?.(); }, 'transform');
+    document.body.style.overflow = activeModal ? 'hidden' : '';
     unregisterSurface('drawer');
     if (restoreFocus && previouslyFocused && document.contains(previouslyFocused)) {
         previouslyFocused.focus({ preventScroll: true });
@@ -279,7 +280,7 @@ export function closeModal() {
     unbind.forEach(fn => fn());
     root.classList.remove('is-open');overlay.classList.remove('is-open');overlay.classList.add('is-closing');
     root.setAttribute('aria-hidden','true');root.inert=true;root.style.pointerEvents='none';overlay.style.pointerEvents='none';
-    setTimeout(()=>{root.remove();overlay.remove();},window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:190);
+    afterMotion(root, () => { root.remove(); overlay.remove(); }, 'transform');
     document.body.style.overflow = activeDrawer?'hidden':'';
     unregisterSurface('modal');
     if (previouslyFocused && document.contains(previouslyFocused)) previouslyFocused.focus({ preventScroll: true });
@@ -395,8 +396,7 @@ export function confirmDialog(options = {}) {
             root.inert = true;
             root.style.pointerEvents = 'none';
             overlay.style.pointerEvents = 'none';
-            const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 190;
-            setTimeout(() => { root.remove(); overlay.remove(); }, delay);
+            afterMotion(root, () => { root.remove(); overlay.remove(); }, 'transform');
             document.body.style.overflow = '';
             unregisterSurface('modal');
             if (previouslyFocused && document.contains(previouslyFocused)) {
