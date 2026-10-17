@@ -26,6 +26,7 @@ const verificationListeners=new Map();
 let activeFilter = 'all';
 let listContainer;
 let refreshBtn;
+let filterTransitionRevision=0,filterTransitionTimer=null,filterHeightTimer=null;
 
 export function initContributorsModule() {
     document.addEventListener('vertex:certificate-selector',openCertificateSelector);
@@ -33,8 +34,8 @@ export function initContributorsModule() {
     listContainer = document.getElementById('contributors-list-container');
     listContainer.replaceChildren();
     loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows(),skeletonDelay:0});
-    window.filterContributors = filter => { activeFilter=filter; renderContributors(window.loadedContributors || []); };
-    window.searchContributorsLocal = () => renderContributors(window.loadedContributors || []);
+    window.filterContributors = filter => { activeFilter=filter; transitionFilteredContributors(); };
+    window.searchContributorsLocal = transitionFilteredContributors;
     refreshBtn = document.getElementById('refresh-contributors-btn');
     if(refreshBtn&&!document.getElementById('certificate-email-templates-btn')){
         const button=document.createElement('button');button.id='certificate-email-templates-btn';button.type='button';button.className='chrome-btn-outline';button.dataset.i18n='email_templates.title';button.textContent=__('email_templates.title');button.style.display=isPanelAdmin()?'':'none';button.onclick=openCertificateEmailTemplates;refreshBtn.before(button);refreshBtn.parentElement.classList.add('certificate-template-entry-row');
@@ -98,7 +99,31 @@ async function loadContributors() {
     }
 }
 
+function transitionFilteredContributors() {
+    if (!listContainer) return;
+    const currentRows=listContainer.querySelector('.contributor-table-rows');
+    const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    clearTimeout(filterTransitionTimer);
+    clearTimeout(filterHeightTimer);
+    const revision=++filterTransitionRevision;
+    if (!currentRows || reduced) { renderContributors(window.loadedContributors || []);return; }
+    // Preserve the old table's height during the crossfade, then release it.
+    listContainer.style.minHeight=listContainer.getBoundingClientRect().height+'px';
+    listContainer.classList.add('is-filter-transitioning');
+    filterTransitionTimer=setTimeout(()=>{
+        if(revision!==filterTransitionRevision)return;
+        renderContributors(window.loadedContributors || []);
+        listContainer.classList.remove('is-filter-transitioning');
+        filterHeightTimer=setTimeout(()=>{if(revision===filterTransitionRevision)listContainer.style.minHeight='';},180);
+    },110);
+}
+
 function renderContributors(contributors) {
+    ++filterTransitionRevision;
+    clearTimeout(filterTransitionTimer);
+    clearTimeout(filterHeightTimer);
+    listContainer?.classList.remove('is-filter-transitioning');
+    if(listContainer)listContainer.style.minHeight='';
     refreshRosterAccess();
     const query = document.getElementById('contributor-search')?.value.toLowerCase().trim() || '';
     const hidden = new Set(getHiddenFieldsFor('contributors.list'));
@@ -117,7 +142,7 @@ function renderContributors(contributors) {
     // Keyboard users can activate a focused row with Enter or Space.
     listContainer.querySelectorAll('.contributor-row').forEach(row => {
         row.setAttribute('tabindex', '0');
-        row.setAttribute('role', 'button');
+        row.setAttribute('role', 'group');
         row.setAttribute('aria-label', row.querySelector('.contributor-name')?.textContent || '');
         const open = () => {
             const contributor = contributors.find(p => p.id === row.dataset.contributorId);
