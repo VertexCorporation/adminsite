@@ -4,7 +4,7 @@
 export function emailTemplateValidationReason(draft){
     const subject=draft?.subject,html=draft?.html;
     if(typeof subject!=='string'||!subject.trim()||subject.length>500||/[\r\n\u0000-\u001f\u007f]/.test(subject))return 'subject';
-    if(typeof html!=='string'||!html.trim()||html.length>50000||!html.replace(/<[^>]*>/g,'').trim())return 'body';
+    if(typeof html!=='string'||!html.trim()||html.length>50000)return 'body';
     const valid=new Set(['recipientName','certificateName','contributionMonths','verificationUrl','formattedDate']);
     for(const value of [subject,html]){
         const remain=value.replace(/\{\{([a-zA-Z]+)\}\}/g,(_,key)=>valid.has(key)?'':'{invalid}');
@@ -29,11 +29,14 @@ export function emailTemplateValidationReason(draft){
             if(!/^(https:\/\/|mailto:)/i.test(url)||/[\u0000-\u0020\u007f]/.test(url)){
                 return 'link';
             }
-            try{if(!['https:','mailto:'].includes(new URL(url).protocol))return 'link';}
-            catch{return 'link';}
+            // The server also parses the URL; this light preflight avoids a network 400.
+            if(/^https:\/\//i.test(url) && !/^https:\/\/[^\/?#\s]+\.[^\/?#\s]+/i.test(url) &&
+               !/^https:\/\/localhost(?::\d+)?(?:[/?#]|$)/i.test(url))return 'link';
+            if(/^mailto:/i.test(url) && !/^mailto:[^@\s]+@[^@\s]+\.[^@\s]+/i.test(url))return 'link';
         }else if(raw.trim() && !(tag==='br' && raw.trim()==='/'))return 'format';
         residue=residue.replace(match[0],'');
     }
     if(/[<>]/.test(residue))return 'format';
+    if(!html.replace(/<[^>]*>/g,'').trim())return 'body';
     return null;
 }
