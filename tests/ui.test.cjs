@@ -79,3 +79,15 @@ test('models and administration use the centralized async action state',()=>{
  const models=read('js/modules/models.js');
  assert.doesNotMatch(models,/saveButton\.disabled = true/);
 });
+
+test('overlay and confirm dialog styles live in one sheet with correct stacking',()=>{
+ const overlay=read('css/ui/overlay.css');
+ const components=read('css/components.css');
+ const modules=read('css/modules.css');
+ assert.match(overlay,/z-index: 139/);
+ assert.match(overlay,/\.confirm-dialog-footer/);
+ assert.match(overlay,/\.vx-drawer-footer:has\(\[data-more\]\)/);
+ assert.doesNotMatch(components,/\.vx-overlay\s*\{/);
+ assert.doesNotMatch(components,/\.confirm-dialog-footer/);
+ assert.doesNotMatch(modules,/\.vx-drawer-footer:has\(\[data-more\]\)/);
+});

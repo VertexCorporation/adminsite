@@ -4,7 +4,7 @@
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.44);
-    z-index: 90;
+    z-index: 139;
     opacity: 0;
     transition: opacity var(--motion-overlay) var(--ease-standard);
 }
@@ -160,3 +160,70 @@ html[data-theme="light"] .vx-drawer-scrim { background: rgba(23, 25, 29, 0.30); 
 /* The backdrop and panel have a single CSS-owned lifecycle. */
 .vx-popover.is-closing, .vx-drawer[aria-hidden="true"], .vx-modal[aria-hidden="true"] { pointer-events: none; }
 .vx-drawer-body, .vx-modal-body { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+/* Shared elevated-surface variants and confirmation content. */
+.vx-popover { max-height: calc(100dvh - 16px); overflow: auto; }
+.vx-drawer-footer:has([data-more]){display:flex;flex-wrap:wrap;gap:8px}.vx-drawer-footer button{min-height:44px}.vx-drawer-footer .icon{width:17px;height:17px}
+.vx-drawer-footer:has([data-more]){display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:8px}.vx-drawer-footer [data-edit]{grid-column:1/-1}.vx-drawer-footer [data-certificate]{min-width:0}.vx-drawer-footer [data-more]{padding:0;justify-content:center}
+/* ---------- Confirm dialog stilleri ---------- */
+.confirm-dialog-body {
+    padding: var(--space-5);
+}
+.confirm-dialog-icon {
+    width: 40px; height: 40px;
+    border-radius: var(--radius-full);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: var(--space-4);
+    background: var(--bg-elevated); color: var(--text-muted);
+}
+.confirm-dialog-icon.danger {
+    background: var(--status-error-soft);
+    color: var(--status-error);
+}
+.confirm-dialog-title {
+    font-size: var(--fs-section-title);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+.confirm-dialog-desc {
+    font-size: var(--fs-body);
+    color: var(--text-secondary);
+    line-height: var(--lh-normal);
+}
+.confirm-dialog-warning {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    background: var(--status-error-soft);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-secondary);
+    color: var(--status-error);
+    line-height: var(--lh-normal);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+}
+.confirm-dialog-warning > .icon { flex-shrink: 0; margin-top: 1px; }
+.confirm-dialog-rows {
+    margin-top: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+.confirm-dialog-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    font-size: var(--fs-secondary);
+}
+.confirm-dialog-row dt { color: var(--text-muted); flex-shrink: 0; }
+.confirm-dialog-row dd { color: var(--text-primary); text-align: right; word-break: break-all; }
+.confirm-dialog-footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border-subtle);
+}
+/* İptal sol, Onayla sağ */
+.confirm-dialog-footer .cancel-btn { margin-right: auto; }
