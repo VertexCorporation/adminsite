@@ -8,7 +8,7 @@ let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn
 let getModelImageUploadUrlFn, getCoverUploadUrlFn, triggerAttributionsUpdateFn;
 let getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn;
 let verifyUserEmailFn;
-let updateContributorApplicationFn;
+let updateContributorApplicationFn, createManualVertexContributorFn;
 let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
 let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn;
 let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn;
@@ -107,6 +107,7 @@ function initFirebase(firebaseConfig) {
     verifyUserEmailFn = callable('verifyUserEmail');
     deleteVertexContributorFn = callable('deleteVertexContributor');
     updateContributorApplicationFn = callable('updateContributorApplication');
+    createManualVertexContributorFn = callable('createManualVertexContributor');
     toggleVertexStatusFn = callable('toggleVertexStatus');
     removeAdminRoleFn = callable('removeAdminRole');
     listAdminsFn = callable('listAdmins');
@@ -160,6 +161,7 @@ export {
     verifyUserEmailFn,
     deleteVertexContributorFn,
     updateContributorApplicationFn,
+    createManualVertexContributorFn,
     toggleVertexStatusFn,
     removeAdminRoleFn,
     listAdminsFn,

@@ -601,3 +601,15 @@ input.file-control-input{position:absolute;width:1px;height:1px;min-height:0;pad
 }
 
 
+
+/* Applicant search and manual intake: matches Vertex Console native controls. */
+.contributor-search-toolbar{display:flex;align-items:stretch;gap:12px;min-width:0;margin:14px 0 16px}
+.contributor-search-toolbar>.search-input-field{flex:1 1 auto;min-width:0;margin:0}
+.contributor-add-btn{flex:0 0 48px;min-width:48px;min-height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:12px}
+.contributor-add-btn[hidden]{display:none!important}
+.contributor-add-btn i,.contributor-add-btn svg{width:21px;height:21px}
+.manual-application-note{font-size:12px;line-height:1.65;color:var(--text-secondary);margin:0 0 8px}
+.manual-application-error:not([hidden]){font-size:12px;color:var(--status-danger,var(--text-primary));padding:12px;border:1px solid var(--border-strong);border-radius:10px}
+#manual-application-form .contributor-edit-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+#manual-application-form .form-group-field:last-child{grid-column:1/-1}
+@media(max-width:600px){.contributor-search-toolbar{gap:8px}.contributor-add-btn{flex-basis:44px;min-width:44px}#manual-application-form .contributor-edit-grid{grid-template-columns:1fr}}

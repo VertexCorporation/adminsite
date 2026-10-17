@@ -1,0 +1,43 @@
+/* ================================================================
+   VERTEX KONSOL — MOTION
+   Bütün hareket merkezi token'larla yönetilir. Animasyonlar
+   ağırlıklı olarak opacity + transform üzerinden yürür.
+   ================================================================ */
+
+@keyframes tabFade {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes slideUpIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* İçerik geçişi: skeleton → içerik crossfade */
+.content-fade-in {
+    animation: fadeIn var(--motion-normal) var(--ease-standard) both;
+}
+
+/* Dekoratif hareketleri tamamen kaldır */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .vx-popover, .vx-drawer, .vx-modal, .toast {
+        transition: none !important;
+    }
+}

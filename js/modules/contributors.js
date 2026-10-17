@@ -1,4 +1,5 @@
 import { openCertificateEmailTemplates } from './certificateEmailTemplates.js';
+import {initManualApplication} from './manualApplication.js';
 import { deploymentCapabilities } from '../core/deployment-capabilities.js';
 import { isActiveContributor, contributorState } from '../utils/contributor-state.js';
 import { changedContributorFields } from '../utils/contributor-edit.js';
@@ -30,6 +31,7 @@ let refreshBtn;
 export function initContributorsModule() {
     document.addEventListener('vertex:certificate-selector',openCertificateSelector);
     initVertexRoster(fetchContributorsData);
+    initManualApplication({onCreated:fetchContributorsData});
     listContainer = document.getElementById('contributors-list-container');
     listContainer.replaceChildren();
     loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows(),skeletonDelay:0});
@@ -109,9 +111,10 @@ function renderContributors(contributors) {
     document.querySelectorAll('#tab-contributors .filter-chip').forEach(b=>b.classList.toggle('active',b.dataset.filter===activeFilter));
     const canWrite = getEffectivePanelLevel('contributors.list')==='write';
     const admin = isPanelAdmin();
+    const addButton=document.getElementById('add-manual-application');if(addButton)addButton.hidden=!canWrite;
     const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry){templateEntry.style.display=admin?'':'none';templateEntry.textContent=__('email_templates.title');}
     const headers = ['name','department','age','status','applied','actions'];
-    loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row ${p.hasVerified?'is-verified':''}" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(p.age??'—')}</span><span class="contributor-cell-status status-badge ${p.hasVerified?'success':''}">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${contributorState(p)==='active'?'is-active':contributorState(p)==='unknown'?'is-unknown':''}" data-membership="${escapeHTML(p.id)}" title="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-label="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-pressed="${isActiveContributor(p)}" data-vertex-state="${contributorState(p)}" ${!deploymentCapabilities.contributorMembershipWrites||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`));
+    loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row ${p.hasVerified?'is-verified':''}" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(p.age??'—')}</span><span class="contributor-cell-status status-badge ${p.hasVerified?'success':''}">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.applicationDate?escapeHTML(formatCertificateDate(p.applicationDate)):p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${contributorState(p)==='active'?'is-active':contributorState(p)==='unknown'?'is-unknown':''}" data-membership="${escapeHTML(p.id)}" title="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-label="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-pressed="${isActiveContributor(p)}" data-vertex-state="${contributorState(p)}" ${!deploymentCapabilities.contributorMembershipWrites||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`));
     listContainer.querySelectorAll('[data-membership]').forEach(b=>b.onclick=()=>toggleMembership(contributors.find(p=>p.id===b.dataset.membership),b));
     listContainer.querySelectorAll('[data-details]').forEach(b=>b.onclick=()=>openContributorDetails(contributors.find(p=>p.id===b.dataset.details)));
     listContainer.querySelectorAll('.certificate-manage-btn').forEach(b=>b.onclick=()=>openCertificates(contributors.find(p=>p.id===b.dataset.id),fetchContributorsData,b));
@@ -183,6 +186,10 @@ function openContributorEditor(contributor) {
                     <input type="url" id="ce-github" value="${escapeHTML(contributor.github || '')}">
                 </div>
                 <div class="form-group-field">
+                    <label for="ce-application-date">${__('manual_application.application_date')}</label>
+                    <input type="datetime-local" id="ce-application-date" value="${toDatetimeLocalValue(contributor.applicationDate)}">
+                </div>
+                <div class="form-group-field">
                     <label for="ce-interview" data-i18n="contributors.field_interview">${__('contributors.field_interview')}</label>
                     <input type="datetime-local" id="ce-interview" value="${toDatetimeLocalValue(contributor.interviewDate)}">
                 </div>
@@ -213,11 +220,17 @@ function openContributorEditor(contributor) {
             linkedin:card.querySelector('#ce-linkedin').value,
             github:card.querySelector('#ce-github').value,
             interviewDate:card.querySelector('#ce-interview').value,
+            applicationDate:card.querySelector('#ce-application-date').value,
             about:card.querySelector('#ce-about').value
-        },{department:originalDepartment,interviewDate:toDatetimeLocalValue(contributor.interviewDate)});
+        },{department:originalDepartment,interviewDate:toDatetimeLocalValue(contributor.interviewDate),applicationDate:toDatetimeLocalValue(contributor.applicationDate)});
         if(!Object.keys(updates).length){
             if(drawer.classList.contains('is-open'))closeDrawer();
             return;
+        }
+        // datetime-local values are in the operator's timezone; preserve the
+        // selected instant when saving to the server.
+        for(const field of ['applicationDate','interviewDate']){
+            if(updates[field])updates[field]=new Date(updates[field]).toISOString();
         }
         try{
             const {data}=await updateContributorApplicationFn({contributorId:contributor.id,...updates});
