@@ -11,7 +11,7 @@ import { icon } from '../utils/icons.js';
  */
 
 import { userErrorMessage, showToast, __, escapeHTML } from '../utils/ui.js';
-import { listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn } from '../core/firebase.js';
+import { listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn, auth } from '../core/firebase.js';
 
 let mods = [];
 let editingId = null;
@@ -166,5 +166,8 @@ export function initSiteTeamPanel() {
             render();
         }
     });
-    loadTeam();
+    // Initialize before login, but read team data only from an authenticated workspace.
+    document.addEventListener('vertex:system-page',event=>{
+        if(event.detail==='verification' && auth.currentUser)void loadTeam();
+    });
 }

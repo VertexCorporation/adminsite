@@ -1,6 +1,7 @@
 import { openCertificateEmailTemplates } from './certificateEmailTemplates.js';
 import { deploymentCapabilities } from '../core/deployment-capabilities.js';
 import { isActiveContributor, contributorState } from '../utils/contributor-state.js';
+import { changedContributorFields } from '../utils/contributor-edit.js';
 import { initVertexRoster, refreshRosterAccess } from './vertex-roster.js';
 import { displayDepartmentName, canonicalDepartment } from '../utils/departments.js';
 import { icon } from '../utils/icons.js';
@@ -11,7 +12,7 @@ import { openCertificates } from './certificates.js';
 // js/modules/contributors.js
 
 import { showToast, userErrorMessage, __, onLangChange, sanitizeHTML, escapeHTML } from '../utils/ui.js';
-import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn, toggleVertexStatusFn, auth } from '../core/firebase.js';
+import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn, setContributorVertexStatusFn, auth } from '../core/firebase.js';
 import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS, isPanelAdmin, getHiddenFieldsFor } from './roles.js';
 
 const editIcon = icon('pencil');
@@ -21,12 +22,14 @@ let inFlight;
 let inFlightContext;
 let lastLoadFailed=false;
 const membershipPending=new Set();
+const verificationPending=new Set();
 let activeFilter = 'all';
 let listContainer;
 let refreshBtn;
 
 export function initContributorsModule() {
     document.addEventListener('vertex:certificate-selector',openCertificateSelector);
+    initVertexRoster(fetchContributorsData);
     listContainer = document.getElementById('contributors-list-container');
     listContainer.replaceChildren();
     loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows(),skeletonDelay:0});
@@ -40,8 +43,6 @@ export function initContributorsModule() {
 
     if (refreshBtn) {
         refreshBtn.addEventListener('click', fetchContributorsData);
-        initVertexRoster(fetchContributorsData);
-        document.addEventListener('vertex:departments', refreshRosterAccess);
     }
 
 }
@@ -93,10 +94,11 @@ async function loadContributors() {
 }
 
 function renderContributors(contributors) {
+    refreshRosterAccess();
     const query = document.getElementById('contributor-search')?.value.toLowerCase().trim() || '';
     const hidden = new Set(getHiddenFieldsFor('contributors.list'));
     contributors = contributors.filter(p => {
-        const match = ({all:true,vertex:p.membership?.status==='matched'&&p.membership?.isVertex===true,verified:!!p.hasVerified,unverified:!p.hasVerified,'age-14-15':p.age>=14&&p.age<=15,'age-16-17':p.age>=16&&p.age<=17,'age-18':p.age>=18,linkedin:!!p.linkedin,github:!!p.github,interview:!!p.interviewDate})[activeFilter];
+        const match = ({all:true,vertex:isActiveContributor(p),verified:!!p.hasVerified,unverified:!p.hasVerified,'age-14-15':p.age>=14&&p.age<=15,'age-16-17':p.age>=16&&p.age<=17,'age-18':p.age>=18,linkedin:!!p.linkedin,github:!!p.github,interview:!!p.interviewDate})[activeFilter];
         return match && [p.name,p.department,...(!hidden.has('contact')?[p.email]:[]),...(!hidden.has('about')?[p.about]:[])].some(v=>String(v || '').toLowerCase().includes(query));
     });
     document.querySelectorAll('#tab-contributors .filter-chip').forEach(b=>b.classList.toggle('active',b.dataset.filter===activeFilter));
@@ -104,7 +106,7 @@ function renderContributors(contributors) {
     const admin = isPanelAdmin();
     const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry){templateEntry.style.display=admin?'':'none';templateEntry.textContent=__('email_templates.title');}
     const headers = ['name','department','age','status','applied','actions'];
-    loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(p.age??'—')}</span><span class="contributor-cell-status status-badge">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button>`:''}${admin&&deploymentCapabilities.contributorMembershipWrites?`<button type="button" class="vertex-membership-btn icon-action-btn ${p.membership?.status==='matched'?(p.membership.isVertex?'is-active':''):'is-unknown'}" data-membership="${escapeHTML(p.id)}" title="${__(p.membership?.status==='matched'?(p.membership.isVertex?'contributors.vertex_active':'contributors.vertex_inactive'):'contributors.vertex_unknown')}" aria-label="${__(p.membership?.status==='matched'?(p.membership.isVertex?'contributors.vertex_active':'contributors.vertex_inactive'):'contributors.vertex_unknown')}" ${p.membership?.status!=='matched'||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`));
+    loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row ${p.hasVerified?'is-verified':verificationPending.has(p.id)?'is-verification-pending':''}" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(p.age??'—')}</span><span class="contributor-cell-status status-badge ${p.hasVerified?'success':verificationPending.has(p.id)?'warning':''}">${p.hasVerified?__('contributors.verified_label'):verificationPending.has(p.id)?__('contributors.verification_waiting_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${contributorState(p)==='active'?'is-active':contributorState(p)==='unknown'?'is-unknown':''}" data-membership="${escapeHTML(p.id)}" title="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-label="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-pressed="${isActiveContributor(p)}" data-vertex-state="${contributorState(p)}" ${!deploymentCapabilities.contributorMembershipWrites||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`));
     listContainer.querySelectorAll('[data-membership]').forEach(b=>b.onclick=()=>toggleMembership(contributors.find(p=>p.id===b.dataset.membership),b));
     listContainer.querySelectorAll('[data-details]').forEach(b=>b.onclick=()=>openContributorDetails(contributors.find(p=>p.id===b.dataset.details)));
     listContainer.querySelectorAll('.certificate-manage-btn').forEach(b=>b.onclick=()=>openCertificates(contributors.find(p=>p.id===b.dataset.id),fetchContributorsData,b));
@@ -194,30 +196,71 @@ function openContributorEditor(contributor) {
         const submitBtn = card.closest('.vx-drawer').querySelector('button[type="submit"]');
         submitBtn.disabled = true;
 
-        const updates = {
-            name: card.querySelector('#ce-name').value.trim(),
-            email: card.querySelector('#ce-email').value.trim(),
-            phone: card.querySelector('#ce-phone').value.trim(),
-            age: card.querySelector('#ce-age').value,
-            department: card.querySelector('#ce-dept').value,
-            language: card.querySelector('#ce-lang').value,
-            linkedin: card.querySelector('#ce-linkedin').value.trim(),
-            github: card.querySelector('#ce-github').value.trim(),
-            interviewDate: card.querySelector('#ce-interview').value,
-            about: card.querySelector('#ce-about').value.trim()
-        };
-
-        try {
-            await updateContributorApplicationFn({ contributorId: contributor.id, ...updates });
-            closeDrawer();
-            showToast(() => __('contributors.edit_updated'), 'success');
-            fetchContributorsData();
-        } catch (error) {
-            console.error('[CONTRIBUTORS] Edit failed:', error);
-            showToast(() => userErrorMessage(error), 'error');
-            submitBtn.disabled = false;
+        // Submit the actual delta, not every field from the edit form.
+        const drawer=card.closest('.vx-drawer');
+        const updates=changedContributorFields(contributor,{
+            name:card.querySelector('#ce-name').value,
+            email:card.querySelector('#ce-email').value,
+            phone:card.querySelector('#ce-phone').value,
+            age:card.querySelector('#ce-age').value,
+            department:card.querySelector('#ce-dept').value,
+            language:card.querySelector('#ce-lang').value,
+            linkedin:card.querySelector('#ce-linkedin').value,
+            github:card.querySelector('#ce-github').value,
+            interviewDate:card.querySelector('#ce-interview').value,
+            about:card.querySelector('#ce-about').value
+        },{department:originalDepartment,interviewDate:toDatetimeLocalValue(contributor.interviewDate)});
+        if(!Object.keys(updates).length){
+            if(drawer.classList.contains('is-open'))closeDrawer();
+            return;
+        }
+        try{
+            const {data}=await updateContributorApplicationFn({contributorId:contributor.id,...updates});
+            if(data?.success!==true)throw new Error('Application update not confirmed.');
+            Object.assign(contributor,updates);
+            const cached=(window.loadedContributors||[]).find(p=>p.id===contributor.id);
+            if(cached&&cached!==contributor)Object.assign(cached,updates);
+            if(window.loadedContributors)renderContributors(window.loadedContributors);
+            // Do not inadvertently dismiss a newer drawer.
+            if(drawer.classList.contains('is-open'))closeDrawer();
+            showToast(()=>__('contributors.edit_updated'),'success');
+            void fetchContributorsData();
+        }catch(error){
+            console.error('[CONTRIBUTORS] Edit failed:',error);
+            showToast(()=>userErrorMessage(error),'error');
+            submitBtn.disabled=false;
         }
     });
+}
+
+// Issuance and verification are distinct: wait for the correlated mail callback.
+async function watchContributorVerification(id,viewerUid,attempt=0){
+    if(!verificationPending.has(id)||auth.currentUser?.uid!==viewerUid)return;
+    if(attempt>=12){
+        verificationPending.delete(id);
+        renderContributors(window.loadedContributors||[]);
+        showToast(()=>__('contributors.verification_pending'),'info');
+        return;
+    }
+    await new Promise(resolve=>setTimeout(resolve,4000));
+    if(!verificationPending.has(id)||auth.currentUser?.uid!==viewerUid)return;
+    try{
+        const response=await getVertexContributorsFn();
+        if(!verificationPending.has(id)||auth.currentUser?.uid!==viewerUid)return;
+        const people=response.data?.contributors||[];
+        window.loadedContributors=people;
+        const updated=people.find(p=>p.id===id);
+        if(updated?.hasVerified){
+            verificationPending.delete(id);
+            showToast(()=>__('contributors.verify_updated'),'success');
+        }
+        document.dispatchEvent(new CustomEvent('vertex:contributor-updated',{detail:{person:updated}}));
+        renderContributors(people);
+        if(verificationPending.has(id))void watchContributorVerification(id,viewerUid,attempt+1);
+    }catch(error){
+        console.warn('[CONTRIBUTORS] Verification refresh failed',error.code);
+        if(verificationPending.has(id))void watchContributorVerification(id,viewerUid,attempt+1);
+    }
 }
 
 function openContributorDetails(person) {
@@ -235,34 +278,28 @@ function openContributorDetails(person) {
         footer.querySelector('[data-more]')?.addEventListener('click',e=>openPopover(e.currentTarget,{className:'contributor-actions-popover',render(menu){
             menu.innerHTML=`<div class="menu-list"><button class="menu-item" data-verify>${icon('check')}${person.hasVerified?__('contributors.unverify'):__('contributors.verify')}</button><button class="menu-item" data-delete>${icon('trash')}${__('contributors.delete_action')}</button></div>`;
             menu.querySelector('[data-verify]').onclick=async()=>{
-                if(pending||!isPanelAdmin())return;
-                pending=true; closePopover();
+                if(pending||!isPanelAdmin()||verificationPending.has(person.id))return; pending=true;closePopover();paint();
                 const next=!person.hasVerified;
-                const previous=person.hasVerified;
-
-                // Optimistik güncelleme: hem detay çekmecesi hem liste tablosu anında güncellenir
-                person.hasVerified=next;
-                paint();
-                renderContributors(window.loadedContributors || []);
-
                 try{
-                    await toggleContributorVerificationFn({contributorId:person.id,hasVerified:next});
-                    showToast(()=>__('contributors.verify_updated'),'success');
-                    renderContributors(window.loadedContributors || []);
-                    // Arka planda sunucudan gerçek veriyle eşitle
-                    fetchContributorsData().catch(()=>{});
-                } catch(err){
-                    // Rollback: sunucu başarısız → eski duruma dön
-                    person.hasVerified=previous;
-                    paint();
-                    renderContributors(window.loadedContributors || []);
-                    showToast(()=>userErrorMessage(err),'error');
-                } finally{
-                    pending=false;
-                    paint();
+                    const response=await toggleContributorVerificationFn({contributorId:person.id,hasVerified:next});
+                    await fetchContributorsData();
+                    const current=(window.loadedContributors||[]).find(p=>p.id===person.id);
+                    if(current)Object.assign(person,current);
+                    if(person.hasVerified===next){
+                        verificationPending.delete(person.id);
+                        showToast(()=>__('contributors.verify_updated'),'success');
+                    }else if(next && !['failed','revoked'].includes(response.data?.status)){
+                        if(!verificationPending.has(person.id)){
+                            verificationPending.add(person.id);
+                            void watchContributorVerification(person.id,auth.currentUser?.uid);
+                        }
+                        showToast(()=>__('contributors.verification_pending'),'info');
+                    }else{
+                        showToast(()=>__('system.error'),'error');
+                    }
                 }
+                catch(error){showToast(() => userErrorMessage(error),'error');}finally{pending=false;paint();}
             };
-
             menu.querySelector('[data-delete]').onclick=async()=>{
                 if(pending||!isPanelAdmin())return; closePopover();
                 if(!await confirmDialog(()=>({title:__('contributors.delete_action'),body:__('contributors.delete_warning'),confirmLabel:__('contributors.delete_action'),danger:true})))return;
@@ -270,45 +307,35 @@ function openContributorDetails(person) {
             };
         }}));
     }
+    const syncPerson=event=>{
+        if(event.detail?.person?.id!==person.id)return;
+        Object.assign(person,event.detail.person);
+        paint();
+    };
+    document.addEventListener('vertex:contributor-updated',syncPerson);
     const unsubscribe=onLangChange(paint);
-    body=openDrawer({title:person.name,footerHTML:' ',onAfterClose:unsubscribe});paint();
+    body=openDrawer({title:person.name,footerHTML:' ',onAfterClose(){
+        unsubscribe();
+        document.removeEventListener('vertex:contributor-updated',syncPerson);
+    }});paint();
 }
 
 async function toggleMembership(person,button) {
-    if(!deploymentCapabilities.contributorMembershipWrites||!isPanelAdmin() || person?.membership?.status!=='matched'||membershipPending.has(person.id))return;
-
-    const confirmed=await confirmDialog(()=>({
-        title:__('subnav.vertex_status'),
-        warning:__('contributors.vertex_confirm'),
-        rows:[{label:__('contributors.field_email'),value:escapeHTML(person.email)},{label:'UID',value:escapeHTML(person.membership.uid)}]
-    }));
-    if(!confirmed)return;
-
-    membershipPending.add(person.id);
-    setButtonLoading(button,true);
-
-    const previousStatus = person.membership?.isVertex;
+    if(!deploymentCapabilities.contributorMembershipWrites || !isPanelAdmin() || !person || membershipPending.has(person.id))return;
+    membershipPending.add(person.id);setButtonLoading(button,true);
     try {
-        const {data}=await toggleVertexStatusFn({
-            targetUid:person.membership.uid,
-            contributorId:person.id,
-            expectedStatus:previousStatus
-        });
+        const confirmed=await confirmDialog(()=>({title:__('subnav.vertex_status'),warning:__('contributors.vertex_confirm'),rows:[{label:__('contributors.field_email'),value:escapeHTML(person.email)},{label:'Contributor',value:escapeHTML(person.id)}]}));
+        if(!confirmed)return;
+        const existing=person.isVertex===true;
+        const {data}=await setContributorVertexStatusFn({contributorId:person.id,isVertex:!existing,expectedStatus:existing,expectedFieldExists:Object.prototype.hasOwnProperty.call(person,'isVertex')});
         if(typeof data.isVertex!=='boolean')throw new Error('Invalid membership response');
-        person.membership.isVertex=data.isVertex;
-        renderContributors(window.loadedContributors||[]);
+        person.isVertex=data.isVertex;
+        if(person.membership){person.membership.fieldExists=true;person.membership.isVertex=data.isVertex;}
+        if(data.joinedAtSet)person.joinedAt=new Date();
         showToast(()=>__(data.isVertex?'system.vertex_enabled':'system.vertex_disabled'),'success');
-        fetchContributorsData().catch(()=>{});
-    } catch(error){
-        if (person.membership) person.membership.isVertex = previousStatus;
         renderContributors(window.loadedContributors||[]);
-        showToast(()=>userErrorMessage(error),'error');
-    }
-    finally{
-        membershipPending.delete(person.id);
-        setButtonLoading(button,false);
-        renderContributors(window.loadedContributors||[]);
-    }
+    } catch(error){showToast(()=>userErrorMessage(error),'error');}
+    finally{membershipPending.delete(person.id);setButtonLoading(button,false);renderContributors(window.loadedContributors||[]);}
 }
 function openCertificateSelector() {
     if(!isPanelAdmin())return;
