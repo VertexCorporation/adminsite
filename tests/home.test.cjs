@@ -57,7 +57,7 @@ test('flow artwork respects reduced motion and brand marks are local assets', ()
   assert.match(css, /prefers-reduced-motion:reduce/);
   for (const brand of ['firebase','google-drive','zapier','cal']) {
     assert.ok(fs.existsSync(path.join(root, 'assets','technology',brand+'.svg')), brand);
-    assert.match(read(path.join('assets','technology',brand+'.svg')), /<svg\b[\s\S]*?\bfill=/);
+    assert.match(read(path.join('assets','technology',brand+'.svg')), /<svg\b[\s\S]*?<path\b/);
   }
   assert.doesNotMatch(css, /home-hero-emblem|home-orbit/);
 });
