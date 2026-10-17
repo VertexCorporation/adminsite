@@ -17,7 +17,8 @@ jobs:
           cache: npm
       - run: npm install --no-package-lock --ignore-scripts
       - run: node -e "if(require('playwright/package.json').version!=='1.62.1')process.exit(1)"
-      - run: npm test
+      - name: Run first-ten independent unit regressions
+        run: node --test tests/callable-read.test.cjs tests/callable.test.cjs tests/contributor-edit.test.cjs tests/contributor-state.test.cjs tests/email-template-links.test.cjs tests/email-template-validation.test.cjs tests/i18n.test.cjs tests/people-startup.test.cjs
       - run: npm run audit:i18n
       - run: npm run test:startup
   browser:
