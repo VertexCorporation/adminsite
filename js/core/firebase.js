@@ -207,3 +207,5 @@ export const consolePeopleCall = (name, data) => callCallable(name, data);
 export const getVertexCertificateEmailTemplatesFn = callable('getVertexCertificateEmailTemplates');
 export const saveVertexCertificateEmailTemplateFn = callable('saveVertexCertificateEmailTemplate');
 export const previewVertexCertificateEmailTemplateFn = callable('previewVertexCertificateEmailTemplate');
+
+export const eventCallable = (name, data) => callCallable(name, data);

@@ -1,4 +1,5 @@
 import { initPeopleModule } from './modules/people.js';
+import { initEventsModule } from './modules/events.js';
 import { initScrollEdges } from './utils/scrollEdges.js';
 import { displayDepartmentName } from './utils/departments.js';
 import { initSystemSections } from './modules/system.js';
@@ -41,6 +42,7 @@ export function startApp(firebaseConfig) {
     initPeopleModule();
     initModelsModule(); // CORRECTED: Calls the new unified initializer
     initNewsModule();
+    initEventsModule();
     initNotificationModule();
     initContributorsModule();
     initSubscriptionsModule();
