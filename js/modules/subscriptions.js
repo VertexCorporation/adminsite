@@ -95,7 +95,7 @@ function renderSubscriptions() {
                 </div>
                 <span class="sub-dates">${sub.source === 'vertex' ? (getLang()==='tr'?'Vertex sponsorluğu · Üyelik sürdükçe':'Vertex sponsorship · While membership is active') : `${__('subs.end_label_short')}: ${formatDate(sub.expiresAt)}`}</span>
             </div>
-            ${getEffectivePanelLevel('subscriptions.list') === 'write' && sub.source !== 'vertex' ? `<button type="button" class="dept-user-edit cancel-task-btn" data-uid="${sanitizeHTML(sub.uid)}">${__('subs.remove_btn')}</button>` : ''}
+            ${getEffectivePanelLevel('subscriptions.list') === 'write' && sub.canRemove === true ? `<button type="button" class="dept-user-edit cancel-task-btn" data-uid="${sanitizeHTML(sub.uid)}">${__('subs.remove_btn')}</button>` : ''}
         </div>`;
     }).join('');
 }
@@ -112,7 +112,9 @@ async function loadSubscriptions() {
             email: String(sub.email || ''),
             displayName: String(sub.displayName || ''),
             tier: String(sub.tier || ''),
-            source: String(sub.source || ''),
+            source: String(sub.source || 'unknown'),
+            canRemove: sub.canRemove === true,
+            status: String(sub.status || ''),
             expiresAt: sub.expiresAt || null
         })).filter(sub => sub.uid);
         subscriptions.sort((a, b) => new Date(b.expiresAt || 0) - new Date(a.expiresAt || 0));
@@ -165,7 +167,23 @@ async function handleAssignSubmit(e) {
 }
 
 async function handleRemoveSubscription(uid, button) {
-    if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('subs.remove_confirm')}))) return;
+    const item = subscriptions.find(sub => sub.uid === uid);
+    if (!item || item.canRemove !== true) {
+        showToast(()=>__('errors.permission'),'error');
+        return;
+    }
+    if (!await confirmDialog(()=>({
+        title:__('common.confirm'),
+        body:__('subs.remove_confirm'),
+        danger:true,
+        rows:[
+            {label:getLang()==='tr'?'Kişi':'User',value:item.displayName||item.email||uid},
+            {label:getLang()==='tr'?'E-posta':'Email',value:item.email||'—'},
+            {label:getLang()==='tr'?'Plan':'Plan',value:__(getPlan(item.tier).labelKey)},
+            {label:getLang()==='tr'?'Kaynak':'Source',value:item.source},
+            {label:getLang()==='tr'?'Bitiş':'Expiry',value:formatDate(item.expiresAt)}
+        ]
+    }))) return;
     button.disabled = true;
     button.textContent = __('subs.removing');
     try {
