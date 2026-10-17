@@ -2,15 +2,15 @@
 
 // These will be populated by the initFirebase function
 let auth, db, storage, functions, appCheck;
-let sendTargetedNotificationFn, scheduleNotificationFn, listScheduledNotificationsFn;
+let sendTargetedNotificationFn, scheduleNotificationFn, listScheduledNotificationsFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn, previewNotificationAudienceFn;
 let cancelScheduledNotificationFn, getServerStatusFn, setServerStatusFn, blockOnlineModelFn;
-let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn;
+let updateModelsListFn, createNewsArticleFn, updateNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn;
 let getModelImageUploadUrlFn, getCoverUploadUrlFn, triggerAttributionsUpdateFn;
 let getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn;
 let verifyUserEmailFn;
 let updateContributorApplicationFn, createManualVertexContributorFn;
 let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
-let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn;
+let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn, previewBulkUserSubscriptionsFn;
 let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn;
 let getPanelPermissionsFn;
 let listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn;
@@ -89,6 +89,9 @@ function initFirebase(firebaseConfig) {
     // Initialize Cloud Functions with the correct region
     const europeFunctions = firebase.app().functions('europe-west1');
     sendTargetedNotificationFn = callable('sendTargetedNotification');
+    getNotificationDeliveryStatusFn = callable('getNotificationDeliveryStatus');
+    reconcileNotificationQueueFn = callable('reconcileNotificationQueue');
+    previewNotificationAudienceFn = callable('previewNotificationAudience');
     scheduleNotificationFn = callable('scheduleNotification');
     listScheduledNotificationsFn = callable('listScheduledNotifications');
     cancelScheduledNotificationFn = callable('cancelScheduledNotification');
@@ -97,6 +100,7 @@ function initFirebase(firebaseConfig) {
     blockOnlineModelFn = callable('blockOnlineModel');
     updateModelsListFn = callable('updateModelsList');
     createNewsArticleFn = callable('createNewsArticle');
+    updateNewsArticleFn = callable('updateNewsArticle');
     deleteNewsArticleFn = callable('deleteNewsArticle');
     addAdminRoleFn = callable('addAdminRole');
     getModelImageUploadUrlFn = callable('getModelImageUploadUrl');
@@ -119,6 +123,7 @@ function initFirebase(firebaseConfig) {
     removeUserSubscriptionFn = callable('removeUserSubscription');
     listUserSubscriptionsFn = callable('listUserSubscriptions');
     bulkSetUserSubscriptionsFn = callable('bulkSetUserSubscriptions');
+    previewBulkUserSubscriptionsFn = callable('previewBulkUserSubscriptions');
     listConsoleChatChannelsFn = callable('listConsoleChatChannels');
     createConsoleChatChannelFn = callable('createConsoleChatChannel');
     updateConsoleChatChannelFn = callable('updateConsoleChatChannel');
@@ -143,6 +148,9 @@ export {
     functions,
     appCheck,
     sendTargetedNotificationFn,
+    getNotificationDeliveryStatusFn,
+    reconcileNotificationQueueFn,
+    previewNotificationAudienceFn,
     scheduleNotificationFn,
     listScheduledNotificationsFn,
     cancelScheduledNotificationFn,
@@ -151,6 +159,7 @@ export {
     blockOnlineModelFn,
     updateModelsListFn,
     createNewsArticleFn,
+    updateNewsArticleFn,
     deleteNewsArticleFn,
     addAdminRoleFn,
     getModelImageUploadUrlFn,
@@ -173,6 +182,7 @@ export {
     removeUserSubscriptionFn,
     listUserSubscriptionsFn,
     bulkSetUserSubscriptionsFn,
+    previewBulkUserSubscriptionsFn,
     listConsoleChatChannelsFn,
     createConsoleChatChannelFn,
     updateConsoleChatChannelFn,

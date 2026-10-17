@@ -38,6 +38,9 @@ let mentionIndex = null;
 let mentionPop = null;
 let mentionMatches = [];
 let mentionActive = -1;
+const drafts = new Map();
+let lastRenderedChannel = null;
+let pollPending = false;
 
 const el = (id) => document.getElementById(id);
 
@@ -49,7 +52,7 @@ function linkify(text) {
     // @Departman ve @mail etiketlerini vurgula, satır sonlarını koru
     return escapeHTML(text)
         .replace(/@([\w.+-]+@[\w-]+\.[\w.-]+)/g, '<span class="chat-mention chat-mention-mail">@$1</span>')
-        .replace(/@(Tensor|Curia|Essence|Core|Senatus|Pulse|Chroma|Catalyst|Envoy|Aero|Array|Scout|Vertest)/g, '<span class="chat-mention chat-mention-dept">@$1</span>')
+        .replace(new RegExp('@(' + DEPARTMENTS.map(d=>d.id).join('|') + ')(?![\\w-])','g'), '<span class="chat-mention chat-mention-dept">@$1</span>')
         .replace(/\n/g, '<br>');
 }
 
@@ -123,7 +126,16 @@ function renderChannelList() {
 }
 
 function selectChannel(channelId) {
-    currentChannelId = channelId;
+    if(channelId===currentChannelId)return;
+    const input=el('chat-input'),asTask=el('chat-as-task');
+    if(currentChannelId && input) drafts.set(currentChannelId,{text:input.value,asTask:!!asTask?.checked});
+    currentChannelId=channelId;
+    const draft=drafts.get(channelId);
+    if(input)input.value=draft?.text||'';
+    if(asTask)asTask.checked=!!draft?.asTask;
+    closeMentionPop();
+    lastMessagesKey='';
+    lastRenderedChannel=null;
     renderChannelList();
     loadMessages();
 }
@@ -139,7 +151,7 @@ async function loadMessages(animate = true) {
         if (currentChannelId !== channel.id) { finishLoading(); return; }
         const messages = result.data.messages || [];
         cachedMessages=messages;cachedChannelId=channel.id;
-        const key = messages.map(m => `${m.id}:${m.taskStatus || ''}`).join('|');
+        const key = JSON.stringify(messages.map(m => [m.id,m.taskStatus,m.text,m.createdAt,m.authorName,m.authorDepartments]));
         if (!animate && key === lastMessagesKey) { finishLoading(); return; } // degisiklik yoksa DOM'a dokunma
         lastMessagesKey = key;
         renderMessages(messages, channel, animate);
@@ -214,8 +226,15 @@ function renderMessages(messages, channel, animate = true) {
             delay++;
         }
     }
+    const sameChannel = lastRenderedChannel === currentChannelId;
+    const distanceFromBottom = container.scrollHeight-container.scrollTop-container.clientHeight;
+    const stickToBottom = !sameChannel || distanceFromBottom < 70;
+    const previousScrollTop = container.scrollTop;
+    const previousScrollHeight = container.scrollHeight;
     container.innerHTML = html;
-    container.scrollTop = container.scrollHeight;
+    if(stickToBottom)container.scrollTop = container.scrollHeight;
+    else container.scrollTop = Math.max(0,previousScrollTop+(container.scrollHeight-previousScrollHeight));
+    lastRenderedChannel=currentChannelId;
 
     const pending = container.querySelector('.chat-task-toggle-btn');
     if (pending) pending.disabled = false;
@@ -228,13 +247,17 @@ async function sendMessage() {
     const text = input.value.trim();
     if (!text || !currentChannelId) return;
     const asTask = el('chat-as-task').checked;
+    const sendChannel = currentChannelId;
     el('chat-send').disabled = true;
     input.disabled = true;
     try {
-        await postConsoleChatMessageFn({ channelId: currentChannelId, text, asTask });
-        input.value = '';
-        el('chat-as-task').checked = false;
-        await loadMessages(false);
+        await postConsoleChatMessageFn({ channelId: sendChannel, text, asTask });
+        drafts.delete(sendChannel);
+        if(currentChannelId===sendChannel) {
+            input.value = '';
+            el('chat-as-task').checked = false;
+            await loadMessages(false);
+        }
     } catch (error) {
         showToast(() => userErrorMessage(error), 'error');
     } finally {
@@ -346,7 +369,8 @@ async function ensureDirectory() {
         const r = await listConsoleChatDirectoryFn({});
         mentionIndex = r.data.users || [];
     } catch {
-        mentionIndex = [];
+        // Do not cache transient directory errors as a permanently empty directory.
+        return [];
     }
     return mentionIndex;
 }
@@ -490,8 +514,10 @@ export function initConsoleChat() {
     // Yeni mesaj/kanallar için hafif yoklama
     pollTimer = setInterval(() => {
         if (document.hidden || !auth || !auth.currentUser || !el('tab-chat')?.classList.contains('active')) return;
-        loadChannels();
-        if (currentChannelId) loadMessages(false);
+        if(pollPending)return;
+        pollPending=true;
+        Promise.allSettled([loadChannels(),...(currentChannelId?[loadMessages(false)]:[])])
+            .finally(()=>{pollPending=false;});
     }, 8000);
 
     onLangChange(() => {renderChannelList();const channel=channels.find(c=>c.id===currentChannelId);renderChatHeader(channel);if(channel&&cachedChannelId===channel.id)renderMessages(cachedMessages,channel,false);});

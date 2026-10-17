@@ -2,11 +2,13 @@ import { confirmDialog } from './shell.js';
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/news.js
 
-import { db, createNewsArticleFn, deleteNewsArticleFn, getCoverUploadUrlFn } from '../core/firebase.js';
+import { db, createNewsArticleFn, updateNewsArticleFn, deleteNewsArticleFn, getCoverUploadUrlFn } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
 import { userErrorMessage, __, showToast, getLang, onLangChange, escapeHTML } from '../utils/ui.js';
 
 let unsubscribeFromArticles = null;
+let editingArticle = null;
+let articleSearch = '';
 
 /**
  * Handles the submission of the news article creation form.
@@ -20,7 +22,7 @@ async function handleNewsFormSubmit(e) {
     submitBtn.textContent = __('news.publishing');
 
     const titleEN = document.getElementById('title-en').value;
-    const cleanSlug = titleEN.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const cleanSlug = editingArticle?.id || titleEN.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
     if (!cleanSlug) {
         showToast(() => __('news.slug_invalid'), 'error');
@@ -31,9 +33,15 @@ async function handleNewsFormSubmit(e) {
 
     const uploadImage = async (fileInputId, lang) => {
         const file = document.getElementById(fileInputId).files[0];
-        if (!file) throw new Error(__('news.cover_required'));
+        if (!file) {
+            if(editingArticle?.cover?.[lang])return editingArticle.cover[lang];
+            throw new Error(__('news.cover_required'));
+        }
         const result = await getCoverUploadUrlFn({ slug: cleanSlug, fileName: `${lang}-${file.name}`, contentType: file.type });
-        await fetch(result.data.signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+        if(!['image/jpeg','image/png','image/webp'].includes(file.type))
+            throw new Error(getLang()==='tr'?'JPEG, PNG veya WebP kullanın.':'Use JPEG, PNG or WebP.');
+        const response=await fetch(result.data.signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+        if(!response.ok) throw new Error(getLang()==='tr'?'Kapak görseli yüklenemedi.':'Cover image upload failed.');
         return result.data.filePath;
     };
 
@@ -54,9 +62,13 @@ async function handleNewsFormSubmit(e) {
             }
         };
         showToast(() => __('news.saving'), 'info');
-        const result = await createNewsArticleFn(articleData);
+        if(editingArticle) {
+            await updateNewsArticleFn({slug:editingArticle.id,revision:editingArticle.revision||0,article:articleData});
+            editingArticle=null;
+        } else await createNewsArticleFn(articleData);
         showToast(() => __('news.saved'), 'success');
         dom.newsForm.reset();
+        const hint=document.getElementById('news-editing-hint');if(hint)hint.textContent='';
     } catch (error) {
         console.error("[CLIENT] An error occurred during news submission:", error);
         showToast(()=>userErrorMessage(error), 'error');
@@ -95,29 +107,76 @@ export function listenForArticles() {
         dom.articlesListContainer.innerHTML = '';
         if (snapshot.empty) {
             window.loadedArticles = [];
-            dom.articlesListContainer.innerHTML = `<p class="form-hint" data-i18n="news.empty">${__('news.empty')}</p>`;
+            renderArticleList();
             return;
         }
-        const articles = [];
-        snapshot.forEach(doc => {
-            articles.push({ id: doc.id, ...doc.data() });
-            const item = document.createElement('div');
-            item.className = 'article-item';
-            item.innerHTML = `
-                <div class="item-details">
-                    <span class="item-title">${escapeHTML(doc.data().translations?.[getLang()]?.title || __('news.untitled'))}</span>
-                </div>
-                <div class="item-actions">
-                    <button class="delete-btn" data-slug="${escapeHTML(doc.id)}">${__('common.delete')}</button>
-                </div>`;
-            dom.articlesListContainer.appendChild(item);
-        });
+        const articles = snapshot.docs.map(doc=>({id:doc.id,...doc.data()}));
         window.loadedArticles = articles;
+        renderArticleList();
     }, error => {
         finishLoading();
         console.error("[CLIENT] Error listening for article updates:", error);
         showToast(() => __('news.load_error'), 'error');
     });
+}
+
+function renderArticleList(){
+    const root=dom.articlesListContainer;
+    const all=window.loadedArticles||[];
+    let toolbar=document.getElementById('news-search');
+    if(!toolbar){
+       toolbar=document.createElement('input');toolbar.id='news-search';
+       toolbar.type='search';toolbar.className='search-input-field';
+       toolbar.placeholder=getLang()==='tr'?'Haberlerde ara':'Search articles';
+       toolbar.addEventListener('input',()=>{articleSearch=toolbar.value.trim().toLocaleLowerCase();renderArticleList();});
+    }
+    toolbar.value=articleSearch;
+    if(toolbar.parentElement!==root.parentElement)root.parentElement.insertBefore(toolbar,root);
+    root.replaceChildren();
+    const articles=all.filter(a=>[a.id,a.translations?.en?.title,a.translations?.tr?.title,...(a.tags||[])]
+      .some(x=>String(x||'').toLocaleLowerCase().includes(articleSearch)));
+    if(!articles.length){
+       const empty=document.createElement('p');empty.className='form-hint';
+       empty.textContent=getLang()==='tr'?'Eşleşen haber yok.':'No matching articles.';
+       root.append(empty);return;
+    }
+    for(const article of articles){
+       const item=document.createElement('div');item.className='article-item';
+       const details=document.createElement('div');details.className='item-details';
+       const name=document.createElement('strong');name.className='item-title';
+       name.textContent=article.translations?.[getLang()]?.title||article.translations?.en?.title||article.id;
+       details.append(name);
+       const meta=document.createElement('span');meta.className='form-hint';
+       const date=article.publishedAt?.toDate?.()||new Date(article.publishedAt||0);
+       meta.textContent=(Number.isFinite(date.getTime())?date.toLocaleDateString(getLang()==='tr'?'tr-TR':'en-US'):'')+' · '+(article.tags||[]).join(', ');
+       details.append(meta);item.append(details);
+       const actions=document.createElement('div');actions.className='item-actions';
+       for(const [action,label] of [['edit',getLang()==='tr'?'Düzenle':'Edit'],['delete',__('common.delete')]]){
+          const button=document.createElement('button');button.type='button';button.className=action==='delete'?'delete-btn':'chrome-btn-outline';
+          button.dataset.slug=article.id;button.dataset.action=action;button.textContent=label;actions.append(button);
+       }item.append(actions);root.append(item);
+    }
+}
+function editArticle(slug){
+    const article=(window.loadedArticles||[]).find(a=>a.id===slug);
+    if(!article)return;
+    editingArticle=article;
+    for(const lang of ['en','tr']){
+        for(const field of ['title','summary','content']){
+            const input=document.getElementById(field+'-'+lang);
+            if(input)input.value=article.translations?.[lang]?.[field]||'';
+        }
+        const file=document.getElementById('cover-image-'+lang);if(file)file.value='';
+    }
+    document.getElementById('tags').value=(article.tags||[]).join(', ');
+    document.getElementById('references').value=(article.references||[]).join('\n');
+    let hint=document.getElementById('news-editing-hint');
+    if(!hint){
+      hint=document.createElement('p');hint.id='news-editing-hint';hint.className='form-hint';
+      dom.newsForm.prepend(hint);
+    }
+    hint.textContent=(getLang()==='tr'?'Düzenleniyor: ':'Editing: ')+slug;
+    dom.newsForm.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 /**
@@ -135,12 +194,13 @@ export function stopListeningForArticles() {
  * Initializes all event listeners for the news management module.
  */
 export function initNewsModule() {
-    onLangChange(()=>{const btn=document.getElementById('submit-btn');btn.textContent=__(btn.disabled?'news.publishing':'news.publish_btn');if(unsubscribeFromArticles)listenForArticles();});
+    onLangChange(()=>{const btn=document.getElementById('submit-btn');btn.textContent=__(btn.disabled?'news.publishing':'news.publish_btn');renderArticleList();});
     dom.newsForm.addEventListener('submit', handleNewsFormSubmit);
     dom.articlesListContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('delete-btn')) {
-            const slug = e.target.getAttribute('data-slug');
-            handleDeleteArticle(slug);
-        }
+        const button=e.target.closest('[data-action]');
+        if(!button)return;
+        const slug=button.dataset.slug;
+        if(button.dataset.action==='delete')void handleDeleteArticle(slug);
+        if(button.dataset.action==='edit')editArticle(slug);
     });
 }

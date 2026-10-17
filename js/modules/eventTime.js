@@ -5,15 +5,26 @@ export function eventLocalTime(iso,timeZone) {
  const p=partsAt(new Date(iso),timeZone);
  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
 }
-export function eventInstant(local,timeZone) {
- if(!local)return '';
+// Resolve wall-clock times against surrounding IANA offsets. Some times occur
+// twice when clocks go back, while spring-forward gaps have zero candidates.
+export function eventCandidates(local,timeZone) {
+ if(!local)return [];
  if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(local))throw Error('Invalid event time');
- const [year,month,day,hour,minute]=local.match(/\d+/g).map(Number);
- const wall=Date.UTC(year,month-1,day,hour,minute);let candidate=wall;
- for(let attempt=0;attempt<4;attempt++){
-  const p=partsAt(new Date(candidate),timeZone);const displayed=Date.UTC(+p.year,+p.month-1,+p.day,+p.hour,+p.minute);
-  candidate+=wall-displayed;
-  if(eventLocalTime(new Date(candidate).toISOString(),timeZone)===local)return new Date(candidate).toISOString();
+ const [y,m,d,h,min]=local.match(/\d+/g).map(Number);
+ const wall=Date.UTC(y,m-1,d,h,min);
+ const candidates=new Set();
+ for(const drift of [-86400000,-43200000,0,43200000,86400000]){
+  const sample=wall+drift;
+  const p=partsAt(new Date(sample),timeZone);
+  const projected=Date.UTC(+p.year,+p.month-1,+p.day,+p.hour,+p.minute);
+  const candidate=wall-(projected-sample);
+  if(eventLocalTime(new Date(candidate).toISOString(),timeZone)===local)candidates.add(candidate);
  }
- throw Error('This local time does not exist in the selected time zone');
+ return [...candidates].sort((a,b)=>a-b).map(ts=>new Date(ts).toISOString());
+}
+export function eventInstant(local,timeZone,selection='earlier') {
+ if(!local)return '';
+ const matches=eventCandidates(local,timeZone);
+ if(!matches.length)throw Error('This local time does not exist in the selected time zone');
+ return selection==='later'?matches[matches.length-1]:matches[0];
 }

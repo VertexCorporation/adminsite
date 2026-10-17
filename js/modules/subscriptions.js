@@ -4,7 +4,7 @@ import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../uti
 
 import { userErrorMessage, showToast, __, getLang, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
-import { removeUserSubscriptionFn, listUserSubscriptionsFn } from '../core/firebase.js';
+import { removeUserSubscriptionFn, listUserSubscriptionsFn, previewBulkUserSubscriptionsFn } from '../core/firebase.js';
 import { grantPremium, grantPremiumBulk } from './admin.js';
 import { getEffectivePanelLevel } from './roles.js';
 
@@ -95,7 +95,7 @@ function renderSubscriptions() {
                 </div>
                 <span class="sub-dates">${sub.source === 'vertex' ? (getLang()==='tr'?'Vertex sponsorluğu · Üyelik sürdükçe':'Vertex sponsorship · While membership is active') : `${__('subs.end_label_short')}: ${formatDate(sub.expiresAt)}`}</span>
             </div>
-            ${getEffectivePanelLevel('subscriptions.list') === 'write' && sub.source !== 'vertex' ? `<button type="button" class="dept-user-edit cancel-task-btn" data-uid="${sanitizeHTML(sub.uid)}">${__('subs.remove_btn')}</button>` : ''}
+            ${getEffectivePanelLevel('subscriptions.list') === 'write' && sub.canRemove === true ? `<button type="button" class="dept-user-edit cancel-task-btn" data-uid="${sanitizeHTML(sub.uid)}">${__('subs.remove_btn')}</button>` : ''}
         </div>`;
     }).join('');
 }
@@ -112,7 +112,9 @@ async function loadSubscriptions() {
             email: String(sub.email || ''),
             displayName: String(sub.displayName || ''),
             tier: String(sub.tier || ''),
-            source: String(sub.source || ''),
+            source: String(sub.source || 'unknown'),
+            canRemove: sub.canRemove === true,
+            status: String(sub.status || ''),
             expiresAt: sub.expiresAt || null
         })).filter(sub => sub.uid);
         subscriptions.sort((a, b) => new Date(b.expiresAt || 0) - new Date(a.expiresAt || 0));
@@ -165,7 +167,23 @@ async function handleAssignSubmit(e) {
 }
 
 async function handleRemoveSubscription(uid, button) {
-    if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('subs.remove_confirm')}))) return;
+    const item = subscriptions.find(sub => sub.uid === uid);
+    if (!item || item.canRemove !== true) {
+        showToast(()=>__('errors.permission'),'error');
+        return;
+    }
+    if (!await confirmDialog(()=>({
+        title:__('common.confirm'),
+        body:__('subs.remove_confirm'),
+        danger:true,
+        rows:[
+            {label:getLang()==='tr'?'Kişi':'User',value:item.displayName||item.email||uid},
+            {label:getLang()==='tr'?'E-posta':'Email',value:item.email||'—'},
+            {label:getLang()==='tr'?'Plan':'Plan',value:__(getPlan(item.tier).labelKey)},
+            {label:getLang()==='tr'?'Kaynak':'Source',value:item.source},
+            {label:getLang()==='tr'?'Bitiş':'Expiry',value:formatDate(item.expiresAt)}
+        ]
+    }))) return;
     button.disabled = true;
     button.textContent = __('subs.removing');
     try {
@@ -234,9 +252,22 @@ async function handleBulkSubmit() {
     const btn = document.getElementById('sub-bulk-submit');
     btn.disabled = true;
     btn.innerHTML = `<span data-i18n="subs.bulk_running">${__('subs.bulk_running')}</span>`;
-    showToast(() => __('subs.bulk_started'), 'info');
 
     try {
+        const preview=(await previewBulkUserSubscriptionsFn({raw,tier,expiresAt:expiresAt.toISOString()})).data;
+        const approved=await confirmDialog(()=>({
+            title:getLang()==='tr'?'Toplu abonelik onayı':'Confirm bulk subscriptions',
+            body:getLang()==='tr'?'Yalnızca devam ederseniz değişiklikler uygulanacak.':'Changes will be applied only if you continue.',
+            rows:[
+                {label:getLang()==='tr'?'Geçerli adres':'Valid addresses',value:String(preview.total)},
+                {label:getLang()==='tr'?'Güncellenebilir':'Eligible accounts',value:String(preview.replaceable)},
+                {label:getLang()==='tr'?'Mağaza aboneliği korunan':'Store protected',value:String(preview.protected)},
+                {label:getLang()==='tr'?'Bulunamadı':'Missing',value:String(preview.missing)},
+                {label:getLang()==='tr'?'Uygun değil':'Unavailable',value:String(preview.unavailable)},
+                {label:getLang()==='tr'?'Geçersiz giriş':'Invalid entries',value:String(preview.invalidTokens?.length||0)}
+            ]
+        }));
+        if(!approved)return;
         const data = await grantPremiumBulk({ raw, tier, expiresAt: expiresAt.toISOString() });
         renderBulkResult(data);
         showToast(() => `${data.grantedCount} ${__('subs.bulk_granted')} · ${data.failedCount} ${__('subs.bulk_failed')}`,

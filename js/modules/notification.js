@@ -2,7 +2,7 @@ import { confirmDialog } from './shell.js';
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/notification.js
 
-import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn } from '../core/firebase.js';
+import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn, previewNotificationAudienceFn, auth } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
 import { showToast, userErrorMessage, __, getLang, onLangChange, escapeHTML } from '../utils/ui.js';
 
@@ -10,6 +10,98 @@ let unsubscribeFromScheduledTasks = null;
 let submissionPending = false;
 let deliveryUncertain = false;
 const cancellingTasks=new Set();
+const DELIVERY_SESSION_KEY = 'vertex:notification:pending';
+let statusRequestId = null;
+let statusPollCount = 0;
+let statusPollTimer = null;
+const ntr = (tr,en) => getLang()==='tr'?tr:en;
+function deliveryNotice(message, action = null) {
+    const submit = document.getElementById('submit-notification-btn');
+    if (!submit) return;
+    let notice = document.getElementById('notification-delivery-status');
+    if (!notice) {
+        notice = document.createElement('div');
+        notice.id = 'notification-delivery-status';
+        notice.className = 'form-hint';
+        notice.setAttribute('role', 'status');
+        notice.setAttribute('aria-live', 'polite');
+        submit.insertAdjacentElement('afterend',notice);
+    }
+    notice.replaceChildren(document.createTextNode(message));
+    if (action && statusRequestId) {
+        const check=document.createElement('button');check.type='button';
+        check.className='chrome-btn-outline';check.style.marginLeft='8px';
+        check.textContent=ntr('Durumu kontrol et','Check status');
+        check.onclick=()=>void checkDeliveryStatus(statusRequestId, true);
+        notice.append(check);
+        if(action==='repair') {
+            const retry=document.createElement('button');retry.type='button';
+            retry.className='chrome-btn-outline';retry.style.marginLeft='8px';
+            retry.textContent=ntr('Kuyruğu onar','Repair queue');
+            retry.onclick=async()=>{
+                retry.disabled=true;
+                try {
+                    await reconcileNotificationQueueFn({requestId:statusRequestId});
+                    statusPollCount=0;void checkDeliveryStatus(statusRequestId,true);
+                } catch(error){
+                    deliveryNotice(ntr('Kuyruk onarılamadı. Sunucu kayıtlarını incele.','Queue could not be repaired. Review server logs.'),'repair');
+                } finally {if(retry.isConnected)retry.disabled=false;}
+            };
+            notice.append(retry);
+        }
+    }
+}
+function rememberDelivery(requestId) {
+    try { sessionStorage.setItem(DELIVERY_SESSION_KEY, JSON.stringify({uid:auth.currentUser?.uid, requestId})); } catch {}
+}
+function clearDelivery() {
+    try { sessionStorage.removeItem(DELIVERY_SESSION_KEY); } catch {}
+    statusRequestId=null;
+    deliveryUncertain=false;
+    const submit = document.getElementById('submit-notification-btn');
+    if(submit) submit.disabled=false;
+    handleScheduleSwitchChange();
+}
+async function checkDeliveryStatus(requestId, continuePolling=false) {
+    if (!requestId || requestId !== statusRequestId) return;
+    if(statusPollTimer){clearTimeout(statusPollTimer);statusPollTimer=null;}
+    try {
+        const response=await getNotificationDeliveryStatusFn({requestId});
+        if(requestId!==statusRequestId)return;
+        const {status,successCount,failureCount,failureCodes}=response.data||{};
+        const errors=Object.entries(failureCodes||{}).filter(([,count])=>count>0)
+            .slice(0,3).map(([code,count])=>`${code}: ${count}`).join(', ');
+        if(status==='DELIVERED'||status==='NO_DELIVERIES') {
+            const msg=status==='NO_DELIVERIES'
+                ? ntr('FCM tarafından kabul edilen cihaz tokenı yok. Tokenları ve hata kodlarını incele.','FCM accepted no device tokens. Check tokens and failure codes.')
+                : ntr(`FCM ${successCount} tokenı kabul etti, ${failureCount} tokenı reddetti. Cihazda gösterilmesi ayrıca doğrulanmalıdır.`,`FCM accepted ${successCount} tokens and rejected ${failureCount}. Device display is not confirmed.`);
+            clearDelivery();deliveryNotice(errors?`${msg} ${errors}`:msg);
+            showToast(msg,status==='DELIVERED'?'success':'warning');
+            return;
+        }
+        if(status==='QUEUE_FAILED') {
+            deliveryUncertain=true;
+            deliveryNotice(ntr('Bildirim kuyruğa alınamadı. Aynı işlem kimliğiyle kuyruğu onarmayı deneyin.','Delivery was not queued. You can repair the queue using the same request ID.'),'repair');
+            handleScheduleSwitchChange();
+            return;
+        }
+        if(status==='FAILED_UNCERTAIN'||status==='QUEUE_UNCERTAIN') {
+            deliveryUncertain=true;
+            deliveryNotice(ntr('Teslimat doğrulanamadı. Aynı bildirimi yeniden göndermeden önce sunucu kaydını incele.','Delivery is uncertain. Review the server record before sending again.'),status==='QUEUE_UNCERTAIN'?'repair':true);
+            handleScheduleSwitchChange();
+            return;
+        }
+        deliveryUncertain=true;
+        deliveryNotice(ntr('Bildirim kuyruğa alındı. Teslimat sonucu bekleniyor.','Notification queued. Waiting for delivery result.'),true);
+        handleScheduleSwitchChange();
+        if(continuePolling && ++statusPollCount<24)
+            statusPollTimer=setTimeout(()=>void checkDeliveryStatus(requestId,true),5000);
+    } catch(error) {
+        if(requestId!==statusRequestId)return;
+        deliveryNotice(ntr('Gönderimin sonucu sorgulanamadı. Aynı bildirimi tekrar gönderme.','Unable to check delivery. Do not resend blindly.'),true);
+    }
+}
+
 
 /**
  * Handles changes in the notification schedule switch.
@@ -169,23 +261,54 @@ async function handleNotificationFormSubmit(e) {
             const localTimeValue = document.getElementById('notification-schedule-time').value;
             if (!localTimeValue) throw new Error(__('notif.time_required'));
             const scheduledDate = new Date(localTimeValue);
-            if (scheduledDate <= new Date()) throw new Error(__('notif.time_future'));
+            if (!Number.isFinite(scheduledDate.getTime()) || scheduledDate.getTime() <= Date.now()+60000) throw new Error(__('notif.time_future'));
             scheduleTimeISO = scheduledDate.toISOString();
         }
 
+        const placeholders=Object.values(dataPayload).filter(value=>typeof value==='string'&&/^ENTER_[A-Z_]+$/.test(value));
+        if(placeholders.length)throw new Error(ntr('Şablon değişkenlerini doldurun.','Fill in template placeholders.'));
+        const estimate=(await previewNotificationAudienceFn({target,payload})).data;
+        const zone=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
+        const time=isScheduled?new Intl.DateTimeFormat(getLang()==='tr'?'tr-TR':'en-US',
+           {dateStyle:'medium',timeStyle:'short',timeZone:zone}).format(new Date(scheduleTimeISO)):ntr('Şimdi','Now');
+        const confirmed=await confirmDialog(()=>({
+            title:ntr('Bildirimi onayla','Confirm notification'),
+            body:ntr('Kullanıcı ve cihaz sayıları tahminidir. Cihazda görünme garantisi yoktur.','Counts are estimates, not proof of display on devices.'),
+            rows:[
+                {label:ntr('Hedef','Audience'),value:target.type==='ALL_USERS'?ntr('Tüm kullanıcılar','All users'):target.type==='SINGLE_USER'?target.uid:target.tier},
+                {label:ntr('Kullanıcı','Users'),value:String(estimate.users)},
+                {label:ntr('Cihaz tokenı','Device tokens'),value:String(estimate.devices)},
+                {label:ntr('Başlık','Title'),value:payload.notification?.title||payload.notification_title_key||'—'},
+                {label:ntr('Zaman','Time'),value:time+' · '+zone}
+            ]
+        }));
+        if(!confirmed)return;
         const apiPayload = { payload, target, scheduleTime: scheduleTimeISO };
         const apiFunction = isScheduled ? scheduleNotificationFn : sendTargetedNotificationFn;
-        if (!isScheduled) delete apiPayload.scheduleTime;
+        if (!isScheduled) {
+            delete apiPayload.scheduleTime;
+            statusRequestId = crypto.randomUUID();
+            apiPayload.requestId = statusRequestId;
+            statusPollCount=0;
+            deliveryUncertain=true;
+            rememberDelivery(statusRequestId);
+        }
 
         showToast(isScheduled ? __('notif.scheduling') : __('notif.sending'), 'info');
         let result;
         try { result = await apiFunction(apiPayload); }
         catch (error) {
             // A network/500 failure can follow partial delivery; never invite a blind resend.
-            if (!isScheduled && !['functions/invalid-argument','functions/permission-denied','functions/unauthenticated'].includes(error.code)) deliveryUncertain = true;
+            if (!isScheduled && ['functions/invalid-argument','functions/permission-denied','functions/unauthenticated'].includes(error.code)) clearDelivery();
             throw error;
         }
-        showToast(() => __('notif.success'), 'success');
+        if (!isScheduled && result?.data?.queued) {
+            deliveryNotice(ntr('Bildirim kuyruğa alındı. Sonuç takip ediliyor.','Notification queued. Tracking delivery.'),true);
+            void checkDeliveryStatus(statusRequestId,true);
+        } else {
+            if(!isScheduled)clearDelivery();
+            showToast(() => __('notif.success'), 'success');
+        }
 
         dom.notificationForm.reset();
         handleTargetTypeChange();
@@ -193,6 +316,7 @@ async function handleNotificationFormSubmit(e) {
     } catch (error) {
         console.error("[CLIENT] Error submitting notification:", error);
         showToast(()=>deliveryUncertain ? __('notif.uncertain') : userErrorMessage(error), 'error');
+        if(deliveryUncertain && statusRequestId) void checkDeliveryStatus(statusRequestId,false);
     } finally {
         submissionPending = false;
         submitBtn.disabled = deliveryUncertain;
@@ -232,13 +356,14 @@ export function listenForScheduledTasks() {
         .onSnapshot(snapshot => {
         finishLoading();
             dom.scheduledTasksListContainer.innerHTML = '';
-            if (snapshot.empty) {
+            const scheduled=snapshot.docs.filter(doc=>doc.data().kind!=='IMMEDIATE');
+            if (!scheduled.length) {
                 dom.scheduledTasksListContainer.innerHTML = `<p class="form-hint" data-i18n="notif.empty">${__('notif.empty')}</p>`;
                 return;
             }
-            snapshot.forEach(doc => {
+            scheduled.forEach(doc => {
                 const task = doc.data();
-                const scheduleDate = task.scheduleTime.toDate();
+                const scheduleDate = task.scheduleTime?.toDate?.() || new Date();
                 const formattedTime = scheduleDate.toLocaleString(getLang()==='tr'?'tr-TR':'en-US', {
                     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
@@ -253,7 +378,10 @@ export function listenForScheduledTasks() {
                     <span class="task-time">${__('notif.scheduled_for')}: ${formattedTime}</span>
                     <span class="task-target">${__('notif.target_label')}: ${__(({ALL_USERS:'notif.target_all',SINGLE_USER:'notif.target_single',SUBSCRIPTION_TIER:'notif.target_level',SUBSCRIPTION_LEVEL:'notif.target_level'})[task.target?.type]||'notif.target_label')}</span>
                 </div>
-                <div class="task-actions"><button class="cancel-task-btn chrome-btn-outline" data-task-id="${escapeHTML(doc.id)}">${__('common.cancel')}</button></div>`;
+                <div class="task-actions">
+                    <span class="form-hint">${escapeHTML(task.status||'SCHEDULED')}</span>
+                    ${task.status==='SCHEDULED'?`<button class="cancel-task-btn chrome-btn-outline" data-task-id="${escapeHTML(doc.id)}">${__('common.cancel')}</button>`:''}
+                </div>`;
                 dom.scheduledTasksListContainer.appendChild(item);
             });
         }, error => {
@@ -291,6 +419,18 @@ export function initNotificationModule() {
     });
 
     onLangChange(() => {handleScheduleSwitchChange(); if(unsubscribeFromScheduledTasks)listenForScheduledTasks();});
+    // Restore the pending request after navigation or refresh, without submitting it again.
+    auth?.onAuthStateChanged(user=>{
+        if(!user)return;
+        try {
+            const saved=JSON.parse(sessionStorage.getItem(DELIVERY_SESSION_KEY)||'null');
+            if(saved?.uid===user.uid && saved?.requestId && !statusRequestId){
+                statusRequestId=saved.requestId;deliveryUncertain=true;
+                statusPollCount=0;handleScheduleSwitchChange();
+                void checkDeliveryStatus(statusRequestId,true);
+            }
+        }catch{}
+    });
     // Initial UI setup
     handleScheduleSwitchChange();
     handleTargetTypeChange();

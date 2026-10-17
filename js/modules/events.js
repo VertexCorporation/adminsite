@@ -18,6 +18,7 @@ const fields = [
  ['translations','Diğer diller (JSON dil kodları)','Other languages (JSON language codes)','textarea']
 ];
 let current = null;
+let editorDirty = false;
 export function initEventsModule() {
  const form=document.getElementById('events-editor');
  const container=document.getElementById('events-fields');
@@ -25,6 +26,18 @@ export function initEventsModule() {
  form.elements.startsAt.onchange=()=>{if(form.elements.startsAt.value)form.elements.date.value=form.elements.startsAt.value.slice(0,10);};
  const refreshFields=mountEventFields(form,tr);
  const fail=e=>showToast(e.message,'error');
+ const editorStatus=document.createElement('span');
+ editorStatus.className='form-hint';
+ editorStatus.setAttribute('aria-live','polite');
+ form.append(editorStatus);
+ const markDirty=()=>{editorDirty=true;editorStatus.textContent=tr('Kaydedilmemiş değişiklikler','Unsaved changes');};
+ form.addEventListener('input',markDirty);
+ form.addEventListener('change',markDirty);
+ window.addEventListener('beforeunload',event=>{
+   if(!editorDirty)return;
+   event.preventDefault();
+   event.returnValue='';
+ });
  const fill = event => {
   current=event; form.reset();
   for(const [key] of fields) form.elements[key].value=key==='images'?(event?.[key]||[]).join('\n'):['speakers','ticketCategories','translations'].includes(key)?JSON.stringify(event?.[key]|| (key==='translations'?{}:[]),null,2):event?.[key]??'';
@@ -34,6 +47,7 @@ export function initEventsModule() {
   form.elements.status.value=event?.status||'draft';form.elements.salesStatus.value=event?.salesStatus||'closed';
   document.getElementById('events-review-label').hidden=!event?.dateReviewRequired;
   refreshFields();
+  editorDirty=false;editorStatus.textContent='';
   const writable=getEffectivePanelLevel('events.editor')==='write';
   form.querySelectorAll('input,textarea,select,button').forEach(control=>{if(control.id==='events-preview')return;control.disabled=!writable;if(!writable)control.dataset.roleDisabled='true';});
  };
@@ -61,19 +75,85 @@ export function initEventsModule() {
   }
  };
  form.onsubmit=async e=>{e.preventDefault();const button=form.querySelector('[type="submit"]');if(button.disabled||getEffectivePanelLevel('events.editor')!=='write')return;button.disabled=true;try{const event=collect();if(await confirmDialog({title:tr('Değişiklik kaydedilsin mi?','Save changes?'),body:`${event.title} · ${event.status}`})){await eventCallable('saveConsoleEvent',{event,revision:current?.revision||0});fill(null);await refresh();showToast(tr('Kaydedildi','Saved'),'success');}}catch(e){fail(e);}finally{button.disabled=false;}};
- document.getElementById('events-preview').onclick=()=>{try{const event=collect();const box=document.getElementById('events-preview-content');box.hidden=false;box.replaceChildren();for(const text of [event.title,`${event.date} · ${event.timeZone}`,event.desc,event.detailDesc,event.location]){const p=document.createElement('p');p.textContent=text;box.append(p);}}catch(e){fail(e);}};
+ document.getElementById('events-preview').onclick=()=>{
+  try{
+   const event=collect(),box=document.getElementById('events-preview-content');box.hidden=false;box.replaceChildren();
+   const article=document.createElement('article');article.className='panel-card';article.style.maxWidth='680px';
+   const add=(tag,value)=>{const node=document.createElement(tag);node.textContent=value||'';article.append(node);return node;};
+   if(event.cover&&/^https:\/\//.test(event.cover)){const img=document.createElement('img');img.src=event.cover;img.alt=event.title;img.style.cssText='width:100%;max-height:280px;object-fit:cover;border-radius:12px;margin-bottom:16px';article.append(img);}
+   add('h2',event.title);add('p',`${event.date||'—'} · ${event.timeZone||'—'}`);
+   add('p',event.desc);add('p',event.detailDesc);add('p',event.location);
+   if(event.speakers?.length)add('p',event.speakers.map(v=>v.name).filter(Boolean).join(', '));
+   if(event.ticketCategories?.length)add('p',event.ticketCategories.map(v=>`${v.name}: ${v.price} ${v.currency||''}`).join(' · '));
+   box.append(article);
+  }catch(e){fail(e);}
+ };
  document.getElementById('events-new').onclick=()=>fill(null);
  document.getElementById('events-refresh').onclick=()=>refresh().catch(fail);
- const upload=async file=>{
+ const uploadStatus=document.createElement('p');uploadStatus.className='form-hint';uploadStatus.setAttribute('aria-live','polite');
+ document.getElementById('event-gallery-upload').closest('.form-group-field')?.append(uploadStatus);
+ const upload=async (file,onProgress=()=>{})=>{
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error(tr('JPEG, PNG veya WebP kullanın.','Use JPEG, PNG or WebP.'));
   if(file.size>10*1024*1024)throw Error(tr('En fazla 10 MB','Maximum 10 MB'));
   const {data}=await eventCallable('getEventImageUploadUrl',{eventId:form.elements.id.value,contentType:file.type});
-  const response=await fetch(data.url,{method:'PUT',headers:data.headers,body:file});
-  if(!response.ok)throw Error(tr('Görsel yüklenemedi','Image upload failed'));
-  const completed=await eventCallable('completeEventImageUpload',{filePath:data.filePath});return completed.data.downloadUrl;
+  await new Promise((resolve,reject)=>{
+   const request=new XMLHttpRequest();request.open('PUT',data.url);
+   for(const [name,value] of Object.entries(data.headers||{}))request.setRequestHeader(name,value);
+   request.upload.onprogress=e=>{if(e.lengthComputable)onProgress(Math.round(e.loaded/e.total*100));};
+   request.onload=()=>request.status>=200&&request.status<300?resolve():reject(Error(tr('Görsel yüklenemedi','Image upload failed')));
+   request.onerror=()=>reject(Error(tr('Ağ hatası','Network error')));
+   request.send(file);
+  });
+  const completed=await eventCallable('completeEventImageUpload',{filePath:data.filePath});
+  return completed.data.downloadUrl;
  };
- document.getElementById('event-upload').onchange=async e=>{try{if(e.target.files[0])form.elements.cover.value=await upload(e.target.files[0]);}catch(error){fail(error);}};
- document.getElementById('event-gallery-upload').onchange=async e=>{try{for(const file of e.target.files){const url=await upload(file);form.elements.images.value=[form.elements.images.value.trim(),url].filter(Boolean).join('\n');}}catch(error){fail(error);}};
- document.getElementById('events-load-registrations').onclick=async()=>{try{const {data}=await eventCallable('listEventRegistrations',{eventId:document.getElementById('events-registration-search').value});const box=document.getElementById('events-registrations');box.replaceChildren();for(const row of data.registrations){const p=document.createElement('p');p.textContent=`${row.name} · ${row.email} · ${row.status} · ${row.id}`;box.append(p);}}catch(e){fail(e);}};
+ const uploadFiles=async(files,cover=false)=>{
+  const coverInput=document.getElementById('event-upload'),galleryInput=document.getElementById('event-gallery-upload');
+  coverInput.disabled=galleryInput.disabled=true;
+  try{
+   for(let index=0;index<files.length;index++){
+    const file=files[index];
+    const url=await upload(file,p=>{uploadStatus.textContent=`${index+1}/${files.length} · ${file.name} · %${p}`;});
+    if(cover)form.elements.cover.value=url;
+    else form.elements.images.value=[form.elements.images.value.trim(),url].filter(Boolean).join('\n');
+    markDirty();
+   }
+   uploadStatus.textContent=tr('Görseller yüklendi. Değişiklikleri kaydet.','Images uploaded. Save your changes.');
+  }catch(error){uploadStatus.textContent=tr('Yükleme başarısız. Yeniden deneyin.','Upload failed. Please retry.');fail(error);}
+  finally{coverInput.disabled=galleryInput.disabled=false;coverInput.value='';galleryInput.value='';}
+ };
+ document.getElementById('event-upload').onchange=e=>{if(e.target.files?.length)void uploadFiles([...e.target.files],true);};
+ document.getElementById('event-gallery-upload').onchange=e=>{if(e.target.files?.length)void uploadFiles([...e.target.files],false);};
+ document.getElementById('events-load-registrations').onclick=async()=>{
+  const box=document.getElementById('events-registrations');box.replaceChildren();
+  const heading=document.createElement('p');heading.className='form-hint';heading.textContent=tr('Kayıtlar yükleniyor…','Loading registrations…');box.append(heading);
+  try{
+   const {data}=await eventCallable('listEventRegistrations',{eventId:document.getElementById('events-registration-search').value});
+   const rows=data.registrations||[];box.replaceChildren();
+   if(!rows.length){box.textContent=tr('Kayıt bulunamadı.','No registrations found.');return;}
+   const search=document.createElement('input');search.type='search';
+   search.placeholder=tr('Kayıtlarda ara','Search registrations');search.setAttribute('aria-label',search.placeholder);
+   search.className='form-group-field';box.append(search);
+   const viewport=document.createElement('div');viewport.style.overflowX='auto';box.append(viewport);
+   const table=document.createElement('table');table.className='contributor-table';viewport.append(table);
+   const head=document.createElement('thead'),headrow=document.createElement('tr');head.append(headrow);
+   for(const label of [tr('Ad','Name'),tr('E-posta','Email'),tr('Durum','Status'),tr('Bilet','Ticket'),tr('Kayıt zamanı','Registered at')]){
+    const th=document.createElement('th');th.textContent=label;th.style.textAlign='left';th.style.padding='10px';headrow.append(th);
+   }
+   table.append(head);
+   const body=document.createElement('tbody');table.append(body);
+   const paint=()=>{
+    body.replaceChildren();
+    const query=search.value.toLocaleLowerCase();
+    for(const row of rows.filter(r=>[r.name,r.email,r.status,r.ticketCategory,r.id].some(v=>String(v||'').toLocaleLowerCase().includes(query)))){
+     const trEl=document.createElement('tr');
+     for(const val of [row.name,row.email,row.status,row.ticketCategory||row.category||'—',row.createdAt||'—']){
+      const td=document.createElement('td');td.textContent=String(val||'—');td.style.padding='10px';td.style.borderBottom='1px solid var(--border-subtle)';trEl.append(td);
+     }body.append(trEl);
+    }
+   };search.addEventListener('input',paint);paint();
+  }catch(e){box.replaceChildren();fail(e);}
+ };
  document.addEventListener('vertex:workspace',e=>{if(e.detail.keys.includes('events.list'))refresh().catch(fail);});
  fill(null);
 }
