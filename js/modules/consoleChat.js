@@ -42,6 +42,7 @@ let mentionActive = -1;
 const drafts = new Map();
 let lastRenderedChannel = null;
 let pollPending = false;
+let cachedMessageVersion = -1;
 const readSequences=new Map();
 let lastSavedDraftUser=null;
 function draftsKey(){return myUid?'vertex:chat:drafts:'+myUid:null;}
@@ -184,7 +185,7 @@ function selectChannel(channelId) {
     updateNewIndicator(false);
     closeMentionPop();
     lastMessagesKey='';
-    lastRenderedChannel=null;
+    lastRenderedChannel=null;cachedMessageVersion=-1;
     renderChannelList();
     loadMessages();
 }
@@ -200,6 +201,7 @@ async function loadMessages(animate = true) {
         if (currentChannelId !== channel.id) { finishLoading(); return; }
         const messages = result.data.messages || [];
         cachedMessages=messages;cachedChannelId=channel.id;
+        cachedMessageVersion=Number(result.data.channel?.messageVersion||0);
         const key = JSON.stringify(messages.map(m => [m.id,m.taskStatus,m.text,m.createdAt,m.authorName,m.authorDepartments]));
         if (!animate && key === lastMessagesKey) { finishLoading(); return; } // degisiklik yoksa DOM'a dokunma
         lastMessagesKey = key;
@@ -580,8 +582,14 @@ export function initConsoleChat() {
         if (document.hidden || !auth || !auth.currentUser || !el('tab-chat')?.classList.contains('active')) return;
         if(pollPending)return;
         pollPending=true;
-        Promise.allSettled([loadChannels(),...(currentChannelId?[loadMessages(false)]:[])])
-            .finally(()=>{pollPending=false;});
+        (async()=>{
+            await loadChannels();
+            const active=channels.find(ch=>ch.id===currentChannelId);
+            if(active && (cachedChannelId!==active.id ||
+               cachedMessageVersion!==Number(active.messageVersion||0)))
+                await loadMessages(false);
+        })().catch(error=>console.warn('[CHAT] Poll failed',error.code||'unavailable'))
+          .finally(()=>{pollPending=false;});
     }, 8000);
 
     onLangChange(() => {renderChannelList();const channel=channels.find(c=>c.id===currentChannelId);renderChatHeader(channel);if(channel&&cachedChannelId===channel.id)renderMessages(cachedMessages,channel,false);});
