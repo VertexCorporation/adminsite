@@ -101,7 +101,7 @@ await page.locator('#team-cards-list [data-edit-card]').first().click();
 await page.waitForSelector('#team-card-form');
 assert.equal(await page.locator('#team-card-position').inputValue(),'CEO');
 await page.locator('#team-card-position-tr').fill('Genel Müdür');
-await page.locator('#team-card-form [type=submit]').count().then(async()=>page.locator('.vx-drawer [data-drawer-submit]').click());
+await page.locator('.vx-drawer [data-drawer-submit]').click();
 await page.waitForSelector('.vx-drawer',{state:'detached'});
 assert.equal(payloads.filter(p=>p.name==='setsiteteamentry').at(-1).data.positions.tr,'Genel Müdür');
 note('Team card read, multilingual update and write contract');
