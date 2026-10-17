@@ -322,13 +322,14 @@ export function listenForScheduledTasks() {
         .onSnapshot(snapshot => {
         finishLoading();
             dom.scheduledTasksListContainer.innerHTML = '';
-            if (snapshot.empty) {
+            const scheduled=snapshot.docs.filter(doc=>doc.data().kind!=='IMMEDIATE');
+            if (!scheduled.length) {
                 dom.scheduledTasksListContainer.innerHTML = `<p class="form-hint" data-i18n="notif.empty">${__('notif.empty')}</p>`;
                 return;
             }
-            snapshot.forEach(doc => {
+            scheduled.forEach(doc => {
                 const task = doc.data();
-                const scheduleDate = task.scheduleTime.toDate();
+                const scheduleDate = task.scheduleTime?.toDate?.() || new Date();
                 const formattedTime = scheduleDate.toLocaleString(getLang()==='tr'?'tr-TR':'en-US', {
                     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
@@ -343,7 +344,10 @@ export function listenForScheduledTasks() {
                     <span class="task-time">${__('notif.scheduled_for')}: ${formattedTime}</span>
                     <span class="task-target">${__('notif.target_label')}: ${__(({ALL_USERS:'notif.target_all',SINGLE_USER:'notif.target_single',SUBSCRIPTION_TIER:'notif.target_level',SUBSCRIPTION_LEVEL:'notif.target_level'})[task.target?.type]||'notif.target_label')}</span>
                 </div>
-                <div class="task-actions"><button class="cancel-task-btn chrome-btn-outline" data-task-id="${escapeHTML(doc.id)}">${__('common.cancel')}</button></div>`;
+                <div class="task-actions">
+                    <span class="form-hint">${escapeHTML(task.status||'SCHEDULED')}</span>
+                    ${task.status==='SCHEDULED'?`<button class="cancel-task-btn chrome-btn-outline" data-task-id="${escapeHTML(doc.id)}">${__('common.cancel')}</button>`:''}
+                </div>`;
                 dom.scheduledTasksListContainer.appendChild(item);
             });
         }, error => {
