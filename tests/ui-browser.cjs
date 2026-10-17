@@ -83,6 +83,24 @@ const server = http.createServer((req,res)=>{
    assert(await button.evaluate(el=>el.getBoundingClientRect().width)>=startWidth);
    await page.evaluate(()=>window.uiTest.loading.setButtonLoading(document.getElementById('action'),false));
    assert.equal(await button.isDisabled(),false);
+
+   await page.evaluate(async()=>{
+    const {lockScroll,unlockScroll}=await import('/js/ui/overlay.js');
+    document.body.style.overflow='auto';
+    lockScroll('drawer');lockScroll('modal');
+    if(document.body.style.overflow!=='hidden')throw Error('scroll should be locked');
+    unlockScroll('modal');
+    if(document.body.style.overflow!=='hidden')throw Error('drawer lock lost');
+    unlockScroll('drawer');
+    if(document.body.style.overflow!=='auto')throw Error('scroll original state lost');
+    document.body.style.overflow='';
+    window.uiTest.loading.setButtonState(document.getElementById('action'),'success');
+   });
+   assert.equal(await button.getAttribute('data-state'),'success');
+   await page.evaluate(()=>window.uiTest.loading.setButtonState(document.getElementById('action'),'error'));
+   assert.equal(await button.getAttribute('data-state'),'error');
+   await page.evaluate(()=>window.uiTest.loading.setButtonState(document.getElementById('action'),'idle'));
+   assert.equal(await button.getAttribute('data-state'),null);
    await page.emulateMedia({reducedMotion:'reduce'});
    assert.equal(await page.locator('.toast').first().evaluate(el=>getComputedStyle(el).transitionDuration),'0s');
    assert.deepEqual(exceptions,[]);
