@@ -4,7 +4,7 @@
 let auth, db, storage, functions, appCheck;
 let sendTargetedNotificationFn, scheduleNotificationFn, listScheduledNotificationsFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn, previewNotificationAudienceFn;
 let cancelScheduledNotificationFn, getServerStatusFn, setServerStatusFn, blockOnlineModelFn;
-let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn;
+let updateModelsListFn, createNewsArticleFn, updateNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn;
 let getModelImageUploadUrlFn, getCoverUploadUrlFn, triggerAttributionsUpdateFn;
 let getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn;
 let verifyUserEmailFn;
@@ -100,6 +100,7 @@ function initFirebase(firebaseConfig) {
     blockOnlineModelFn = callable('blockOnlineModel');
     updateModelsListFn = callable('updateModelsList');
     createNewsArticleFn = callable('createNewsArticle');
+    updateNewsArticleFn = callable('updateNewsArticle');
     deleteNewsArticleFn = callable('deleteNewsArticle');
     addAdminRoleFn = callable('addAdminRole');
     getModelImageUploadUrlFn = callable('getModelImageUploadUrl');
@@ -157,6 +158,7 @@ export {
     blockOnlineModelFn,
     updateModelsListFn,
     createNewsArticleFn,
+    updateNewsArticleFn,
     deleteNewsArticleFn,
     addAdminRoleFn,
     getModelImageUploadUrlFn,
