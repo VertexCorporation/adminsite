@@ -41,6 +41,7 @@ export async function loadTeamCards() {
 
     cardsLoading = true;
     const addBtn = document.getElementById('add-team-card-btn');
+    if (addBtn) addBtn.disabled = true;
     const emptyEl = document.getElementById('team-cards-empty');
 
     try {
@@ -59,6 +60,8 @@ export async function loadTeamCards() {
         listEl.innerHTML = `<div class="state-block" role="alert"><p>${escapeHTML(userErrorMessage(err))}</p><button type="button" class="chrome-btn-outline" data-team-retry>${__('common.retry')}</button></div>`;
         listEl.querySelector('[data-team-retry]').onclick = loadTeamCards;
         if (emptyEl) emptyEl.hidden = true;
+        // Do not allow writes while the current server state and capacity are unknown.
+        if (addBtn) addBtn.disabled = true;
         cardsLoading = false;
         return;
     } finally {
