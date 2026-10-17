@@ -20,5 +20,6 @@ export function updateGridVisibleCounts(scope) {
             getComputedStyle(el).display !== 'none'
         ).length;
         grid.dataset.visiblePanels = String(visible);
+        grid.style.setProperty('--grid-visible', String(Math.max(1, visible)));
     });
 }

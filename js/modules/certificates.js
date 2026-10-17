@@ -5,6 +5,7 @@ import { icon } from '../utils/icons.js';
 import { openDrawer, confirmDialog } from './shell.js';
 import { createLoadingController, skeletonRows, skeletonCertificate, setButtonLoading } from '../utils/loading.js';
 import { isPanelAdmin } from './roles.js';
+import { withReadTimeout } from '../utils/callable-read.js';
 const awards = [{type:'tenacity',months:1,icon:'award',tr:'Dirayet',en:'Tenacity'},{type:'constancy',months:3,icon:'shield',tr:'Metanet',en:'Constancy'},{type:'nobility',months:6,icon:'diamond',tr:'Azamet',en:'Nobility'},{type:'majesty',months:12,icon:'crown',tr:'Asalet',en:'Majesty'}];
 const pending = new Set();
 const unresolved = new Set();
@@ -61,7 +62,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
     }
     async function load() {
         const token=++generation; setTitle('cert.title'); loader.start();
-        try { const {data}=await getVertexCertificateDetailsFn({contributorId:person.id}); if(!alive||token!==generation)return; if(!data||typeof data!=='object'||!Array.isArray(data.history))throw Object.assign(new Error('Invalid certificate response'),{code:'functions/internal'}); details=data; render(); }
+        try { const {data}=await withReadTimeout(getVertexCertificateDetailsFn({contributorId:person.id})); if(!alive||token!==generation)return; if(!data||typeof data!=='object'||!Array.isArray(data.history))throw Object.assign(new Error('Invalid certificate response'),{code:'functions/internal'}); details=data; render(); }
         catch(error) { console.error('[CERTIFICATES] Details failed',{code:error.code,status:error.httpStatus});if(alive&&token===generation){footer.innerHTML='';loader.error(userErrorMessage(error),load,__('common.retry'));} }
     }
     async function execute(type, retry, button) {
@@ -82,7 +83,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
         if(confirmed)await execute(type,retry,button);
     }
     async function reloadHistory() {
-        try { const {data}=await getVertexCertificateDetailsFn({contributorId:person.id}); details=data; } catch(error){ showToast(()=>userErrorMessage(error),'error'); }
+        try { const {data}=await withReadTimeout(getVertexCertificateDetailsFn({contributorId:person.id})); details=data; } catch(error){ showToast(()=>userErrorMessage(error),'error'); }
     }
     function editDate() {
         historyOpen=true;

@@ -1,0 +1,39 @@
+name: build immutable console release
+on:
+  push:
+    branches: [fix/console-first-ten-20261017]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    if: github.ref == 'refs/heads/fix/console-first-ten-20261017'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: console-release-branch
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/console-first-ten-20261017
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rebuild and safely fast-forward development release
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3; do
+            git fetch origin fix/console-first-ten-20261017
+            git reset --hard FETCH_HEAD
+            node scripts/release.cjs
+            git add index.html assets/releases
+            if git diff --cached --quiet; then
+              echo 'Immutable release is current.'
+              exit 0
+            fi
+            git commit -m 'fix: refresh immutable console assets for first ten changes'
+            if git push origin HEAD:fix/console-first-ten-20261017; then exit 0; fi
+          done
+          exit 1

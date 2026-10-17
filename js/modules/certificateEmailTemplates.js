@@ -5,6 +5,7 @@ import { createLoadingController, skeletonRows, setButtonLoading } from '../util
 import { isPanelAdmin } from './roles.js';
 import { emailTemplateValidationReason } from '../utils/email-template-validation.js';
 import { normalizeVerificationLinks } from '../utils/email-template-links.js';
+import { withReadTimeout } from '../utils/callable-read.js';
 
 export function openCertificateEmailTemplates() {
     if (!isPanelAdmin()) return;
@@ -128,8 +129,9 @@ export function openCertificateEmailTemplates() {
         if(validation){showValidationError(validation);return;}
         section.setAttribute('aria-busy','true');
         try{
-            const {data}=await previewVertexCertificateEmailTemplateFn({certificateType:type,language,...draft,html:normalizeVerificationLinks(draft.html)});
+            const {data}=await withReadTimeout(previewVertexCertificateEmailTemplateFn({certificateType:type,language,...draft,html:normalizeVerificationLinks(draft.html)}));
             if(!alive||generation!==previewGeneration||selection!==type+'_'+language)return;
+            if(typeof data?.emailSubject!=='string'||typeof data?.emailHtml!=='string')throw Object.assign(new Error('Invalid preview response'),{code:'functions/internal'});
             error.hidden=true;body.querySelector('[data-preview-subject]').textContent=data.emailSubject;
             // Backend sanitization plus an inert, network-blocked sandbox: no email is sent.
             body.querySelector('iframe').srcdoc=`<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><style>body{font:15px/1.6 Arial,sans-serif;color:#202124;background:#fff;margin:18px;overflow-wrap:anywhere}a{color:#245fc7}</style></head><body>${data.emailHtml}</body></html>`;
@@ -155,7 +157,12 @@ export function openCertificateEmailTemplates() {
     }
     async function load(){
         loader.start();footer.hidden=true;
-        try{const {data}=await getVertexCertificateEmailTemplatesFn({});if(!alive)return;templates=data.templates;current=selected();draft={subject:current.subject,html:normalizeVerificationLinks(current.html)};dirty=draft.html!==current.html;footer.hidden=false;paint();}
+        try{const {data}=await withReadTimeout(getVertexCertificateEmailTemplatesFn({}));if(!alive)return;
+            if(!Array.isArray(data?.templates))throw Object.assign(new Error('Invalid email template list'),{code:'functions/internal'});
+            templates=data.templates.filter(t=>typeof t.certificateType==='string'&&['tr','en'].includes(t.language)&&typeof t.subject==='string'&&typeof t.html==='string'&&Number.isSafeInteger(t.revision));
+            current=selected();
+            if(!current)throw Object.assign(new Error('Missing selected template'),{code:'functions/internal'});
+            draft={subject:current.subject,html:normalizeVerificationLinks(current.html)};dirty=draft.html!==current.html;footer.hidden=false;paint();}
         catch(e){if(alive)loader.error(userErrorMessage(e),load,__('common.retry'));}
     }
     const unsubscribe=onLangChange(paint);load();

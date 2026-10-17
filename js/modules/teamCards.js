@@ -11,6 +11,9 @@
 //  - Mustafa Çakı yönetici profili ve Weekly Stars yönetimi aynı alanda bulunur
 
 import {
+    listSiteTeamFn,
+    setSiteTeamEntryFn,
+    deleteSiteTeamEntryFn,
     listTeamCardsFn,
     setTeamCardFn,
     deleteTeamCardFn,
@@ -31,6 +34,17 @@ export const POSITIONS = Object.freeze([
 
 let teamCards = [];
 let cardsLoading = false;
+let cardsLoadError = null;
+const MAX_TEAM_CARDS = 40;
+const modernCount = () => teamCards.filter(card=>!card.legacy).length;
+let legacyWarning = false;
+function normalizeCard(card) {
+    const positions = card.positions || card.titles || {};
+    const position = card.position || positions.en || positions.tr || '';
+    const links = Array.isArray(card.links) ? card.links : Object.entries(card.socialLinks || {}).filter(([,url])=>url).map(([label,url])=>({label,url}));
+    const find = key => links.find(link => link.label?.toLowerCase() === key)?.url || '';
+    return {...card, position, titles:positions, imageUrl:card.imageUrl || card.photoUrl || '', photoUrl:card.imageUrl || card.photoUrl || '', socialLinks:{linkedin:find('linkedin'),instagram:find('instagram')}, links, order:card.order};
+}
 
 /**
  * Ekip kartları listesini Firestore'dan çeker ve ekrana çizer.
@@ -44,10 +58,26 @@ export async function loadTeamCards() {
     const emptyEl = document.getElementById('team-cards-empty');
 
     try {
-        const { data } = await listTeamCardsFn({});
-        teamCards = Array.isArray(data?.cards) ? data.cards : [];
+        const [modern,legacy] = await Promise.allSettled([
+            listSiteTeamFn({manage:true}), listTeamCardsFn({})
+        ]);
+        if(modern.status!=='fulfilled' || !Array.isArray(modern.value.data?.cards))
+            throw modern.status==='rejected' ? modern.reason : Object.assign(new Error('Invalid team cards response'),{code:'functions/internal'});
+        const current=modern.value.data.cards.map(normalizeCard);
+        legacyWarning=false;
+        if(legacy.status==='fulfilled' && Array.isArray(legacy.value.data?.cards)){
+            const keys=new Set(current.map(card=>(card.name+'|'+card.position).toLowerCase()));
+            const oldCards=legacy.value.data.cards.map(card=>({...normalizeCard(card),legacy:true,legacyId:card.id,id:'legacy:'+card.id})).filter(card=>!keys.has((card.name+'|'+card.position).toLowerCase()));
+            legacyWarning=oldCards.length>0;
+            teamCards=[...current,...oldCards];
+        }else{
+            teamCards=current;
+            cardsLoadError=__('team_cards.legacy_unavailable');
+        }
+        if(legacy.status==='fulfilled')cardsLoadError=null;
     } catch (err) {
-        console.warn('[TEAM_CARDS] Could not fetch cards from backend, using current state:', err);
+        cardsLoadError=userErrorMessage(err);
+        console.warn('[TEAM_CARDS] Could not fetch cards from backend:',err.code || 'unknown');
     } finally {
         cardsLoading = false;
     }
@@ -55,7 +85,7 @@ export async function loadTeamCards() {
     renderTeamCardsList();
 
     if (addBtn) {
-        const isFull = teamCards.length >= 10;
+        const isFull = modernCount() >= MAX_TEAM_CARDS;
         addBtn.disabled = isFull;
         addBtn.title = isFull ? __('team_cards.all_filled') : __('team_cards.add_btn');
     }
@@ -66,18 +96,19 @@ function renderTeamCardsList() {
     const emptyEl = document.getElementById('team-cards-empty');
     if (!listEl) return;
 
+    if (emptyEl) emptyEl.hidden = !!cardsLoadError || teamCards.length > 0;
     if (!teamCards.length) {
-        listEl.innerHTML = '';
-        if (emptyEl) emptyEl.hidden = false;
+        listEl.innerHTML = cardsLoadError
+            ? `<div class="state-block" role="alert"><p>${escapeHTML(cardsLoadError)}</p><button type="button" class="chrome-btn-outline" data-retry-cards>${__('common.retry')}</button></div>`
+            : '';
+        listEl.querySelector('[data-retry-cards]')?.addEventListener('click', loadTeamCards);
         return;
     }
-
-    if (emptyEl) emptyEl.hidden = true;
     listEl.className = 'team-list';
 
-    listEl.innerHTML = teamCards.map(card => {
+    listEl.innerHTML = (cardsLoadError ? `<div class="state-block" role="alert"><p>${escapeHTML(cardsLoadError)}</p><button type="button" class="chrome-btn-outline" data-retry-cards>${__('common.retry')}</button></div>` : '') + (legacyWarning ? `<p class="form-hint" role="status">${__('team_cards.legacy_pending')}</p>` : '') + teamCards.map(card => {
         const currentLang = getLang() || 'tr';
-        const localizedTitle = card.titles?.[currentLang] || card.position;
+        const localizedTitle = card.titles?.[currentLang] || card.titles?.en || card.position;
         const avatarSrc = card.photoUrl
             ? `<img src="${escapeHTML(card.photoUrl)}" alt="${escapeHTML(card.name)}" loading="lazy">`
             : icon('user', { size: 18 });
@@ -90,7 +121,7 @@ function renderTeamCardsList() {
             <div class="team-list-info">
                 <div style="display:flex;align-items:center;gap:8px;">
                     <span class="team-list-name">${escapeHTML(card.name)}</span>
-                    <span class="position-badge">${escapeHTML(card.position)}</span>
+                    <span class="position-badge">${escapeHTML(card.position)}</span>${card.legacy?`<small class="team-list-meta">${__('team_cards.legacy_label')}</small>`:''}
                 </div>
                 <span class="team-list-meta">${escapeHTML(localizedTitle)}</span>
             </div>
@@ -105,6 +136,7 @@ function renderTeamCardsList() {
         </div>`;
     }).join('');
 
+    listEl.querySelector('[data-retry-cards]')?.addEventListener('click', loadTeamCards);
     // Eylemleri bağla
     listEl.querySelectorAll('[data-edit-card]').forEach(btn => {
         btn.onclick = () => {
@@ -126,14 +158,15 @@ function renderTeamCardsList() {
             if (!confirmed) return;
 
             try {
-                await deleteTeamCardFn({ id: cardId });
+                if(card?.legacy)await deleteTeamCardFn({id:card.legacyId});
+                else await deleteSiteTeamEntryFn({ kind:'card', id: cardId });
                 teamCards = teamCards.filter(c => c.id !== cardId);
                 renderTeamCardsList();
                 showToast(() => __('team_cards.deleted'), 'success');
                 const addBtn = document.getElementById('add-team-card-btn');
                 if (addBtn) {
-                    addBtn.disabled = teamCards.length >= 10;
-                    addBtn.title = teamCards.length >= 10 ? __('team_cards.all_filled') : __('team_cards.add_btn');
+                    addBtn.disabled = modernCount() >= MAX_TEAM_CARDS;
+                    addBtn.title = teamCards.length >= MAX_TEAM_CARDS ? __('team_cards.all_filled') : __('team_cards.add_btn');
                 }
             } catch (err) {
                 showToast(() => userErrorMessage(err), 'error');
@@ -147,7 +180,8 @@ function renderTeamCardsList() {
  */
 export function openTeamCardDrawer(cardToEdit = null) {
     const isEdit = Boolean(cardToEdit);
-    let selectedPhoto = cardToEdit?.photoUrl || '';
+    let selectedPhoto = cardToEdit?.imageUrl || cardToEdit?.photoUrl || '';
+    let selectedPhotoType = '';
     let isSaving = false;
 
     const drawerBody = openDrawer({
@@ -191,16 +225,8 @@ export function openTeamCardDrawer(cardToEdit = null) {
             <!-- Pozisyon Seçimi -->
             <div class="form-group-field">
                 <label for="team-card-position">${__('team_cards.position_label')}</label>
-                <select id="team-card-position" required>
-                    <option value="" disabled ${!isEdit ? 'selected' : ''}>${__('team_cards.position_select')}</option>
-                    ${POSITIONS.map(pos => {
-                        const occupiedCard = teamCards.find(c => c.position === pos && c.id !== cardToEdit?.id);
-                        const isSelected = cardToEdit?.position === pos;
-                        const disabledAttr = occupiedCard ? 'disabled' : '';
-                        const labelSuffix = occupiedCard ? ` (${__('team_cards.position_occupied')} - ${occupiedCard.name})` : '';
-                        return `<option value="${pos}" ${isSelected ? 'selected' : ''} ${disabledAttr}>${pos}${labelSuffix}</option>`;
-                    }).join('')}
-                </select>
+                <input id="team-card-position" list="team-card-positions" maxlength="160" required value="${escapeHTML(cardToEdit?.position || '')}" placeholder="${__('team_cards.position_select')}">
+                <datalist id="team-card-positions">${POSITIONS.map(pos => `<option value="${pos}"></option>`).join('')}</datalist>
             </div>
 
             <!-- Sosyal Medya Bağlantıları -->
@@ -251,6 +277,7 @@ export function openTeamCardDrawer(cardToEdit = null) {
         const reader = new FileReader();
         reader.onload = e => {
             selectedPhoto = e.target.result;
+            selectedPhotoType = file.type;
             photoPreview.innerHTML = `<img src="${selectedPhoto}" alt="Preview">`;
         };
         reader.readAsDataURL(file);
@@ -274,18 +301,28 @@ export function openTeamCardDrawer(cardToEdit = null) {
         setButtonLoading(submitBtn, true);
 
         try {
+            if (POSITIONS.includes(position) && teamCards.some(card => card.id !== cardToEdit?.id && card.position === position)) {
+                throw Object.assign(new Error(__('team_cards.position_occupied')), {code:'functions/failed-precondition'});
+            }
+            let imageUrl = cardToEdit?.imageUrl || '';
+            if (selectedPhoto.startsWith('data:')) {
+                const [,imageData] = selectedPhoto.split(',',2);
+                const {data:upload} = await setSiteTeamEntryFn({kind:'photo',imageData,contentType:selectedPhotoType});
+                if (!upload?.imageUrl) throw Object.assign(new Error('Image upload failed'),{code:'functions/internal'});
+                imageUrl = upload.imageUrl;
+            }
+            if (!imageUrl) throw Object.assign(new Error(__('team_cards.photo_label')), {code:'functions/invalid-argument'});
+            const existingLinks = Array.isArray(cardToEdit?.links) ? cardToEdit.links.filter(link => !['linkedin','instagram'].includes(link.label?.toLowerCase())) : [];
+            const links = [...existingLinks,...(linkedin?[{label:'LinkedIn',url:linkedin}]:[]),...(instagram?[{label:'Instagram',url:instagram}]:[])];
             const payload = {
-                id: cardToEdit?.id,
-                name,
-                position,
-                photoUrl: selectedPhoto,
-                socialLinks: {
-                    linkedin: linkedin || undefined,
-                    instagram: instagram || undefined
-                }
+                kind:'card', ...(cardToEdit?.id && !cardToEdit?.legacy ? {id:cardToEdit.id} : {}),
+                name, imageUrl, links, order:cardToEdit?.order || (Math.max(0,...teamCards.map(card=>Number(card.order)||0))+1),
+                positions:{...cardToEdit?.titles,tr:position,en:position}
             };
-
-            await setTeamCardFn(payload);
+            if(cardToEdit?.legacy) {
+                if(!POSITIONS.includes(position))throw Object.assign(new Error(__('team_cards.position_select')),{code:'functions/invalid-argument'});
+                await setTeamCardFn({id:cardToEdit.legacyId,name,position,photoUrl:imageUrl,socialLinks:{linkedin,instagram}});
+            } else await setSiteTeamEntryFn(payload);
             closeDrawer();
             showToast(() => __('team_cards.saved'), 'success');
             await loadTeamCards();

@@ -50,7 +50,7 @@ await page.route('**/*',async route=>{
   else if(name==='listadmins')result={admins:adminRoster};
   else if(name==='removeadminrole'){if(failAdmin)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});adminRoster=adminRoster.filter(a=>a.email!==route.request().postDataJSON().data.email);result={success:true};}
   else if(name==='listusersubscriptions')result={subscriptions:[{uid:'sub-fixture',displayName:'Example Subscriber',email:'subscriber@example.invalid',tier:'pro',expiresAt:'2027-01-01T12:00:00Z'}]};
-  else if(name==='listsiteteam')result={staff:[],mods:[]};
+  else if(name==='listsiteteam')result={staff:[],honors:[],cards:[]};
   else if(name==='getcoveruploadurl')result={signedUrl:'https://upload.example.invalid/cover',filePath:'test-cover.png'};
   return route.fulfill({contentType:'application/json',body:JSON.stringify({result})});
  }
@@ -59,6 +59,8 @@ await page.route('**/*',async route=>{
 });
 
 console.log("Starting page");await page.goto(`http://127.0.0.1:${server.address().port}`,{waitUntil:"domcontentloaded",timeout:15000});console.log("Page loaded");
+await page.waitForSelector('#admin-panel',{state:'visible'});
+await page.locator('[data-target="tab-contributors"]').click();
 await page.waitForSelector('.certificate-manage-btn');
 assert.equal(errors.length,0);
 const checks=[];
@@ -88,8 +90,8 @@ note('8 navigation tabs, light/dark, 6 viewport widths, popover bounds');
 await page.setViewportSize({width:1440,height:900});
 await page.locator('[data-details]').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Contributor drawer');
 await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());assert.equal(await page.locator('.contributor-row').count(),0);
-await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));assert.equal(await page.locator('.contributor-row').count(),1);
-await page.evaluate(()=>window.filterContributors('verified'));assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
+await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===1);
+await page.evaluate(()=>window.filterContributors('verified'));await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===0);await page.evaluate(()=>window.filterContributors('all'));await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===1);note('Combined search and filters');
 await openCert();assert.deepEqual(await page.locator('[data-award]').evaluateAll(es=>es.map(e=>e.dataset.award)),['tenacity','constancy','nobility','majesty']);
 await page.locator('[data-award=tenacity]').click();assert.equal(issueCount(),0);await page.locator('[data-review]').click();await page.waitForSelector('.confirm-ok');assert.equal(issueCount(),0);
 await page.locator('.confirm-ok').focus();await page.keyboard.press('Tab');assert(await page.locator('.confirm-cancel').evaluate(el=>el===document.activeElement));await page.keyboard.press('Shift+Tab');assert(await page.locator('.confirm-ok').evaluate(el=>el===document.activeElement));await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('tr');});assert.equal(await page.locator('.vx-modal-title').innerText(),'Sertifikayı İncele');await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('en');});await page.locator('.confirm-cancel').click();assert.equal(issueCount(),0);note('Selection and cancellation never issue certificates; confirmation focus trap and live language');

@@ -22,12 +22,13 @@ async function loadTeam() {
     if (!el('team-mod-list')) return;
     const finishLoading = beginPanelLoading(el('team-mod-list'));
     try {
-        const result = await listSiteTeamFn({});
-        mods = (result.data && result.data.mods) || [];
+        const result = await listSiteTeamFn({manage:true});
+        if (!Array.isArray(result.data?.honors)) throw Object.assign(new Error('Invalid honor roll response'),{code:'functions/internal'});
+        mods = result.data.honors;
         render();
     } catch (error) {
         const list = el('team-mod-list');
-        if (list) list.innerHTML = `<p class="form-hint">${escapeHTML(error.message)}</p>`;
+        if (list) {list.innerHTML = `<div class="state-block" role="alert"><p>${escapeHTML(userErrorMessage(error))}</p><button type="button" class="chrome-btn-outline" data-retry-honor>${__('common.retry')}</button></div>`;list.querySelector('[data-retry-honor]')?.addEventListener('click',loadTeam);}
     } finally { finishLoading(); }
 }
 
@@ -89,7 +90,7 @@ async function add() {
     const btn = el('team-mod-add');
     if (btn) btn.disabled = true;
     try {
-        await setSiteTeamEntryFn({ kind: 'mod', name });
+        await setSiteTeamEntryFn({ kind: 'honor', name });
         input.value = '';
         showToast(() => __('team.added'), 'success');
         await loadTeam();
@@ -110,7 +111,7 @@ async function rename(id) {
         return;
     }
     try {
-        await setSiteTeamEntryFn({ kind: 'mod', name, id });
+        await setSiteTeamEntryFn({ kind: 'honor', name, id });
         editingId = null;
         showToast(() => __('team.updated'), 'success');
         await loadTeam();
@@ -128,7 +129,7 @@ async function remove(id) {
         danger: true
     }))) return;
     try {
-        await deleteSiteTeamEntryFn({ id });
+        await deleteSiteTeamEntryFn({ kind:'honor', id });
         showToast(() => __('team.removed'), 'success');
         await loadTeam();
     } catch (error) {

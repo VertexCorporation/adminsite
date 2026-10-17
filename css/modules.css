@@ -542,3 +542,22 @@
   background:var(--status-warning-soft);
   border-color:transparent;
 }
+
+/* Shared label alignment: whole department option remains an interactive hit target. */
+#dept-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));gap:8px 14px;min-width:0}
+#dept-options .dept-choice{display:flex;align-items:center;gap:10px;min-width:0;min-height:40px;padding:7px 10px;border-radius:10px;cursor:pointer;line-height:1.35;overflow-wrap:anywhere}
+#dept-options .dept-choice:hover{background:var(--bg-hover)}
+#dept-options .dept-choice input{margin:0;flex:0 0 auto;align-self:center;accent-color:var(--action-primary)}
+#dept-options .dept-choice:focus-within{outline:2px solid var(--border-strong);outline-offset:2px}
+/* Permission matrix columns are sourced from the actual TABS length. */
+.dept-perms-table{--permission-columns:minmax(132px,1.25fr) repeat(var(--permission-module-count,7),minmax(108px,1fr)) 36px;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-gutter:stable}
+.dept-perms-header,.dept-perm-row{min-width:max(100%,calc(185px + var(--permission-module-count,7) * 116px));grid-template-columns:var(--permission-columns)}
+.dept-perms-header>*,.dept-perm-row>*{min-width:0}
+
+/* Full-row pointer and keyboard interaction without swallowing action buttons. */
+.contributor-row[data-contributor-id]{cursor:pointer}
+.contributor-row[data-contributor-id]:focus-visible{outline:2px solid var(--border-strong);outline-offset:2px}
+#contributors-list-container.contributor-filter-exit{opacity:0;transform:translateY(3px);transition:opacity 110ms ease,transform 110ms ease}
+#contributors-list-container.contributor-filter-enter{animation:contributor-filter-enter 170ms ease-out both}
+@keyframes contributor-filter-enter{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){#contributors-list-container .contributor-table-rows,#contributors-list-container .state-block{animation:none!important;transition:none!important;transform:none!important}}
