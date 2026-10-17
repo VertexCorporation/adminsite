@@ -71,6 +71,8 @@ await page.route('**/*',async route=>{
 });
 
 console.log("Starting page");await page.goto(`http://127.0.0.1:${server.address().port}`,{waitUntil:"domcontentloaded",timeout:15000});console.log("Page loaded");
+await page.waitForSelector('#admin-panel',{state:'visible'});
+await page.locator('[data-target="tab-contributors"]').click();
 await page.waitForSelector('.certificate-manage-btn').catch(async error=>{
  console.error('BOOT_DIAGNOSTICS',JSON.stringify(await page.evaluate(()=>({
   readyState:document.readyState,language:document.documentElement.lang,
