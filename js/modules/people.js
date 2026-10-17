@@ -63,6 +63,19 @@ function openBulkPreview(){openDrawer({title:__('people.bulk_preview'),titleKey:
  body.querySelector('form').onsubmit=async event=>{event.preventDefault();const button=event.currentTarget.querySelector('button'),host=body.querySelector('#people-bulk-result');button.disabled=true;loading(host);try{const data=(await consolePeopleCall('previewConsoleAccounts',{emails:body.querySelector('textarea').value})).data;if(!body.isConnected)return;host.removeAttribute('aria-busy');host.innerHTML=`<p class="people-list-footnote">${esc(__('people.preview_summary').replace('{valid}',data.emails.length).replace('{duplicate}',data.duplicates.length).replace('{invalid}',data.invalid.length))}</p>${data.invalid.length?`<p class="people-validation">${esc(__('people.invalid_addresses'))}: ${esc(data.invalid.join(', '))}</p>`:''}<div class="people-preview-list">${data.rows.map(row=>`<div><strong>${esc(row.email)}</strong><small>${esc(__('people.preview_'+row.status))}</small></div>`).join('')}</div>`;}catch(error){if(host.isConnected)errorState(host,error,()=>body.querySelector('form').requestSubmit());}finally{if(button.isConnected)button.disabled=false;}};
  }});}
 export function initPeopleModule(){
+ // This legacy directory only initializes when its entire view is mounted.
+ // The current contributors workspace uses different controls and remains active.
+ const requiredIds = [
+  'refresh-console-users', 'refresh-vertex-accounts', 'console-users-list',
+  'vertex-accounts-list', 'console-user-search-form', 'console-user-search',
+  'console-users-next', 'console-users-previous', 'console-users-page',
+  'console-user-department', 'console-user-role', 'vertex-accounts-search',
+  'vertex-membership-filter', 'preview-account-bulk'
+ ];
+ if (!requiredIds.every(id => el(id))) {
+  console.info('[PEOPLE] Legacy directory view not mounted; skipping its event bindings.');
+  return;
+ }
  el('refresh-console-users').onclick=()=>loadConsoleUsers(true);el('refresh-vertex-accounts').onclick=loadVertexAccounts;
  el('console-user-search-form').onsubmit=event=>{event.preventDefault();loadConsoleUsers(true);};
  el('console-users-next').onclick=()=>{if(state.busy||!state.next)return;state.history.push(state.cursor);state.cursor=state.next;state.page++;loadConsoleUsers();};
