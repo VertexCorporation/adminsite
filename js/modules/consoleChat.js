@@ -36,6 +36,9 @@ let lastMessagesKey = '';
 let cachedMessages=[],cachedChannelId=null;
 let myUid = null;
 let mentionIndex = null;
+let directoryPending = null;
+let directoryRetryAt = 0;
+const lastRenderedMessageIds = new Map();
 let mentionPop = null;
 let mentionMatches = [];
 let mentionActive = -1;
@@ -279,6 +282,8 @@ function renderMessages(messages, channel, animate = true) {
     const container = el('chat-messages');
     if (!messages.length) {
         container.innerHTML = `<p class="form-hint chat-hint" data-i18n="chat.empty">${__('chat.empty')}</p>`;
+        updateNewIndicator(false);
+        lastRenderedMessageIds.delete(currentChannelId);
         return;
     }
     // güne göre grupla
@@ -319,6 +324,11 @@ function renderMessages(messages, channel, animate = true) {
         }
     }
     const sameChannel = lastRenderedChannel === currentChannelId;
+    const previousLastId=lastRenderedMessageIds.get(currentChannelId);
+    const newestId=messages.at(-1)?.id;
+    const grew=sameChannel && !!previousLastId && newestId!==previousLastId
+      && messages.some(item=>item.id===previousLastId);
+    lastRenderedMessageIds.set(currentChannelId,newestId);
     const distanceFromBottom = container.scrollHeight-container.scrollTop-container.clientHeight;
     const stickToBottom = !sameChannel || distanceFromBottom < 70;
     const previousScrollTop = container.scrollTop;
@@ -330,7 +340,7 @@ function renderMessages(messages, channel, animate = true) {
        void markRead(messages.at(-1)?.sequence||0);
     }else{
        container.scrollTop=Math.max(0,previousScrollTop+(container.scrollHeight-previousScrollHeight));
-       updateNewIndicator(messages.length>0);
+       if(grew)updateNewIndicator(true);
     }
     lastRenderedChannel=currentChannelId;
 
@@ -463,14 +473,17 @@ function caretToken() {
 
 async function ensureDirectory() {
     if (mentionIndex) return mentionIndex;
-    try {
-        const r = await listConsoleChatDirectoryFn({});
-        mentionIndex = r.data.users || [];
-    } catch {
-        // Do not cache transient directory errors as a permanently empty directory.
+    if (directoryPending) return directoryPending;
+    if (Date.now()<directoryRetryAt) return [];
+    directoryPending=listConsoleChatDirectoryFn({}).then(result=>{
+        mentionIndex=Array.isArray(result.data?.users)?result.data.users:[];
+        directoryRetryAt=0;
+        return mentionIndex;
+    }).catch(error=>{
+        directoryRetryAt=Date.now()+(error.code==='functions/permission-denied'?60000:5000);
         return [];
-    }
-    return mentionIndex;
+    }).finally(()=>{directoryPending=null;});
+    return directoryPending;
 }
 
 function closeMentionPop() {
@@ -546,7 +559,7 @@ export function refreshConsoleChat() {
 export function initConsoleChat() {
     if (!el('chat-channel-list')) return;
     isAdmin = isPanelAdmin();
-    auth?.onAuthStateChanged(user=>{if(!user){stopChannelHint();drafts.clear();lastSavedDraftUser=null;}});
+    auth?.onAuthStateChanged(user=>{if(!user){stopChannelHint();drafts.clear();lastSavedDraftUser=null;mentionIndex=null;directoryPending=null;directoryRetryAt=0;}});
     el('chat-create-btn').style.display = isAdmin ? 'inline-flex' : 'none';
     el('chat-create-btn').addEventListener('click', () => openChannelForm('create'));
     el('chat-channel-edit').addEventListener('click', () => {
