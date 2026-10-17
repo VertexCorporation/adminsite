@@ -2,7 +2,7 @@ import { confirmDialog } from './shell.js';
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/news.js
 
-import { db, createNewsArticleFn, updateNewsArticleFn, deleteNewsArticleFn, getCoverUploadUrlFn } from '../core/firebase.js';
+import { db, createNewsArticleFn, updateNewsArticleFn, listNewsRevisionsFn, restoreNewsRevisionFn, deleteNewsArticleFn, getCoverUploadUrlFn } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
 import { userErrorMessage, __, showToast, getLang, onLangChange, escapeHTML } from '../utils/ui.js';
 
@@ -69,6 +69,8 @@ async function handleNewsFormSubmit(e) {
         showToast(() => __('news.saved'), 'success');
         dom.newsForm.reset();
         const hint=document.getElementById('news-editing-hint');if(hint)hint.textContent='';
+        const trigger=document.getElementById('news-history-trigger');if(trigger)trigger.remove();
+        document.getElementById('news-history')?.remove();
     } catch (error) {
         console.error("[CLIENT] An error occurred during news submission:", error);
         showToast(()=>userErrorMessage(error), 'error');
@@ -157,6 +159,38 @@ function renderArticleList(){
        }item.append(actions);root.append(item);
     }
 }
+async function showNewsHistory(slug){
+ const root=document.getElementById('news-history')||document.createElement('div');
+ root.id='news-history';root.className='ui-news-history';
+ if(!root.parentElement)dom.newsForm.append(root);
+ root.replaceChildren();
+ const status=document.createElement('p');status.textContent=getLang()==='tr'?'Sürümler yükleniyor…':'Loading revisions…';
+ root.append(status);
+ try{
+  const {data}=await listNewsRevisionsFn({slug});
+  root.replaceChildren();
+  if(!data.revisions?.length){status.textContent=getLang()==='tr'?'Henüz önceki sürüm yok.':'No prior revisions.';root.append(status);return;}
+  for(const revision of data.revisions){
+   const row=document.createElement('div');row.className='ui-news-history-row';
+   const label=document.createElement('span');const when=revision.at?new Date(revision.at).toLocaleString(getLang()==='tr'?'tr-TR':'en-US'):'—';
+   label.textContent='#'+revision.revision+' · '+when+' · '+revision.title;
+   const restore=document.createElement('button');restore.type='button';restore.className='chrome-btn-outline';
+   restore.textContent=getLang()==='tr'?'Geri yükle':'Restore';
+   restore.onclick=async()=>{
+     if(!await confirmDialog({title:getLang()==='tr'?'Sürümü geri yükle':'Restore revision',
+       body:label.textContent}))return;
+     restore.disabled=true;
+     try{
+       await restoreNewsRevisionFn({slug,historyId:revision.id,revision:editingArticle?.revision||0});
+       showToast(getLang()==='tr'?'Sürüm geri yüklendi.':'Revision restored.','success');
+       editingArticle=null;dom.newsForm.reset();root.replaceChildren();
+       document.getElementById('news-editing-hint').textContent='';
+     }catch(error){restore.disabled=false;showToast(()=>userErrorMessage(error),'error');}
+   };
+   row.append(label,restore);root.append(row);
+  }
+ }catch(error){root.replaceChildren();showToast(()=>userErrorMessage(error),'error');}
+}
 function editArticle(slug){
     const article=(window.loadedArticles||[]).find(a=>a.id===slug);
     if(!article)return;
@@ -176,6 +210,13 @@ function editArticle(slug){
       dom.newsForm.prepend(hint);
     }
     hint.textContent=(getLang()==='tr'?'Düzenleniyor: ':'Editing: ')+slug;
+    let history=document.getElementById('news-history-trigger');
+    if(!history){
+       history=document.createElement('button');history.type='button';history.id='news-history-trigger';
+       history.className='chrome-btn-outline';dom.newsForm.insertBefore(history,dom.newsForm.firstChild);
+    }
+    history.textContent=getLang()==='tr'?'Sürüm geçmişi':'Revision history';
+    history.onclick=()=>void showNewsHistory(slug);
     dom.newsForm.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
