@@ -10,7 +10,7 @@ let getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContri
 let verifyUserEmailFn;
 let updateContributorApplicationFn;
 let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
-let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn;
+let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn, previewBulkUserSubscriptionsFn;
 let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn;
 let getPanelPermissionsFn;
 let listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn;
@@ -120,6 +120,7 @@ function initFirebase(firebaseConfig) {
     removeUserSubscriptionFn = callable('removeUserSubscription');
     listUserSubscriptionsFn = callable('listUserSubscriptions');
     bulkSetUserSubscriptionsFn = callable('bulkSetUserSubscriptions');
+    previewBulkUserSubscriptionsFn = callable('previewBulkUserSubscriptions');
     listConsoleChatChannelsFn = callable('listConsoleChatChannels');
     createConsoleChatChannelFn = callable('createConsoleChatChannel');
     updateConsoleChatChannelFn = callable('updateConsoleChatChannel');
@@ -175,6 +176,7 @@ export {
     removeUserSubscriptionFn,
     listUserSubscriptionsFn,
     bulkSetUserSubscriptionsFn,
+    previewBulkUserSubscriptionsFn,
     listConsoleChatChannelsFn,
     createConsoleChatChannelFn,
     updateConsoleChatChannelFn,
