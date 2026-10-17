@@ -1,3 +1,4 @@
+import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from './shell.js';
 import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
 // js/modules/notification.js
@@ -232,11 +233,12 @@ export function listenForScheduledTasks() {
         .orderBy('scheduleTime', 'asc')
         .onSnapshot(snapshot => {
         finishLoading();
-            dom.scheduledTasksListContainer.innerHTML = '';
+            const container = dom.scheduledTasksListContainer;
             if (snapshot.empty) {
-                dom.scheduledTasksListContainer.innerHTML = `<p class="form-hint" data-i18n="notif.empty">${__('notif.empty')}</p>`;
+                crossfade(container, () => { container.innerHTML = `<p class="form-hint" data-i18n="notif.empty">${__('notif.empty')}</p>`; });
                 return;
             }
+            const fragment = document.createDocumentFragment();
             snapshot.forEach(doc => {
                 const task = doc.data();
                 const scheduleDate = task.scheduleTime.toDate();
@@ -255,8 +257,9 @@ export function listenForScheduledTasks() {
                     <span class="task-target">${__('notif.target_label')}: ${__(({ALL_USERS:'notif.target_all',SINGLE_USER:'notif.target_single',SUBSCRIPTION_TIER:'notif.target_level',SUBSCRIPTION_LEVEL:'notif.target_level'})[task.target?.type]||'notif.target_label')}</span>
                 </div>
                 <div class="task-actions"><button class="cancel-task-btn chrome-btn-outline" data-task-id="${escapeHTML(doc.id)}">${__('common.cancel')}</button></div>`;
-                dom.scheduledTasksListContainer.appendChild(item);
+                fragment.appendChild(item);
             });
+            crossfade(container, () => container.replaceChildren(fragment));
         }, error => {
         finishLoading();
             console.error("[CLIENT] Error listening for scheduled tasks:", error);

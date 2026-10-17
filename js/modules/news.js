@@ -1,3 +1,4 @@
+import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from './shell.js';
 import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
 // js/modules/news.js
@@ -92,13 +93,14 @@ export function listenForArticles() {
     console.log("[CLIENT] Attaching real-time listener for 'news' collection.");
     unsubscribeFromArticles = db.collection('news').orderBy('publishedAt', 'desc').onSnapshot(snapshot => {
         finishLoading();
-        dom.articlesListContainer.innerHTML = '';
+        const container = dom.articlesListContainer;
         if (snapshot.empty) {
             window.loadedArticles = [];
-            dom.articlesListContainer.innerHTML = `<p class="form-hint" data-i18n="news.empty">${__('news.empty')}</p>`;
+            crossfade(container, () => { container.innerHTML = `<p class="form-hint" data-i18n="news.empty">${__('news.empty')}</p>`; });
             return;
         }
         const articles = [];
+        const fragment=document.createDocumentFragment();
         snapshot.forEach(doc => {
             articles.push({ id: doc.id, ...doc.data() });
             const item = document.createElement('div');
@@ -110,8 +112,9 @@ export function listenForArticles() {
                 <div class="item-actions">
                     <button class="delete-btn" data-slug="${escapeHTML(doc.id)}">${__('common.delete')}</button>
                 </div>`;
-            dom.articlesListContainer.appendChild(item);
+            fragment.appendChild(item);
         });
+        crossfade(container, () => container.replaceChildren(fragment));
         window.loadedArticles = articles;
     }, error => {
         finishLoading();

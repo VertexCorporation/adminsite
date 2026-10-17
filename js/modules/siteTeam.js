@@ -1,3 +1,4 @@
+import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from './shell.js';
 import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
 import { icon } from '../utils/icons.js';
@@ -35,11 +36,11 @@ function render() {
     const list = el('team-mod-list');
     if (!list) return;
     if (!mods.length) {
-        list.innerHTML = `<p class="state-block" data-i18n="team.empty">${__('team.empty')}</p>`;
+        crossfade(list, () => { list.innerHTML = `<p class="state-block" data-i18n="team.empty">${__('team.empty')}</p>`; });
         return;
     }
     list.className = 'team-list';
-    list.innerHTML = mods.map(m => {
+    const html = mods.map(m => {
         if (editingId === m.id) {
             return `
             <div class="team-list-row team-list-row--editing" data-id="${m.id}">
@@ -72,6 +73,7 @@ function render() {
             </div>
         </div>`;
     }).join('');
+    crossfade(list, () => { list.innerHTML = html; });
     const editing = list.querySelector('.team-edit-input');
     if (editing) {
         editing.focus();

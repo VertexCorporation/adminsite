@@ -53,3 +53,11 @@ test('navigation and scroll enhancements preserve all module families',()=>{
     assert.ok(scroller.includes(selector),selector);
  assert.match(read('css/ui/scroll.css'),/-webkit-mask-composite:source-in/);
 });
+
+test('list refresh transitions are centralized across modules',()=>{
+ for(const name of ['news','notification','subscriptions','siteTeam','consoleChat']){
+  const source=read('js/modules/'+name+'.js');
+  assert.match(source,/import \{ crossfade \} from '\.\.\/ui\/transition\.js'/,name);
+  assert.match(source,/crossfade\(/,name);
+ }
+});

@@ -1,3 +1,4 @@
+import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from './shell.js';
 import { beginPanelLoading, skeletonListItem, skeletonChatMessage, setButtonLoading } from '../utils/loading.js';
 // js/modules/subscriptions.js
@@ -76,11 +77,11 @@ function renderSubscriptions() {
             .some(value => String(value || '').toLocaleLowerCase().includes(query))
     );
     if (!filtered.length) {
-        container.innerHTML = `<p class="form-hint dept-list-message">${query ? __('subs.no_match') : __('subs.empty')}</p>`;
+        crossfade(container, () => { container.innerHTML = `<p class="form-hint dept-list-message">${query ? __('subs.no_match') : __('subs.empty')}</p>`; });
         return;
     }
     const now = Date.now();
-    container.innerHTML = filtered.map(sub => {
+    const html = filtered.map(sub => {
         const status = now >= (sub.expiresAt ? new Date(sub.expiresAt).getTime() : Infinity)
             ? { badge: 'expired', key: 'subs.badge_expired' }
             : { badge: 'active', key: 'subs.badge_active' };
@@ -98,6 +99,7 @@ function renderSubscriptions() {
             ${getEffectivePanelLevel('subscriptions.list') === 'write' && sub.source !== 'vertex' ? `<button type="button" class="dept-user-edit cancel-task-btn" data-uid="${sanitizeHTML(sub.uid)}">${__('subs.remove_btn')}</button>` : ''}
         </div>`;
     }).join('');
+    crossfade(container, () => { container.innerHTML = html; });
 }
 
 async function loadSubscriptions() {
