@@ -284,7 +284,8 @@ export function openTeamCardDrawer(cardToEdit = null) {
         try {
             let imageUrl = selectedPhoto;
             if (selectedPhotoBytes) {
-                const {data:photo}=await setSiteTeamEntryFn({kind:'photo',photoData:selectedPhotoBytes});
+                const photoFile=photoInput.files?.[0];
+                const {data:photo}=await setSiteTeamEntryFn({kind:'photo',imageData:selectedPhotoBytes.split(',')[1],contentType:photoFile?.type});
                 imageUrl=photo?.imageUrl;
             }
             if (!imageUrl?.startsWith('https://')) throw Object.assign(new Error('A hosted HTTPS image is required'),{code:'functions/invalid-argument'});
