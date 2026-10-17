@@ -38,6 +38,7 @@ await page.route('**/*',async route=>{
   if(name==='getserverstatus'&&failMaintenance)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture maintenance unavailable'}})});
   if(name==='togglecontributorverification'&&failVerify)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture verification unavailable'}})});
   let result={};
+  if(name==='togglecontributorverification')result={status:'succeeded'};
   if(name==='getserverstatus')result={isUnderMaintenance:maintenanceState};
   if(name==='getbackuphealthstatus')result=backupFixture;
   if(name==='setserverstatus'){maintenanceState=route.request().postDataJSON().data.maintenanceEnabled;result={success:true};}
