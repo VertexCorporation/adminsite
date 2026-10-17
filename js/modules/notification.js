@@ -73,10 +73,15 @@ async function checkDeliveryStatus(requestId, continuePolling=false) {
     try {
         const response=await getNotificationDeliveryStatusFn({requestId});
         if(requestId!==statusRequestId)return;
-        const {status,successCount,failureCount,failureCodes}=response.data||{};
+        const {status,kind,successCount,failureCount,failureCodes}=response.data||{};
         const errors=Object.entries(failureCodes||{}).filter(([,count])=>count>0)
             .slice(0,3).map(([code,count])=>`${code}: ${count}`).join(', ');
-        if(status==='DELIVERED'||status==='NO_DELIVERIES') {
+        if(status==='SCHEDULED'&&kind==='SCHEDULED'){
+            clearDelivery();deliveryNotice(ntr('Bildirim planlandı.','Notification scheduled.'));
+            showToast(ntr('Bildirim planlandı.','Notification scheduled.'),'success');
+            return;
+        }
+        if(status==='DELIVERED'||status==='NO_DELIVERIES'||status==='SENT') {
             const msg=status==='NO_DELIVERIES'
                 ? ntr('FCM tarafından kabul edilen cihaz tokenı yok. Tokenları ve hata kodlarını incele.','FCM accepted no device tokens. Check tokens and failure codes.')
                 : ntr(`FCM ${successCount} tokenı kabul etti, ${failureCount} tokenı reddetti. Cihazda gösterilmesi ayrıca doğrulanmalıdır.`,`FCM accepted ${successCount} tokens and rejected ${failureCount}. Device display is not confirmed.`);
@@ -329,29 +334,28 @@ async function handleNotificationFormSubmit(e) {
         if(!confirmed)return;
         const apiPayload = { payload, target, scheduleTime: scheduleTimeISO };
         const apiFunction = isScheduled ? scheduleNotificationFn : sendTargetedNotificationFn;
-        if (!isScheduled) {
-            delete apiPayload.scheduleTime;
-            statusRequestId = crypto.randomUUID();
-            apiPayload.requestId = statusRequestId;
-            statusPollCount=0;
-            deliveryUncertain=true;
-            rememberDelivery(statusRequestId);
-        }
+        if(!isScheduled)delete apiPayload.scheduleTime;
+        statusRequestId=crypto.randomUUID();apiPayload.requestId=statusRequestId;
+        statusPollCount=0;deliveryUncertain=true;rememberDelivery(statusRequestId);
 
         showToast(isScheduled ? __('notif.scheduling') : __('notif.sending'), 'info');
         let result;
         try { result = await apiFunction(apiPayload); }
         catch (error) {
             // A network/500 failure can follow partial delivery; never invite a blind resend.
-            if (!isScheduled && ['functions/invalid-argument','functions/permission-denied','functions/unauthenticated'].includes(error.code)) clearDelivery();
+            if (['functions/invalid-argument','functions/permission-denied','functions/unauthenticated'].includes(error.code)) clearDelivery();
             throw error;
         }
-        if (!isScheduled && result?.data?.queued) {
+        if(isScheduled && result?.data?.status==='SCHEDULED'){
+            clearDelivery();
+            deliveryNotice(ntr('Bildirim planlandı.','Notification scheduled.'));
+            showToast(() => __('notif.success'),'success');
+        }else if(!isScheduled && result?.data?.queued){
             deliveryNotice(ntr('Bildirim kuyruğa alındı. Sonuç takip ediliyor.','Notification queued. Tracking delivery.'),true);
             void checkDeliveryStatus(statusRequestId,true);
-        } else {
+        }else{
             if(!isScheduled)clearDelivery();
-            showToast(() => __('notif.success'), 'success');
+            showToast(() => __('notif.success'),'success');
         }
 
         dom.notificationForm.reset();
