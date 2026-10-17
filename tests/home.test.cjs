@@ -39,3 +39,33 @@ test('release contains home module and stylesheet', () => {
   for (const file of ['js/main.js','js/modules/home.js','js/modules/shell.js','css/home.css'])
     assert.ok(fs.existsSync(path.join(root,'assets','releases',id,file)), file);
 });
+
+test('home presents four Vertex technologies in both languages', () => {
+  const src = read('js/modules/home.js');
+  for (const name of ['Cortex', 'Ally', 'Mergen', 'Fulcrum']) assert.match(src, new RegExp(name));
+  assert.match(src, /VERTEX KONSOL/);
+  assert.match(src, /VERTEX CONSOLE/);
+  assert.match(src, /home-product-grid/);
+  assert.match(src, /home-technology-grid/);
+  assert.doesNotMatch(src, /home-hero-emblem|home-orbit|t\.ecosystemEyebrow/);
+});
+
+test('flow artwork respects reduced motion and brand marks are local assets', () => {
+  const src = read('js/modules/home.js');
+  const css = read('css/home.css');
+  assert.match(src, /home-flow-svg/);
+  assert.match(css, /prefers-reduced-motion:reduce/);
+  for (const brand of ['firebase','google-drive','zapier','cal']) {
+    assert.ok(fs.existsSync(path.join(root, 'assets','technology',brand+'.svg')), brand);
+    assert.match(read(path.join('assets','technology',brand+'.svg')), /<svg[^>]*fill=/);
+  }
+  assert.doesNotMatch(css, /home-hero-emblem|home-orbit/);
+});
+
+test('product and technology cards stay separate from permission-controlled console modules', () => {
+  const home = read('js/modules/home.js');
+  assert.match(home, /getEffectivePanelLevel\(key\) !== 'none'/);
+  assert.match(home, /visibleTarget\(moduleId\)/);
+  assert.match(home, /const card = el\('article', 'home-product-card'\)/);
+  assert.match(home, /const card = el\('article', 'home-tech-card'\)/);
+});
