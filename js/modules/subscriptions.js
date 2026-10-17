@@ -4,7 +4,7 @@ import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../uti
 
 import { userErrorMessage, showToast, __, getLang, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
-import { removeUserSubscriptionFn, listUserSubscriptionsFn } from '../core/firebase.js';
+import { removeUserSubscriptionFn, listUserSubscriptionsFn, previewBulkUserSubscriptionsFn } from '../core/firebase.js';
 import { grantPremium, grantPremiumBulk } from './admin.js';
 import { getEffectivePanelLevel } from './roles.js';
 
@@ -252,9 +252,22 @@ async function handleBulkSubmit() {
     const btn = document.getElementById('sub-bulk-submit');
     btn.disabled = true;
     btn.innerHTML = `<span data-i18n="subs.bulk_running">${__('subs.bulk_running')}</span>`;
-    showToast(() => __('subs.bulk_started'), 'info');
 
     try {
+        const preview=(await previewBulkUserSubscriptionsFn({raw,tier,expiresAt:expiresAt.toISOString()})).data;
+        const approved=await confirmDialog(()=>({
+            title:getLang()==='tr'?'Toplu abonelik onayı':'Confirm bulk subscriptions',
+            body:getLang()==='tr'?'Yalnızca devam ederseniz değişiklikler uygulanacak.':'Changes will be applied only if you continue.',
+            rows:[
+                {label:getLang()==='tr'?'Geçerli adres':'Valid addresses',value:String(preview.total)},
+                {label:getLang()==='tr'?'Güncellenebilir':'Eligible accounts',value:String(preview.replaceable)},
+                {label:getLang()==='tr'?'Mağaza aboneliği korunan':'Store protected',value:String(preview.protected)},
+                {label:getLang()==='tr'?'Bulunamadı':'Missing',value:String(preview.missing)},
+                {label:getLang()==='tr'?'Uygun değil':'Unavailable',value:String(preview.unavailable)},
+                {label:getLang()==='tr'?'Geçersiz giriş':'Invalid entries',value:String(preview.invalidTokens?.length||0)}
+            ]
+        }));
+        if(!approved)return;
         const data = await grantPremiumBulk({ raw, tier, expiresAt: expiresAt.toISOString() });
         renderBulkResult(data);
         showToast(() => `${data.grantedCount} ${__('subs.bulk_granted')} · ${data.failedCount} ${__('subs.bulk_failed')}`,
