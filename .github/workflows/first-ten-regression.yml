@@ -1,0 +1,50 @@
+name: console first ten regression
+on:
+  push:
+    branches:
+      - fix/first-ten-hardening-20261017-v2
+  pull_request:
+    paths:
+      - 'js/**'
+      - 'css/**'
+      - 'index.html'
+      - 'tests/**'
+      - 'scripts/release.cjs'
+      - '.github/workflows/first-ten-regression.yml'
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: standalone javascript unit tests
+        run: |
+          echo "Backend-linked certificate tests require the private Fulcrum checkout and are not part of this frontend-only job."
+          find tests -maxdepth 1 -name '*.test.cjs' ! -name 'certificate-owner-policy.test.cjs' ! -name 'zapier-*.test.cjs' -print0 | xargs -0 node --test
+      - name: translation audit
+        run: npm run audit:i18n
+      - name: build immutable release before browser tests
+        run: |
+          node scripts/release.cjs
+          node -e "const fs=require('fs');const html=fs.readFileSync('index.html','utf8');const id=html.match(/name=\"vertex-release\" content=\"([a-f0-9]{12})\"/)[1];if(!fs.existsSync('assets/releases/'+id+'/js/modules/teamCards.js'))process.exit(1);if(!html.includes('assets/releases/'+id+'/js/main.js'))process.exit(1);console.log('release validated: '+id)"
+      - name: playwright chromium
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:browser
+      - name: persist tested release artifacts on the feature branch
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html assets/releases
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: publish verified immutable console assets"
+            git push origin HEAD:fix/first-ten-hardening-20261017-v2
+          fi
