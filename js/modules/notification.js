@@ -73,8 +73,8 @@ async function checkDeliveryStatus(requestId, continuePolling=false) {
             .slice(0,3).map(([code,count])=>`${code}: ${count}`).join(', ');
         if(status==='DELIVERED'||status==='NO_DELIVERIES') {
             const msg=status==='NO_DELIVERIES'
-                ? ntr('Gönderim tamamlandı ancak hiçbir cihaza ulaşılamadı. Cihaz tokenlarını kontrol et.','Delivery finished with no successful devices. Check device tokens.')
-                : ntr(`Gönderim tamamlandı: ${successCount} başarılı, ${failureCount} başarısız.`,`Delivery finished: ${successCount} successful, ${failureCount} failed.`);
+                ? ntr('FCM tarafından kabul edilen cihaz tokenı yok. Tokenları ve hata kodlarını incele.','FCM accepted no device tokens. Check tokens and failure codes.')
+                : ntr(`FCM ${successCount} tokenı kabul etti, ${failureCount} tokenı reddetti. Cihazda gösterilmesi ayrıca doğrulanmalıdır.`,`FCM accepted ${successCount} tokens and rejected ${failureCount}. Device display is not confirmed.`);
             clearDelivery();deliveryNotice(errors?`${msg} ${errors}`:msg);
             showToast(msg,status==='DELIVERED'?'success':'warning');
             return;
