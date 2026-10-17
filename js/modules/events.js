@@ -115,7 +115,7 @@ export function initEventsModule() {
     const file=files[index];
     const url=await upload(file,p=>{uploadStatus.textContent=`${index+1}/${files.length} · ${file.name} · %${p}`;});
     if(cover)form.elements.cover.value=url;
-    else form.elements.images.value=[form.elements.images.value.trim(),url].filter(Boolean).join('\\n');
+    else form.elements.images.value=[form.elements.images.value.trim(),url].filter(Boolean).join('\n');
     markDirty();
    }
    uploadStatus.textContent=tr('Görseller yüklendi. Değişiklikleri kaydet.','Images uploaded. Save your changes.');
