@@ -13,8 +13,8 @@ test('central ui sheets are included in the release source',()=>{
 });
 test('toast slots avoid clipped host and transform conflicts',()=>{
  assert.match(read('css/ui/toast.css'), /#toast-container\s*\{[\s\S]*overflow: visible/);
- assert.match(read('js/utils/ui.js'), /slot\.animate/);
- assert.match(read('js/utils/ui.js'), /slot\.appendChild\(toast\)/);
+ assert.match(read('js/ui/toast.js'), /slot\.animate/);
+ assert.match(read('js/ui/toast.js'), /slot\.appendChild\(toast\)/);
  assert.doesNotMatch(read('css/components.css'), /#toast-container\s*\{/);
 });
 test('overlay cleanup uses CSS motion and lifecycle events',()=>{
@@ -32,4 +32,11 @@ test('scroll observer handles horizontal and vertical internal regions',()=>{
  const src=read('js/utils/scrollEdges.js');
  for(const value of ['ResizeObserver','MutationObserver','fogLeft','fogRight','removeEventListener'])
   assert.ok(src.includes(value));
+});
+
+test('action state module supports loading, success and failure',()=>{
+ const src=read('js/ui/controls.js');
+ assert.match(src,/new WeakMap/);
+ for(const state of ['idle','loading','success','error'])assert.ok(src.includes("'"+state+"'"));
+ assert.match(read('js/utils/loading.js'),/setButtonState\(btn/);
 });

@@ -1,5 +1,6 @@
 import { escapeHTML, showToast } from './ui.js';
 import { crossfade } from '../ui/transition.js';
+import { setButtonState } from '../ui/controls.js';
 import { icon } from './icons.js';
 // js/utils/loading.js
 //
@@ -178,22 +179,11 @@ export function createLoadingController(container, opts = {}) {
     return { start, success, error, empty, destroy };
 }
 
-const busyButtons = new WeakMap();
-/** Preserve the live icon, label, dimensions and the original disabled state. */
+/** Preserve existing callers while all action controls share the same state machine. */
 export function setButtonLoading(btn, loading, loadingLabel = null) {
-    if (!btn) return;
-    if (loading) {
-        if (busyButtons.has(btn)) return;
-        busyButtons.set(btn, {disabled:btn.disabled, minWidth:btn.style.minWidth});
-        btn.style.minWidth = Math.ceil(btn.getBoundingClientRect().width) + 'px';
-        btn.disabled = true;
-        btn.setAttribute('aria-busy','true');
-        btn.classList.add('button-pending');
-    } else {
-        const state=busyButtons.get(btn);if(!state)return;
-        btn.disabled=state.disabled;btn.style.minWidth=state.minWidth;btn.removeAttribute('aria-busy');btn.classList.remove('button-pending');busyButtons.delete(btn);
-    }
+    setButtonState(btn, loading ? 'loading' : 'idle');
 }
+export { setButtonState } from '../ui/controls.js';
 
 /** İstek sırası damgası: stale response koruması. */
 export function createRequestGuard() {
