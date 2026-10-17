@@ -33,7 +33,10 @@ async function handleNewsFormSubmit(e) {
         const file = document.getElementById(fileInputId).files[0];
         if (!file) throw new Error(__('news.cover_required'));
         const result = await getCoverUploadUrlFn({ slug: cleanSlug, fileName: `${lang}-${file.name}`, contentType: file.type });
-        await fetch(result.data.signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+        if(!['image/jpeg','image/png','image/webp'].includes(file.type))
+            throw new Error(getLang()==='tr'?'JPEG, PNG veya WebP kullanın.':'Use JPEG, PNG or WebP.');
+        const response=await fetch(result.data.signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+        if(!response.ok) throw new Error(getLang()==='tr'?'Kapak görseli yüklenemedi.':'Cover image upload failed.');
         return result.data.filePath;
     };
 
