@@ -20,7 +20,6 @@ jobs:
       - name: Run first-ten independent unit regressions
         run: node --test tests/callable-read.test.cjs tests/callable.test.cjs tests/contributor-edit.test.cjs tests/contributor-state.test.cjs tests/email-template-links.test.cjs tests/email-template-validation.test.cjs tests/i18n.test.cjs tests/people-startup.test.cjs
       - run: npm run audit:i18n
-      - run: npm run test:startup
   browser:
     runs-on: ubuntu-latest
     steps:
@@ -32,5 +31,6 @@ jobs:
       - run: npm install --no-package-lock --ignore-scripts
       - run: node -e "if(require('playwright/package.json').version!=='1.62.1')process.exit(1)"
       - run: npx playwright install --with-deps chromium
+      - run: npm run test:startup
       - run: node tests/honor-browser.cjs
       - run: npm run test:browser
