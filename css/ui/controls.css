@@ -296,3 +296,12 @@ input[type="checkbox"][role="switch"]:checked::after {
 @media (prefers-reduced-motion:reduce) {
     :where(input[type="checkbox"]):active:not(:disabled) { transform:none; }
 }
+
+/* Canonical pending icon sweep. Dimensions and icon markup remain unchanged. */
+.button-pending svg,.button-pending img,.button-pending [data-icon]{mask-image:linear-gradient(110deg,#0008 35%,#000 50%,#0008 65%);mask-size:250% 100%;animation:iconSweep 820ms ease-in-out infinite}
+.button-pending:not(:has(svg,img,[data-icon])){animation:iconSweep 820ms ease-in-out infinite}
+@keyframes iconSweep{from{mask-position:150% 0;opacity:.75}50%{opacity:1}to{mask-position:-50% 0;opacity:.75}}
+@media(prefers-reduced-motion:reduce){
+    .button-pending svg,.button-pending img,.button-pending [data-icon],
+    .button-pending:not(:has(svg,img,[data-icon])) { animation:none; }
+}

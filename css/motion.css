@@ -41,3 +41,8 @@
         transition: none !important;
     }
 }
+
+/* Workspace-only entrance animation (content crossfade lives in ui/transition.js). */
+.workspace-enter{animation:workspaceEnter var(--motion-normal) var(--ease-out) both}
+@keyframes workspaceEnter{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.workspace-enter{animation:none}}

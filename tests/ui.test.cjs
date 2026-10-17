@@ -61,3 +61,12 @@ test('list refresh transitions are centralized across modules',()=>{
   assert.match(source,/crossfade\(/,name);
  }
 });
+
+test('motion and controls have one style owner rather than layered overrides',()=>{
+ const stabilization=read('css/stabilization.css');
+ assert.doesNotMatch(stabilization,/^\.button-pending/m);
+ assert.doesNotMatch(stabilization,/@keyframes iconSweep/);
+ assert.doesNotMatch(stabilization,/@keyframes workspaceEnter/);
+ assert.match(read('css/ui/controls.css'),/@keyframes iconSweep/);
+ assert.match(read('css/motion.css'),/@keyframes workspaceEnter/);
+});
