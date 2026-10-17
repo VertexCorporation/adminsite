@@ -44,6 +44,9 @@ let lastRenderedChannel = null;
 let pollPending = false;
 let cachedMessageVersion = -1;
 const readSequences=new Map();
+const mentionCounts=new Map();
+let myDepartments=[];
+let myEmail='';
 let lastSavedDraftUser=null;
 function draftsKey(){return myUid?'vertex:chat:drafts:'+myUid:null;}
 function restoreDrafts(){
@@ -69,6 +72,7 @@ async function markRead(sequence){
  try{
    await markConsoleChatReadFn({channelId,sequence});
    readSequences.set(channelId,sequence);
+   mentionCounts.set(channelId,0);
    const channel=channels.find(ch=>ch.id===channelId);
    if(channel){channel.unreadCount=0;lastChannelsKey='';renderChannelList();}
  }catch(error){console.warn('[CHAT] Could not save read receipt',error.code||'unavailable');}
@@ -133,6 +137,8 @@ async function loadChannels() {
         const nextUid=auth?.currentUser?.uid||null;
         if(myUid!==nextUid){myUid=nextUid;restoreDrafts();} 
         isAdmin = result.data.isAdmin || isPanelAdmin();
+        myDepartments=result.data.myDepartments||[];
+        myEmail=(result.data.myEmail||auth?.currentUser?.email||'').toLowerCase();
         const createBtn = el('chat-create-btn');
         if (createBtn) createBtn.style.display = isAdmin ? 'inline-flex' : 'none';
         renderChannelList();
@@ -159,13 +165,14 @@ function renderChannelList() {
         return;
     }
     // Poll yenilemelerinde icerik degismemisse DOM'a dokunma (titreme fix).
-    const key = JSON.stringify([isAdmin, currentChannelId, channels.map(c => [c.id, c.name, !!c.pinned, c.postLevel, !!c.departments?.length,c.unreadCount||0])]);
+    const key = JSON.stringify([isAdmin, currentChannelId, channels.map(c => [c.id, c.name, !!c.pinned, c.postLevel, !!c.departments?.length,c.unreadCount||0,mentionCounts.get(c.id)||0])]);
     if (key === lastChannelsKey) return;
     lastChannelsKey = key;
     container.innerHTML = channels.map(ch => `
         <button type="button" class="chat-channel-item ${ch.id === currentChannelId ? 'active' : ''}" data-channel="${ch.id}">
             <i class="" data-icon="${ch.departments?.length ? 'lock' : 'tag'}"></i>
             <span class="chat-channel-name">${escapeHTML(ch.name)}</span>
+            ${mentionCounts.get(ch.id)?'<span class="chat-mentions" aria-label="'+(getLang()==='tr'?'Bahsetmeler':'Mentions')+'">@'+mentionCounts.get(ch.id)+'</span>':''}
             ${ch.unreadCount?'<span class="chat-unread">'+Math.min(ch.unreadCount,99)+(ch.unreadCount>99?'+':'')+'</span>':''}
             ${ch.pinned ? `<i class=" chat-pin-flag" title="${__('chat.pin')}" data-icon="push_pin"></i>` : ''}
             ${ch.postLevel === 'admins' ? `<i class=" chat-channel-lock" title="${__('chat.admin_channel')}" data-icon="shield"></i>` : ''}
@@ -201,6 +208,11 @@ async function loadMessages(animate = true) {
         if (currentChannelId !== channel.id) { finishLoading(); return; }
         const messages = result.data.messages || [];
         cachedMessages=messages;cachedChannelId=channel.id;
+        const readSequence=Math.max(readSequences.get(channel.id)||0,channel.lastReadSequence||0);
+        mentionCounts.set(channel.id,messages.filter(m=>m.authorUid!==myUid && m.sequence>readSequence
+          && ((m.mentions?.emails||[]).includes(myEmail)
+            ||(m.mentions?.departments||[]).some(d=>myDepartments.includes(d)))).length);
+        lastChannelsKey='';renderChannelList();
         cachedMessageVersion=Number(result.data.channel?.messageVersion||0);
         const key = JSON.stringify(messages.map(m => [m.id,m.taskStatus,m.text,m.createdAt,m.authorName,m.authorDepartments]));
         if (!animate && key === lastMessagesKey) { finishLoading(); return; } // degisiklik yoksa DOM'a dokunma
