@@ -45,6 +45,21 @@ function birthDateLabel(person){
     return estimate?estimate[0]+'–'+estimate[1]+' ('+__('contributors.birth_year_estimated')+')':'—';
 }
 
+function filterBirthYear(person){
+    const actual=Number(person.birthYear || person.birthDate?.slice(0,4));
+    if(Number.isInteger(actual)&&actual>=1900)return actual;
+    return legacyYearRange(person)?.[1] ?? null;
+}
+function syncBirthYearFilters(){
+    const current=new Date().getFullYear();
+    const labels={'age-14-15':(current-15)+'–'+(current-14),
+        'age-16-17':(current-17)+'–'+(current-16),
+        'age-18': '≤'+(current-18)};
+    for(const [name,value] of Object.entries(labels)){
+        const element=document.querySelector('#tab-contributors .filter-chip[data-filter="'+name+'"]');
+        if(element)element.textContent=value;
+    }
+}
 const editIcon = icon('pencil');
 const requestGuard = createRequestGuard();
 let loading;
@@ -66,6 +81,7 @@ export function initContributorsModule() {
     loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows(),skeletonDelay:0});
     window.filterContributors = filter => { activeFilter=filter; renderContributors(window.loadedContributors || []); };
     window.searchContributorsLocal = () => renderContributors(window.loadedContributors || []);
+    syncBirthYearFilters();
     refreshBtn = document.getElementById('refresh-contributors-btn');
     if(refreshBtn&&!document.getElementById('certificate-email-templates-btn')){
         const button=document.createElement('button');button.id='certificate-email-templates-btn';button.type='button';button.className='chrome-btn-outline';button.dataset.i18n='email_templates.title';button.textContent=__('email_templates.title');button.style.display=isPanelAdmin()?'':'none';button.onclick=openCertificateEmailTemplates;refreshBtn.before(button);refreshBtn.parentElement.classList.add('certificate-template-entry-row');
@@ -131,11 +147,12 @@ async function loadContributors() {
 
 function renderContributors(contributors) {
     refreshRosterAccess();
+    syncBirthYearFilters();
     const query = document.getElementById('contributor-search')?.value.toLowerCase().trim() || '';
     const hidden = new Set(getHiddenFieldsFor('contributors.list'));
     contributors = contributors.filter(p => {
-        const age=p.birthDate?birthAge(p.birthDate):Number(p.age);
-        const match = ({all:true,vertex:isActiveContributor(p),verified:!!p.hasVerified,unverified:!p.hasVerified,'age-14-15':age>=14&&age<=15,'age-16-17':age>=16&&age<=17,'age-18':age>=18,linkedin:!!p.linkedin,github:!!p.github,interview:!!p.interviewDate})[activeFilter];
+        const year=filterBirthYear(p),currentYear=new Date().getFullYear();
+        const match = ({all:true,vertex:isActiveContributor(p),verified:!!p.hasVerified,unverified:!p.hasVerified,'age-14-15':year!==null&&year>=currentYear-15&&year<=currentYear-14,'age-16-17':year!==null&&year>=currentYear-17&&year<=currentYear-16,'age-18':year!==null&&year<=currentYear-18,linkedin:!!p.linkedin,github:!!p.github,interview:!!p.interviewDate})[activeFilter];
         return match && [p.name,p.department,...(!hidden.has('contact')?[p.email]:[]),...(!hidden.has('about')?[p.about]:[])].some(v=>String(v || '').toLowerCase().includes(query));
     });
     document.querySelectorAll('#tab-contributors .filter-chip').forEach(b=>b.classList.toggle('active',b.dataset.filter===activeFilter));
