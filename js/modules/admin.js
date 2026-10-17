@@ -260,51 +260,42 @@ async function handleMaintenanceToggle() {
 export async function loadBackupHealthStatus() {
     const card = document.getElementById('gcs-backup-status');
     if (!card) return;
-
     const descEl = document.getElementById('gcs-backup-desc');
     const badgeEl = document.getElementById('gcs-backup-badge');
     const refreshBtn = document.getElementById('refresh-backup-btn');
-
-    if (refreshBtn) setButtonLoading(refreshBtn, true);
-
+    setButtonLoading(refreshBtn, true);
     try {
-        const { data } = await getBackupHealthStatusFn({});
-        if (data?.healthy) {
-            if (badgeEl) {
-                badgeEl.className = 'status-badge status-badge--success';
-                badgeEl.textContent = __('system.backup_healthy');
-            }
-            if (descEl) {
-                const dateStr = data.lastBackupDate ? new Date(data.lastBackupDate).toLocaleString() : '';
-                descEl.textContent = `${__('system.backup_last_success')} ${dateStr} (${Math.round((data.sizeBytes || 0) / 1024)} KB)`;
-            }
-        } else if (data?.status === 'stale') {
-            if (badgeEl) {
-                badgeEl.className = 'status-badge status-badge--warning';
-                badgeEl.textContent = __('system.backup_stale');
-            }
-            if (descEl) {
-                descEl.textContent = data.error || __('system.backup_unknown');
-            }
-        } else {
-            if (badgeEl) {
-                badgeEl.className = 'status-badge';
-                badgeEl.textContent = __('system.backup_configured');
-            }
-            if (descEl) {
-                descEl.textContent = data?.error || __('system.backup_unknown');
-            }
+        const {data} = await getBackupHealthStatusFn({});
+        if (!data || typeof data.status !== 'string') throw Object.assign(new Error('Invalid backup response'),{code:'functions/internal'});
+        const states = {
+            healthy:['system.backup_healthy','status-badge--success'],
+            stale:['system.backup_stale','status-badge--warning'],
+            unconfigured:['system.backup_unconfigured',''],
+            empty:['system.backup_empty',''],
+            unverifiable:['system.backup_unverifiable','']
+        };
+        const [label,style] = states[data.status] || states.unverifiable;
+        badgeEl.className = 'status-badge '+style;
+        badgeEl.textContent = __(label);
+        const details = [];
+        if (data.lastBackupDate) {
+            const date = new Date(data.lastBackupDate);
+            if (!Number.isNaN(date.getTime())) details.push(__('system.backup_last_success')+' '+date.toLocaleString());
         }
+        if (Number.isFinite(Number(data.sizeBytes))) details.push(__('system.backup_size')+' '+Math.round(Number(data.sizeBytes)/1024)+' KB');
+        details.push(__('system.backup_restore_not_verified'));
+        descEl.textContent = details.join(' · ') || __('system.backup_unknown');
+        if (data.error && !details.length) descEl.textContent = __('system.backup_unknown');
+        const timestamp = document.getElementById('gcs-backup-timestamp');
+        if (timestamp) timestamp.textContent = data.checkedAt ? __('system.backup_checked')+' '+new Date(data.checkedAt).toLocaleString() : '';
     } catch (err) {
-        if (badgeEl) {
-            badgeEl.className = 'status-badge';
-            badgeEl.textContent = __('cert.status_unknown');
-        }
-        if (descEl) {
-            descEl.textContent = userErrorMessage(err);
-        }
+        badgeEl.className = 'status-badge';
+        badgeEl.textContent = __('system.backup_unverifiable');
+        descEl.textContent = userErrorMessage(err);
+        const timestamp = document.getElementById('gcs-backup-timestamp');
+        if (timestamp) timestamp.textContent = '';
     } finally {
-        if (refreshBtn) setButtonLoading(refreshBtn, false);
+        setButtonLoading(refreshBtn, false);
     }
 }
 
