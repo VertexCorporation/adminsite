@@ -53,12 +53,14 @@ async function checkDeliveryStatus(requestId, continuePolling=false) {
     try {
         const response=await getNotificationDeliveryStatusFn({requestId});
         if(requestId!==statusRequestId)return;
-        const {status,successCount,failureCount}=response.data||{};
+        const {status,successCount,failureCount,failureCodes}=response.data||{};
+        const errors=Object.entries(failureCodes||{}).filter(([,count])=>count>0)
+            .slice(0,3).map(([code,count])=>`${code}: ${count}`).join(', ');
         if(status==='DELIVERED'||status==='NO_DELIVERIES') {
             const msg=status==='NO_DELIVERIES'
                 ? ntr('Gönderim tamamlandı ancak hiçbir cihaza ulaşılamadı. Cihaz tokenlarını kontrol et.','Delivery finished with no successful devices. Check device tokens.')
                 : ntr(`Gönderim tamamlandı: ${successCount} başarılı, ${failureCount} başarısız.`,`Delivery finished: ${successCount} successful, ${failureCount} failed.`);
-            clearDelivery();deliveryNotice(msg);
+            clearDelivery();deliveryNotice(errors?`${msg} ${errors}`:msg);
             showToast(msg,status==='DELIVERED'?'success':'warning');
             return;
         }
