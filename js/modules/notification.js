@@ -2,7 +2,7 @@ import { confirmDialog } from './shell.js';
 import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/notification.js
 
-import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn, getNotificationDeliveryStatusFn, auth } from '../core/firebase.js';
+import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn, auth } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
 import { showToast, userErrorMessage, __, getLang, onLangChange, escapeHTML } from '../utils/ui.js';
 
@@ -34,6 +34,21 @@ function deliveryNotice(message, action = null) {
         check.textContent=ntr('Durumu kontrol et','Check status');
         check.onclick=()=>void checkDeliveryStatus(statusRequestId, true);
         notice.append(check);
+        if(action==='repair') {
+            const retry=document.createElement('button');retry.type='button';
+            retry.className='chrome-btn-outline';retry.style.marginLeft='8px';
+            retry.textContent=ntr('Kuyruğu onar','Repair queue');
+            retry.onclick=async()=>{
+                retry.disabled=true;
+                try {
+                    await reconcileNotificationQueueFn({requestId:statusRequestId});
+                    statusPollCount=0;void checkDeliveryStatus(statusRequestId,true);
+                } catch(error){
+                    deliveryNotice(ntr('Kuyruk onarılamadı. Sunucu kayıtlarını incele.','Queue could not be repaired. Review server logs.'),'repair');
+                } finally {if(retry.isConnected)retry.disabled=false;}
+            };
+            notice.append(retry);
+        }
     }
 }
 function rememberDelivery(requestId) {
@@ -65,13 +80,14 @@ async function checkDeliveryStatus(requestId, continuePolling=false) {
             return;
         }
         if(status==='QUEUE_FAILED') {
-            clearDelivery();
-            deliveryNotice(ntr('Gönderim kuyruğa alınamadı. Sunucu yapılandırmasını kontrol et.','Delivery could not be queued. Check server configuration.'));
+            deliveryUncertain=true;
+            deliveryNotice(ntr('Bildirim kuyruğa alınamadı. Aynı işlem kimliğiyle kuyruğu onarmayı deneyin.','Delivery was not queued. You can repair the queue using the same request ID.'),'repair');
+            handleScheduleSwitchChange();
             return;
         }
         if(status==='FAILED_UNCERTAIN'||status==='QUEUE_UNCERTAIN') {
             deliveryUncertain=true;
-            deliveryNotice(ntr('Teslimat doğrulanamadı. Aynı bildirimi yeniden göndermeden önce sunucu kaydını incele.','Delivery is uncertain. Review the server record before sending again.'),true);
+            deliveryNotice(ntr('Teslimat doğrulanamadı. Aynı bildirimi yeniden göndermeden önce sunucu kaydını incele.','Delivery is uncertain. Review the server record before sending again.'),status==='QUEUE_UNCERTAIN'?'repair':true);
             handleScheduleSwitchChange();
             return;
         }
