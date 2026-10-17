@@ -469,9 +469,9 @@ function initNavigation() {
         if (changed) window.scrollTo({top:0,behavior:'instant'});
     };
     const dock=document.createElement('nav');dock.className='mobile-bottom-dock';dock.setAttribute('aria-label',__('navigation.main'));
-    dock.innerHTML=['contributors','models','news','notifications'].map((id,i)=>`<button type="button" data-mobile-tab="tab-${id}">${icon(['users-group','robot','news','bell'][i])}</button>`).join('')+`<button type="button" data-mobile-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`;
+    dock.innerHTML=['home','contributors','models','news','notifications'].map((id,i)=>`<button type="button" data-mobile-tab="tab-${id}">${icon(['home','users-group','robot','news','bell'][i])}</button>`).join('')+`<button type="button" data-mobile-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`;
     document.querySelector('.app-layout').append(dock);
-    dock.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.hasAttribute('data-mobile-more')){openMore(button);return;}const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);if(source){activateTab(source);source.closest('.nav-module')?.querySelector('[aria-current=page]')?.click();closeSidebarDrawer(false);}});
+    dock.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.hasAttribute('data-mobile-more')){openMore(button);return;}const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);if(source){activateTab(source);const selected=source.closest('.nav-module')?.querySelector('[aria-current=page]');if(selected)selected.click();else if(source.dataset.target==='tab-home'||source.dataset.target==='tab-chat')recordRoute({dataset:{navPanel:source.dataset.target.slice(4),navAction:''}});closeSidebarDrawer(false);}});
     onLangChange(()=>{dock.setAttribute('aria-label',__('navigation.main'));dock.querySelector('[data-mobile-more]').setAttribute('aria-label',__('contributors.more'));syncMobileDock();});
     function openMore(anchor){
         let unsubscribe=()=>{};const body=openModal({title:__('navigation.more'),titleKey:'navigation.more',onAfterClose:()=>unsubscribe()});
@@ -497,6 +497,11 @@ function initNavigation() {
     const restoreRoute = () => {
         const params=new URLSearchParams(location.search);
         const route=history.state?.vertexRoute || {panel:params.get('panel'),action:params.get('view')||''};
+        if (route.panel === 'home' || route.panel === 'chat') {
+            const tabButton = document.querySelector('.dock-btn[data-target="tab-' + route.panel + '"]');
+            if(tabButton){restoringRoute=true;activateTab(tabButton);restoringRoute=false;}
+            return;
+        }
         const child=[...document.querySelectorAll('[data-nav-panel]')].find(el=>el.dataset.navPanel===route.panel&&el.dataset.navAction===route.action&&!el.hidden);
         const exportChild=route.action==='attributions'?[...document.querySelectorAll('[data-nav-panel]')].find(el=>el.dataset.navAction==='export'&&el.dataset.navPanel===route.panel&&!el.hidden):null;
         if(child||exportChild){restoringRoute=true;(child||exportChild).click();if(exportChild)document.dispatchEvent(new CustomEvent('vertex:system-section',{detail:'attributions'}));restoringRoute=false;}
@@ -512,6 +517,7 @@ function initNavigation() {
             const wasExpanded = module?.classList.contains('expanded');
             activateTab(button);
             const destination=module?.querySelector('[aria-current=page]');if(destination)recordRoute(destination);
+            else if(button.dataset.target==='tab-home'||button.dataset.target==='tab-chat')recordRoute({dataset:{navPanel:button.dataset.target.slice(4),navAction:''}});
             if (wasActive) expandModule(module, !wasExpanded);
             // Keep mobile navigation open while choosing a contextual destination.
             if (!module?.querySelector('.sidebar-submenu')) closeSidebarDrawer(true);
@@ -563,7 +569,7 @@ function initNavigation() {
     document.addEventListener('vertex:close-navigation', () => closeSidebarDrawer());
     document.addEventListener('vertex:departments', () => queueMicrotask(refreshNavigation));
     closeSidebarDrawer(); syncTopbarTitle();
-    if(!history.state?.vertexRoute&&!new URLSearchParams(location.search).has('panel')){const initial=document.querySelector('.nav-module .dock-btn.active')?.closest('.nav-module').querySelector('[aria-current=page]');if(initial)history.replaceState({vertexRoute:{panel:initial.dataset.navPanel,action:initial.dataset.navAction||''}},'');}
+    if(!history.state?.vertexRoute&&!new URLSearchParams(location.search).has('panel')) history.replaceState({vertexRoute:{panel:'home',action:''}},'',location.pathname+'?panel=home&view=');
 }
 
 function initTopbarMenus() {

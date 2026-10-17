@@ -1,5 +1,6 @@
 const LANG = {
   tr: {
+    "nav.home": "Ev",
     "email_templates.rich_text": "Görsel düzenleyici",
     "email_templates.title": "E-posta Şablonları",
     "email_templates.help": "Sertifika e-postalarını buradan düzenle. Değişiklikler yalnızca gelecekte oluşturulan sertifikalarda kullanılır.",
@@ -877,6 +878,7 @@ const LANG = {
   },
 
   en: {
+    "nav.home": "Home",
     "email_templates.rich_text": "Visual editor",
     "email_templates.title": "Email Templates",
     "email_templates.help": "Customize certificate emails here. Changes apply only to future certificate events.",
