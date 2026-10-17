@@ -15,14 +15,18 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
-      - run: npm ci
+      - name: Refresh corrupted lockfile integrity from pinned packages
+        run: |
+          rm package-lock.json
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --no-audit --no-fund
       - name: Build immutable source-aligned release
         run: node scripts/release.cjs
       - name: Check JavaScript regression suite
@@ -38,7 +42,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html assets/releases/
+          git add index.html package-lock.json assets/releases/
           if ! git diff --cached --quiet; then
             git commit -m "fix: refresh verified console release assets"
             git push
