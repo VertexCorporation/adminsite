@@ -1,6 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 module.exports=async({page,selectTab,note,calls,payloads,setPeople,person,failMaintenance,failVerify})=>{
  const count=name=>calls.filter(n=>n===name).length;
+ const waitCrossfade=()=>page.waitForFunction(()=>!document.querySelector('.ui-crossfade-ghost'));
  const locale=async lang=>page.evaluate(async lang=>(await import('/js/lang.js')).setLang(lang),lang);
  const closeDrawer=async()=>{await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});};
  await page.setViewportSize({width:1440,height:900});await selectTab('contributors');
@@ -8,7 +9,7 @@ module.exports=async({page,selectTab,note,calls,payloads,setPeople,person,failMa
  assert(await page.locator('.vertex-brand-logo').first().evaluate(img=>img.complete&&img.naturalWidth>0));
  const loaderCSS=await page.evaluate(async()=>{const css=await(await fetch('/css/layout.css')).text();return /2100ms linear infinite/.test(css)&&/opacity 180ms ease/.test(css);});assert(loaderCSS);await page.waitForSelector('#app-loader',{state:'detached'});assert.equal(await page.locator('#app-loader').count(),0);
  note('Official brand asset, exact Soft Sweep timing and bootstrap removal');
- await page.locator('#contributor-search').fill('local test fixture');assert.equal(await page.locator('.contributor-row').count(),1);await page.locator('#contributor-search').fill('');
+ await page.locator('#contributor-search').fill('local test fixture');await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),1);await page.locator('#contributor-search').fill('');
  for(const lang of ['tr','en']){await locale(lang);const alignment=await page.evaluate(()=>{const pill=document.querySelector('.contributor-cell-status');const range=document.createRange();range.selectNodeContents(pill);const text=range.getBoundingClientRect(),box=pill.getBoundingClientRect(),head=document.querySelector('.contributor-table-head>span:nth-child(4)').getBoundingClientRect();return {textOffset:Math.abs(text.x+text.width/2-box.x-box.width/2),axisOffset:Math.abs(box.x+box.width/2-head.x-head.width/2)};});assert(alignment.textOffset<1,JSON.stringify(alignment));assert(alignment.axisOffset<1,JSON.stringify(alignment));}
  note('Biography search and measured status text/header centering in TR/EN');
  await locale('tr');await page.locator('#lang-toggle-btn').click();assert.equal(await page.locator('.language-popover.is-open [data-language=en]').innerText(),'İngilizce');await page.locator('.language-popover.is-open [data-language=en]').click();assert.equal(await page.locator('#lang-indicator').innerText(),'English');await page.locator('#lang-toggle-btn').click();assert.equal(await page.locator('.language-popover.is-open [data-language=tr]').innerText(),'Turkish');await page.keyboard.press('Escape');
@@ -18,7 +19,7 @@ module.exports=async({page,selectTab,note,calls,payloads,setPeople,person,failMa
  const beforeDelete=count('deletevertexcontributor');await page.locator('[data-more]').click();await page.locator('[data-delete]').click();assert.equal(count('deletevertexcontributor'),beforeDelete);await page.locator('.confirm-cancel').click();await page.waitForTimeout(210);
  await page.locator('[data-more]').click();await page.locator('[data-delete]').click();await page.locator('.confirm-ok').click();await page.waitForTimeout(300);assert.equal(count('deletevertexcontributor'),beforeDelete+1);
  note('Drawer toolbar, verified server result, failed verification rollback and explicit deletion (mock)');
- setPeople([{...person,department:'aero'},{...person,id:'second',name:'Second Participant',email:'second@example.invalid',department:'scout'}]);await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});
+ setPeople([{...person,department:'aero'},{...person,id:'second',name:'Second Participant',email:'second@example.invalid',department:'scout'}]);await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});await waitCrossfade();
  assert.deepEqual(await page.locator('.contributor-cell-dept').allTextContents(),['Aero','Scout']);
  if(await page.locator('.dock-btn[data-target=tab-contributors]').getAttribute('aria-expanded')==='false')await page.locator('.dock-btn[data-target=tab-contributors]').click();await page.locator('[data-nav-action=certificates]').click();assert.equal(await page.locator('[data-award]').count(),0);await page.locator('#certificate-person-search').fill('second');assert.equal(await page.locator('[data-person]').count(),1);await page.locator('[data-person=second]').click();await page.waitForSelector('.certificate-drawer.is-open');assert.equal(payloads.filter(p=>p.name==='getvertexcertificatedetails').at(-1).data.contributorId,'second');await page.keyboard.press('Escape');await closeDrawer();
  setPeople(null);await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});
