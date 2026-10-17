@@ -7,18 +7,23 @@ const fixture = [
  '<link rel="stylesheet" href="/css/tokens.css">',
  '<link rel="stylesheet" href="/css/base.css">',
  '<link rel="stylesheet" href="/css/ui/controls.css">',
+ '<link rel="stylesheet" href="/css/ui/overlay.css">',
+ '<link rel="stylesheet" href="/css/loading.css">',
  '<link rel="stylesheet" href="/css/ui/toast.css">',
  '<link rel="stylesheet" href="/css/ui/scroll.css">',
  '<link rel="stylesheet" href="/css/ui/layout.css">',
  '<style>#vertical{height:100px;width:220px;overflow:auto;border:1px solid}',
  '#horizontal{width:220px;overflow-x:auto;display:flex;gap:16px}',
  '#horizontal>span{flex:0 0 180px;padding:12px}',
- '#content{width:240px;min-height:70px;border:1px solid}</style></head><body>',
+ '#content{width:240px;min-height:70px;border:1px solid}',
+ '#both{width:220px;height:80px;overflow:auto}</style></head><body>',
  '<div id="toast-container"></div>',
  '<button id="action" class="chrome-btn-outline">Save</button>',
  '<label><input id="choice" type="checkbox"> Selection</label>',
  '<div id="vertical" data-scroll-fog><div style="height:420px">Scrollable vertical content</div></div>',
  '<div id="horizontal" data-scroll-fog><span>First</span><span>Second</span><span>Third</span></div>',
+ '<div id="both" data-scroll-fog><div style="width:440px;height:250px">Both axes</div></div>',
+ '<input id="required-field" required value="x">',
  '<div id="content"><p>Outgoing content</p></div></body></html>'
 ].join('');
 const server = http.createServer((req,res)=>{
@@ -37,17 +42,18 @@ const server = http.createServer((req,res)=>{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const browser=await chromium.launch({headless:true});
  try{
-  for(const width of [390,1440]){
+  for(const width of [320,360,390,768,1024,1440,1920]){
    const page=await browser.newPage({viewport:{width,height:820}});
    const exceptions=[];page.on('pageerror',e=>exceptions.push(e.message));
    await page.goto('http://127.0.0.1:'+server.address().port);
    await page.evaluate(async()=>{
-    const [ui,transition,loading,scroll]=await Promise.all([
+    const [ui,transition,loading,scroll,feedback]=await Promise.all([
      import('/js/utils/ui.js'),import('/js/ui/transition.js'),
-     import('/js/utils/loading.js'),import('/js/utils/scrollEdges.js')
+     import('/js/utils/loading.js'),import('/js/utils/scrollEdges.js'),import('/js/ui/feedback.js')
     ]);
     window.uiTest={ui,transition,loading};
     scroll.initScrollEdges();
+    feedback.initUiFeedback();
    });
    const count=width<721?2:3;
    for(const type of ['info','success','warning'].slice(0,count))
@@ -75,6 +81,7 @@ const server = http.createServer((req,res)=>{
     v.dispatchEvent(new Event('scroll'));h.dispatchEvent(new Event('scroll'));
    });
    assert.equal(await page.locator('#vertical').getAttribute('data-fog-bottom'),'false');
+   await page.waitForFunction(()=>document.getElementById('both').dataset.fogRight==='true'&&document.getElementById('both').dataset.fogBottom==='true');
    assert.equal(await page.locator('#horizontal').getAttribute('data-fog-right'),'false');
    const button=page.locator('#action');
    const startWidth=await button.evaluate(el=>el.getBoundingClientRect().width);
@@ -101,11 +108,48 @@ const server = http.createServer((req,res)=>{
    assert.equal(await button.getAttribute('data-state'),'error');
    await page.evaluate(()=>window.uiTest.loading.setButtonState(document.getElementById('action'),'idle'));
    assert.equal(await button.getAttribute('data-state'),null);
+   // Validation messages and aria-invalid are owned by the shared form layer.
+   await page.evaluate(()=>{
+    const field=document.getElementById('required-field');
+    field.value='';
+    field.dispatchEvent(new Event('invalid',{bubbles:false}));
+    if(field.getAttribute('aria-invalid')!=='true')throw Error('invalid state missing');
+    field.value='valid';
+    field.dispatchEvent(new Event('input',{bubbles:true}));
+    if(field.hasAttribute('aria-invalid'))throw Error('invalid state was not cleared');
+   });
+
+   // Async content preserves stale data, and skeletons are not shown instantly.
+   await page.evaluate(async()=>{
+    const host=document.getElementById('content');
+    const ctl=window.uiTest.loading.createLoadingController(host);
+    ctl.start();
+    if(!host.textContent.includes('Incoming content'))throw Error('stale content vanished');
+    if(!host.classList.contains('is-refreshing'))throw Error('refresh state missing');
+    ctl.error('Network unavailable',()=>{});
+    if(!host.textContent.includes('Incoming content'))throw Error('stale error erased the data');
+    ctl.start();
+    ctl.success('<strong>Fresh content</strong>');
+    if(!host.textContent.includes('Fresh content'))throw Error('fresh content not rendered');
+    ctl.destroy();
+   });
+   await page.waitForTimeout(240);
+   assert.equal(await page.locator('.ui-crossfade-ghost').count(),0);
+
+   for(const theme of ['light','dark']){
+    await page.evaluate(theme=>{
+     if(theme==='light')document.documentElement.setAttribute('data-theme','light');
+     else document.documentElement.removeAttribute('data-theme');
+    },theme);
+    const actual=await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--bg-app').trim().toLowerCase());
+    assert.equal(actual,theme==='light'?'#f8f9fa':'#0f0f10');
+   }
+
    await page.emulateMedia({reducedMotion:'reduce'});
    assert.equal(await page.locator('.toast').first().evaluate(el=>getComputedStyle(el).transitionDuration),'0s');
    assert.deepEqual(exceptions,[]);
    await page.close();
   }
-  console.log('PASS ui smoke: mobile/desktop toast, crossfade, scroll, buttons, reduced motion');
+  console.log('PASS ui smoke: 7 widths, light/dark, toast, crossfade, stale data, two-axis scroll, forms, actions, reduced motion');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>server.close());
