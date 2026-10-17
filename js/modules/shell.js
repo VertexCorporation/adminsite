@@ -1,5 +1,6 @@
 import { showWorkspace } from './views.js';
 import { afterMotion } from '../ui/motion.js';
+import { lockScroll, unlockScroll } from '../ui/overlay.js';
 // js/modules/shell.js
 //
 // Uygulama kabuğu ve yükseltilmiş yüzey altyapısı:
@@ -191,7 +192,7 @@ export function closeDrawer(restoreFocus = true) {
     scrim.style.pointerEvents = 'none';
     scrim.classList.remove('is-open');
     afterMotion(root, () => { root.remove(); scrim.remove(); onAfterClose?.(); }, 'transform');
-    document.body.style.overflow = activeModal ? 'hidden' : '';
+    unlockScroll('drawer');
     unregisterSurface('drawer');
     if (restoreFocus && previouslyFocused && document.contains(previouslyFocused)) {
         previouslyFocused.focus({ preventScroll: true });
@@ -226,7 +227,7 @@ export function openDrawer(opts = {}) {
     root.querySelector('.vx-drawer-title').textContent = opts.title || '';
 
     document.body.append(scrim, root);
-    document.body.style.overflow = 'hidden';
+    lockScroll('drawer');
 
     const body = root.querySelector('.vx-drawer-body');
     opts.render?.(body);
@@ -281,7 +282,7 @@ export function closeModal() {
     root.classList.remove('is-open');overlay.classList.remove('is-open');overlay.classList.add('is-closing');
     root.setAttribute('aria-hidden','true');root.inert=true;root.style.pointerEvents='none';overlay.style.pointerEvents='none';
     afterMotion(root, () => { root.remove(); overlay.remove(); }, 'transform');
-    document.body.style.overflow = activeDrawer?'hidden':'';
+    unlockScroll('modal');
     unregisterSurface('modal');
     if (previouslyFocused && document.contains(previouslyFocused)) previouslyFocused.focus({ preventScroll: true });
     onAfterClose?.();
@@ -316,7 +317,7 @@ export function openModal(opts = {}) {
     root.querySelector('.vx-modal-title').textContent = opts.title || '';
 
     document.body.append(overlay, root);
-    document.body.style.overflow = 'hidden';
+    lockScroll('modal');
     const body = root.querySelector('.vx-modal-body');
     opts.render?.(body);
     requestAnimationFrame(() => { if(activeModal?.root !== root)return;overlay.classList.add('is-open'); root.classList.add('is-open'); });
@@ -377,7 +378,7 @@ export function confirmDialog(options = {}) {
         root.setAttribute('aria-modal', 'true');
 
         document.body.append(overlay, root);
-        document.body.style.overflow = 'hidden';
+        lockScroll('confirm');
         registerSurface('modal');
 
         let resolved = false;
@@ -397,7 +398,7 @@ export function confirmDialog(options = {}) {
             root.style.pointerEvents = 'none';
             overlay.style.pointerEvents = 'none';
             afterMotion(root, () => { root.remove(); overlay.remove(); }, 'transform');
-            document.body.style.overflow = '';
+            unlockScroll('confirm');
             unregisterSurface('modal');
             if (previouslyFocused && document.contains(previouslyFocused)) {
                 previouslyFocused.focus({ preventScroll: true });
