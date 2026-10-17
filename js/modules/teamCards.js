@@ -213,6 +213,11 @@ export function openTeamCardDrawer(cardToEdit = null) {
                 <input id="team-card-position-tr" type="text" maxlength="160"
                     value="${escapeHTML(cardToEdit?.titles?.tr || '')}">
             </div>
+            <div class="form-group-field">
+                <label for="team-card-order">${__('team_cards.order_label')}</label>
+                <input id="team-card-order" type="number" min="1" max="1000" step="1" required
+                    value="${escapeHTML(String(cardToEdit?.order || Math.min(1000, Math.max(0,...teamCards.map(card=>Number(card.order)||0))+1)))}">
+            </div>
 
             <!-- Sosyal Medya Bağlantıları -->
             <div class="form-section">
@@ -277,10 +282,11 @@ export function openTeamCardDrawer(cardToEdit = null) {
         const name = drawerBody.querySelector('#team-card-name').value.trim();
         const position = drawerBody.querySelector('#team-card-position').value.trim();
         const positionTr = drawerBody.querySelector('#team-card-position-tr').value.trim();
+        const order = Number(drawerBody.querySelector('#team-card-order').value);
         const linkedin = drawerBody.querySelector('#team-card-linkedin').value.trim();
         const instagram = drawerBody.querySelector('#team-card-instagram').value.trim();
 
-        if (!name || !position) return;
+        if (!name || !position || !Number.isInteger(order) || order<1 || order>1000) return;
         if (POSITIONS.includes(position) && teamCards.some(card=>card.id!==cardToEdit?.id && (card.titles?.en || card.position)===position)) {
             showToast(() => __('team_cards.position_occupied'),'error');return;
         }
@@ -305,7 +311,7 @@ export function openTeamCardDrawer(cardToEdit = null) {
             const payload = {
                 kind:'card',id:cardToEdit?.id,name,imageUrl,
                 positions:{...(cardToEdit?.titles||{}),en:position,tr:positionTr || cardToEdit?.titles?.tr || position},
-                order:cardToEdit?.order || Math.min(1000, Math.max(0,...teamCards.map(card=>Number(card.order)||0))+1),
+                order,
                 links:[...(cardToEdit?.links || []).filter(link=>!['linkedin','instagram'].includes(String(link.label).toLowerCase())),
                     ...[{label:'linkedin',url:linkedin},{label:'instagram',url:instagram}].filter(link=>link.url)]
             };
