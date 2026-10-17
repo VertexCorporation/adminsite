@@ -1,10 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const src=fs.readFileSync(path.join(__dirname,'../js/utils/contributor-edit.js'),'utf8');
 const delta=new Function(src.replaceAll('export ','')+';return changedContributorFields;')();
-const applicant={name:'Original Name',email:'example@example.invalid',phone:'+905551234567',age:15,department:'Chroma',language:'tr',linkedin:'',github:'',interviewDate:'2026-10-10T12:00',about:'hello',linkedUid:'uid-fixture'};
-const form={...applicant,department:'chroma',age:'15'},displayed={department:'chroma',interviewDate:'2026-10-10T12:00'};
+const applicant={name:'Original Name',email:'example@example.invalid',phone:'+905551234567',birthDate:'2011-03-08',department:'Chroma',language:'tr',linkedin:'',github:'',interviewDate:'2026-10-10T12:00',about:'hello',linkedUid:'uid-fixture'};
+const form={...applicant,department:'chroma',birthDate:'2011-03-08'},displayed={department:'chroma',interviewDate:'2026-10-10T12:00'};
 test('name-only update does not resend linked email, phone or department',()=>assert.deepEqual(delta(applicant,{...form,name:'New Name'},displayed),{name:'New Name'}));
-test('no-op despite legacy department casing and numerical age',()=>assert.deepEqual(delta(applicant,form,displayed),{}));
+test('no-op despite legacy department casing and unchanged birth date',()=>assert.deepEqual(delta(applicant,form,displayed),{}));
+test('birth date update is explicit',()=>assert.deepEqual(delta(applicant,{...form,birthDate:'2010-12-25'},displayed),{birthDate:'2010-12-25'}));
 test('real department change is explicit',()=>assert.deepEqual(delta(applicant,{...form,department:'aero'},displayed),{department:'aero'}));
 test('email changes never imply other edits',()=>assert.deepEqual(delta(applicant,{...form,email:'other@example.invalid'},displayed),{email:'other@example.invalid'}));
 test('local display of original interview date stays untouched',()=>assert.deepEqual(delta(applicant,{...form,name:'Edited'},displayed),{name:'Edited'}));
