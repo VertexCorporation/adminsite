@@ -18,11 +18,11 @@ function bootWith(elements) {
   };
   const auth = { onAuthStateChanged() {} };
   const onLangChange = () => {};
-  const init = new Function('document', 'console', 'auth', 'onLangChange', [
+  const init = new Function('document', 'console', 'auth', 'onLangChange', 'loadVertexAccounts', 'renderApplications', 'openBulkPreview', [
     'const el = id => document.getElementById(id);',
     implementation.replace('export ', ''),
     'return initPeopleModule;'
-  ].join('\n'))(document, {info: message => notices.push(message)}, auth, onLangChange);
+  ].join('\n'))(document, {info: message => notices.push(message)}, auth, onLangChange, () => {}, () => {}, () => {});
   init();
   return { controls, notices };
 }

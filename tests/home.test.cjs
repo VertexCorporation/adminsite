@@ -30,7 +30,7 @@ test('home preserves router history and mobile access', () => {
   assert.match(shell, /route.panel === 'home'/);
   assert.match(shell, /panel:'home'/);
   assert.match(shell, /\['home','contributors','models'/);
-  assert.match(read('css/home.css'), /@media\(max-width:760px\)/);
+  assert.match(read('css/home.css'), /@media\s*\(max-width:760px\)/);
 });
 
 test('release contains home module and stylesheet', () => {
