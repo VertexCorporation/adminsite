@@ -9,6 +9,8 @@ const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=tru
 
 let failMembership=false,failAdmin=false;
 let siteCards=[{id:'board-1',kind:'card',name:'Example Director',positions:{en:'CEO',tr:'CEO'},imageUrl:'https://static.example.invalid/team.webp',order:1,links:[{label:'linkedin',url:'https://www.linkedin.com/in/example'}]}];
+let failEmailTemplates=false;
+let emailTemplates=['merit','tenacity','constancy','nobility','majesty'].flatMap(certificateType=>['tr','en'].map(language=>({certificateType,language,revision:0,subject:'Hello {{recipientName}}',html:'<p>Welcome {{recipientName}}</p>',isDefault:true})));
 let honors=[{id:'honor-1',name:'Example Honoree'}];let adminRoster=[{uid:'admin',email:'admin@example.invalid'},{uid:'other-admin',email:'other@example.invalid'}];
 const person={membership:{status:'matched',uid:'auth-person',isVertex:true},id:'person',name:'Example Participant',email:'person@example.invalid',language:'en',hasVerified:false,createdAt:{_seconds:1767272400},department:'Core',interviewDate:'2026-10-10',about:'Local test fixture'};
 const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet'},constancy:{en:'Constancy',tr:'Metanet'},nobility:{en:'Nobility',tr:'Azamet'},majesty:{en:'Majesty',tr:'Asalet'}};
@@ -35,6 +37,7 @@ await page.route('**/*',async route=>{
   if(name==='sendtargetednotification' && failNotification)return route.fulfill({status:500,contentType:'application/json',body:JSON.stringify({error:{status:'INTERNAL',message:'Mock delivery outcome uncertain'}})});
   if(name==='getserverstatus'&&failMaintenance)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture maintenance unavailable'}})});
   if(name==='togglecontributorverification'&&failVerify)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture verification unavailable'}})});
+  if(name==='getvertexcertificateemailtemplates'&&failEmailTemplates)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture templates unavailable'}})});
   let result={};
   if(name==='getserverstatus')result={isUnderMaintenance:maintenanceState};
   if(name==='setserverstatus'){maintenanceState=route.request().postDataJSON().data.maintenanceEnabled;result={success:true};}
@@ -42,6 +45,17 @@ await page.route('**/*',async route=>{
   if(name==='savedepartmentpermissions' && failPermissionSave)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture permission rejection'}})});
   if(name==='getvertexcontributors'){const fixture=people || [person];if(contributorDelay)await new Promise(r=>setTimeout(r,contributorDelay));if(failContributors)return route.fulfill({contentType:'application/json',status:503,body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});result={contributors:fixture};}
   else if(name==='togglecontributorverification')result={success:true,status:'succeeded'};
+  else if(name==='getvertexcertificateemailtemplates')result={templates:emailTemplates};
+  else if(name==='previewvertexcertificateemailtemplate')result={emailSubject:'Preview',emailHtml:'<p>Preview</p>'};
+  else if(name==='savevertexcertificateemailtemplate'){
+    const data=route.request().postDataJSON()?.data;
+    const index=emailTemplates.findIndex(item=>item.certificateType===data.certificateType&&item.language===data.language);
+    if(index<0)throw Error('Fixture template missing');
+    const previous=emailTemplates[index];
+    if(data.expectedRevision!==previous.revision)return route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:{status:'ABORTED',message:'Revision conflict'}})});
+    result={...previous,subject:data.subject,html:data.html,revision:previous.revision+1};
+    emailTemplates[index]=result;
+  }
   else if(name==='getvertexcertificatedetails')result={types,eligibility:{status:'joining-date-required',eligibleTypes:[],joinedAt:joiningDate},history};
   else if(name==='setvertexcontributorjoiningdate'){joiningDate=route.request().postDataJSON().data.joinedAt;result={success:true};}
   else if(name==='issuevertexcertificate'){history=[{id:'person--tenacity',certificateType:'tenacity',status:'processing',attempts:[]}];result={id:'person',status:'processing'};}
@@ -117,6 +131,17 @@ assert.equal(payloads.filter(p=>p.name==='setsiteteamentry').at(-1).data.positio
 assert.equal(payloads.filter(p=>p.name==='setsiteteamentry').at(-1).data.order,3);
 note('Team card read, multilingual update and write contract');
 await selectTab('contributors');
+failEmailTemplates=true;
+await page.locator('#certificate-email-templates-btn').click();
+await page.waitForSelector('.email-template-drawer .state-block button');
+failEmailTemplates=false;
+await page.locator('.email-template-drawer .state-block button').click();
+await page.waitForSelector('#template-subject');
+await page.locator('#template-subject').fill('Updated {{recipientName}}');
+await page.locator('.email-template-drawer [data-save]').click();
+await page.waitForSelector('.email-template-drawer',{state:'detached'});
+assert.equal(payloads.filter(p=>p.name==='savevertexcertificateemailtemplate').at(-1).data.expectedRevision,0);
+note('Certificate email template error, retry and optimistic revision save');
 await page.locator('[data-details]').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
 await page.locator('.contributor-cell-dept').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
 await page.locator('.contributor-row').first().focus();await page.keyboard.press('Enter');await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Contributor drawer opens by name, whole row and keyboard');
