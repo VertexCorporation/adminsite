@@ -27,6 +27,7 @@ const verificationListeners=new Map();
 let activeFilter = 'all';
 let listContainer;
 let refreshBtn;
+let filterTransitionRevision=0,filterTransitionTimer=null,filterHeightTimer=null;
 
 export function initContributorsModule() {
     document.addEventListener('vertex:certificate-selector',openCertificateSelector);
@@ -35,8 +36,8 @@ export function initContributorsModule() {
     listContainer = document.getElementById('contributors-list-container');
     listContainer.replaceChildren();
     loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows(),skeletonDelay:0});
-    window.filterContributors = filter => { activeFilter=filter; renderContributors(window.loadedContributors || []); };
-    window.searchContributorsLocal = () => renderContributors(window.loadedContributors || []);
+    window.filterContributors = filter => { activeFilter=filter; transitionFilteredContributors(); };
+    window.searchContributorsLocal = transitionFilteredContributors;
     refreshBtn = document.getElementById('refresh-contributors-btn');
     if(refreshBtn&&!document.getElementById('certificate-email-templates-btn')){
         const button=document.createElement('button');button.id='certificate-email-templates-btn';button.type='button';button.className='chrome-btn-outline';button.dataset.i18n='email_templates.title';button.textContent=__('email_templates.title');button.style.display=isPanelAdmin()?'':'none';button.onclick=openCertificateEmailTemplates;refreshBtn.before(button);refreshBtn.parentElement.classList.add('certificate-template-entry-row');
@@ -100,7 +101,33 @@ async function loadContributors() {
     }
 }
 
-function renderContributors(contributors) {
+function transitionFilteredContributors() {
+    if (!listContainer) return;
+    const currentRows=listContainer.querySelector('.contributor-table-rows');
+    const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    clearTimeout(filterTransitionTimer);
+    clearTimeout(filterHeightTimer);
+    const revision=++filterTransitionRevision;
+    if (!currentRows || reduced) { renderContributors(window.loadedContributors || []);return; }
+    // Preserve the old table's height during the crossfade, then release it.
+    listContainer.style.minHeight=listContainer.getBoundingClientRect().height+'px';
+    listContainer.classList.add('is-filter-transitioning');
+    filterTransitionTimer=setTimeout(()=>{
+        if(revision!==filterTransitionRevision)return;
+        renderContributors(window.loadedContributors || [],true);
+        listContainer.classList.remove('is-filter-transitioning');
+        filterHeightTimer=setTimeout(()=>{if(revision===filterTransitionRevision)listContainer.style.minHeight='';},180);
+    },110);
+}
+
+function renderContributors(contributors, fromFilter=false) {
+    if(!fromFilter){
+        ++filterTransitionRevision;
+        clearTimeout(filterTransitionTimer);
+        clearTimeout(filterHeightTimer);
+        listContainer?.classList.remove('is-filter-transitioning');
+        if(listContainer)listContainer.style.minHeight='';
+    }
     refreshRosterAccess();
     const query = document.getElementById('contributor-search')?.value.toLowerCase().trim() || '';
     const hidden = new Set(getHiddenFieldsFor('contributors.list'));
@@ -116,6 +143,26 @@ function renderContributors(contributors) {
     const headers = ['name','department','age','status','applied','actions'];
     loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row ${p.hasVerified?'is-verified':''}" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(p.age??'—')}</span><span class="contributor-cell-status status-badge ${p.hasVerified?'success':''}">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.applicationDate?escapeHTML(formatCertificateDate(p.applicationDate)):p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${contributorState(p)==='active'?'is-active':contributorState(p)==='unknown'?'is-unknown':''}" data-membership="${escapeHTML(p.id)}" title="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-label="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-pressed="${isActiveContributor(p)}" data-vertex-state="${contributorState(p)}" ${!deploymentCapabilities.contributorMembershipWrites||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`));
     listContainer.querySelectorAll('[data-membership]').forEach(b=>b.onclick=()=>toggleMembership(contributors.find(p=>p.id===b.dataset.membership),b));
+    // Treat the entire row as a detail target without swallowing individual actions.
+    // Keyboard users can activate a focused row with Enter or Space.
+    listContainer.querySelectorAll('.contributor-row').forEach(row => {
+        row.setAttribute('tabindex', '0');
+        row.setAttribute('role', 'group');
+        row.setAttribute('aria-label', row.querySelector('.contributor-name')?.textContent || '');
+        const open = () => {
+            const contributor = contributors.find(p => p.id === row.dataset.contributorId);
+            if (contributor) openContributorDetails(contributor);
+        };
+        row.addEventListener('click', event => {
+            if (event.target.closest('button, a, input, select, textarea, [data-stop-row-open]')) return;
+            open();
+        });
+        row.addEventListener('keydown', event => {
+            if (event.target !== row || !['Enter', ' '].includes(event.key)) return;
+            event.preventDefault();
+            open();
+        });
+    });
     listContainer.querySelectorAll('[data-details]').forEach(b=>b.onclick=()=>openContributorDetails(contributors.find(p=>p.id===b.dataset.details)));
     listContainer.querySelectorAll('.certificate-manage-btn').forEach(b=>b.onclick=()=>openCertificates(contributors.find(p=>p.id===b.dataset.id),fetchContributorsData,b));
     // Add event listeners to edit (pencil) buttons
