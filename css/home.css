@@ -444,3 +444,124 @@ html[data-theme="light"] #tab-home .home-tech-logo img[src$="/cal.svg"],
   #tab-home .home-module-card,
   #tab-home .home-product-card { transition:none; }
 }
+
+/* Finishing pass: balanced technology catalogue and soft fog at both artwork edges. */
+#tab-home .home-hero-art {
+  isolation:isolate;
+}
+#tab-home .home-flow-svg {
+  z-index:1;
+}
+#tab-home .home-hero-art::before {
+  z-index:2;
+  content:'';
+  position:absolute;
+  inset:-8px;
+  border-radius:0;
+  background:linear-gradient(90deg,
+    var(--bg-surface) 0%,
+    var(--bg-surface) 4%,
+    transparent 28%,
+    transparent 72%,
+    var(--bg-surface) 96%,
+    var(--bg-surface) 100%);
+  filter:blur(13px);
+  opacity:.90;
+  pointer-events:none;
+}
+#tab-home .home-hero-art::after {
+  z-index:2;
+  content:'';
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse 21% 72% at 0% 50%,var(--bg-surface),transparent 100%),
+    radial-gradient(ellipse 21% 72% at 100% 50%,var(--bg-surface),transparent 100%);
+  opacity:.70;
+  pointer-events:none;
+}
+#tab-home .home-technology {
+  margin-top:clamp(76px,8vw,108px);
+}
+#tab-home .home-technology-grid {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  column-gap:17px;
+  row-gap:17px;
+}
+#tab-home .home-tech-card {
+  min-height:170px;
+  padding:24px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+}
+#tab-home .home-tech-brand {
+  margin-bottom:20px;
+  gap:14px;
+}
+#tab-home .home-tech-logo {
+  flex-basis:46px;
+  width:46px;
+  height:46px;
+  border-radius:11px;
+}
+#tab-home .home-tech-logo img {
+  width:27px;
+  height:27px;
+}
+#tab-home .home-tech-logo img[src$="/elevenlabs.svg"] {
+  width:20px;
+  height:31px;
+}
+#tab-home .home-tech-fallback {
+  color:var(--text-primary);
+  font-size:20px;
+  font-weight:680;
+  line-height:1;
+}
+#tab-home .home-tech-name {
+  font-size:14px;
+  letter-spacing:-.01em;
+}
+#tab-home .home-tech-reason {
+  font-size:13px;
+  line-height:1.75;
+  text-wrap:pretty;
+}
+#tab-home .home-technology-note {
+  margin-top:32px;
+  padding-top:24px;
+  max-width:990px;
+}
+#tab-home .home-tech-logo img[src$="/cal.svg"],
+#tab-home .home-tech-logo img[src$="/github.svg"],
+#tab-home .home-tech-logo img[src$="/elevenlabs.svg"] {
+  filter:brightness(0) invert(1);
+}
+html[data-theme="light"] #tab-home .home-tech-logo img[src$="/cal.svg"],
+html[data-theme="light"] #tab-home .home-tech-logo img[src$="/github.svg"],
+html[data-theme="light"] #tab-home .home-tech-logo img[src$="/elevenlabs.svg"],
+html[data-theme="system"] #tab-home .home-tech-logo img[src$="/cal.svg"],
+html[data-theme="system"] #tab-home .home-tech-logo img[src$="/github.svg"],
+html[data-theme="system"] #tab-home .home-tech-logo img[src$="/elevenlabs.svg"] {
+  filter:none;
+}
+@media (prefers-color-scheme:dark) {
+  html[data-theme="system"] #tab-home .home-tech-logo img[src$="/cal.svg"],
+  html[data-theme="system"] #tab-home .home-tech-logo img[src$="/github.svg"],
+  html[data-theme="system"] #tab-home .home-tech-logo img[src$="/elevenlabs.svg"] {
+    filter:brightness(0) invert(1);
+  }
+}
+@media (max-width:1310px) {
+  #tab-home .home-technology-grid {grid-template-columns:repeat(3,minmax(0,1fr));}
+}
+@media (max-width:880px) {
+  #tab-home .home-technology-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (max-width:520px) {
+  #tab-home .home-technology-grid {grid-template-columns:minmax(0,1fr);}
+  #tab-home .home-tech-card {min-height:135px;padding:22px;}
+  #tab-home .home-tech-brand {margin-bottom:13px;}
+  #tab-home .home-hero-art::before {filter:blur(10px);}
+}
