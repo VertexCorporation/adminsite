@@ -249,4 +249,25 @@
 
 .template-rich-editor{min-height:240px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:16px;background:var(--bg-surface);color:var(--text-primary);font-family:inherit;line-height:1.6;overflow-wrap:anywhere;white-space:normal}.template-rich-editor:focus{outline:2px solid var(--border-strong);outline-offset:2px}.template-rich-editor p,.template-rich-editor div{margin:0 0 12px}.template-rich-editor ul,.template-rich-editor ol{padding-left:24px}.template-rich-editor a{color:var(--text-primary);text-decoration:underline}.template-rich-editor[contenteditable=false]{opacity:.65}.email-template-drawer #template-body.template-rich-editor{font-family:inherit;font-size:var(--fs-body)}
 
+/* Keep long rich-text emails inside a scrollable editing surface. */
+.email-template-drawer .vx-drawer-body{min-height:0;overflow-y:auto}
+.email-template-drawer #template-body.template-rich-editor{
+    box-sizing:border-box;
+    display:block;
+    flex:0 0 auto;
+    width:100%;
+    min-width:0;
+    height:clamp(220px,40dvh,430px);
+    max-height:min(48dvh,480px);
+    min-height:min(220px,35dvh);
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+    scrollbar-gutter:stable;
+}
+.email-template-drawer #template-body.template-rich-editor > *{max-width:100%}
+
+
 .certificate-template-entry-row{flex-wrap:wrap}.certificate-template-entry-row .title-details{margin-right:auto}
