@@ -25,18 +25,23 @@ jobs:
       # Generate the immutable release in CI's temporary checkout only.
       # Never push the generated assets or deploy the website.
       - run: node scripts/release.cjs
-      # Legacy certificate tests require sibling Fulcrum fixtures not present in CI.
-      # Capture their result without masking failures in the required UI suite.
-      - name: legacy unit suite (diagnostic)
-        run: npm test
-        continue-on-error: true
+      # GitHub's adminsite runner cannot read the private Fulcrum repository.
+      # Its four real-contract tests run separately in an isolated private
+      # Fulcrum workflow with both repositories checked out (no copied backend).
+      # Every other original unit test is mandatory here; no error masking.
+      - name: General repository-local regression tests
+        shell: bash
+        run: |
+          mapfile -t testfiles < <(find tests -maxdepth 1 -name '*.test.cjs' \
+            ! -name 'certificate-owner-policy.test.cjs' \
+            ! -name 'zapier-delivery-replay.test.cjs' \
+            ! -name 'zapier-preparation.test.cjs' \
+            ! -name 'zapier-real-delivery.test.cjs' | sort)
+          node --test "${testfiles[@]}"
       - run: node --test tests/ui.test.cjs
       - run: npx playwright install --with-deps chromium
       - run: node tests/ui-browser.cjs
-      # The legacy suite includes authorization assumptions not modeled by this
-      # UI-only fixture. It is still executed and its failures remain visible.
-      - name: legacy browser suite (diagnostic)
+      - name: Full legacy application browser regression
         run: npm run test:browser
-        continue-on-error: true
         env:
           VERTEX_BROWSER: chromium
