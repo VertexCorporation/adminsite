@@ -228,8 +228,24 @@ export function initEventsModule() {
   const box=document.getElementById('events-registrations');box.replaceChildren();
   const heading=document.createElement('p');heading.className='form-hint';heading.textContent=tr('Kayıtlar yükleniyor…','Loading registrations…');box.append(heading);
   try{
-   const {data}=await eventCallable('listEventRegistrations',{eventId:document.getElementById('events-registration-search').value});
-   const rows=data.registrations||[];box.replaceChildren();
+   const eventId=document.getElementById('events-registration-search').value.trim();
+   const {data}=await eventCallable('listEventRegistrations',{eventId,pageSize:100});
+   const rows=[...(data.registrations||[])];
+   let nextCursor=data.nextCursor||null;
+   let fetching=false;
+   const fetchNext=async()=>{
+    if(!nextCursor || fetching)return;
+    fetching=true;
+    const cursor=nextCursor;
+    try{
+     const response=(await eventCallable('listEventRegistrations',{eventId,pageSize:100,cursor})).data;
+     if(!response.registrations?.length&&response.nextCursor===cursor)
+      throw new Error(tr('Sayfalama devam etmiyor.','Pagination did not advance.'));
+     rows.push(...(response.registrations||[]));
+     nextCursor=response.nextCursor||null;
+    }finally{fetching=false;}
+   };
+   box.replaceChildren();
    if(!rows.length){box.textContent=tr('Kayıt bulunamadı.','No registrations found.');return;}
    const search=document.createElement('input');search.type='search';
    search.placeholder=tr('Kayıtlarda ara','Search registrations');search.setAttribute('aria-label',search.placeholder);
@@ -245,7 +261,16 @@ export function initEventsModule() {
    const actions=document.createElement('div');actions.className='ui-list-actions';
    const exportButton=document.createElement('button');exportButton.type='button';
    exportButton.className='chrome-btn-outline';exportButton.textContent=tr('CSV dışa aktar','Export CSV');
-   actions.append(exportButton);box.insertBefore(actions,viewport);
+   const loadMore=document.createElement('button');loadMore.type='button';
+   loadMore.className='chrome-btn-outline';
+   loadMore.textContent=tr('Diğer kayıtları yükle','Load more registrations');
+   loadMore.hidden=!nextCursor;
+   const loadAll=document.createElement('button');loadAll.type='button';
+   loadAll.className='chrome-btn-outline';
+   loadAll.textContent=tr('Tüm kayıtlarda ara','Search all registrations');
+   loadAll.hidden=!nextCursor;
+   const countLabel=document.createElement('span');countLabel.className='form-hint';
+   actions.append(exportButton,loadMore,loadAll,countLabel);box.insertBefore(actions,viewport);
    let page=1;const pageSize=25;
    const columns=[['name','Ad','Name'],['email','E-posta','Email'],['status','Durum','Status'],['ticketCategory','Bilet','Ticket'],['createdAt','Kayıt zamanı','Registered at']];
    const visible=()=>rows.filter(row=>[row.name,row.email,row.status,row.ticketCategory,row.id]
@@ -261,11 +286,33 @@ export function initEventsModule() {
      body.append(trEl);
     }
     renderPager(box,{page,total:matches.length,pageSize,language:getLang(),onChange:next=>{page=next;paint();}});
+    loadMore.hidden=!nextCursor;
+    loadAll.hidden=!nextCursor;
+    countLabel.textContent=nextCursor
+        ?tr(`${rows.length} kayıt yüklendi; devamı mevcut.`,`${rows.length} registrations loaded; more available.`)
+        :tr(`${rows.length} kayıt yüklendi.`,`${rows.length} registrations loaded.`);
    };
+   const loadRemaining=async()=>{
+    if(fetching)return;
+    loadMore.disabled=loadAll.disabled=exportButton.disabled=true;
+    try {
+     // Bounded in-browser collection. Large reports require a dedicated background export.
+     while(nextCursor && rows.length<20000)await fetchNext();
+     if(nextCursor)showToast(tr('20.000 kayıt gösterildi. Daha büyük rapor için yöneticiye başvurun.','20,000 records loaded. Contact an administrator for larger exports.'),'info');
+    }catch(error){fail(error);}
+    finally{loadMore.disabled=loadAll.disabled=exportButton.disabled=false;paint();}
+   };
+   loadMore.onclick=async()=>{loadMore.disabled=true;try{await fetchNext();page=Math.ceil(rows.length/pageSize);paint();}catch(error){fail(error);}finally{loadMore.disabled=false;}};
+   loadAll.onclick=loadRemaining;
    search.addEventListener('input',()=>{page=1;paint();});
    exportButton.onclick=async()=>{
     if(!await confirmDialog({title:tr('Kişisel verileri dışa aktar','Export personal data'),
       body:tr('Yetkili olduğun etkinlik kayıtları CSV olarak indirilecek.','The visible event registrations will be exported as CSV.')}))return;
+    if(nextCursor)await loadRemaining();
+    if(nextCursor){
+        showToast(tr('CSV yalnızca yüklenen kayıtları içerir.','CSV contains only loaded registrations.'),'warning');
+        return;
+    }
     const escape=value=>{
      let text=String(value??'');
      if(/^[=+@-]/.test(text))text="'"+text;
