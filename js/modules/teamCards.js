@@ -311,7 +311,7 @@ export function openTeamCardDrawer(cardToEdit = null) {
         try {
             let imageUrl = selectedPhoto;
             if (selectedPhoto.startsWith('data:')) {
-                const photo = selectedPhoto.match(/^data:(image\\/(?:jpeg|png|webp));base64,([a-z0-9+/=]+)$/i);
+                const photo = selectedPhoto.match(/^data:(image\/(?:jpeg|png|webp));base64,([a-z0-9+/=]+)$/i);
                 if (!photo) throw new Error(__('team_cards.photo_type_error'));
                 const result = await setSiteTeamEntryFn({ kind: 'photo', imageData: photo[2], contentType: photo[1] });
                 imageUrl = result.data?.imageUrl || '';
