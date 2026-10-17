@@ -7,7 +7,8 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await (process.env.VERTEX_BROWSER==='webkit'?webkit:chromium).launch({...(process.env.VERTEX_BROWSER!=='webkit'&&process.env.CHROME_PATH ? {executablePath:process.env.CHROME_PATH} : {}),headless:true});
 const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=true,history=[],people=null,contributorDelay=0,failContributors=false,failNotification=false; let joiningDate=null,failPermissionSave=false,failMaintenance=false,maintenanceState=false,failVerify=false;
 
-let failMembership=false,failAdmin=false;
+let failMembership=false,failAdmin=false,badEmailTemplateFixture=true;
+const emailFixture=['en','tr'].map(language=>({certificateType:'merit',language,subject:'Vertex {{certificateName}} Certificate',html:'<p>Hello {{recipientName}}</p>',revision:0,isDefault:true}));
 let siteCards=[{id:'board-1',kind:'card',name:'Example Director',positions:{en:'CEO',tr:'CEO'},imageUrl:'https://static.example.invalid/team.webp',order:1,links:[{label:'linkedin',url:'https://www.linkedin.com/in/example'}]}];
 let backupFixture={status:'healthy',healthy:true,configured:true,checkedAt:'2026-10-17T12:00:00Z',lastBackupDate:'2026-10-17T11:00:00Z',sizeBytes:1024,restoreStatus:'unknown',evidence:{verified:false}};
 let honors=[{id:'honor-1',name:'Example Honoree'}];let adminRoster=[{uid:'admin',email:'admin@example.invalid'},{uid:'other-admin',email:'other@example.invalid'}];
@@ -51,6 +52,9 @@ await page.route('**/*',async route=>{
   else if(name==='listconsolechatmessages')result={messages:[{id:'m1',authorUid:'admin',authorName:'Local Admin',authorEmail:'admin@example.invalid',text:'Fixture message',createdAt:'2026-10-11T00:00:00Z'}]};
   else if(name==='bulksetusersubscriptions')result={grantedCount:1,failedCount:1,failed:[{email:'missing@example.invalid',error:'User not found'}],invalidTokens:[]};
   else if(name==='listdepartmentusers')result={users:[]};
+  else if(name==='getvertexcertificateemailtemplates')result=badEmailTemplateFixture?{}:{templates:emailFixture};
+  else if(name==='previewvertexcertificateemailtemplate')result={emailSubject:'Certificate preview',emailHtml:'<p>Preview</p>'};
+  else if(name==='savevertexcertificateemailtemplate'){const data=route.request().postDataJSON()?.data;result={...data,revision:(data.expectedRevision||0)+1};}
   else if(name==='listadmins')result={admins:adminRoster};
   else if(name==='removeadminrole'){if(failAdmin)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});adminRoster=adminRoster.filter(a=>a.email!==route.request().postDataJSON().data.email);result={success:true};}
   else if(name==='listusersubscriptions')result={subscriptions:[{uid:'sub-fixture',displayName:'Example Subscriber',email:'subscriber@example.invalid',tier:'pro',expiresAt:'2027-01-01T12:00:00Z'}]};
@@ -134,6 +138,18 @@ await page.locator('.vx-drawer [data-drawer-submit]').click();
 await page.waitForSelector('.vx-drawer',{state:'detached'});
 assert.equal(payloads.filter(p=>p.name==='setsiteteamentry').at(-1).data.positions.tr,'Genel Müdür');
 note('Team card read, multilingual update and write contract');
+await page.evaluate(async()=>{(await import('/js/modules/certificateEmailTemplates.js')).openCertificateEmailTemplates();});
+await page.waitForSelector('.email-template-drawer .retry-btn');
+assert.equal(await page.locator('.email-template-drawer .skeleton').count(),0);
+badEmailTemplateFixture=false;
+await page.locator('.email-template-drawer .retry-btn').click();
+await page.waitForSelector('#template-subject');
+await page.locator('#template-subject').fill('Vertex {{certificateName}} confirmation');
+await page.locator('.email-template-drawer [data-save]').click();
+await page.waitForSelector('.email-template-drawer',{state:'detached'});
+assert.equal(payloads.filter(p=>p.name==='savevertexcertificateemailtemplate').at(-1).data.expectedRevision,0);
+assert(calls.includes('previewvertexcertificateemailtemplate'));
+note('Email templates recover from malformed responses, preview and save with revision control');
 await selectTab('contributors');
 await page.locator('[data-details]').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
 await page.locator('.contributor-cell-dept').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
