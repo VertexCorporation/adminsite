@@ -21,6 +21,7 @@ let loading;
 let inFlight;
 let inFlightContext;
 let lastLoadFailed=false;
+let lastSuccessfulLoadAt=0;
 const membershipPending=new Set();
 const verificationListeners=new Map();
 let activeFilter = 'all';
@@ -44,6 +45,17 @@ export function initContributorsModule() {
     if (refreshBtn) {
         refreshBtn.addEventListener('click', fetchContributorsData);
     }
+
+    // A previously opened applicant list must not stay stale all day.
+    // Only poll the visible workspace; reuse the existing in-flight guard.
+    const refreshVisibleApplications=()=>{
+        if(document.hidden || !auth.currentUser || !document.getElementById('tab-contributors')?.classList.contains('active'))return;
+        if(getEffectivePanelLevel('contributors.list')==='none' || Date.now()-lastSuccessfulLoadAt<25000)return;
+        void fetchContributorsData();
+    };
+    window.addEventListener('focus',refreshVisibleApplications);
+    document.addEventListener('visibilitychange',refreshVisibleApplications);
+    setInterval(refreshVisibleApplications,60000);
 
 }
 
@@ -79,6 +91,7 @@ async function loadContributors() {
         loading.destroy();
         const contributors = result.data.contributors || [];
         lastLoadFailed=false;
+        lastSuccessfulLoadAt=Date.now();
         window.loadedContributors = contributors;
         renderContributors(contributors);
         const uid=auth.currentUser?.uid;
