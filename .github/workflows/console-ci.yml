@@ -22,6 +22,10 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: verify lockfile package signatures
+        run: |
+          npm view playwright@1.62.1 dist.integrity
+          npm view playwright-core@1.62.1 dist.integrity
       - name: install dependencies
         run: npm ci
       - name: check source syntax
