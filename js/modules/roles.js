@@ -324,8 +324,12 @@ function renderMatrixTable() {
         html+=`<span role="cell"><button type="button" class="icon-action-btn perm-presets-trigger" data-preset-dept="${dept.id}" aria-haspopup="dialog" aria-label="${__(dept.nameKey)} · ${__('common.actions')}">${icon('dots')}</button></span></div>`;
     });
     // Keep CSS columns bound to the actual permission module catalogue.
-    container.style.setProperty('--permission-columns',`minmax(132px,1.25fr) repeat(${TABS.length},minmax(108px,1fr)) 36px`);
     container.innerHTML = html + '</div>';
+    // Set on the table itself: a CSS custom property declared on the table
+    // would otherwise override an inherited value from the wrapper.
+    container.querySelector('.dept-perms-table')?.style.setProperty(
+        '--permission-columns',`minmax(132px,1.25fr) repeat(${TABS.length},minmax(108px,1fr)) 36px`
+    );
     paintSaveState();
     container.querySelectorAll('.perm-cycle').forEach(button=>button.onclick=()=>handleMatrixCycle(button));
     container.querySelectorAll('[data-preset-dept]').forEach(button=>button.onclick=()=>openPopover(button,{render(pop){
