@@ -1,0 +1,38 @@
+name: console first ten regression
+on:
+  push:
+    branches:
+      - fix/first-ten-navigation-and-contributors-20261017
+  pull_request:
+    paths:
+      - 'js/**'
+      - 'css/**'
+      - 'index.html'
+      - 'tests/**'
+      - 'scripts/release.cjs'
+      - '.github/workflows/first-ten-regression.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: javascript unit tests
+        run: npm test
+      - name: translation audit
+        run: npm run audit:i18n
+      - name: playwright chromium
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:browser
+      - name: immutable release generation
+        run: |
+          node scripts/release.cjs
+          node -e "const fs=require('fs');const html=fs.readFileSync('index.html','utf8');const id=html.match(/name=\"vertex-release\" content=\"([a-f0-9]{12})\"/)[1];if(!fs.existsSync('assets/releases/'+id+'/js/modules/teamCards.js'))process.exit(1);if(!html.includes('assets/releases/'+id+'/js/main.js'))process.exit(1);console.log('release validated: '+id)"
