@@ -550,3 +550,8 @@
 .dept-perms-table{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
 .dept-perms-header,.dept-perm-row{min-width:1060px}
 @media(max-width:1280px){.dept-perm-row{min-width:0}}
+
+/* Incoming filtered contributor rows fade in without delaying the latest filter result. */
+@keyframes contributor-filter-enter{from{opacity:0}to{opacity:1}}
+#tab-contributors .contributor-table-rows{animation:contributor-filter-enter 160ms ease-out both}
+@media(prefers-reduced-motion:reduce){#tab-contributors .contributor-table-rows{animation:none}}
