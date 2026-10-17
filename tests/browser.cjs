@@ -8,7 +8,8 @@ const browser=await (process.env.VERTEX_BROWSER==='webkit'?webkit:chromium).laun
 const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=true,history=[],people=null,contributorDelay=0,failContributors=false,failNotification=false; let joiningDate=null,failPermissionSave=false,failMaintenance=false,maintenanceState=false,failVerify=false;
 
 let failMembership=false,failAdmin=false;
-let siteCards=[{id:'board-1',kind:'card',name:'Example Director',positions:{en:'CEO',tr:'CEO'},imageUrl:'https://static.example.invalid/team.webp',order:1,links:[{label:'linkedin',url:'https://www.linkedin.com/in/example'}]}];let adminRoster=[{uid:'admin',email:'admin@example.invalid'},{uid:'other-admin',email:'other@example.invalid'}];
+let siteCards=[{id:'board-1',kind:'card',name:'Example Director',positions:{en:'CEO',tr:'CEO'},imageUrl:'https://static.example.invalid/team.webp',order:1,links:[{label:'linkedin',url:'https://www.linkedin.com/in/example'}]}];
+let honors=[{id:'honor-1',name:'Example Honoree'}];let adminRoster=[{uid:'admin',email:'admin@example.invalid'},{uid:'other-admin',email:'other@example.invalid'}];
 const person={membership:{status:'matched',uid:'auth-person',isVertex:true},id:'person',name:'Example Participant',email:'person@example.invalid',language:'en',hasVerified:false,createdAt:{_seconds:1767272400},department:'Core',interviewDate:'2026-10-10',about:'Local test fixture'};
 const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet'},constancy:{en:'Constancy',tr:'Metanet'},nobility:{en:'Nobility',tr:'Azamet'},majesty:{en:'Majesty',tr:'Asalet'}};
 const page=await browser.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|\[AUTH\] Login failed auth\/(?:invalid-credential|too-many-requests|network-request-failed)|Fixture unavailable|Mock delivery outcome uncertain|Fixture permission rejection|Fixture verification unavailable|Fixture maintenance unavailable|400 \(Bad Request\)|functions\/failed-precondition|\[CERTIFICATES\]/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
@@ -52,13 +53,14 @@ await page.route('**/*',async route=>{
   else if(name==='removeadminrole'){if(failAdmin)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});adminRoster=adminRoster.filter(a=>a.email!==route.request().postDataJSON().data.email);result={success:true};}
   else if(name==='listusersubscriptions')result={subscriptions:[{uid:'sub-fixture',displayName:'Example Subscriber',email:'subscriber@example.invalid',tier:'pro',expiresAt:'2027-01-01T12:00:00Z'}]};
   else if(name==='listsiteteam')result=route.request().postDataJSON()?.data?.manage===true
-    ? {cards:siteCards,honors:[]} : {staff:[],mods:[],cards:siteCards};
+    ? {cards:siteCards,honors} : {staff:[],honors:honors.map(h=>({name:h.name})),cards:siteCards};
   else if(name==='setsiteteamentry'){
     const data=route.request().postDataJSON()?.data;
     if(data.kind==='photo')result={imageUrl:'https://static.example.invalid/upload.webp'};
     else if(data.kind==='card'){const id=data.id||'card-'+(siteCards.length+1);siteCards=[...siteCards.filter(card=>card.id!==id),{...data,id}];result={success:true,id};}
+    else if(data.kind==='honor'){const id=data.id||'honor-'+(honors.length+1);honors=[...honors.filter(h=>h.id!==id),{id,name:data.name}];result={success:true,id};}
   }
-  else if(name==='deletesiteteamentry'){siteCards=siteCards.filter(card=>card.id!==route.request().postDataJSON()?.data?.id);result={success:true};}
+  else if(name==='deletesiteteamentry'){const data=route.request().postDataJSON()?.data;if(data?.kind==='honor')honors=honors.filter(h=>h.id!==data.id);else siteCards=siteCards.filter(card=>card.id!==data?.id);result={success:true};}
   else if(name==='getcoveruploadurl')result={signedUrl:'https://upload.example.invalid/cover',filePath:'test-cover.png'};
   return route.fulfill({contentType:'application/json',body:JSON.stringify({result})});
  }
@@ -95,6 +97,10 @@ for(const width of [360,390,768,1024,1440,1920]){
 note('8 navigation tabs, light/dark, 6 viewport widths, popover bounds');
 await page.setViewportSize({width:1440,height:900});
 await selectTab('system');
+await page.evaluate(()=>document.dispatchEvent(new CustomEvent('vertex:system-page',{detail:'verification'})));
+await page.waitForSelector('#team-mod-list .team-list-row');
+assert.equal(await page.locator('#team-mod-list .team-list-name').first().innerText(),'Example Honoree');
+note('Honor roll reads managed records instead of legacy moderator list');
 await page.waitForSelector('#team-cards-list [data-edit-card]');
 assert.equal(await page.locator('#team-cards-list .team-list-name').first().innerText(),'Example Director');
 await page.locator('#team-cards-list [data-edit-card]').first().click();
