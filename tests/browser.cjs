@@ -16,7 +16,7 @@ await page.addInitScript(()=>{
  localStorage.setItem('siteLang','en');
  const snapshot={docs:[],empty:true,exists:false,data:()=>({}),forEach:()=>{}};
  const chain={orderBy:()=>chain,where:()=>chain,limit:()=>chain,doc:()=>chain,get:async()=>snapshot,onSnapshot:fn=>{setTimeout(()=>fn(snapshot),0);return ()=>{};}};
- const user={uid:'admin',email:'admin@example.invalid',displayName:'Local Admin',getIdTokenResult:async()=>({claims:window.__testClaims || {admin:true}}),getIdToken:async()=>'test-only',updateProfile:async()=>{}};
+ const user={uid:'admin',email:'admin@example.invalid',displayName:'Local Admin',getIdTokenResult:async()=>({claims:window.__testClaims || {admin:true,departments:['Core']}}),getIdToken:async()=>'test-only',updateProfile:async()=>{}};
  const listeners=[];const auth={currentUser:user,onAuthStateChanged:fn=>{listeners.push(fn);setTimeout(()=>fn(user),10);return ()=>{};},signOut:async()=>{auth.currentUser=null;listeners.forEach(fn=>fn(null));},signInWithEmailAndPassword:async()=>{if(window.__testAuthError)throw Object.assign(new Error('Private authentication detail'),{code:window.__testAuthError});auth.currentUser=user;listeners.forEach(fn=>fn(user));}};
  window.firebase={apps:[],initializeApp:()=>{},auth:()=>auth,firestore:()=>({collection:()=>chain}),storage:()=>({}),functions:()=>({}),appCheck:()=>({activate:()=>{},getToken:async()=>({token:'fixture-app-check'})}),app:()=>({functions:()=>({httpsCallable:()=>async()=>({data:{}})})})};
 });
