@@ -22,8 +22,8 @@ module.exports=async({page,selectTab,note,calls,payloads,setPeople,person,failMa
  assert(await page.locator('[data-verify]').isDisabled());
  await page.keyboard.press('Escape');
  assert((await page.locator('.detail-list').innerText()).includes('Verified'));
- const beforeDelete=count('deletevertexcontributor');await page.locator('[data-more]').click();await page.locator('[data-delete]').click();assert.equal(count('deletevertexcontributor'),beforeDelete);await page.locator('.confirm-cancel').click();await page.waitForTimeout(210);
- await page.locator('[data-more]').click();await page.locator('[data-delete]').click();await page.locator('.confirm-ok').click();await page.waitForTimeout(300);assert.equal(count('deletevertexcontributor'),beforeDelete+1);
+ const beforeDelete=count('deletevertexcontributor');await page.locator('[data-more]').click();await page.locator('.contributor-actions-popover [data-delete]').click();assert.equal(count('deletevertexcontributor'),beforeDelete);await page.locator('.confirm-cancel').click();await page.waitForTimeout(210);
+ await page.locator('[data-more]').click();await page.locator('.contributor-actions-popover [data-delete]').click();await page.locator('.confirm-ok').click();await page.waitForTimeout(300);assert.equal(count('deletevertexcontributor'),beforeDelete+1);
  note('Drawer toolbar, pending verification lock and explicit deletion (mock)');
  setPeople([{...person,department:'aero'},{...person,id:'second',name:'Second Participant',email:'second@example.invalid',department:'scout'}]);await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});
  assert.deepEqual(await page.locator('.contributor-cell-dept').allTextContents(),['Aero','Scout']);
