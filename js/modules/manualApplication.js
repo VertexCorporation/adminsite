@@ -33,6 +33,9 @@ export function initManualApplication({onCreated}={}){
 }
 
 function openManualApplication({onCreated}){
+    const now=new Date(),pad=n=>String(n).padStart(2,'0');
+    const localNow=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const localToday=localNow.slice(0,10);
     const options=DEPARTMENTS.filter(d=>!['Core','Senatus'].includes(d.id)).map(d=>
         '<option value="'+escapeHTML(d.id.toLowerCase())+'">'+escapeHTML(displayDepartmentName(d.id))+'</option>'
     ).join('');
@@ -49,15 +52,15 @@ function openManualApplication({onCreated}){
                 input('name','name','text','autocomplete="name" minlength="3" maxlength="128" required')+
                 input('email','email','email','autocomplete="email" maxlength="254" required')+
                 input('phone','phone','tel','autocomplete="tel" maxlength="40" required')+
-                input('age','age','number','min="0" max="123" step="1" required')+
+                input('birthDate','birth_date','date','max="'+localToday+'" required')+
                 '<div class="form-group-field"><label for="manual-department">'+t('department')+'</label><select id="manual-department" name="department" required><option value="">'+t('select_department')+'</option>'+options+'</select></div>'+
-                input('applicationDate','application_date','datetime-local')+
-                input('interviewDate','interview_date','datetime-local')+
+                input('applicationDate','application_date','datetime-local','value="'+localNow+'"')+
+                input('interviewDate','interview_date','datetime-local','value="'+localNow+'"')+
                 input('linkedin','linkedin','url','maxlength="2000" placeholder="https://"')+
                 input('github','github','url','maxlength="2000" placeholder="https://"')+
                 '<div class="form-group-field"><label for="manual-about">'+t('about')+'</label><textarea id="manual-about" name="about" rows="4" maxlength="10000"></textarea></div>'+
             '</div>'+
-            '<p class="manual-application-note">'+t('date_hint')+'</p>'+
+
             '<p class="manual-application-error" id="manual-application-error" role="alert" hidden></p>'+
         '</form>';
     const form=body.querySelector('#manual-application-form'),save=drawer.querySelector('#manual-application-save');
