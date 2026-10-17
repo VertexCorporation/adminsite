@@ -70,3 +70,12 @@ test('motion and controls have one style owner rather than layered overrides',()
  assert.match(read('css/ui/controls.css'),/@keyframes iconSweep/);
  assert.match(read('css/motion.css'),/@keyframes workspaceEnter/);
 });
+
+test('models and administration use the centralized async action state',()=>{
+ for(const name of ['admin','models']){
+   const src=read('js/modules/'+name+'.js');
+   assert.match(src,/setButtonLoading\(/);
+ }
+ const models=read('js/modules/models.js');
+ assert.doesNotMatch(models,/saveButton\.disabled = true/);
+});
