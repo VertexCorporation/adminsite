@@ -1,0 +1,68 @@
+name: console ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+      - 'feat/**'
+      - 'ci/**'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: install dependencies
+        run: npm ci
+      - name: check source syntax
+        run: find js -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+      - name: detect private fulcrum test access
+        id: fulcrum
+        env:
+          FULCRUM_READ_TOKEN: ${{ secrets.FULCRUM_READ_TOKEN }}
+        run: |
+          if [ -n "$FULCRUM_READ_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::cross-repository certificate integration tests require FULCRUM_READ_TOKEN"
+          fi
+      - name: checkout private fulcrum for integration tests
+        if: steps.fulcrum.outputs.available == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: VertexCorporation/Fulcrum
+          path: Fulcrum
+          token: ${{ secrets.FULCRUM_READ_TOKEN }}
+      - name: expose fulcrum fixture path
+        if: steps.fulcrum.outputs.available == 'true'
+        run: ln -s "$GITHUB_WORKSPACE/Fulcrum" "$GITHUB_WORKSPACE/../Fulcrum"
+      - name: install fulcrum test dependencies
+        if: steps.fulcrum.outputs.available == 'true'
+        run: npm ci --prefix Fulcrum/functions
+      - name: run complete unit and integration tests
+        if: steps.fulcrum.outputs.available == 'true'
+        run: npm test
+      - name: run standalone unit regressions
+        if: steps.fulcrum.outputs.available != 'true'
+        run: node scripts/run-standalone-tests.cjs
+      - name: audit translations
+        run: npm run audit:i18n
+      - name: build immutable release
+        run: node scripts/release.cjs
+      - name: verify immutable release
+        run: node scripts/check-release.cjs
+      - name: install browser
+        run: npx playwright install --with-deps chromium
+      - name: run browser regressions
+        run: npm run test:browser

@@ -1,7 +1,7 @@
 const {chromium,webkit} = require('playwright');
 const fs=require('fs'),path=require('path'),http=require('http'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
-const server=http.createServer((req,res)=>{const p=path.join(root,decodeURIComponent(req.url.split('?')[0])==='/'?'index.html':req.url.split('?')[0]);if(!p.startsWith(root))return res.end();fs.readFile(p,(err,data)=>{if(err){res.statusCode=404;return res.end();}res.setHeader('Content-Type',p.endsWith('.woff2')?'font/woff2':p.endsWith('.ttf')?'font/ttf':p.endsWith('.js')?'text/javascript':p.endsWith('.css')?'text/css':p.endsWith('.png')?'image/png':p.endsWith('.svg')?'image/svg+xml':'text/html');res.end(data);});});
+const server=http.createServer((req,res)=>{const p=path.join(root,decodeURIComponent(req.url.split('?')[0])==='/'?'index.html':req.url.split('?')[0]);if(!p.startsWith(root))return res.end();fs.readFile(p,(err,data)=>{if(err){res.statusCode=404;return res.end();}res.setHeader('Content-Type',p.endsWith('.woff2')?'font/woff2':p.endsWith('.ttf')?'font/ttf':/\.(?:mjs|js)$/.test(p)?'text/javascript':p.endsWith('.css')?'text/css':p.endsWith('.png')?'image/png':p.endsWith('.svg')?'image/svg+xml':'text/html');res.end(data);});});
 (async()=>{
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await (process.env.VERTEX_BROWSER==='webkit'?webkit:chromium).launch({...(process.env.VERTEX_BROWSER!=='webkit'&&process.env.CHROME_PATH ? {executablePath:process.env.CHROME_PATH} : {}),headless:true});
@@ -34,6 +34,8 @@ await page.route('**/*',async route=>{
   if(name==='getserverstatus'&&failMaintenance)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture maintenance unavailable'}})});
   if(name==='togglecontributorverification'&&failVerify)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture verification unavailable'}})});
   let result={};
+  // A settled verification does not hold the recipient in a certificate delivery lock.
+  if(name==='togglecontributorverification')result={status:'succeeded'};
   if(name==='getserverstatus')result={isUnderMaintenance:maintenanceState};
   if(name==='setserverstatus'){maintenanceState=route.request().postDataJSON().data.maintenanceEnabled;result={success:true};}
   if(name==='togglevertexstatus'){if(failMembership)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});const data=route.request().postDataJSON().data;const next=typeof data.expectedStatus==='boolean'?!data.expectedStatus:true;if(data.contributorId){const target=(people||[person]).find(p=>p.id===data.contributorId);if(target)target.membership.isVertex=next;}result={isVertex:next};}
@@ -59,6 +61,7 @@ await page.route('**/*',async route=>{
 });
 
 console.log("Starting page");await page.goto(`http://127.0.0.1:${server.address().port}`,{waitUntil:"domcontentloaded",timeout:15000});console.log("Page loaded");
+await page.locator('.dock-btn[data-target="tab-contributors"]').first().click();
 await page.waitForSelector('.certificate-manage-btn');
 assert.equal(errors.length,0);
 const checks=[];
@@ -87,6 +90,25 @@ for(const width of [360,390,768,1024,1440,1920]){
 note('8 navigation tabs, light/dark, 6 viewport widths, popover bounds');
 await page.setViewportSize({width:1440,height:900});
 await page.locator('[data-details]').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Contributor drawer');
+await page.locator('.contributor-cell-dept').first().click();
+await page.waitForSelector('.vx-drawer.is-open');
+await page.keyboard.press('Escape');
+await page.waitForSelector('.vx-drawer',{state:'detached'});
+await page.locator('.contributor-row').first().focus();
+await page.keyboard.press('Enter');
+await page.waitForSelector('.vx-drawer.is-open');
+await page.keyboard.press('Escape');
+await page.waitForSelector('.vx-drawer',{state:'detached'});
+await page.locator('.contributor-row').first().focus();
+await page.keyboard.press('Space');
+await page.waitForSelector('.vx-drawer.is-open');
+await page.keyboard.press('Escape');
+await page.waitForSelector('.vx-drawer',{state:'detached'});
+await page.locator('.edit-contributor-btn').first().click();
+await page.waitForSelector('.contributor-edit-form');
+await page.keyboard.press('Escape');
+await page.waitForSelector('.vx-drawer',{state:'detached'});
+note('Contributor row mouse and keyboard details, action button isolation');
 await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());assert.equal(await page.locator('.contributor-row').count(),0);
 await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));assert.equal(await page.locator('.contributor-row').count(),1);
 await page.evaluate(()=>window.filterContributors('verified'));assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
