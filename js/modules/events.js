@@ -90,15 +90,40 @@ export function initEventsModule() {
  };
  document.getElementById('events-new').onclick=()=>fill(null);
  document.getElementById('events-refresh').onclick=()=>refresh().catch(fail);
- const upload=async file=>{
+ const uploadStatus=document.createElement('p');uploadStatus.className='form-hint';uploadStatus.setAttribute('aria-live','polite');
+ document.getElementById('event-gallery-upload').closest('.form-group-field')?.append(uploadStatus);
+ const upload=async (file,onProgress=()=>{})=>{
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error(tr('JPEG, PNG veya WebP kullanın.','Use JPEG, PNG or WebP.'));
   if(file.size>10*1024*1024)throw Error(tr('En fazla 10 MB','Maximum 10 MB'));
   const {data}=await eventCallable('getEventImageUploadUrl',{eventId:form.elements.id.value,contentType:file.type});
-  const response=await fetch(data.url,{method:'PUT',headers:data.headers,body:file});
-  if(!response.ok)throw Error(tr('Görsel yüklenemedi','Image upload failed'));
-  const completed=await eventCallable('completeEventImageUpload',{filePath:data.filePath});return completed.data.downloadUrl;
+  await new Promise((resolve,reject)=>{
+   const request=new XMLHttpRequest();request.open('PUT',data.url);
+   for(const [name,value] of Object.entries(data.headers||{}))request.setRequestHeader(name,value);
+   request.upload.onprogress=e=>{if(e.lengthComputable)onProgress(Math.round(e.loaded/e.total*100));};
+   request.onload=()=>request.status>=200&&request.status<300?resolve():reject(Error(tr('Görsel yüklenemedi','Image upload failed')));
+   request.onerror=()=>reject(Error(tr('Ağ hatası','Network error')));
+   request.send(file);
+  });
+  const completed=await eventCallable('completeEventImageUpload',{filePath:data.filePath});
+  return completed.data.downloadUrl;
  };
- document.getElementById('event-upload').onchange=async e=>{try{if(e.target.files[0])form.elements.cover.value=await upload(e.target.files[0]);}catch(error){fail(error);}};
- document.getElementById('event-gallery-upload').onchange=async e=>{try{for(const file of e.target.files){const url=await upload(file);form.elements.images.value=[form.elements.images.value.trim(),url].filter(Boolean).join('\n');}}catch(error){fail(error);}};
+ const uploadFiles=async(files,cover=false)=>{
+  const coverInput=document.getElementById('event-upload'),galleryInput=document.getElementById('event-gallery-upload');
+  coverInput.disabled=galleryInput.disabled=true;
+  try{
+   for(let index=0;index<files.length;index++){
+    const file=files[index];
+    const url=await upload(file,p=>{uploadStatus.textContent=`${index+1}/${files.length} · ${file.name} · %${p}`;});
+    if(cover)form.elements.cover.value=url;
+    else form.elements.images.value=[form.elements.images.value.trim(),url].filter(Boolean).join('\\n');
+    markDirty();
+   }
+   uploadStatus.textContent=tr('Görseller yüklendi. Değişiklikleri kaydet.','Images uploaded. Save your changes.');
+  }catch(error){uploadStatus.textContent=tr('Yükleme başarısız. Yeniden deneyin.','Upload failed. Please retry.');fail(error);}
+  finally{coverInput.disabled=galleryInput.disabled=false;coverInput.value='';galleryInput.value='';}
+ };
+ document.getElementById('event-upload').onchange=e=>{if(e.target.files?.length)void uploadFiles([...e.target.files],true);};
+ document.getElementById('event-gallery-upload').onchange=e=>{if(e.target.files?.length)void uploadFiles([...e.target.files],false);};
  document.getElementById('events-load-registrations').onclick=async()=>{
   const box=document.getElementById('events-registrations');box.replaceChildren();
   const heading=document.createElement('p');heading.className='form-hint';heading.textContent=tr('Kayıtlar yükleniyor…','Loading registrations…');box.append(heading);
