@@ -2,7 +2,7 @@
 
 // These will be populated by the initFirebase function
 let auth, db, storage, functions, appCheck;
-let sendTargetedNotificationFn, scheduleNotificationFn, listScheduledNotificationsFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn;
+let sendTargetedNotificationFn, scheduleNotificationFn, listScheduledNotificationsFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn, previewNotificationAudienceFn;
 let cancelScheduledNotificationFn, getServerStatusFn, setServerStatusFn, blockOnlineModelFn;
 let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn;
 let getModelImageUploadUrlFn, getCoverUploadUrlFn, triggerAttributionsUpdateFn;
@@ -91,6 +91,7 @@ function initFirebase(firebaseConfig) {
     sendTargetedNotificationFn = callable('sendTargetedNotification');
     getNotificationDeliveryStatusFn = callable('getNotificationDeliveryStatus');
     reconcileNotificationQueueFn = callable('reconcileNotificationQueue');
+    previewNotificationAudienceFn = callable('previewNotificationAudience');
     scheduleNotificationFn = callable('scheduleNotification');
     listScheduledNotificationsFn = callable('listScheduledNotifications');
     cancelScheduledNotificationFn = callable('cancelScheduledNotification');
@@ -147,6 +148,7 @@ export {
     sendTargetedNotificationFn,
     getNotificationDeliveryStatusFn,
     reconcileNotificationQueueFn,
+    previewNotificationAudienceFn,
     scheduleNotificationFn,
     listScheduledNotificationsFn,
     cancelScheduledNotificationFn,
