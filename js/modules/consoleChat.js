@@ -25,7 +25,7 @@ import {
     deleteConsoleChatMessageFn,
     deleteConsoleChatChannelFn,
     listConsoleChatDirectoryFn,
-    auth
+    db, auth
 } from '../core/firebase.js';
 
 let channels = [];
@@ -44,6 +44,60 @@ let mentionIndex = null;
 let mentionPop = null;
 let mentionMatches = [];
 let mentionActive = -1;
+let cachedMessageVersion=-1;
+const realtimeStops=new Map();
+let realtimePending=null;
+let realtimeLatestVersion=0;
+let realtimeRetry=false;
+function stopRealtime() {
+    for(const unsub of realtimeStops.values())unsub();
+    realtimeStops.clear();
+    realtimeLatestVersion=0;cachedMessageVersion=-1;realtimePending=null;realtimeRetry=false;
+}
+function refreshVersionHint() {
+    if(!currentChannelId || cachedMessageVersion>=realtimeLatestVersion)return;
+    if(realtimePending){realtimeRetry=true;return;}
+    const uid=auth?.currentUser?.uid,channelId=currentChannelId;
+    realtimePending=loadMessages(false).finally(()=>{
+        realtimePending=null;
+        if(realtimeRetry && auth?.currentUser?.uid===uid && currentChannelId===channelId) {
+            realtimeRetry=false;
+            if(cachedMessageVersion<realtimeLatestVersion)refreshVersionHint();
+        }
+    });
+}
+function observeChannelVersions() {
+    if(!auth?.currentUser || !db)return;
+    const selected=new Set(channels.slice(0,40).map(ch=>ch.id));
+    for(const [id,unsub]of realtimeStops){
+        if(!selected.has(id)){unsub();realtimeStops.delete(id);}
+    }
+    for(const id of selected){
+        if(realtimeStops.has(id))continue;
+        const uid=auth.currentUser.uid;
+        try {
+            const unsub=db.collection('chatHints').doc(id).onSnapshot(snap=>{
+                if(auth?.currentUser?.uid!==uid || !snap.exists)return;
+                const ch=channels.find(ch=>ch.id===id);
+                if(!ch)return;
+                const next=Number(snap.data()?.messageVersion||0);
+                if(!Number.isSafeInteger(next)||next<0)return;
+                ch.messageVersion=next;
+                if(id!==currentChannelId)return;
+                realtimeLatestVersion=Math.max(next,realtimeLatestVersion);
+                if(cachedMessageVersion>=0 && realtimeLatestVersion>cachedMessageVersion)
+                    refreshVersionHint();
+            },error=>{
+                realtimeStops.get(id)?.();
+                realtimeStops.delete(id);
+                if(error.code!=='permission-denied')console.warn('[CHAT] Realtime metadata unavailable',error.code||'unknown');
+                // Legacy rules and offline mode continue to use guarded polling.
+            });
+            realtimeStops.set(id,unsub);
+        }catch{/* Fall back to polling. */}
+    }
+}
+
 
 const el = (id) => document.getElementById(id);
 
@@ -109,6 +163,7 @@ async function loadChannelsOnce(uid) {
             renderChatHeader();
         }
         if (!currentChannelId && channels.length) selectChannel(channels[0].id);
+        observeChannelVersions();
     } catch (error) {
         if(auth?.currentUser?.uid!==uid)return;
         console.error('[CHAT] Kanallar yüklenemedi:', error);
@@ -142,8 +197,11 @@ function renderChannelList() {
 }
 
 function selectChannel(channelId) {
-    currentChannelId = channelId;
+    if(currentChannelId===channelId)return;
+    currentChannelId=channelId;
+    cachedMessageVersion=-1;realtimeLatestVersion=0;realtimeRetry=false;
     renderChannelList();
+    observeChannelVersions();
     loadMessages();
 }
 
@@ -170,6 +228,8 @@ async function loadMessagesOnce(animate,uid) {
         if (currentChannelId !== channel.id || auth?.currentUser?.uid!==uid) { finishLoading(); return; }
         const messages = result.data.messages || [];
         cachedMessages=messages;cachedChannelId=channel.id;
+        cachedMessageVersion=Number(result.data.channel?.messageVersion||0);
+        if(realtimeLatestVersion>cachedMessageVersion)realtimeRetry=true;
         const key = messages.map(m => `${m.id}:${m.taskStatus || ''}`).join('|');
         if (!animate && key === lastMessagesKey) { finishLoading(); return; } // degisiklik yoksa DOM'a dokunma
         lastMessagesKey = key;
@@ -456,6 +516,19 @@ export function refreshConsoleChat() {
 export function initConsoleChat() {
     if (!el('chat-channel-list')) return;
     isAdmin = isPanelAdmin();
+    let sessionUid=auth?.currentUser?.uid||null;
+    auth?.onAuthStateChanged(user=>{
+        const uid=user?.uid||null;
+        if(uid===sessionUid)return;
+        sessionUid=uid;
+        stopRealtime();
+        channels=[];currentChannelId=null;lastChannelsKey='';lastMessagesKey='';
+        cachedMessages=[];cachedChannelId=null;myUid=null;mentionIndex=null;isAdmin=false;
+        el('chat-channel-list')?.replaceChildren();
+        el('chat-messages')?.replaceChildren();
+        renderChatHeader(null);
+        if(el('chat-create-btn'))el('chat-create-btn').style.display='none';
+    });
 
     el('chat-create-btn').style.display = isAdmin ? 'inline-flex' : 'none';
     el('chat-create-btn').addEventListener('click', () => openChannelForm('create'));
