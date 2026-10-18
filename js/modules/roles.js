@@ -79,7 +79,8 @@ const CONTENT_OPTIONS = {
             { tag: 'contact', key: 'perms.hidden_contact' },
             { tag: 'age', key: 'perms.hidden_age' },
             { tag: 'links', key: 'perms.hidden_links' },
-            { tag: 'interview', key: 'perms.hidden_interview' }
+            { tag: 'interview', key: 'perms.hidden_interview' },
+            { tag: 'about', key: 'perms.hidden_about' }
         ],
         chips: [
             { id: 'verified', key: 'contributors.filter.verified' },
