@@ -10,3 +10,12 @@ test('certificate recipient picker filters cached rows immediately while preserv
  assert(input.indexOf('render();')<input.indexOf('debounce=setTimeout('));
  assert(input.includes('loadPage(true)'));
 });
+
+test('recipient picker uses existing application data until fresh paginated results arrive',()=>{
+ const source=fs.readFileSync('js/modules/contributors.js','utf8');
+ const picker=source.slice(source.indexOf('function openCertificateSelector('));
+ assert.match(picker,/people=Array\.isArray\(window\.loadedContributors\)/);
+ assert.match(picker,/if\(reset\)\{cursor=null;scroll=0;\}/);
+ assert.match(picker,/people=reset\?\(data\.contributors\|\|\[\]\)/);
+ assert.match(picker,/render\(\);void loadPage\(true\)/);
+});
