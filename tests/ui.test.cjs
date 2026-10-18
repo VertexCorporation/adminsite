@@ -30,11 +30,11 @@ test('long applicant filters retain an optimized visible crossfade',()=>{
  assert.doesNotMatch(src,/oldChildren\.length > 0[^;]+container\.querySelectorAll\('\*'\)\.length < 140;/);
 });
 
-test('crossfade is visual only and stale data is preserved',()=>{
- assert.match(read('js/utils/loading.js'), /crossfade\(container/);
- assert.match(read('js/utils/loading.js'), /if \(stale && container\.children\.length\)/);
- assert.match(read('js/ui/transition.js'), /ghost\.inert = true/);
- assert.match(read('js/modules/views.js'), /crossfade\(host, update/);
+test('content crossfade preserves stale data but workspace navigation never clones old cards',()=>{
+ assert.match(read('js/utils/loading.js'),/crossfade\(container/);
+ assert.match(read('js/utils/loading.js'),/if \(stale && container\.children\.length\)/);
+ assert.match(read('js/ui/transition.js'),/ghost\.inert = true/);
+ assert.doesNotMatch(read('js/modules/views.js'),/crossfade\(host, update/);
 });
 test('scroll observer handles horizontal and vertical internal regions',()=>{
  const src=read('js/utils/scrollEdges.js');
@@ -112,15 +112,14 @@ test('retry states keep stale business data and never display raw server message
  assert.doesNotMatch(read('js/modules/siteTeam.js'),/escapeHTML\(error\.message\)/);
 });
 
-test('navigation and workspace do not run competing opacity animations',()=>{
+test('page and workspace navigation do not run competing translations',()=>{
  assert.doesNotMatch(read('css/layout.css'),/\.tab-panel\s*\{[^}]*animation:/);
  const nav=read('js/ui/transition.js');
  assert.match(nav,/ui-tab-entering/);
  const views=read('js/modules/views.js');
- assert.match(views,/!isSwitchingTab/);
- assert.match(views,/if \(animateWorkspace\) crossfade/);
+ assert.match(views,/const enteringTab = tab\.classList\.contains\('ui-tab-entering'\)/);
+ assert.doesNotMatch(views,/crossfade\(host, update/);
 });
-
 test('generic long lists use bounded visual snapshots, not animation suppression',()=>{
  const transition=read('js/ui/transition.js');
  assert.match(transition,/function boundedClone\(/);
@@ -139,18 +138,15 @@ test('contributor editing and manual applicant intake share safe async button st
  assert.doesNotMatch(intake,/save\.disabled\s*=\s*true/);
 });
 
-test('navigation tabs use simultaneous outgoing and incoming animation with live DOM retained',()=>{
- const transitions=read('js/ui/transition.js');
- const shell=read('js/modules/shell.js');
+test('navigation never displays outgoing page snapshots',()=>{
+ const transitions=read('js/ui/transition.js'), shell=read('js/modules/shell.js');
  assert.match(transitions,/export function animateViewSwitch\(/);
- assert.match(transitions,/ghost\.animate\(\[\{opacity:1\},\{opacity:0\}\]/);
+ assert.match(transitions,/mutate\(\); \/\/ exactly one active tab/);
  assert.match(transitions,/to\.animate\(/);
- assert.match(transitions,/ghost\.inert = true/);
+ assert.doesNotMatch(transitions,/ghost\.classList\.add\('ui-view-ghost'/);
  assert.match(transitions,/viewSwitches\.get\(host\)\?\.\(\)/);
  assert.match(shell,/animateViewSwitch\(outgoing,target,update\)/);
- assert.doesNotMatch(shell,/if \(changed\) animateViewEntry\(target\);\s*refreshNavigation\(\)/);
 });
-
 test('shared panel loading preserves live nodes and cancels superseded refreshes',()=>{
  const src=read('js/utils/loading.js');
  assert.match(src,/const panelLoaders = new WeakMap\(\)/);
@@ -196,12 +192,11 @@ test('contributors suppress skeleton flashes for sub-150ms responses',()=>{
  assert.doesNotMatch(src,/skeletonDelay:0/);
 });
 
-test('the real application browser regression verifies overlapping tab transitions',()=>{
+test('browser regressions reject intermediate pages rather than expecting them',()=>{
  const browser=read('tests/browser.cjs');
- assert.match(browser,/Real navigation animates outgoing and incoming tabs simultaneously/);
- assert.match(browser,/navMotion\.ghost&&navMotion\.inert&&navMotion\.outgoing>0/);
+ assert.match(browser,/Navigation never displays the outgoing screen above its destination/);
+ assert.match(browser,/!navMotion\.ghost&&navMotion\.incoming>0/);
 });
-
 test('legacy people directory also uses one shared loading and crossfade controller',()=>{
  const src=read('js/modules/people.js');
  assert.match(src,/const peopleLoaders = new WeakMap\(\)/);
@@ -245,9 +240,12 @@ test('sub-navigation renders the chosen workspace before the incoming tab',()=>{
  assert.match(shell,/activateTab\(parent, child\)/);
  assert.doesNotMatch(shell,/showWorkspace\(document\.getElementById\(parent\.dataset\.target\),keys\)/);
 });
-test('applicant crossfade does not retain outgoing list height',()=>{
- assert.match(read('js/ui/transition.js'),/preserveHeight = true/);
+test('applicant filters use incoming-only animation and fixed hydration viewport',()=>{
+ assert.match(read('js/ui/transition.js'),/mode === 'enter'/);
  assert.match(read('js/utils/loading.js'),/opts\.crossfadeOptions/);
- assert.match(read('js/modules/contributors.js'),/crossfadeOptions:\{preserveHeight:false\}/);
- assert.match(read('css/ui/layout.css'),/overflow-anchor: none/);
+ assert.match(read('js/modules/contributors.js'),/crossfadeOptions:\{mode:'enter'\}/);
+ const css=read('css/ui/layout.css');
+ assert.match(css,/min-height: 464px/);
+ assert.match(css,/overflow-anchor: none/);
+ assert.match(read('tests/browser.cjs'),/Stable applicant viewport through delayed first hydration/);
 });
