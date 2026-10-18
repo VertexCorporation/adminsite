@@ -127,3 +127,14 @@ test('generic long lists use bounded visual snapshots, not animation suppression
  assert.match(transition,/largeList \? boundedClone\(child, budget\)/);
  assert.doesNotMatch(transition,/\(denseList \|\| container\.querySelectorAll\('\*'\)\.length < 140\)/);
 });
+
+test('contributor editing and manual applicant intake share safe async button states',()=>{
+ const contributor=read('js/modules/contributors.js');
+ const intake=read('js/modules/manualApplication.js');
+ assert.match(contributor,/setButtonLoading\(submitBtn,true\)/);
+ assert.match(contributor,/if\(submitBtn\.isConnected\)setButtonLoading\(submitBtn,false\)/);
+ assert.doesNotMatch(contributor,/submitBtn\.disabled\s*=\s*true/);
+ assert.match(intake,/setButtonLoading\(save,true\)/);
+ assert.match(intake,/setButtonLoading\(save,false\)/);
+ assert.doesNotMatch(intake,/save\.disabled\s*=\s*true/);
+});

@@ -248,7 +248,7 @@ function openContributorEditor(contributor) {
     card.querySelector('.contributor-edit-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         const submitBtn = card.closest('.vx-drawer').querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
+        if (submitBtn.disabled) return;
 
         // Submit the actual delta, not every field from the edit form.
         const drawer=card.closest('.vx-drawer');
@@ -269,12 +269,13 @@ function openContributorEditor(contributor) {
             if(drawer.classList.contains('is-open'))closeDrawer();
             return;
         }
-        // datetime-local values are in the operator's timezone; preserve the
-        // selected instant when saving to the server.
-        for(const field of ['applicationDate','interviewDate']){
-            if(updates[field])updates[field]=new Date(updates[field]).toISOString();
-        }
+        setButtonLoading(submitBtn,true);
         try{
+            // datetime-local values are in the operator's timezone; preserve
+            // the selected instant; malformed dates keep the form available.
+            for(const field of ['applicationDate','interviewDate']){
+                if(updates[field])updates[field]=new Date(updates[field]).toISOString();
+            }
             const {data}=await updateContributorApplicationFn({contributorId:contributor.id,...updates});
             if(data?.success!==true)throw new Error('Application update not confirmed.');
             Object.assign(contributor,updates);
@@ -288,7 +289,8 @@ function openContributorEditor(contributor) {
         }catch(error){
             console.error('[CONTRIBUTORS] Edit failed:',error);
             showToast(()=>userErrorMessage(error),'error');
-            submitBtn.disabled=false;
+        }finally{
+            if(submitBtn.isConnected)setButtonLoading(submitBtn,false);
         }
     });
 }

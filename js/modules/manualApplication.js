@@ -1,3 +1,4 @@
+import {setButtonLoading} from '../utils/loading.js';
 import {openDrawer,closeDrawer} from './shell.js';
 import {createManualVertexContributorFn,auth} from '../core/firebase.js';
 import {getEffectivePanelLevel,DEPARTMENTS} from './roles.js';
@@ -82,7 +83,7 @@ function openManualApplication({onCreated}){
             field.addEventListener('input',()=>field.setCustomValidity(''),{once:true});
             return;
         }
-        save.disabled=true;save.setAttribute('aria-busy','true');
+        setButtonLoading(save,true);
         const errorBox=form.querySelector('#manual-application-error');
         errorBox.hidden=true;
         try{
@@ -104,7 +105,7 @@ function openManualApplication({onCreated}){
             errorBox.hidden=false;
             showToast(()=>errorBox.textContent,'error');
         }finally{
-            if(drawer.isConnected){save.disabled=false;save.removeAttribute('aria-busy');}
+            if(drawer.isConnected)setButtonLoading(save,false);
         }
     });
 }
