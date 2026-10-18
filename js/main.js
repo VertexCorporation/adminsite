@@ -40,30 +40,41 @@ export function startApp(firebaseConfig) {
     initUiFeedback();
     console.log('[APP] Main application started.');
 
-    // --- Step 2: Initialize All Feature Modules (Bind Static Event Listeners) ---
-    // These listeners are safe to add now, as they are attached to elements
-    // that are always present in the DOM.
-    initAdminModule();
-    initPeopleModule();
-    initModelsModule(); // CORRECTED: Calls the new unified initializer
-    initNewsModule();
-    initEventsModule();
-    initNotificationModule();
-    initContributorsModule();
-    initSubscriptionsModule();
-    initUserMenu();
-    initConsoleChat();
-    // initDockNav kaldirildi: yay fiziği döngüsü nav butonlarina surekli inline
-    // genislik yazip titreme/taşmaya yol açiyordu (kullanicinin istedigi kaldirim).
-    initProfileMenu();
-    initSiteTeamPanel();
-    initTeamCardsPanel();
-
+    // --- Step 2: Bring up the critical navigation shell first. ---
+    // A feature workspace may be temporarily unavailable (for example while a
+    // backend contract is being deployed). That must never disable sidebar
+    // expansion, theme/language menus, navigation animations or authentication.
     initShell();
-    initHomeModule();
-    initSystemSections();
-    initIcons();
-    updateGridVisibleCounts();
+
+    // Bind independent features without allowing one broken optional module
+    // to prevent other workspaces and the central auth listener from starting.
+    const featureInitializers = [
+        ['admin', initAdminModule],
+        ['people', initPeopleModule],
+        ['models', initModelsModule],
+        ['news', initNewsModule],
+        ['events', initEventsModule],
+        ['notifications', initNotificationModule],
+        ['contributors', initContributorsModule],
+        ['subscriptions', initSubscriptionsModule],
+        ['user-menu', initUserMenu],
+        ['chat', initConsoleChat],
+        ['profile', initProfileMenu],
+        ['site-team', initSiteTeamPanel],
+        ['team-cards', initTeamCardsPanel],
+        ['home', initHomeModule],
+        ['system-sections', initSystemSections],
+        ['icons', initIcons],
+        ['adaptive-grid', updateGridVisibleCounts],
+    ];
+    // Intentionally not asynchronous: listeners are installed synchronously.
+    for (const [name, initialize] of featureInitializers) {
+        try {
+            initialize();
+        } catch (error) {
+            console.error('[INIT] Optional workspace failed to initialize:', name, error);
+        }
+    }
     const readOnlyObserver = new MutationObserver(records => {
         const panels = new Set();
         for(const record of records) for(const node of record.addedNodes) {
