@@ -73,18 +73,33 @@ await page.waitForSelector('.certificate-manage-btn');
 assert.equal(errors.length,0);
 const checks=[];
 const note=x=>{checks.push(x);console.log('PASS',x);};
-// Verify real navigation uses simultaneous exit and entrance, not a simple
-// fade-in after the outgoing tab has disappeared.
+// Never show a cloned outgoing page while navigating. Our former regression
+// incorrectly demanded this exact source of the user's stray-screen flash.
 await page.locator('.dock-btn[data-target="tab-news"]').click();
 const navMotion=await page.evaluate(()=>{
- const host=document.getElementById('tab-scroll-container'),ghost=host.querySelector(':scope > .ui-view-ghost'),incoming=document.getElementById('tab-news');
- return {ghost:!!ghost,inert:ghost?.inert,outgoing:ghost?.getAnimations().length,incoming:incoming.getAnimations().length,liveOld:!!document.getElementById('tab-contributors')};
+ const host=document.getElementById('tab-scroll-container'), incoming=document.getElementById('tab-news');
+ return {ghost:!!host.querySelector(':scope > .ui-view-ghost'),
+   incoming:incoming.getAnimations().length,
+   visible:[...host.querySelectorAll(':scope > .tab-panel')]
+      .filter(t=>getComputedStyle(t).display!=='none').map(t=>t.id),
+   liveOld:!!document.getElementById('tab-contributors')};
 });
-assert(navMotion.ghost&&navMotion.inert&&navMotion.outgoing>0&&navMotion.incoming>0&&navMotion.liveOld,JSON.stringify(navMotion));
-await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
+assert(!navMotion.ghost&&navMotion.incoming>0&&navMotion.liveOld,JSON.stringify(navMotion));
+assert.deepEqual(navMotion.visible,['tab-news']);
 await page.locator('.dock-btn[data-target="tab-contributors"]').click();
-await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
-note('Real navigation animates outgoing and incoming tabs simultaneously without replacing live forms');
+assert.equal(await page.locator('#tab-scroll-container > .ui-view-ghost').count(),0);
+note('Navigation never displays the outgoing screen above its destination');
+// Fast consecutive clicks must still leave only the final tab visible.
+const rapidNav=await page.evaluate(()=>{
+ for(const id of ['tab-models','tab-notifications','tab-news','tab-contributors'])
+   document.querySelector('.dock-btn[data-target="'+id+'"]').click();
+ return {visible:[...document.querySelectorAll('.tab-panel')]
+    .filter(t=>getComputedStyle(t).display!=='none').map(t=>t.id),
+   ghosts:document.querySelectorAll('.ui-view-ghost').length};
+});
+assert.deepEqual(rapidNav.visible,['tab-contributors']);
+assert.equal(rapidNav.ghosts,0);
+note('Rapid navigation never cycles through intermediate screens');
 // Deep sub-navigation must select the final workspace before the new page
 // enters. No intermediary contributor panel may be rendered.
 await page.locator('.dock-btn[data-target="tab-news"]').click();
@@ -173,16 +188,16 @@ const listTopAfter=await page.locator('#contributors-list-container').evaluate(e
 assert(Math.abs(listTopAfter-listTopBefore)<1,'Filter moved its list header vertically');
 const filterTransition=await page.evaluate(()=>{
  const host=document.getElementById('contributors-list-container');
- const ghost=host.querySelector('.ui-crossfade-ghost');
- return {ghost:!!ghost,oldRows:ghost?.querySelectorAll('.contributor-row').length,
+ return {ghost:!!host.querySelector('.ui-crossfade-ghost'),
   newRows:host.querySelector(':scope > .contributor-table-rows')?.children.length,
-  animating:!!host.querySelector(':scope > .contributor-table-rows')?.getAnimations().length};
+  animating:!!host.querySelector(':scope > .contributor-table-rows')?.getAnimations().length,
+  height:host.getBoundingClientRect().height};
 });
-assert.equal(filterTransition.ghost,true,JSON.stringify(filterTransition));
-assert(filterTransition.oldRows>0&&filterTransition.oldRows<=28,JSON.stringify(filterTransition));
+assert.equal(filterTransition.ghost,false,JSON.stringify(filterTransition));
 assert.equal(filterTransition.newRows,43);
-assert.equal(await page.locator('#contributors-list-container').evaluate(el=>el.style.minHeight),'');
 assert.equal(filterTransition.animating,true);
+assert(filterTransition.height>=460,JSON.stringify(filterTransition));
+assert.equal(await page.locator('#contributors-list-container').evaluate(el=>el.style.minHeight),'');
 assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="verified"]').getAttribute('aria-pressed'),'true');
 await waitCrossfade();
 await page.evaluate(()=>{
@@ -192,7 +207,7 @@ await page.evaluate(()=>{
 });
 await waitCrossfade();
 assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="all"]').getAttribute('aria-pressed'),'true');
-note('Populated applicant filter transitions use bounded crossfade and preserve real rows');
+note('Applicant filtering replaces rows without ghosts or height jumps');
 await openCert();assert.deepEqual(await page.locator('[data-award]').evaluateAll(es=>es.map(e=>e.dataset.award)),['tenacity','constancy','nobility','majesty']);
 await page.locator('[data-award=tenacity]').click();assert.equal(issueCount(),0);await page.locator('[data-review]').click();await page.waitForSelector('.confirm-ok');assert.equal(issueCount(),0);
 await page.locator('.confirm-ok').focus();await page.keyboard.press('Tab');assert(await page.locator('.confirm-cancel').evaluate(el=>el===document.activeElement));await page.keyboard.press('Shift+Tab');assert(await page.locator('.confirm-ok').evaluate(el=>el===document.activeElement));await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('tr');});assert.equal(await page.locator('.vx-modal-title').innerText(),'Sertifikayı İncele');await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('en');});await page.locator('.confirm-cancel').click();assert.equal(issueCount(),0);note('Selection and cancellation never issue certificates; confirmation focus trap and live language');
@@ -210,7 +225,19 @@ failContributors=true;await page.locator('#refresh-contributors-btn').click();aw
 // Close any contributor drawer left open by the preceding certificate/focus tests.
 await page.keyboard.press('Escape');
 await page.waitForSelector('.vx-drawer.is-open',{state:'detached'});
-await page.evaluate(()=>{document.getElementById('contributors-list-container').replaceChildren();});contributorDelay=500;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('.contributor-row');assert.equal(await page.locator('#contributors-list-container .skeleton').count(),0);contributorDelay=0;note('Delayed list hydration preserves real rows and leaves no skeleton');
+await page.evaluate(()=>{document.getElementById('contributors-list-container').replaceChildren();});
+const blankHeight=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().height);
+contributorDelay=500;
+await page.locator('#refresh-contributors-btn').click();
+await page.waitForSelector('#contributors-list-container .skeleton');
+const skeletonHeight=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().height);
+await page.waitForSelector('.contributor-row');
+const loadedHeight=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().height);
+assert(Math.abs(blankHeight-skeletonHeight)<1&&Math.abs(skeletonHeight-loadedHeight)<1,
+ 'Contributor list jumped on load: '+JSON.stringify({blankHeight,skeletonHeight,loadedHeight}));
+assert.equal(await page.locator('#contributors-list-container .skeleton').count(),0);
+contributorDelay=0;
+note('Stable applicant viewport through delayed first hydration')
 people=[{...person,name:'Old Response'}];contributorDelay=500;
 await page.evaluate(()=>{import('/js/modules/contributors.js').then(m=>m.fetchContributorsData());});await page.waitForTimeout(75);people=[{...person,name:'Latest Response'}];contributorDelay=0;
 await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});await page.waitForTimeout(550);assert.equal(await page.locator('.contributor-name').innerText(),'Old Response');await page.locator('#refresh-contributors-btn').click();await page.waitForFunction(()=>document.querySelector('.contributor-name')?.textContent==='Latest Response');people=null;note('Concurrent refreshes coalesce and subsequent refresh loads latest data');
