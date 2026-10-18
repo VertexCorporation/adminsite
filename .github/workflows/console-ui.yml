@@ -52,6 +52,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node tests/ui-browser.cjs
       - run: node tests/people-browser.cjs
+      - name: Keyboard overlays and reduced motion browser coverage
+        run: node tests/overlay-keyboard-browser.cjs
       - name: Full legacy application browser regression
         run: npm run test:browser
         env:
