@@ -1,12 +1,64 @@
-const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+'use strict';
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),vm=require('node:vm');
 const source=fs.readFileSync('js/core/firebase.js','utf8');
-function harness(fetch,getToken=async()=>({token:'test-attestation'})){
- const box={auth:{currentUser:{getIdToken:async()=> 'test-auth'}},appCheck:{getToken},fetch,AbortSignal,setTimeout,clearTimeout,console:{error(){},warn(){}}};vm.createContext(box);
- vm.runInContext(source.slice(source.indexOf('let attestationPending'),source.indexOf('// httpsCallable')),box);return box.callCallable;
+function harness(handler,{signedIn=true}={}){
+ const calls=[],definitions=[];
+ const box={
+   auth:{currentUser:signedIn?{uid:'test-user'}:null},
+   functions:{httpsCallable(name,settings){
+     definitions.push({name,settings});
+     return async data=>{calls.push({name,data});return handler(name,data,calls.length);};
+   }},
+   console:{error(){},warn(){}},setTimeout,clearTimeout,Promise
+ };
+ vm.createContext(box);
+ vm.runInContext(source.slice(source.indexOf('// Firebase Functions SDK owns'),source.indexOf('// httpsCallable')),box);
+ return {...box,calls,definitions,call:box.callCallable};
 }
-const response=(status,value)=>({status,ok:status===200,json:async()=>value});
-test('callable carries Auth and available App Check headers; never retries writes',async()=>{let requests=0;const call=harness(async(url,o)=>{requests++;assert.match(url,/issuevertexcertificate-.*\.run\.app/);assert.equal(o.headers.Authorization,'Bearer test-auth');assert.equal(o.headers['X-Firebase-AppCheck'],'test-attestation');assert.equal(JSON.parse(o.body).data.contributorId,'fixture');return response(200,{result:{ok:true}});});assert.equal((await call('issueVertexCertificate',{contributorId:'fixture'})).data.ok,true);assert.equal(requests,1);});
-test('concurrent attestation failure is coalesced and backed off without altering backend enforcement',async()=>{let attestations=0,requests=0;const call=harness(async(_,o)=>{requests++;assert.equal(o.headers['X-Firebase-AppCheck'],undefined);return response(200,{result:{}});},async()=>{attestations++;await new Promise(r=>setTimeout(r,10));throw Object.assign(new Error('private'),{code:'app-check/test'});});await Promise.all([call('getServerStatus'),call('listAdmins')]);await call('listAdmins');assert.equal(attestations,1);assert.equal(requests,3);});
-test('non-JSON infrastructure errors keep HTTP classification',async()=>{for(const [status,code] of [[401,'unauthenticated'],[403,'permission-denied'],[429,'resource-exhausted'],[503,'unavailable']]){const call=harness(async()=>({status,ok:false,json:async()=>{throw new Error('not JSON');}}));await assert.rejects(call('listAdmins'),e=>e.httpStatus===status&&e.code==='functions/'+code);}});
-test('structured certificate readiness and exact legacy compatibility preserve localized reason',async()=>{for(const details of [undefined,{reason:'certificate-delivery-not-ready'}]){const call=harness(async()=>response(400,{error:{status:'FAILED_PRECONDITION',message:'Expanded issuance awaits certificate assets and verified Zapier configuration.',details}}));await assert.rejects(call('issueVertexCertificate'),e=>e.details.reason==='certificate-delivery-not-ready');}const call=harness(async()=>response(400,{error:{status:'FAILED_PRECONDITION',message:'Other validation'}}));await assert.rejects(call('issueVertexCertificate'),e=>!e.details&&e.code==='functions/failed-precondition');});
-test('invalid success envelope and network timeout fail safely without retry',async()=>{let attempts=0;const bad=harness(async()=>response(200,{wrong:{}}));await assert.rejects(bad('listAdmins'),e=>e.code==='functions/internal');const timeout=harness(async()=>{attempts++;throw Object.assign(new Error('private transport'),{name:'TimeoutError'});});await assert.rejects(timeout('issueVertexCertificate'),e=>e.code==='functions/deadline-exceeded');assert.equal(attempts,1);});
+test('native SDK owns region, transport, auth/app-check and timeout',async()=>{
+ assert.doesNotMatch(source,/https:\/\/\$\{name\.toLowerCase\(\)\}/);
+ assert.match(source,/firebase\.app\(\)\.functions\(firebaseConfig\.functionsRegion \|\| 'europe-west1'\)/);
+ const h=harness(async(_,data)=>({data:{ok:true,received:data}}));
+ const r=await h.call('issueVertexCertificate',{contributorId:'person-id'});
+ assert.equal(r.data.received.contributorId,'person-id');
+ assert.equal(h.definitions[0].name,'issueVertexCertificate');
+ assert.equal(h.definitions[0].settings.timeout,20000);
+ assert.equal(h.calls.length,1);
+});
+test('writes are never retried after an ambiguous network timeout',async()=>{
+ const h=harness(async()=>{throw Object.assign(new Error('Timed out'),{code:'functions/deadline-exceeded'});});
+ await assert.rejects(h.call('issueVertexCertificate',{contributorId:'x'}),e=>e.code==='functions/deadline-exceeded');
+ assert.equal(h.calls.length,1);
+});
+test('safe reads recover from transient connectivity with bounded retry',async()=>{
+ const h=harness(async(_,data,n)=>n<2
+   ?Promise.reject(Object.assign(new Error('offline'),{code:'functions/unavailable'}))
+   :{data:{contributors:[{id:'x'}]}}
+ );
+ const r=await h.call('getVertexContributors',{pageSize:20});
+ assert.equal(r.data.contributors[0].id,'x');
+ assert.equal(h.calls.length,2);
+});
+test('permission errors do not retry even for reads',async()=>{
+ const h=harness(async()=>{throw Object.assign(new Error('revoked'),{code:'functions/permission-denied'});});
+ await assert.rejects(h.call('getVertexContributors'),e=>e.code==='functions/permission-denied');
+ assert.equal(h.calls.length,1);
+});
+test('auth, App Check and other errors keep distinct explanations',async()=>{
+ for(const [name,expected] of [['auth/network-request-failed','functions/unauthenticated'],['app-check/token-error','functions/failed-precondition'],['fetch/error','functions/unavailable']]){
+   const h=harness(async()=>{throw Object.assign(new Error('unavailable'),{code:name});});
+   await assert.rejects(h.call('saveDepartmentPermissions'),e=>e.code===expected);
+   assert.equal(h.calls.length,1);
+ }
+});
+test('existing certificate readiness contract is preserved',async()=>{
+ const h=harness(async()=>{throw Object.assign(new Error('Expanded issuance awaits certificate assets and verified Zapier configuration.'),{code:'functions/failed-precondition'});});
+ await assert.rejects(h.call('issueVertexCertificate'),e=>e.details?.reason==='certificate-delivery-not-ready');
+});
+test('malformed successful payload fails safely',async()=>{
+ const h=harness(async()=>({wrong:true}));
+ await assert.rejects(h.call('setUserDepartments'),e=>e.code==='functions/internal');
+ assert.equal(h.calls.length,1);
+});
