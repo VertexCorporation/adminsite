@@ -21,7 +21,7 @@ import { initNewsModule, listenForArticles, stopListeningForArticles } from './m
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
 import { initContributorsModule, fetchContributorsData, applyChipVisibility } from './modules/contributors.js';
 import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscriptions.js';
-import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, PANELS } from './modules/roles.js';
+import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getCurrentUserAccess, getEffectivePanelLevel, initPanelMenus, PANELS } from './modules/roles.js';
 import { initSiteTeamPanel } from './modules/siteTeam.js';
 import { initTeamCardsPanel, loadTeamCards } from './modules/teamCards.js';
 import { updateGridVisibleCounts } from './modules/views.js';
@@ -74,14 +74,9 @@ export function startApp(firebaseConfig) {
     });
     readOnlyObserver.observe(dom.adminPanel,{childList:true,subtree:true});
     onLangChange(() => {
-        if (auth.currentUser) {
-            auth.currentUser.getIdTokenResult().then(token => {
-                const departments = Array.isArray(token.claims.departments)
-                    ? token.claims.departments
-                    : (token.claims.department ? [token.claims.department] : []);
-                renderProfile(auth.currentUser, !!token.claims.admin, departments, true);
-            }).catch(console.error);
-        }
+        if (!auth.currentUser) return;
+        const access=getCurrentUserAccess();
+        renderProfile(auth.currentUser,access.isCore,access.departments,true);
     });
     document.getElementById('profile-form').addEventListener('submit', async event => {
         event.preventDefault();
@@ -126,12 +121,14 @@ export function startApp(firebaseConfig) {
             try {
                 const idTokenResult = await user.getIdTokenResult(true);
                 if(epoch!==authEpoch || document.documentElement.dataset.startupFailed === 'true')return;
-                let isAdmin = idTokenResult.claims.admin === true;
-                let departments = Array.isArray(idTokenResult.claims.departments)
-                    ? idTokenResult.claims.departments
-                    : (idTokenResult.claims.department ? [idTokenResult.claims.department] : []);
-
-                if(deploymentCapabilities.consolePeople&&!isAdmin){const profile=(await db.collection('users').doc(user.uid).get()).data()||{};if(profile.contributorId||profile.personnelManaged){if(deploymentCapabilities.consoleAccountActivation&&profile.personnelOwnership==='pending'&&user.emailVerified){await consolePeopleCall('completePersonnelActivation',{});await user.getIdToken(true);}const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;if(typeof access?.isAdmin!=='boolean'||!Array.isArray(access.departments))throw new Error('Invalid access response');isAdmin=access.isAdmin;departments=access.departments;}}
+                // Authentication token establishes identity only; Core and
+                // departments must be checked against current server records.
+                if(!deploymentCapabilities.consolePeople)throw new Error('Console authorization endpoint is unavailable.');
+                const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;
+                if(typeof access?.isAdmin!=='boolean'||!Array.isArray(access.departments))
+                    throw new Error('Invalid console authorization response');
+                let isAdmin=access.isAdmin;
+                let departments=access.departments;
                 if(epoch!==authEpoch)return;
                 if (!isAdmin && !departments.length) {
                     const denied=new Error('Console access denied');denied.code='auth/insufficient-permission';throw denied;
@@ -169,9 +166,9 @@ export function startApp(firebaseConfig) {
                 if(deploymentCapabilities.consolePeople){
                   let revision=null;
                   personnelUnsubscribe=db.collection('users').doc(user.uid).onSnapshot(async snapshot=>{
-                    const profile=snapshot.data()||{};if(!profile.contributorId&&!profile.personnelManaged)return;
+                    const profile=snapshot.data()||{};if(!profile.contributorId&&!profile.personnelManaged&&!profile.consoleAccessManaged)return;
                     const next=profile.authzVersion||0;if(next===revision)return;revision=next;
-                    try{const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;if(epoch!==authEpoch)return;if(!access.isAdmin&&!access.departments.length){await auth.signOut();return;}setCurrentUser(access.isAdmin,access.departments);if(access.isAdmin)resetTabFilter();else{await loadDepartmentPermissions();applyTabFilter(getAccessibleTabs(access.departments));}applyPanelGate(access.isAdmin);applyChipVisibility();renderProfile(user,access.isAdmin,access.departments,true);updateHome(user,access.isAdmin,access.departments);document.dispatchEvent(new CustomEvent('vertex:departments',{detail:access.departments}));}
+                    try{const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;if(epoch!==authEpoch)return;if(!access.isAdmin&&!access.departments.length){await auth.signOut();return;}setCurrentUser(access.isAdmin,access.departments);document.body.classList.toggle('admin-mode',access.isAdmin);dom.adminManagerSection.style.display=access.isAdmin?'block':'none';if(access.isAdmin)resetTabFilter();else{await loadDepartmentPermissions();applyTabFilter(getAccessibleTabs(access.departments));}applyPanelGate(access.isAdmin);applyChipVisibility();renderProfile(user,access.isAdmin,access.departments,true);updateHome(user,access.isAdmin,access.departments);document.dispatchEvent(new CustomEvent('vertex:departments',{detail:access.departments}));}
                     catch(error){if(epoch===authEpoch&&error.code==='functions/permission-denied')auth.signOut();}
                   },error=>console.warn('[PERSONNEL] Access subscription unavailable',error.code));
                 }
