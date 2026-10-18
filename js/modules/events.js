@@ -74,7 +74,7 @@ export function initEventsModule() {
   }
  };
  form.onsubmit=async e=>{e.preventDefault();const button=form.querySelector('[type="submit"]');if(button.disabled||getEffectivePanelLevel('events.editor')!=='write')return;setButtonLoading(button,true);try{const event=collect();if(await confirmDialog({title:tr('Değişiklik kaydedilsin mi?','Save changes?'),body:`${event.title} · ${event.status}`})){await eventCallable('saveConsoleEvent',{event,revision:current?.revision||0});fill(null);await refresh();showToast(tr('Kaydedildi','Saved'),'success');}}catch(e){fail(e);}finally{setButtonLoading(button,false);}};
- document.getElementById('events-preview').onclick=()=>{try{const event=collect();const box=document.getElementById('events-preview-content');box.hidden=false;box.replaceChildren();for(const text of [event.title,`${event.date} · ${event.timeZone}`,event.desc,event.detailDesc,event.location]){const p=document.createElement('p');p.textContent=text;box.append(p);}}catch(e){fail(e);}finally{setButtonLoading(button,false);}};
+ document.getElementById('events-preview').onclick=()=>{try{const event=collect();const box=document.getElementById('events-preview-content');box.hidden=false;box.replaceChildren();for(const text of [event.title,`${event.date} · ${event.timeZone}`,event.desc,event.detailDesc,event.location]){const p=document.createElement('p');p.textContent=text;box.append(p);}}catch(e){fail(e);}};
  document.getElementById('events-new').onclick=()=>fill(null);
  document.getElementById('events-refresh').onclick=()=>refresh().catch(fail);
  const upload=async file=>{

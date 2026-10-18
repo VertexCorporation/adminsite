@@ -129,7 +129,6 @@ async function handleNotificationFormSubmit(e) {
     submissionPending = true;
     const submitBtn = document.getElementById('submit-notification-btn');
     setButtonLoading(submitBtn,true);
-    submitBtn.textContent = __('notif.submitting');
 
     try {
         const titleKey = document.getElementById('notification-title-key').value.trim();

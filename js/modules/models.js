@@ -1,3 +1,4 @@
+import { crossfade } from '../ui/transition.js';
 import { beginPanelLoading, skeletonListItem, skeletonChatMessage, setButtonLoading } from '../utils/loading.js';
 // js/modules/models.js
 
@@ -488,6 +489,7 @@ function renderManualModelsList() {
         roleplayCountBadge.textContent = `${__('models.roleplay_count')} ${roleplayCount}`;
     }
 
+    crossfade(dom.manualModelsListContainer, () => {
     dom.manualModelsListContainer.innerHTML = '';
     if (!allManualModels || allManualModels.length === 0) {
         dom.manualModelsListContainer.innerHTML = `<p class="form-hint" data-i18n="models.no_models">${__('models.no_models')}</p>`;
@@ -514,6 +516,7 @@ function renderManualModelsList() {
         dom.manualModelsListContainer.appendChild(item);
     });
     compactModelActions(dom.manualModelsListContainer);
+    });
 }
 
 /**
@@ -521,6 +524,7 @@ function renderManualModelsList() {
  * Uses a template string with sanitized data to prevent XSS vulnerabilities.
  */
 function renderAllModelsExplorer() {
+    crossfade(dom.allModelsListContainer, () => {
     if (!modelsData || !modelsData.producers) {
         dom.allModelsListContainer.innerHTML = `<p class="form-hint" data-i18n="models.empty_database">${__('models.empty_database')}</p>`;
         return;
@@ -565,6 +569,7 @@ function renderAllModelsExplorer() {
     }
     dom.allModelsListContainer.innerHTML = explorerHTML;
     compactModelActions(dom.allModelsListContainer);
+    });
 }
 
 

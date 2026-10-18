@@ -318,7 +318,6 @@ async function handleAdminFormSubmit(e) {
     const newAdminEmail = document.getElementById('new-admin-email').value;
     const grantBtn = document.getElementById('grant-admin-btn');
     setButtonLoading(grantBtn,true);
-    grantBtn.innerHTML = `<span data-i18n="admin.granting">${__('admin.granting')}</span>`;
 
     try {
         const result = await addAdminRoleFn({ email: newAdminEmail });
@@ -329,7 +328,6 @@ async function handleAdminFormSubmit(e) {
         showToast(() => userErrorMessage(error), 'error');
     } finally {
         setButtonLoading(grantBtn,false);
-        grantBtn.textContent = __('admin.grant_btn');
     }
 }
 

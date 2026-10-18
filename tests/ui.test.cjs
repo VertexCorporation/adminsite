@@ -150,3 +150,26 @@ test('navigation tabs use simultaneous outgoing and incoming animation with live
  assert.match(shell,/animateViewSwitch\(outgoing,target,update\)/);
  assert.doesNotMatch(shell,/if \(changed\) animateViewEntry\(target\);\s*refreshNavigation\(\)/);
 });
+
+test('shared panel loading preserves live nodes and cancels superseded refreshes',()=>{
+ const src=read('js/utils/loading.js');
+ assert.match(src,/const panelLoaders = new WeakMap\(\)/);
+ assert.match(src,/panelLoaders\.get\(container\)\?\.cancel\(\)/);
+ assert.match(src,/container\.replaceChildren\(\.\.\.originalNodes\)/);
+ assert.doesNotMatch(src,/container\.innerHTML = current/);
+});
+test('models and chat render via centralized crossfade, not only an entrance fade',()=>{
+ for (const name of ['models','consoleChat']) {
+  const src=read('js/modules/'+name+'.js');
+  assert.match(src,/crossfade\(/,name);
+ }
+ const src=read('js/modules/models.js');
+ assert.match(src,/crossfade\(dom\.manualModelsListContainer/);
+ assert.match(src,/crossfade\(dom\.allModelsListContainer/);
+});
+test('async admin and notification buttons do not replace the label while pending',()=>{
+ const adm=read('js/modules/admin.js'),notif=read('js/modules/notification.js');
+ assert.doesNotMatch(adm,/grantBtn\.innerHTML = .*admin\.granting/);
+ assert.doesNotMatch(notif,/submitBtn\.textContent = __\('notif\.submitting'\)/);
+ assert.doesNotMatch(read('js/modules/events.js'),/events-preview'[\s\S]{0,750}finally\{setButtonLoading\(button,false\)/);
+});
