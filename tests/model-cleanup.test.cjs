@@ -5,8 +5,8 @@ test('Curator deletion stages image cleanup and confirms only after successful r
  const body=s.slice(s.indexOf('async function handleDeleteModel('),s.indexOf('async function handleBlockOnlineModel('));
  assert(body.indexOf('prepareModelImageCleanupFn(')<body.indexOf("method: 'DELETE'"));
  assert(body.indexOf('confirmModelImageCleanupFn(')>body.indexOf('if (!response.ok)'));
- assert(body.includes('rememberModelCleanup(cleanupId)'));
- assert(body.includes('clearModelCleanup(cleanupId)'));
+ assert(body.includes('journalImageCleanup(cleanupId)'));
+ assert(body.includes('clearImageCleanup(cleanupId)'));
  assert(!body.includes('storageError.message'));
 });
 test('both languages include pending cleanup text',()=>{
