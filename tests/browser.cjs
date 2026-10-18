@@ -103,7 +103,7 @@ assert.deepEqual(atomicDestination.seen,['contributors.vertexStatus'],JSON.strin
 assert.equal(atomicDestination.workspace,'contributors.vertexStatus');
 assert(atomicDestination.active&&!atomicDestination.nestedGhost,JSON.stringify(atomicDestination));
 await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
-await page.locator('[data-nav-panel="contributors.list"]').click();
+await page.locator('[data-nav-panel="contributors.list"][data-nav-action=""]').click();
 note('Contributor sub-navigation enters its final workspace without an intermediate layout');
 const issueCount=()=>calls.filter(n=>n==='issuevertexcertificate').length;
 const openCert=async()=>{if(await page.locator('.certificate-drawer').count()){await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});}await page.waitForSelector('.vx-popover.is-closing',{state:'detached'});await page.waitForSelector('.vx-modal[aria-hidden=true]',{state:'detached'});await page.locator('.certificate-manage-btn').first().click();await page.waitForSelector('[data-award]');};
