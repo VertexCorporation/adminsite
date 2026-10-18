@@ -440,7 +440,18 @@ export function initTeamCardsPanel() {
     // profile editor is intentionally no longer a second source of truth.
     const legacyProfile=document.getElementById('team-profile-container');
     if(legacyProfile)legacyProfile.textContent=getLang()==='tr'?'Biyografi ve bağlantıları düzenlemek için yukarıdaki ekip kartının düzenle butonunu kullanın.':'Use the edit button on an executive card above to manage biographies and links.';
-    initWeeklyStarsPanel();
+    // Startup runs before authentication. Do not look up the sensitive
+    // participant directory until the verified Core workspace is requested.
+    document.addEventListener('vertex:workspace',event=>{
+        if(auth.currentUser&&event.detail?.keys?.includes('system.teamLog'))
+            void initWeeklyStarsPanel();
+    });
+    auth.onAuthStateChanged(user=>{
+        if(user)return;
+        weeklyCache=null;weeklyDirectory=[];cardsLoaded=false;teamCards=[];
+        document.getElementById('weekly-stars-container')?.replaceChildren();
+        document.getElementById('team-cards-list')?.replaceChildren();
+    });
     onLangChange(() => {
         renderTeamCardsList();
     });
