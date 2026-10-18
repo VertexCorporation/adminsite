@@ -160,9 +160,12 @@ function initialsOf(name) {
 // --- Kanallar ---
 
 async function loadChannels() {
+    const sessionUid=auth?.currentUser?.uid;
+    if(!sessionUid)return;
     const finishLoading = beginPanelLoading(el('chat-channel-list'));
     try {
         const result = await listConsoleChatChannelsFn();
+        if(auth?.currentUser?.uid!==sessionUid)return;
         channels = (result.data.channels || []).slice().sort((a, b) => (b.pinned === true) - (a.pinned === true));
         const nextUid=auth?.currentUser?.uid||null;
         if(myUid!==nextUid){myUid=nextUid;restoreDrafts();} 
@@ -181,6 +184,7 @@ async function loadChannels() {
         }
         if (!currentChannelId && channels.length) selectChannel(channels[0].id);
     } catch (error) {
+        if(auth?.currentUser?.uid!==sessionUid)return;
         console.error('[CHAT] Kanallar yüklenemedi:', error);
         const msg = userErrorMessage(error);
         el('chat-channel-list').innerHTML = `<p class="form-hint chat-hint">${escapeHTML(msg)}</p>`;
@@ -230,6 +234,8 @@ function selectChannel(channelId) {
 }
 
 async function loadMessages(animate = true) {
+    const sessionUid=auth?.currentUser?.uid;
+    if(!sessionUid)return;
     const channel = channels.find(c => c.id === currentChannelId);
     renderChatHeader(channel);
     if (!channel) return;
@@ -237,7 +243,7 @@ async function loadMessages(animate = true) {
     const finishLoading = beginPanelLoading(container, skeletonChatMessage);
     try {
         const result = await listConsoleChatMessagesFn({ channelId: currentChannelId });
-        if (currentChannelId !== channel.id) { finishLoading(); return; }
+        if (currentChannelId !== channel.id || auth?.currentUser?.uid!==sessionUid) { finishLoading(); return; }
         const messages = result.data.messages || [];
         cachedMessages=messages;cachedChannelId=channel.id;
         const readSequence=Math.max(readSequences.get(channel.id)||0,channel.lastReadSequence||0);
@@ -259,6 +265,7 @@ async function loadMessages(animate = true) {
         el('chat-channel-edit').style.display = channel.canManage ? 'inline-flex' : 'none';
     } catch (error) {
         finishLoading();
+        if(auth?.currentUser?.uid!==sessionUid)return;
         console.error('[CHAT] Mesajlar yüklenemedi:', error);
         container.innerHTML = `<p class="form-hint chat-hint">${escapeHTML(userErrorMessage(error))}</p>`;
     }
@@ -559,7 +566,22 @@ export function refreshConsoleChat() {
 export function initConsoleChat() {
     if (!el('chat-channel-list')) return;
     isAdmin = isPanelAdmin();
-    auth?.onAuthStateChanged(user=>{if(!user){stopChannelHint();drafts.clear();lastSavedDraftUser=null;mentionIndex=null;directoryPending=null;directoryRetryAt=0;}});
+    let sessionUid=auth?.currentUser?.uid||null;
+    auth?.onAuthStateChanged(user=>{
+        const nextUid=user?.uid||null;
+        if(nextUid===sessionUid)return;
+        sessionUid=nextUid;
+        stopChannelHint();
+        channels=[];currentChannelId=null;cachedMessages=[];cachedChannelId=null;
+        cachedMessageVersion=-1;lastChannelsKey='';lastMessagesKey='';lastRenderedChannel=null;
+        lastRenderedMessageIds.clear();readSequences.clear();mentionCounts.clear();
+        drafts.clear();lastSavedDraftUser=null;myUid=null;myDepartments=[];myEmail='';
+        mentionIndex=null;directoryPending=null;directoryRetryAt=0;isAdmin=false;
+        closeMentionPop();updateNewIndicator(false);
+        el('chat-channel-list')?.replaceChildren();el('chat-messages')?.replaceChildren();
+        renderChatHeader(null);
+        if(el('chat-create-btn'))el('chat-create-btn').style.display='none';
+    });
     el('chat-create-btn').style.display = isAdmin ? 'inline-flex' : 'none';
     el('chat-create-btn').addEventListener('click', () => openChannelForm('create'));
     el('chat-channel-edit').addEventListener('click', () => {
