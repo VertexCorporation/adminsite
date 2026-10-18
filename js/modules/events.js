@@ -175,7 +175,19 @@ export function initEventsModule() {
    frame.setAttribute('sandbox','allow-scripts allow-same-origin');
    frame.loading='eager';
    const origin='https://events.vertexishere.com';
-   const preview=()=>{frame.src=origin+'/'+lang.value+'/?vertexPreview=1';};
+   const preview=()=>{
+     armTimeout();
+     frame.src=origin+'/'+lang.value+'/?vertexPreview=1';
+   };
+   let previewTimer=null;
+   const armTimeout=()=>{
+      clearTimeout(previewTimer);
+      previewTimer=setTimeout(()=>{
+        if(frame.hidden)notice.textContent=tr(
+          'Eventsite önizlemesi henüz kullanılamıyor; yerel taslak gösteriliyor.',
+          'Eventsite preview is unavailable; showing local draft instead.');
+      },7500);
+   };
    const onMessage=message=>{
      if(message.origin!==origin || message.source!==frame.contentWindow ||
         message.data?.version!==1)return;
@@ -184,6 +196,7 @@ export function initEventsModule() {
          type:'vertex:event-preview:render',version:1,event
        },origin);
      } else if(message.data.type==='vertex:event-preview:rendered'&&message.data.id===event.id){
+       clearTimeout(previewTimer);
        article.hidden=true;
        frame.hidden=false;
        notice.textContent=tr('Gerçek Eventsite görünümü · taslak, kayıt kapalı',
@@ -194,6 +207,7 @@ export function initEventsModule() {
    const observer=new MutationObserver(()=>{
       if(!frame.isConnected){
         window.removeEventListener('message',onMessage);
+        clearTimeout(previewTimer);
         observer.disconnect();
       }
    });
