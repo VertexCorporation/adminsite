@@ -74,6 +74,12 @@ export function userErrorMessage(error, context='') {
     const code=String(error?.code||'').replace('functions/','').replace('auth/','');
     const reason=error?.details?.reason;
     if(reason==='certificate-delivery-not-ready')return __('cert.delivery_not_ready');
+    if(error?.reason==='app-check-unavailable' || reason==='app-check-unavailable')
+        return getLang()==='en' ? 'Security verification could not be completed. Check your connection and try again.' : 'Güvenlik doğrulaması tamamlanamadı. Bağlantınızı kontrol edip yeniden deneyin.';
+    if(error?.reason==='authentication-unavailable' || reason==='authentication-unavailable')
+        return __('errors.auth');
+    if(reason==='permission-revision-conflict' || code==='aborted')
+        return getLang()==='en' ? 'This record changed in another session. Reload before saving.' : 'Bu kayıt başka bir oturumda değişti. Kaydetmeden önce yenileyin.';
     const keys={'permission-denied':'errors.permission','insufficient-permission':'auth.denied','unauthenticated':'errors.auth','user-token-expired':'auth.session_expired','invalid-user-token':'auth.session_expired','resource-exhausted':'errors.capacity','too-many-requests':'errors.capacity','invalid-argument':'errors.validation','failed-precondition':'errors.precondition','not-found':'errors.not_found','unavailable':'errors.network','deadline-exceeded':'errors.network','network-request-failed':'errors.network','invalid-credential':'auth.credentials','wrong-password':'auth.credentials','user-not-found':'auth.credentials','invalid-email':'auth.credentials','user-disabled':'auth.denied'};
     return __(keys[code]||'errors.service');
 }
