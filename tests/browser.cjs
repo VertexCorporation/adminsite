@@ -99,6 +99,41 @@ const waitCrossfade = () => page.waitForFunction(() => !document.querySelector('
 await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);
 await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),1);
 await page.evaluate(()=>window.filterContributors('verified'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
+await waitCrossfade();
+// Real contributor renderer: switching between populated chips must animate,
+// not just the single-row fixture used in the historic regression.
+await page.locator('#contributor-search').fill('');
+await page.evaluate(person=>{
+ window.__savedContributors=window.loadedContributors;
+ window.loadedContributors=Array.from({length:85},(_,i)=>({
+   ...person,id:'filter-fixture-'+i,name:'Applicant '+i,
+   email:'applicant'+i+'@example.invalid',hasVerified:i%2===0
+ }));
+ window.filterContributors('all');
+},person);
+await waitCrossfade();
+await page.evaluate(()=>window.filterContributors('verified'));
+const filterTransition=await page.evaluate(()=>{
+ const host=document.getElementById('contributors-list-container');
+ const ghost=host.querySelector('.ui-crossfade-ghost');
+ return {ghost:!!ghost,oldRows:ghost?.querySelectorAll('.contributor-row').length,
+  newRows:host.querySelector(':scope > .contributor-table-rows')?.children.length,
+  animating:!!host.querySelector(':scope > .contributor-table-rows')?.getAnimations().length};
+});
+assert.equal(filterTransition.ghost,true,JSON.stringify(filterTransition));
+assert(filterTransition.oldRows>0&&filterTransition.oldRows<=28,JSON.stringify(filterTransition));
+assert.equal(filterTransition.newRows,43);
+assert.equal(filterTransition.animating,true);
+assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="verified"]').getAttribute('aria-pressed'),'true');
+await waitCrossfade();
+await page.evaluate(()=>{
+ window.loadedContributors=window.__savedContributors;
+ delete window.__savedContributors;
+ window.filterContributors('all');
+});
+await waitCrossfade();
+assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="all"]').getAttribute('aria-pressed'),'true');
+note('Populated applicant filter transitions use bounded crossfade and preserve real rows');
 await openCert();assert.deepEqual(await page.locator('[data-award]').evaluateAll(es=>es.map(e=>e.dataset.award)),['tenacity','constancy','nobility','majesty']);
 await page.locator('[data-award=tenacity]').click();assert.equal(issueCount(),0);await page.locator('[data-review]').click();await page.waitForSelector('.confirm-ok');assert.equal(issueCount(),0);
 await page.locator('.confirm-ok').focus();await page.keyboard.press('Tab');assert(await page.locator('.confirm-cancel').evaluate(el=>el===document.activeElement));await page.keyboard.press('Shift+Tab');assert(await page.locator('.confirm-ok').evaluate(el=>el===document.activeElement));await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('tr');});assert.equal(await page.locator('.vx-modal-title').innerText(),'Sertifikayı İncele');await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('en');});await page.locator('.confirm-cancel').click();assert.equal(issueCount(),0);note('Selection and cancellation never issue certificates; confirmation focus trap and live language');

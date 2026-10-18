@@ -16,7 +16,9 @@ const fixture = [
  '#horizontal{width:220px;overflow-x:auto;display:flex;gap:16px}',
  '#horizontal>span{flex:0 0 180px;padding:12px}',
  '#content{width:240px;min-height:70px;border:1px solid}',
- '#both{width:220px;height:80px;overflow:auto}</style></head><body>',
+ '#both{width:220px;height:80px;overflow:auto}',
+ '#dense .contributor-table-rows{max-height:180px;overflow-y:auto}',
+ '#dense .contributor-row{height:36px}</style></head><body>',
  '<div id="toast-container"></div>',
  '<button id="action" class="chrome-btn-outline">Save</button>',
  '<label><input id="choice" type="checkbox"> Selection</label>',
@@ -24,7 +26,9 @@ const fixture = [
  '<div id="horizontal" data-scroll-fog><span>First</span><span>Second</span><span>Third</span></div>',
  '<div id="both" data-scroll-fog><div style="width:440px;height:250px">Both axes</div></div>',
  '<input id="required-field" required value="x">',
- '<div id="content"><p>Outgoing content</p></div></body></html>'
+ '<div id="content"><p>Outgoing content</p></div>',
+ ' <div id="generic"><ul></ul></div>',
+ ' <div id="dense"><div class="contributor-table-head">Applicant list</div><div class="contributor-table-rows"></div></div></body></html>'
 ].join('');
 const server = http.createServer((req,res)=>{
  const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
@@ -73,6 +77,55 @@ const server = http.createServer((req,res)=>{
    await page.waitForTimeout(300);
    assert.equal(await page.locator('.ui-crossfade-ghost').count(),0);
    assert.equal(await page.locator('#content strong').innerText(),'Incoming content');
+   // Generic result sets must also animate when their nested DOM gets large.
+   await page.evaluate(()=>{
+     const host=document.getElementById('generic');
+     host.querySelector('ul').innerHTML=Array.from({length:70},(_,i)=>
+       '<li><strong>Row '+i+'</strong><span><i>Detail</i></span></li>').join('');
+     window.uiTest.transition.crossfade(host,()=>{
+       host.querySelector('ul').innerHTML='<li><strong>Filtered</strong></li>';
+     });
+   });
+   assert.equal(await page.locator('#generic > .ui-crossfade-ghost').count(),1);
+   assert.equal(await page.locator('#generic > ul li').count(),1);
+   assert(await page.locator('#generic > ul').evaluate(el=>el.getAnimations().length>0));
+   await page.waitForTimeout(250);
+   assert.equal(await page.locator('#generic > .ui-crossfade-ghost').count(),0);
+   // 90 rows used to exceed the 140-descendant cutoff and silently skip fade.
+   await page.evaluate(()=>{
+     const host=document.getElementById('dense');
+     const rows=host.querySelector('.contributor-table-rows');
+     rows.innerHTML=Array.from({length:90},(_,i)=>
+       '<div class="contributor-row" data-row="'+i+'"><button type="button"><span>Applicant '+i+'</span><i>✓</i></button><span><b>Active</b></span></div>').join('');
+     rows.scrollTop=350;
+     window.uiTest.transition.crossfade(host,()=>{
+       rows.innerHTML=Array.from({length:38},(_,i)=>
+         '<div class="contributor-row" data-row="'+i+'"><button type="button"><span>Filtered '+i+'</span><i>✓</i></button><span><b>Active</b></span></div>').join('');
+     });
+   });
+   assert.equal(await page.locator('#dense > .ui-crossfade-ghost').count(),1);
+   const dense=await page.evaluate(()=>{
+     const host=document.getElementById('dense');
+     return {
+       outgoing:host.querySelector('.ui-crossfade-ghost .contributor-table-rows').children.length,
+       incoming:host.querySelector(':scope > .contributor-table-rows').children.length,
+       animating:host.querySelector(':scope > .contributor-table-rows').getAnimations().length > 0
+     };
+   });
+   assert(dense.outgoing <= 29,JSON.stringify(dense));
+   assert.equal(dense.incoming,38);
+   assert.equal(dense.animating,true);
+   await page.evaluate(()=>{
+     const host=document.getElementById('dense');
+     window.uiTest.transition.crossfade(host,()=>{
+       host.querySelector(':scope > .contributor-table-rows').innerHTML=
+         '<div class="contributor-row">Final result</div>';
+     });
+   });
+   assert.equal(await page.locator('#dense > .ui-crossfade-ghost').count(),1);
+   await page.waitForTimeout(300);
+   assert.equal(await page.locator('#dense > .ui-crossfade-ghost').count(),0);
+   assert.equal(await page.locator('#dense > .contributor-table-rows > .contributor-row').count(),1);
    await page.waitForFunction(()=>document.getElementById('vertical').dataset.fogBottom==='true');
    assert.equal(await page.locator('#horizontal').getAttribute('data-fog-right'),'true');
    await page.evaluate(()=>{
@@ -146,6 +199,9 @@ const server = http.createServer((req,res)=>{
    }
 
    await page.emulateMedia({reducedMotion:'reduce'});
+   await page.evaluate(()=>window.uiTest.transition.crossfade(document.getElementById('dense'),()=>{document.querySelector('#dense > .contributor-table-rows').textContent='Reduced motion result';}));
+   assert.equal(await page.locator('#dense > .ui-crossfade-ghost').count(),0);
+   assert.equal(await page.locator('#dense > .contributor-table-rows').innerText(),'Reduced motion result');
    assert.equal(await page.locator('.toast').first().evaluate(el=>getComputedStyle(el).transitionDuration),'0s');
    assert.deepEqual(exceptions,[]);
    await page.close();

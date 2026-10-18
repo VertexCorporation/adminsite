@@ -150,7 +150,7 @@ function renderContributors(contributors) {
         const match = ({all:true,vertex:isActiveContributor(p),verified:!!p.hasVerified,unverified:!p.hasVerified,'age-14-15':year!==null&&year>=currentYear-15&&year<=currentYear-14,'age-16-17':year!==null&&year>=currentYear-17&&year<=currentYear-16,'age-18':year!==null&&year<=currentYear-18,linkedin:!!p.linkedin,github:!!p.github,interview:!!p.interviewDate})[activeFilter];
         return match && [p.name,p.department,...(!hidden.has('contact')?[p.email]:[]),...(!hidden.has('about')?[p.about]:[])].some(v=>String(v || '').toLowerCase().includes(query));
     });
-    document.querySelectorAll('#tab-contributors .filter-chip').forEach(b=>b.classList.toggle('active',b.dataset.filter===activeFilter));
+    document.querySelectorAll('#tab-contributors .filter-chip').forEach(b=>{ const active=b.dataset.filter===activeFilter; b.classList.toggle('active',active); b.setAttribute('aria-pressed',String(active)); });
     const canWrite = getEffectivePanelLevel('contributors.list')==='write';
     const admin = isPanelAdmin();
     const addButton=document.getElementById('add-manual-application');if(addButton)addButton.hidden=!canWrite;
@@ -248,7 +248,7 @@ function openContributorEditor(contributor) {
     card.querySelector('.contributor-edit-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         const submitBtn = card.closest('.vx-drawer').querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
+        if (submitBtn.disabled) return;
 
         // Submit the actual delta, not every field from the edit form.
         const drawer=card.closest('.vx-drawer');
@@ -269,12 +269,13 @@ function openContributorEditor(contributor) {
             if(drawer.classList.contains('is-open'))closeDrawer();
             return;
         }
-        // datetime-local values are in the operator's timezone; preserve the
-        // selected instant when saving to the server.
-        for(const field of ['applicationDate','interviewDate']){
-            if(updates[field])updates[field]=new Date(updates[field]).toISOString();
-        }
+        setButtonLoading(submitBtn,true);
         try{
+            // datetime-local values are in the operator's timezone; preserve
+            // the selected instant; malformed dates keep the form available.
+            for(const field of ['applicationDate','interviewDate']){
+                if(updates[field])updates[field]=new Date(updates[field]).toISOString();
+            }
             const {data}=await updateContributorApplicationFn({contributorId:contributor.id,...updates});
             if(data?.success!==true)throw new Error('Application update not confirmed.');
             Object.assign(contributor,updates);
@@ -288,7 +289,8 @@ function openContributorEditor(contributor) {
         }catch(error){
             console.error('[CONTRIBUTORS] Edit failed:',error);
             showToast(()=>userErrorMessage(error),'error');
-            submitBtn.disabled=false;
+        }finally{
+            if(submitBtn.isConnected)setButtonLoading(submitBtn,false);
         }
     });
 }

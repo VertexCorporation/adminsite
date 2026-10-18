@@ -1,0 +1,455 @@
+import { openCertificateEmailTemplates } from './certificateEmailTemplates.js';
+import {initManualApplication} from './manualApplication.js';
+import { deploymentCapabilities } from '../core/deployment-capabilities.js';
+import { isActiveContributor, contributorState } from '../utils/contributor-state.js';
+import { changedContributorFields } from '../utils/contributor-edit.js';
+import { initVertexRoster, refreshRosterAccess } from './vertex-roster.js';
+import { displayDepartmentName, canonicalDepartment } from '../utils/departments.js';
+import { icon } from '../utils/icons.js';
+import { openDrawer, closeDrawer, confirmDialog, openPopover, closePopover } from './shell.js';
+import { createLoadingController, skeletonRows, createRequestGuard, setButtonLoading } from '../utils/loading.js';
+import { formatCertificateDate } from './certificates.js';
+import { openCertificates } from './certificates.js';
+// js/modules/contributors.js
+
+import { showToast, userErrorMessage, __, onLangChange, sanitizeHTML, escapeHTML } from '../utils/ui.js';
+import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn, setContributorVertexStatusFn, auth, db } from '../core/firebase.js';
+import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS, isPanelAdmin, getHiddenFieldsFor } from './roles.js';
+
+
+function legacyYearRange(person){
+    if(Array.isArray(person.estimatedBirthYearRange)&&person.estimatedBirthYearRange.length===2)return person.estimatedBirthYearRange;
+    const age=Number(person.age),created=person.createdAt;
+    if(person.age===undefined||!Number.isInteger(age)||age<0||age>123)return null;
+    const time=created?new Date(typeof created._seconds==='number'?created._seconds*1000:typeof created.seconds==='number'?created.seconds*1000:created):new Date();
+    const year=Number.isNaN(time.getTime())?new Date().getFullYear():time.getFullYear();
+    return [year-age-1,year-age];
+}
+function birthYearLabel(person){
+    if(person.birthDate)return person.birthDate.slice(0,4);
+    if(person.birthYear)return String(person.birthYear);
+    const estimate=legacyYearRange(person);
+    return estimate?estimate[0]+'–'+estimate[1]+' ≈':'—';
+}
+function birthDateLabel(person){
+    if(person.birthDate){
+        const [year,month,day]=person.birthDate.split('-');
+        return day+'.'+month+'.'+year;
+    }
+    const estimate=legacyYearRange(person);
+    return estimate?estimate[0]+'–'+estimate[1]+' ('+__('contributors.birth_year_estimated')+')':'—';
+}
+
+function filterBirthYear(person){
+    const actual=Number(person.birthYear || person.birthDate?.slice(0,4));
+    if(Number.isInteger(actual)&&actual>=1900)return actual;
+    return legacyYearRange(person)?.[1] ?? null;
+}
+function syncBirthYearFilters(){
+    const current=new Date().getFullYear();
+    const labels={'age-14-15':(current-15)+'–'+(current-14),
+        'age-16-17':(current-17)+'–'+(current-16),
+        'age-18': '≤'+(current-18)};
+    for(const [name,value] of Object.entries(labels)){
+        const element=document.querySelector('#tab-contributors .filter-chip[data-filter="'+name+'"]');
+        if(element)element.textContent=value;
+    }
+}
+const editIcon = icon('pencil');
+const requestGuard = createRequestGuard();
+let loading;
+let inFlight;
+let inFlightContext;
+let lastLoadFailed=false;
+const membershipPending=new Set();
+const verificationListeners=new Map();
+let activeFilter = 'all';
+let listContainer;
+let refreshBtn;
+
+export function initContributorsModule() {
+    document.addEventListener('vertex:certificate-selector',openCertificateSelector);
+    initVertexRoster(fetchContributorsData);
+    initManualApplication({onCreated:fetchContributorsData});
+    listContainer = document.getElementById('contributors-list-container');
+    listContainer.replaceChildren();
+    loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows(),skeletonDelay:0});
+    window.filterContributors = filter => { activeFilter=filter; renderContributors(window.loadedContributors || []); };
+    window.searchContributorsLocal = () => renderContributors(window.loadedContributors || []);
+    syncBirthYearFilters();
+    refreshBtn = document.getElementById('refresh-contributors-btn');
+    if(refreshBtn&&!document.getElementById('certificate-email-templates-btn')){
+        const button=document.createElement('button');button.id='certificate-email-templates-btn';button.type='button';button.className='chrome-btn-outline';button.dataset.i18n='email_templates.title';button.textContent=__('email_templates.title');button.style.display=isPanelAdmin()?'':'none';button.onclick=openCertificateEmailTemplates;refreshBtn.before(button);refreshBtn.parentElement.classList.add('certificate-template-entry-row');
+    }
+    onLangChange(() => { const headers=['name','department','birthYear','status','applied','actions']; document.querySelectorAll('.contributor-table-head').forEach(header=>{if(header.closest('.ui-crossfade-ghost'))return;[...header.children].filter(el=>el.matches('span')).forEach((el,i)=>{if(headers[i])el.textContent=__('contributors.col_'+headers[i]);});}); if(window.loadedContributors) renderContributors(window.loadedContributors); });
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', fetchContributorsData);
+    }
+
+}
+
+/** Rank bazli gizlenen filtre ciplerini uygula (adminler hepsini gorur). */
+export function applyChipVisibility() {
+    const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry)templateEntry.style.display=isPanelAdmin()?'':'none';
+    const hidden = new Set(getHiddenChipsFor('contributors.list'));
+    document.querySelectorAll('#tab-contributors .filter-chip').forEach(chip => {
+        const filter = chip.getAttribute('data-filter');
+        if (filter && filter !== 'all') chip.style.display = hidden.has(filter) ? 'none' : '';
+    });
+}
+
+export function fetchContributorsData() {
+    const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry)templateEntry.style.display=isPanelAdmin()?'':'none';
+    if(getEffectivePanelLevel('contributors.list')==='none')return Promise.resolve();
+    const context=JSON.stringify([auth.currentUser?.uid,isPanelAdmin(),getHiddenFieldsFor('contributors.list')]);
+    if(inFlight&&inFlightContext===context)return inFlight;
+    inFlightContext=context;
+    const promise=loadContributors().finally(()=>{if(inFlight===promise)inFlight=null;});
+    inFlight=promise;return promise;
+}
+async function loadContributors() {
+    if (!listContainer) return;
+
+    const request = requestGuard.begin();
+    loading.start();
+    if (refreshBtn) setButtonLoading(refreshBtn,true);
+
+    try {
+        const result = await getVertexContributorsFn();
+        if (!requestGuard.isCurrent(request)) return;
+        loading.destroy();
+        const contributors = result.data.contributors || [];
+        lastLoadFailed=false;
+        window.loadedContributors = contributors;
+        renderContributors(contributors);
+        const uid=auth.currentUser?.uid;
+        if(uid&&isPanelAdmin())for(const p of contributors){
+            if(p.hasVerified && ['pending','processing'].includes(p.certificateDeliveryStatus))
+                watchContributorVerification(p.id,uid);
+        }
+    } catch (error) {
+        console.error('[CONTRIBUTORS] Failed to fetch data:', error);
+        if (!requestGuard.isCurrent(request)) return;
+        lastLoadFailed=true;
+        if(window.loadedContributors){let error=listContainer.querySelector('.contributors-inline-error');if(!error){error=document.createElement('div');error.className='state-block contributors-inline-error';listContainer.prepend(error);}error.innerHTML=`<p data-i18n="contributors.load_error">${__('contributors.load_error')}</p><button class="chrome-btn-outline" data-i18n="common.retry">${__('common.retry')}</button>`;error.querySelector('button').onclick=fetchContributorsData;listContainer.removeAttribute('aria-busy');}
+        else {loading.error(__('contributors.load_error'),fetchContributorsData,__('common.retry'));listContainer.querySelector('h4').dataset.i18n='contributors.load_error';listContainer.querySelector('button').dataset.i18n='common.retry';}
+        showToast(() => __('contributors.load_error'), 'error');
+    } finally {
+        if (requestGuard.isCurrent(request) && refreshBtn) setButtonLoading(refreshBtn,false);
+    }
+}
+
+function renderContributors(contributors) {
+    refreshRosterAccess();
+    syncBirthYearFilters();
+    const query = document.getElementById('contributor-search')?.value.toLowerCase().trim() || '';
+    const hidden = new Set(getHiddenFieldsFor('contributors.list'));
+    contributors = contributors.filter(p => {
+        const year=filterBirthYear(p),currentYear=new Date().getFullYear();
+        const match = ({all:true,vertex:isActiveContributor(p),verified:!!p.hasVerified,unverified:!p.hasVerified,'age-14-15':year!==null&&year>=currentYear-15&&year<=currentYear-14,'age-16-17':year!==null&&year>=currentYear-17&&year<=currentYear-16,'age-18':year!==null&&year<=currentYear-18,linkedin:!!p.linkedin,github:!!p.github,interview:!!p.interviewDate})[activeFilter];
+        return match && [p.name,p.department,...(!hidden.has('contact')?[p.email]:[]),...(!hidden.has('about')?[p.about]:[])].some(v=>String(v || '').toLowerCase().includes(query));
+    });
+    document.querySelectorAll('#tab-contributors .filter-chip').forEach(b=>{ const active=b.dataset.filter===activeFilter; b.classList.toggle('active',active); b.setAttribute('aria-pressed',String(active)); });
+    const canWrite = getEffectivePanelLevel('contributors.list')==='write';
+    const admin = isPanelAdmin();
+    const addButton=document.getElementById('add-manual-application');if(addButton)addButton.hidden=!canWrite;
+    const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry){templateEntry.style.display=admin?'':'none';templateEntry.textContent=__('email_templates.title');}
+    const headers = ['name','department','birthYear','status','applied','actions'];
+    loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row ${p.hasVerified?'is-verified':''}" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(birthYearLabel(p))}</span><span class="contributor-cell-status status-badge ${p.hasVerified?'success':''}">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.applicationDate?escapeHTML(formatCertificateDate(p.applicationDate)):p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${contributorState(p)==='active'?'is-active':contributorState(p)==='unknown'?'is-unknown':''}" data-membership="${escapeHTML(p.id)}" title="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-label="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-pressed="${isActiveContributor(p)}" data-vertex-state="${contributorState(p)}" ${!deploymentCapabilities.contributorMembershipWrites||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`));
+    listContainer.querySelectorAll('[data-membership]').forEach(b=>b.onclick=()=>toggleMembership(contributors.find(p=>p.id===b.dataset.membership),b));
+    listContainer.querySelectorAll('[data-details]').forEach(b=>b.onclick=()=>openContributorDetails(contributors.find(p=>p.id===b.dataset.details)));
+    listContainer.querySelectorAll('.certificate-manage-btn').forEach(b=>b.onclick=()=>openCertificates(contributors.find(p=>p.id===b.dataset.id),fetchContributorsData,b));
+    // Add event listeners to edit (pencil) buttons
+    const editBtns = listContainer.querySelectorAll('.edit-contributor-btn:not(.certificate-manage-btn)');
+    editBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const contributor = (window.loadedContributors || []).find(item => item.id === id);
+            if (contributor) openContributorEditor(contributor);
+        });
+    });
+}
+
+// --- Kalem düzenleme: başvurunun temel alanlarını komple değiştirme ---
+
+function toDatetimeLocalValue(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return '';
+    const pad = n => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function openContributorEditor(contributor) {
+    if (getEffectivePanelLevel('contributors.list') !== 'write') return;
+    const card = openDrawer({title:__('contributors.edit_title'),titleKey:'contributors.edit_title',footerHTML:`<button type="submit" form="contributor-editor-form" class="chrome-btn-primary"><span data-i18n="contributors.save_btn">${__('contributors.save_btn')}</span></button><button type="button" class="chrome-btn-outline ce-cancel-btn"><span data-i18n="contributors.cancel_btn">${__('contributors.cancel_btn')}</span></button>`});
+    const originalDepartment=canonicalDepartment(contributor.department,DEPARTMENTS);
+    const deptOptions = [...new Set(['', ...DEPARTMENTS.map(d => d.id),originalDepartment])]
+        .map(id => `<option value="${escapeHTML(id)}" ${originalDepartment === id ? 'selected' : ''}>${escapeHTML(displayDepartmentName(id))}</option>`)
+        .join('');
+    const langOptions = [...new Set([contributor.language || 'en', 'tr', 'en'])]
+        .map(code => `<option value="${code}" ${contributor.language === code ? 'selected' : ''}>${code==='tr'?'Türkçe':code==='en'?'English':escapeHTML(code)}</option>`)
+        .join('');
+
+    card.innerHTML = `
+        <form id="contributor-editor-form" class="contributor-edit-form form-stack">
+            <div class="contributor-edit-grid">
+                <div class="form-group-field">
+                    <label for="ce-name" data-i18n="contributors.field_name">${__('contributors.field_name')}</label>
+                    <input type="text" id="ce-name" value="${escapeHTML(contributor.name || '')}" required>
+                </div>
+                <div class="form-group-field">
+                    <label for="ce-email" data-i18n="contributors.field_email">${__('contributors.field_email')}</label>
+                    <input type="email" id="ce-email" value="${escapeHTML(contributor.email || '')}">
+                </div>
+                <div class="form-group-field">
+                    <label for="ce-phone" data-i18n="contributors.field_phone">${__('contributors.field_phone')}</label>
+                    <input type="text" id="ce-phone" value="${escapeHTML(contributor.phone || '')}">
+                </div>
+                <div class="form-group-field">
+                    <label for="ce-birth-date" data-i18n="contributors.field_birth_date">${__('contributors.field_birth_date')}</label>
+                    <input type="date" id="ce-birth-date" max="${new Date().toISOString().slice(0,10)}" value="${escapeHTML(contributor.birthDate || '')}">
+                </div>
+                <div class="form-group-field">
+                    <label for="ce-dept" data-i18n="contributors.field_department">${__('contributors.field_department')}</label>
+                    <select id="ce-dept">${deptOptions}</select>
+                </div>
+                <div class="form-group-field">
+                    <label for="ce-lang" data-i18n="contributors.field_language">${__('contributors.field_language')}</label>
+                    <select id="ce-lang">${langOptions}</select>
+                </div>
+                <div class="form-group-field">
+                    <label for="ce-linkedin" data-i18n="contributors.field_linkedin">${__('contributors.field_linkedin')}</label>
+                    <input type="url" id="ce-linkedin" value="${escapeHTML(contributor.linkedin || '')}">
+                </div>
+                <div class="form-group-field">
+                    <label for="ce-github" data-i18n="contributors.field_github">${__('contributors.field_github')}</label>
+                    <input type="url" id="ce-github" value="${escapeHTML(contributor.github || '')}">
+                </div>
+                <div class="form-group-field">
+                    <label for="ce-application-date">${__('manual_application.application_date')}</label>
+                    <input type="datetime-local" id="ce-application-date" value="${toDatetimeLocalValue(contributor.applicationDate)}">
+                </div>
+                <div class="form-group-field">
+                    <label for="ce-interview" data-i18n="contributors.field_interview">${__('contributors.field_interview')}</label>
+                    <input type="datetime-local" id="ce-interview" value="${toDatetimeLocalValue(contributor.interviewDate)}">
+                </div>
+            </div>
+            <div class="form-group-field">
+                <label for="ce-about" data-i18n="contributors.field_about">${__('contributors.field_about')}</label>
+                <textarea id="ce-about" rows="4">${escapeHTML(contributor.about || '')}</textarea>
+            </div>
+        </form>
+    `;
+
+    card.closest('.vx-drawer').querySelector('.ce-cancel-btn').addEventListener('click', () => closeDrawer());
+
+    card.querySelector('.contributor-edit-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submitBtn = card.closest('.vx-drawer').querySelector('button[type="submit"]');
+        if (submitBtn.disabled) return;
+
+        // Submit the actual delta, not every field from the edit form.
+        const drawer=card.closest('.vx-drawer');
+        const updates=changedContributorFields(contributor,{
+            name:card.querySelector('#ce-name').value,
+            email:card.querySelector('#ce-email').value,
+            phone:card.querySelector('#ce-phone').value,
+            birthDate:card.querySelector('#ce-birth-date').value,
+            department:card.querySelector('#ce-dept').value,
+            language:card.querySelector('#ce-lang').value,
+            linkedin:card.querySelector('#ce-linkedin').value,
+            github:card.querySelector('#ce-github').value,
+            interviewDate:card.querySelector('#ce-interview').value,
+            applicationDate:card.querySelector('#ce-application-date').value,
+            about:card.querySelector('#ce-about').value
+        },{department:originalDepartment,interviewDate:toDatetimeLocalValue(contributor.interviewDate),applicationDate:toDatetimeLocalValue(contributor.applicationDate)});
+        if(!Object.keys(updates).length){
+            if(drawer.classList.contains('is-open'))closeDrawer();
+            return;
+        }
+        setButtonLoading(submitBtn,true);
+        try{
+            // datetime-local values are in the operator's timezone; preserve
+            // the selected instant; malformed dates keep the form available.
+            for(const field of ['applicationDate','interviewDate']){
+                if(updates[field])updates[field]=new Date(updates[field]).toISOString();
+            }
+            const {data}=await updateContributorApplicationFn({contributorId:contributor.id,...updates});
+            if(data?.success!==true)throw new Error('Application update not confirmed.');
+            Object.assign(contributor,updates);
+            const cached=(window.loadedContributors||[]).find(p=>p.id===contributor.id);
+            if(cached&&cached!==contributor)Object.assign(cached,updates);
+            if(window.loadedContributors)renderContributors(window.loadedContributors);
+            // Do not inadvertently dismiss a newer drawer.
+            if(drawer.classList.contains('is-open'))closeDrawer();
+            showToast(()=>__('contributors.edit_updated'),'success');
+            void fetchContributorsData();
+        }catch(error){
+            console.error('[CONTRIBUTORS] Edit failed:',error);
+            showToast(()=>userErrorMessage(error),'error');
+        }finally{
+            if(submitBtn.isConnected)setButtonLoading(submitBtn,false);
+        }
+    });
+}
+
+// Listen only to the current Contributor record. The approval is immediate;
+// Gmail delivery can finish later, without polling the full applicant directory.
+function watchContributorVerification(id,viewerUid){
+    if(!viewerUid || verificationListeners.has(id) || auth.currentUser?.uid!==viewerUid)return;
+    let unsubscribe=()=>{},closed=false;
+    const stop=()=>{
+        if(closed)return;
+        closed=true;
+        verificationListeners.delete(id);
+        unsubscribe();
+    };
+    verificationListeners.set(id,stop);
+    try{
+        unsubscribe=db.collection('contributors').doc(id).onSnapshot(snapshot=>{
+            if(auth.currentUser?.uid!==viewerUid || !snapshot.exists){stop();return;}
+            const current=snapshot.data()||{},status=current.certificateDeliveryStatus;
+            const person=(window.loadedContributors||[]).find(p=>p.id===id);
+            if(person){
+                person.hasVerified=current.hasVerified===true;
+                person.emailSent=current.emailSent===true;
+                person.certificateDeliveryStatus=status;
+                document.dispatchEvent(new CustomEvent('vertex:contributor-updated',{detail:{person}}));
+                renderContributors(window.loadedContributors);
+            }
+            if(['succeeded','failed','uncertain','revoked'].includes(status)){
+                stop();
+                if(status==='succeeded')showToast(()=>__('contributors.delivery_succeeded'),'success');
+                else if(['failed','uncertain'].includes(status))showToast(()=>__('contributors.delivery_failed'),'error');
+            }
+        },error=>{
+            console.warn('[CONTRIBUTORS] Live certificate status unavailable',error.code);
+            stop();
+            showToast(()=>__('contributors.delivery_refresh_error'),'info');
+        });
+        if(closed)unsubscribe();
+    }catch(error){
+        stop();
+        console.warn('[CONTRIBUTORS] Cannot subscribe to verification status',error.code);
+    }
+}
+
+function openContributorDetails(person) {
+    const hidden = new Set(getHiddenFieldsFor('contributors.list'));
+    let body, pending = false;
+    function paint() {
+        if (!body?.isConnected) return;
+        const rows = [['contributors.field_department',displayDepartmentName(person.department)],...(!hidden.has('contact')?[['contributors.field_email',person.email],['contributors.field_phone',person.phone]]:[]),...(!hidden.has('age')?[['contributors.field_birth_date',birthDateLabel(person)]]:[]),['contributors.field_language',person.language==='tr'?'Türkçe':person.language==='en'?'English':person.language],['contributors.col_status',person.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')],['contributors.applied_at',formatCertificateDate(person.createdAt)],...(!hidden.has('interview')?[['contributors.field_interview',formatCertificateDate(person.interviewDate)]]:[]),['cert.joined',person.joinedAt?formatCertificateDate(person.joinedAt):__('cert.not_joined')]];
+        body.innerHTML=`<dl class="detail-list">${rows.map(([label,value])=>`<div class="detail-row"><dt>${__(label)}</dt><dd>${escapeHTML(String(value??'—'))}</dd></div>`).join('')}</dl>${!hidden.has('about')&&person.about?`<p class="drawer-bio">${escapeHTML(person.about)}</p>`:''}<div class="contributor-links">${!hidden.has('links')?['linkedin','github'].filter(k=>/^https?:\/\//.test(person[k]||'')).map(k=>`<a class="chrome-btn-outline" href="${escapeHTML(person[k])}" target="_blank" rel="noopener noreferrer">${icon('brand-'+k)}${k==='linkedin'?'LinkedIn':'GitHub'}</a>`).join(''):''}</div>`;
+        const footer=body.closest('.vx-drawer').querySelector('.vx-drawer-footer');
+        footer.innerHTML=`${getEffectivePanelLevel('contributors.list')==='write'?`<button class="chrome-btn-primary" data-edit>${icon('pencil')}${__('contributors.edit_title')}</button>`:''}${isPanelAdmin()?`<button class="chrome-btn-outline" data-certificate>${icon('award')}${__('cert.management')}</button><button class="chrome-btn-outline" data-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`:''}`;
+        footer.querySelectorAll('button').forEach(b=>b.disabled=pending);
+        footer.querySelector('[data-edit]')?.addEventListener('click',()=>openContributorEditor(person));
+        footer.querySelector('[data-certificate]')?.addEventListener('click',e=>openCertificates(person,fetchContributorsData,e.currentTarget));
+        footer.querySelector('[data-more]')?.addEventListener('click',e=>openPopover(e.currentTarget,{className:'contributor-actions-popover',render(menu){
+            menu.innerHTML=`<div class="menu-list"><button class="menu-item" data-verify ${person.hasVerified && ['pending','processing'].includes(person.certificateDeliveryStatus)?'disabled':''}>${icon('check')}${person.hasVerified?__('contributors.unverify'):__('contributors.verify')}</button><button class="menu-item" data-delete>${icon('trash')}${__('contributors.delete_action')}</button></div>`;
+            menu.querySelector('[data-verify]').onclick=async()=>{
+                if(pending||!isPanelAdmin() || (person.hasVerified&&['pending','processing'].includes(person.certificateDeliveryStatus)))return; pending=true;closePopover();paint();
+                const next=!person.hasVerified;
+                try{
+                    const {data}=await toggleContributorVerificationFn({contributorId:person.id,hasVerified:next});
+                    const status=data?.status;
+                    if(next && ['uncertain','failed','revoked'].includes(status)){
+                        person.hasVerified=false;
+                        person.certificateDeliveryStatus=status;
+                        showToast(()=>__('contributors.delivery_failed'),'error');
+                    }else if(next){
+                        // The server saved hasVerified=true with the issuance ledger.
+                        person.hasVerified=true;
+                        person.emailSent=status==='succeeded';
+                        person.certificateDeliveryStatus=status==='succeeded'?'succeeded':status==='legacy'?'succeeded':'pending';
+                        showToast(()=>__('contributors.verify_updated'),'success');
+                        if(['pending','processing'].includes(status))
+                            watchContributorVerification(person.id,auth.currentUser?.uid);
+                    }else{
+                        person.hasVerified=false;
+                        person.certificateDeliveryStatus='revoked';
+                        showToast(()=>__('contributors.verify_updated'),'success');
+                    }
+                    const list=window.loadedContributors||[];
+                    const cached=list.find(p=>p.id===person.id);
+                    if(cached && cached!==person)Object.assign(cached,{
+                        hasVerified:person.hasVerified,emailSent:person.emailSent,
+                        certificateDeliveryStatus:person.certificateDeliveryStatus
+                    });
+                    if(list.length)renderContributors(list);
+                    document.dispatchEvent(new CustomEvent('vertex:contributor-updated',{detail:{person}}));
+                    void fetchContributorsData();
+                }
+                catch(error){showToast(() => userErrorMessage(error),'error');}finally{pending=false;paint();}
+            };
+            menu.querySelector('[data-delete]').onclick=async()=>{
+                if(pending||!isPanelAdmin())return; closePopover();
+                if(!await confirmDialog(()=>({title:__('contributors.delete_action'),body:__('contributors.delete_warning'),confirmLabel:__('contributors.delete_action'),danger:true})))return;
+                pending=true;paint();try{await deleteVertexContributorFn({contributorId:person.id});closeDrawer();showToast(() => __('contributors.deleted'),'success');await fetchContributorsData();}catch{showToast(() => __('system.error'),'error');pending=false;paint();}
+            };
+        }}));
+    }
+    const syncPerson=event=>{
+        if(event.detail?.person?.id!==person.id)return;
+        Object.assign(person,event.detail.person);
+        paint();
+    };
+    document.addEventListener('vertex:contributor-updated',syncPerson);
+    const unsubscribe=onLangChange(paint);
+    body=openDrawer({title:person.name,footerHTML:' ',onAfterClose(){
+        unsubscribe();
+        document.removeEventListener('vertex:contributor-updated',syncPerson);
+    }});paint();
+}
+
+async function toggleMembership(person,button) {
+    if(!deploymentCapabilities.contributorMembershipWrites || !isPanelAdmin() || !person || membershipPending.has(person.id))return;
+    membershipPending.add(person.id);setButtonLoading(button,true);
+    try {
+        const confirmed=await confirmDialog(()=>({title:__('subnav.vertex_status'),warning:__('contributors.vertex_confirm'),rows:[{label:__('contributors.field_email'),value:escapeHTML(person.email)},{label:'Contributor',value:escapeHTML(person.id)}]}));
+        if(!confirmed)return;
+        const existing=person.isVertex===true;
+        const {data}=await setContributorVertexStatusFn({contributorId:person.id,isVertex:!existing,expectedStatus:existing,expectedFieldExists:Object.prototype.hasOwnProperty.call(person,'isVertex')});
+        if(typeof data.isVertex!=='boolean')throw new Error('Invalid membership response');
+        person.isVertex=data.isVertex;
+        if(person.membership){person.membership.fieldExists=true;person.membership.isVertex=data.isVertex;}
+        if(data.joinedAtSet)person.joinedAt=new Date();
+        showToast(()=>__(data.isVertex?'system.vertex_enabled':'system.vertex_disabled'),'success');
+        renderContributors(window.loadedContributors||[]);
+    } catch(error){showToast(()=>userErrorMessage(error),'error');}
+    finally{membershipPending.delete(person.id);setButtonLoading(button,false);renderContributors(window.loadedContributors||[]);}
+}
+function openCertificateSelector() {
+    if(!isPanelAdmin())return;
+    let disposeCertificate,query='',scroll=0;
+    const body=openDrawer({title:__('cert.select_person'),onAfterClose(){disposeCertificate?.();unsubscribe();}});
+    const root=body.closest('.vx-drawer');
+    const unsubscribe=onLangChange(()=>{if(body.classList.contains('certificate-selector-body'))paint();});
+    async function paint(){
+        if(!body.isConnected)return;
+        root.classList.remove('certificate-drawer');root.querySelector('[data-cert-back]')?.remove();root.querySelector('.vx-drawer-footer')?.remove();
+        root.querySelector('.vx-drawer-title').textContent=__('cert.select_person');root.setAttribute('aria-label',__('cert.select_person'));
+        body.classList.add('certificate-selector-body');
+        body.innerHTML=`<button type="button" class="chrome-btn-outline template-manage-entry" data-email-templates>${__('email_templates.title')}</button><div class="certificate-person-search"><label for="certificate-person-search">${__('cert.search_person')}</label><div class="search-field">${icon('search')}<input id="certificate-person-search" type="search" placeholder="${__('cert.search_person')}" value="${escapeHTML(query)}"></div></div><div class="certificate-person-list"></div>`;
+        body.querySelector('[data-email-templates]').onclick=openCertificateEmailTemplates;
+        const search=body.querySelector('input'),list=body.querySelector('.certificate-person-list');
+        function results(){
+            if(!body.classList.contains('certificate-selector-body'))return;
+            const people=(window.loadedContributors||[]).filter(p=>[p.name,p.email].some(v=>String(v||'').toLowerCase().includes(query.toLowerCase())));
+            list.innerHTML=people.map(p=>`<button class="certificate-person-row" data-person="${escapeHTML(p.id)}"><span><strong>${escapeHTML(p.name)}</strong><small>${escapeHTML(p.email||'')}</small></span>${icon('award')}</button>`).join('')||`<p class="state-block">${__('contributors.empty')}</p>`;
+            list.scrollTop=scroll;
+            list.querySelectorAll('[data-person]').forEach(b=>b.onclick=()=>{
+                scroll=list.scrollTop;body.classList.remove('certificate-selector-body');
+                openCertificates((window.loadedContributors||[]).find(p=>p.id===b.dataset.person),fetchContributorsData,b,{body,onBack(){paint();},onDispose(fn){disposeCertificate=fn;}});
+            });
+        }
+        search.oninput=()=>{query=search.value;scroll=0;results();};
+        search.focus();
+        if(!window.loadedContributors){const load=createLoadingController(list,{skeletonHTML:skeletonRows(5)});load.start();await fetchContributorsData();if(!body.isConnected||!body.classList.contains('certificate-selector-body'))return;load.destroy();if(lastLoadFailed){load.error(__('contributors.load_error'),paint,__('common.retry'));return;}}
+        results();
+    }
+    paint();
+}

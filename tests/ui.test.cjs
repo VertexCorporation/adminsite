@@ -22,6 +22,14 @@ test('overlay cleanup uses CSS motion and lifecycle events',()=>{
  assert.match(read('js/ui/motion.js'), /getComputedStyle\(element\)/);
  assert.match(read('js/ui/motion.js'), /transitionend/);
 });
+test('long applicant filters retain an optimized visible crossfade',()=>{
+ const src=read('js/ui/transition.js');
+ assert.match(src,/contributor-table-rows/);
+ assert.match(src,/rows\.children\.length > 0/);
+ assert.match(src,/snapshot\.appendChild/);
+ assert.doesNotMatch(src,/oldChildren\.length > 0[^;]+container\.querySelectorAll\('\*'\)\.length < 140;/);
+});
+
 test('crossfade is visual only and stale data is preserved',()=>{
  assert.match(read('js/utils/loading.js'), /crossfade\(container/);
  assert.match(read('js/utils/loading.js'), /if \(stale && container\.children\.length\)/);
@@ -111,4 +119,22 @@ test('navigation and workspace do not run competing opacity animations',()=>{
  const views=read('js/modules/views.js');
  assert.match(views,/!isSwitchingTab/);
  assert.match(views,/if \(animateWorkspace\) crossfade/);
+});
+
+test('generic long lists use bounded visual snapshots, not animation suppression',()=>{
+ const transition=read('js/ui/transition.js');
+ assert.match(transition,/function boundedClone\(/);
+ assert.match(transition,/largeList \? boundedClone\(child, budget\)/);
+ assert.doesNotMatch(transition,/\(denseList \|\| container\.querySelectorAll\('\*'\)\.length < 140\)/);
+});
+
+test('contributor editing and manual applicant intake share safe async button states',()=>{
+ const contributor=read('js/modules/contributors.js');
+ const intake=read('js/modules/manualApplication.js');
+ assert.match(contributor,/setButtonLoading\(submitBtn,true\)/);
+ assert.match(contributor,/if\(submitBtn\.isConnected\)setButtonLoading\(submitBtn,false\)/);
+ assert.doesNotMatch(contributor,/submitBtn\.disabled\s*=\s*true/);
+ assert.match(intake,/setButtonLoading\(save,true\)/);
+ assert.match(intake,/setButtonLoading\(save,false\)/);
+ assert.doesNotMatch(intake,/save\.disabled\s*=\s*true/);
 });
