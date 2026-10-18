@@ -27,7 +27,10 @@ const fixture = [
  '<div id="both" data-scroll-fog><div style="width:440px;height:250px">Both axes</div></div>',
  '<input id="required-field" required value="x">',
  '<div id="content"><p>Outgoing content</p></div>',
+ '<div id="delay-host"></div>',
+ '<div id="view-host"><section id="old-tab" class="active"><h2>Old page</h2><input id="retained-value" value="keep me"></section><section id="new-tab" style="display:none"><h2>New page</h2></section></div>',
  ' <div id="generic"><ul></ul></div>',
+ ' <div id="workspace" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px"><article>Old card</article><article hidden>Hidden card</article></div>',
  ' <div id="dense"><div class="contributor-table-head">Applicant list</div><div class="contributor-table-rows"></div></div></body></html>'
 ].join('');
 const server = http.createServer((req,res)=>{
@@ -77,6 +80,41 @@ const server = http.createServer((req,res)=>{
    await page.waitForTimeout(300);
    assert.equal(await page.locator('.ui-crossfade-ghost').count(),0);
    assert.equal(await page.locator('#content strong').innerText(),'Incoming content');
+   await page.evaluate(()=>{
+     const host=document.getElementById('workspace');
+     window.uiTest.transition.crossfade(host,()=>{
+       host.innerHTML='<article>New workspace card</article>';
+     });
+   });
+   assert.equal(await page.locator('#workspace > .ui-crossfade-ghost').count(),1);
+   assert.equal(await page.locator('#workspace > .ui-crossfade-ghost > article').count(),1);
+   assert.equal(await page.locator('#workspace > .ui-crossfade-ghost').evaluate(el=>getComputedStyle(el).display),'grid');
+   await page.waitForTimeout(250);
+   // A real exit+entry pair must overlap, remain inert, and never replace the
+   // existing input (including across rapid navigation).
+   await page.evaluate(()=>{
+     const old=document.getElementById('old-tab'),next=document.getElementById('new-tab');
+     window.uiTest.transition.animateViewSwitch(old,next,()=>{
+       old.classList.remove('active');old.style.display='none';
+       next.classList.add('active');next.style.display='block';
+     });
+   });
+   assert.equal(await page.locator('#view-host > .ui-view-ghost').count(),1);
+   assert.equal(await page.locator('#old-tab #retained-value').inputValue(),'keep me');
+   assert.equal(await page.locator('#view-host > .ui-view-ghost').getAttribute('aria-hidden'),'true');
+   assert(await page.locator('#new-tab').evaluate(el=>el.getAnimations().length>0));
+   assert(await page.locator('#view-host > .ui-view-ghost').evaluate(el=>el.getAnimations().length>0));
+   await page.evaluate(()=>{
+     const old=document.getElementById('old-tab'),next=document.getElementById('new-tab');
+     window.uiTest.transition.animateViewSwitch(next,old,()=>{
+       next.classList.remove('active');next.style.display='none';
+       old.classList.add('active');old.style.display='block';
+     });
+   });
+   assert.equal(await page.locator('#view-host > .ui-view-ghost').count(),1);
+   await page.waitForTimeout(270);
+   assert.equal(await page.locator('#view-host > .ui-view-ghost').count(),0);
+   assert.equal(await page.locator('#old-tab #retained-value').inputValue(),'keep me');
    // Generic result sets must also animate when their nested DOM gets large.
    await page.evaluate(()=>{
      const host=document.getElementById('generic');
@@ -172,6 +210,37 @@ const server = http.createServer((req,res)=>{
     if(field.hasAttribute('aria-invalid'))throw Error('invalid state was not cleared');
    });
 
+   // The first load cannot flash skeleton for a response under 150ms,
+   // but a genuine slow request must show its skeleton before crossfading.
+   await page.evaluate(()=>{
+     const host=document.getElementById('delay-host');
+     window.uiTest.delayed=window.uiTest.loading.createLoadingController(host);
+     window.uiTest.delayed.start();
+   });
+   assert.equal(await page.locator('#delay-host .skeleton').count(),0);
+   await page.waitForTimeout(180);
+   assert(await page.locator('#delay-host .skeleton').count()>0);
+   await page.evaluate(()=>window.uiTest.delayed.success('<p>Loaded data</p>'));
+   await page.waitForTimeout(240);
+   assert.equal(await page.locator('#delay-host .skeleton').count(),0);
+   assert.equal(await page.locator('#delay-host p').innerText(),'Loaded data');
+   // Shared list loader cancels superseded requests; stale refresh never
+   // destroys the existing nodes or reattaches them from serialized markup.
+   await page.evaluate(()=>{
+     const host=document.getElementById('content');
+     host.innerHTML='<button id="old-live-button">Existing interactive record</button>';
+     const original=host.firstElementChild;
+     const stale=window.uiTest.loading.beginPanelLoading(host);
+     if(!host.classList.contains('is-refreshing'))throw Error('stale refresh not visible');
+     const next=window.uiTest.loading.beginPanelLoading(host);
+     stale();
+     if(host.firstElementChild!==original || host.getAttribute('aria-busy')!=='true')
+        throw Error('old request disrupted the latest refresh');
+     next();
+     if(host.firstElementChild!==original || host.hasAttribute('aria-busy'))
+        throw Error('live node was overwritten or busy state was left behind');
+     host.innerHTML='<strong>Incoming content</strong>';
+   });
    // Async content preserves stale data, and skeletons are not shown instantly.
    await page.evaluate(async()=>{
     const host=document.getElementById('content');

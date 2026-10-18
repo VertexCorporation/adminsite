@@ -42,7 +42,17 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
     ghost.inert = true;
     let savedScroll = null;
     const budget = {remaining:160};
+    const containerStyle = getComputedStyle(container);
+    // Workspace outgoing cards retain their grid geometry rather than stacking.
+    if (containerStyle.display === 'grid') {
+        ghost.style.display = 'grid';
+        ghost.style.gridTemplateColumns = containerStyle.gridTemplateColumns;
+        ghost.style.gap = containerStyle.gap;
+        ghost.style.alignItems = containerStyle.alignItems;
+    }
     for (const child of oldChildren) {
+        if (child.nodeType === 1 &&
+            (child.hidden || getComputedStyle(child).display === 'none')) continue;
         if (denseList && child === rows) {
             const snapshot = rows.cloneNode(false);
             const rowHeight = Math.max(1, rows.firstElementChild?.getBoundingClientRect().height || 52);
@@ -105,6 +115,70 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
     Promise.allSettled([outgoing.finished,...incoming.map(anim => anim.finished)]).then(cleanup);
 }
 
+
+
+// Real, simultaneous exit/entrance between navigation tabs. The outgoing tab
+// remains the original hidden DOM; the inert snapshot cannot steal focus,
+// duplicate a submission, or destroy fields when navigation is rapid.
+const viewSwitches = new WeakMap();
+export function animateViewSwitch(from, to, mutate, {duration = 190} = {}) {
+    const host = to?.parentElement;
+    if (!host || !from || from === to || !from.classList.contains('active') ||
+        !from.isConnected || !to.isConnected || reducedMotion()) {
+        mutate();
+        return;
+    }
+    viewSwitches.get(host)?.();
+    const before = from.getBoundingClientRect();
+    const parent = host.getBoundingClientRect();
+    if (!before.width || !before.height) { mutate(); return; }
+
+    const budget = {remaining: 480};
+    const ghost = boundedClone(from, budget);
+    ghost.classList.add('ui-view-ghost', 'ui-crossfade-ghost');
+    ghost.removeAttribute('id');
+    ghost.setAttribute('aria-hidden','true');
+    ghost.inert = true;
+    ghost.querySelectorAll('[id],[name],[tabindex]').forEach(el=>{
+        el.removeAttribute('id');
+        el.removeAttribute('name');
+        el.removeAttribute('tabindex');
+    });
+    ghost.style.cssText = 'position:absolute;overflow:hidden;pointer-events:none;' +
+        'z-index:2;display:block;max-width:100%;' +
+        'left:' + (before.left-parent.left+host.scrollLeft) + 'px;' +
+        'top:' + (before.top-parent.top+host.scrollTop) + 'px;' +
+        'width:' + before.width + 'px;height:' + before.height + 'px;';
+    const originalPosition = host.style.position;
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+
+    // Workspace rendering must see the entering flag before the new tab is
+    // activated; otherwise it creates a competing per-card animation.
+    to.classList.add('ui-tab-entering');
+    const hadFocus = from.contains(document.activeElement);
+    mutate();
+    if (hadFocus && !to.contains(document.activeElement)) {
+        if (!to.hasAttribute('tabindex')) to.tabIndex = -1;
+        to.focus({preventScroll:true});
+    }
+    host.appendChild(ghost);
+    const timing = {duration,easing:'cubic-bezier(.2,.8,.2,1)',fill:'both'};
+    const exit = ghost.animate([{opacity:1},{opacity:0}],timing);
+    const entry = to.animate(
+        [{opacity:0,transform:'translateY(3px)'},{opacity:1,transform:'translateY(0)'}],timing);
+    let cleaned = false;
+    const cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        ghost.remove();
+        to.classList.remove('ui-tab-entering');
+        host.style.position = originalPosition;
+        if (viewSwitches.get(host) === cancel) viewSwitches.delete(host);
+    };
+    const cancel = () => {exit.cancel();entry.cancel();cleanup();};
+    viewSwitches.set(host,cancel);
+    Promise.allSettled([exit.finished,entry.finished]).then(cleanup);
+}
 
 // For navigation panels, keep the *real* DOM and its focus/listeners intact.
 // Crossfade is reserved for replaced content; navigation uses a cheap native

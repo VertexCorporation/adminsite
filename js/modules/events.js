@@ -1,4 +1,5 @@
 import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
+import { crossfade } from '../ui/transition.js';
 import { showLoadError } from '../ui/states.js';
 import { eventLocalTime, eventInstant } from './eventTime.js';
 import { mountEventFields } from './eventFields.js';
@@ -57,7 +58,8 @@ export function initEventsModule() {
   const finishLoading=beginPanelLoading(list);
   setButtonLoading(button,true);
   try {
-  const {data}=await eventCallable('listConsoleEvents',{});list.replaceChildren();
+  const {data}=await eventCallable('listConsoleEvents',{});
+  crossfade(list, () => {list.replaceChildren();
   for(const status of ['published','draft','cancelled']){
    const title=document.createElement('h4');title.textContent=tr({published:'Yayımlanmış',draft:'Taslak',cancelled:'İptal'}[status],status);list.append(title);
    for(const event of data.events.filter(e=>e.status===status)) {
@@ -66,6 +68,7 @@ export function initEventsModule() {
     list.append(row);
    }
   }
+  });
   } catch(error) {
     showLoadError(list,()=>tr('Etkinlikler yüklenemedi','Could not load events'),refresh,{staleSelector:'.article-item'});
   } finally {
@@ -74,7 +77,7 @@ export function initEventsModule() {
   }
  };
  form.onsubmit=async e=>{e.preventDefault();const button=form.querySelector('[type="submit"]');if(button.disabled||getEffectivePanelLevel('events.editor')!=='write')return;setButtonLoading(button,true);try{const event=collect();if(await confirmDialog({title:tr('Değişiklik kaydedilsin mi?','Save changes?'),body:`${event.title} · ${event.status}`})){await eventCallable('saveConsoleEvent',{event,revision:current?.revision||0});fill(null);await refresh();showToast(tr('Kaydedildi','Saved'),'success');}}catch(e){fail(e);}finally{setButtonLoading(button,false);}};
- document.getElementById('events-preview').onclick=()=>{try{const event=collect();const box=document.getElementById('events-preview-content');box.hidden=false;box.replaceChildren();for(const text of [event.title,`${event.date} · ${event.timeZone}`,event.desc,event.detailDesc,event.location]){const p=document.createElement('p');p.textContent=text;box.append(p);}}catch(e){fail(e);}finally{setButtonLoading(button,false);}};
+ document.getElementById('events-preview').onclick=()=>{try{const event=collect();const box=document.getElementById('events-preview-content');box.hidden=false;box.replaceChildren();for(const text of [event.title,`${event.date} · ${event.timeZone}`,event.desc,event.detailDesc,event.location]){const p=document.createElement('p');p.textContent=text;box.append(p);}}catch(e){fail(e);}};
  document.getElementById('events-new').onclick=()=>fill(null);
  document.getElementById('events-refresh').onclick=()=>refresh().catch(fail);
  const upload=async file=>{
@@ -86,7 +89,7 @@ export function initEventsModule() {
  };
  document.getElementById('event-upload').onchange=async e=>{try{if(e.target.files[0])form.elements.cover.value=await upload(e.target.files[0]);}catch(error){fail(error);}};
  document.getElementById('event-gallery-upload').onchange=async e=>{try{for(const file of e.target.files){const url=await upload(file);form.elements.images.value=[form.elements.images.value.trim(),url].filter(Boolean).join('\n');}}catch(error){fail(error);}};
- document.getElementById('events-load-registrations').onclick=async event=>{const button=event.currentTarget;setButtonLoading(button,true);try{const {data}=await eventCallable('listEventRegistrations',{eventId:document.getElementById('events-registration-search').value});const box=document.getElementById('events-registrations');box.replaceChildren();for(const row of data.registrations){const p=document.createElement('p');p.textContent=`${row.name} · ${row.email} · ${row.status} · ${row.id}`;box.append(p);}}catch(e){fail(e);}};
+ document.getElementById('events-load-registrations').onclick=async event=>{const button=event.currentTarget;if(button.disabled)return;setButtonLoading(button,true);try{const {data}=await eventCallable('listEventRegistrations',{eventId:document.getElementById('events-registration-search').value});const box=document.getElementById('events-registrations');crossfade(box,()=>{box.replaceChildren();for(const row of data.registrations){const p=document.createElement('p');p.textContent=`${row.name} · ${row.email} · ${row.status} · ${row.id}`;box.append(p);}});}catch(e){fail(e);}finally{setButtonLoading(button,false);}};
  document.addEventListener('vertex:workspace',e=>{if(e.detail.keys.includes('events.list'))refresh().catch(fail);});
  fill(null);
 }

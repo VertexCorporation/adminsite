@@ -1,7 +1,7 @@
 import { showWorkspace } from './views.js';
 import { afterMotion } from '../ui/motion.js';
 import { lockScroll, unlockScroll } from '../ui/overlay.js';
-import { animateViewEntry } from '../ui/transition.js';
+import { animateViewEntry, animateViewSwitch } from '../ui/transition.js';
 // js/modules/shell.js
 //
 // Uygulama kabuğu ve yükseltilmiş yüzey altyapısı:
@@ -571,11 +571,17 @@ function initNavigation() {
         const target = document.getElementById(button.dataset.target);
         if (!target || button.style.display === 'none') return;
         const changed = !target.classList.contains('active');
-        document.querySelectorAll('.tab-panel,.dock-btn').forEach(el => el.classList.remove('active'));
-        target.classList.add('active'); button.classList.add('active');
-        if (changed) animateViewEntry(target);
-
-        refreshNavigation();
+        const outgoing = changed ? document.querySelector('.tab-panel.active') : null;
+        const update = () => {
+            document.querySelectorAll('.tab-panel,.dock-btn').forEach(el => el.classList.remove('active'));
+            target.classList.add('active'); button.classList.add('active');
+            refreshNavigation();
+        };
+        if (changed && outgoing) animateViewSwitch(outgoing,target,update);
+        else {
+            update();
+            if (changed) animateViewEntry(target);
+        }
         if(target.id==='tab-chat')document.dispatchEvent(new CustomEvent('vertex:workspace',{detail:{keys:['chat.channels']}}));
         if (changed) window.scrollTo({top:0,behavior:'instant'});
     };

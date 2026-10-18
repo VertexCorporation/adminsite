@@ -194,23 +194,37 @@ export function createRequestGuard() {
     };
 }
 
+// One loader per list host. Superseded requests cannot erase the UI state of
+// a later refresh, even if the older network response completes last.
+const panelLoaders = new WeakMap();
 export function beginPanelLoading(container, rowFactory = skeletonListItem) {
     if (!container) return () => {};
-    container.setAttribute('aria-busy','true');
-    const current = container.innerHTML;
-    const stale = container.children.length && !container.querySelector('.form-hint,.state-block,.skeleton');
-    let shown=false;
-    if(stale)container.classList.add('is-refreshing');
-    const timer=setTimeout(()=>{if(!stale){shown=true;container.innerHTML=skeletonRows(5,rowFactory);}},150);
+    panelLoaders.get(container)?.cancel();
+    const originalNodes = [...container.childNodes];
+    const controller = createLoadingController(container, {
+        skeletonHTML: skeletonRows(5, rowFactory)
+    });
+    let done = false;
+    const entry = { cancel: () => {
+        done = true;
+        controller.destroy();
+    }};
+    panelLoaders.set(container,entry);
+    controller.start();
     return () => {
-        clearTimeout(timer);
-        container.removeAttribute('aria-busy');
-        container.classList.remove('is-refreshing');
-        if (shown) {
-            if (container.querySelector('.skeleton')) container.innerHTML = current;
-            else animateContent(container);
-        } else if (stale && container.innerHTML !== current) {
-            animateContent(container);
+        if (done || panelLoaders.get(container) !== entry) return;
+        done = true;
+        panelLoaders.delete(container);
+        // Never restore serialized innerHTML: doing so destroys existing form
+        // values, delegated handlers, and live interactive state.
+        if (originalNodes.length && container.querySelector('.skeleton') &&
+            !originalNodes.some(node => node.isConnected)) {
+            container.replaceChildren(...originalNodes);
         }
+        const changed = originalNodes.length &&
+            container.firstChild !== originalNodes[0] &&
+            !container.querySelector('.skeleton,.ui-crossfade-ghost');
+        controller.destroy();
+        if (changed) animateContent(container);
     };
 }

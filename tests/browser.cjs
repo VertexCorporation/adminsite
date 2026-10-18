@@ -73,6 +73,18 @@ await page.waitForSelector('.certificate-manage-btn');
 assert.equal(errors.length,0);
 const checks=[];
 const note=x=>{checks.push(x);console.log('PASS',x);};
+// Verify real navigation uses simultaneous exit and entrance, not a simple
+// fade-in after the outgoing tab has disappeared.
+await page.locator('.dock-btn[data-target="tab-news"]').click();
+const navMotion=await page.evaluate(()=>{
+ const host=document.getElementById('tab-scroll-container'),ghost=host.querySelector(':scope > .ui-view-ghost'),incoming=document.getElementById('tab-news');
+ return {ghost:!!ghost,inert:ghost?.inert,outgoing:ghost?.getAnimations().length,incoming:incoming.getAnimations().length,liveOld:!!document.getElementById('tab-contributors')};
+});
+assert(navMotion.ghost&&navMotion.inert&&navMotion.outgoing>0&&navMotion.incoming>0&&navMotion.liveOld,JSON.stringify(navMotion));
+await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
+await page.locator('.dock-btn[data-target="tab-contributors"]').click();
+await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
+note('Real navigation animates outgoing and incoming tabs simultaneously without replacing live forms');
 const issueCount=()=>calls.filter(n=>n==='issuevertexcertificate').length;
 const openCert=async()=>{if(await page.locator('.certificate-drawer').count()){await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});}await page.waitForSelector('.vx-popover.is-closing',{state:'detached'});await page.waitForSelector('.vx-modal[aria-hidden=true]',{state:'detached'});await page.locator('.certificate-manage-btn').first().click();await page.waitForSelector('[data-award]');};
 const selectTab=async id=>{if(await page.evaluate(()=>innerWidth<1024)){const dock=page.locator(`[data-mobile-tab="tab-${id}"]`);if(await dock.count()&&await dock.isVisible())await dock.click();else{await page.locator('[data-mobile-more]').click();if(id==='profile')await page.locator('[data-more-profile]').click();else await page.locator(`.mobile-more-pages section[data-more-module="tab-${id}"] button`).first().click();await page.waitForSelector('.vx-modal',{state:'detached'});}}else await page.locator(`[data-target="tab-${id}"]`).click();};
@@ -106,7 +118,11 @@ for(const width of [360,390,768,1024,1440,1920]){
    if(dims.scroll>dims.w+1)console.error(await page.evaluate(()=>[...document.querySelectorAll("body *")].filter(el=>el.getBoundingClientRect().right>innerWidth+1).map(el=>({tag:el.tagName,id:el.id,cls:el.className,right:el.getBoundingClientRect().right})).slice(0,20)));assert(dims.scroll<=dims.w+1,`${width}/${theme}/${id}: overflow ${dims.scroll}`);
   }
   await selectTab('contributors');if(process.env.VERTEX_SCREENSHOTS){await page.waitForTimeout(250);fs.mkdirSync(process.env.VERTEX_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.VERTEX_SCREENSHOTS,`before-${width}-${theme}.png`)});}await openCert();
-  await page.waitForTimeout(200);const box=await page.locator('.certificate-drawer').boundingBox();assert(box.x>=0&&box.x+box.width<=width+1&&box.y>=0&&box.y+box.height<=901,JSON.stringify(box));
+  await page.waitForFunction(()=>{
+   const r=document.querySelector('.certificate-drawer')?.getBoundingClientRect();
+   return !!r&&r.left>=-0.5&&r.right<=innerWidth+0.5&&r.top>=-0.5&&r.bottom<=innerHeight+0.5;
+  },null,{timeout:4000});
+  const box=await page.locator('.certificate-drawer').boundingBox();assert(box.x>=0&&box.x+box.width<=width+1&&box.y>=0&&box.y+box.height<=901,JSON.stringify(box));
   if(process.env.VERTEX_SCREENSHOTS){fs.mkdirSync(process.env.VERTEX_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.VERTEX_SCREENSHOTS,`vertex-${width}-${theme}.png`)});}
   await page.keyboard.press('Escape');
  }
@@ -166,11 +182,11 @@ history=[];await openCert();await page.evaluate(async()=>{(await import('/js/lan
 for(let i=0;i<8;i++){await openCert();await page.keyboard.press('Escape');assert.equal(await page.locator('.certificate-drawer:not([aria-hidden=true])').count(),0);}assert(await page.locator('.certificate-manage-btn').first().evaluate(el=>el===document.activeElement));note('Repeated open/close and focus restoration');
 await page.emulateMedia({colorScheme:'light'});await page.evaluate(async()=>{(await import('/js/modules/shell.js')).applyTheme('system');});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(248, 249, 250)');await page.emulateMedia({colorScheme:'dark'});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(15, 15, 16)');note('System theme follows OS');
 people=[];await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .state-block');note('Empty state');
-failContributors=true;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container button');failContributors=false;people=null;await page.locator('#contributors-list-container button').first().click();await page.waitForSelector('.contributor-row');note('Error and retry state');
+failContributors=true;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .contributors-inline-error button');failContributors=false;people=null;await page.locator('#contributors-list-container .contributors-inline-error button').click();await page.waitForFunction(()=>!document.querySelector('#contributors-list-container .contributors-inline-error')&&!!document.querySelector('#contributors-list-container .contributor-row'));note('Error and retry state');
 // Close any contributor drawer left open by the preceding certificate/focus tests.
 await page.keyboard.press('Escape');
 await page.waitForSelector('.vx-drawer.is-open',{state:'detached'});
-await page.evaluate(()=>{document.getElementById('contributors-list-container').replaceChildren();});contributorDelay=500;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .skeleton');await page.waitForSelector('.contributor-row');assert.equal(await page.locator('#contributors-list-container .skeleton').count(),0);contributorDelay=0;note('Delayed skeleton to content');
+await page.evaluate(()=>{document.getElementById('contributors-list-container').replaceChildren();});contributorDelay=500;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('.contributor-row');assert.equal(await page.locator('#contributors-list-container .skeleton').count(),0);contributorDelay=0;note('Delayed list hydration preserves real rows and leaves no skeleton');
 people=[{...person,name:'Old Response'}];contributorDelay=500;
 await page.evaluate(()=>{import('/js/modules/contributors.js').then(m=>m.fetchContributorsData());});await page.waitForTimeout(75);people=[{...person,name:'Latest Response'}];contributorDelay=0;
 await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});await page.waitForTimeout(550);assert.equal(await page.locator('.contributor-name').innerText(),'Old Response');await page.locator('#refresh-contributors-btn').click();await page.waitForFunction(()=>document.querySelector('.contributor-name')?.textContent==='Latest Response');people=null;note('Concurrent refreshes coalesce and subsequent refresh loads latest data');

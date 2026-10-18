@@ -93,7 +93,7 @@ export function initContributorsModule() {
     initManualApplication({onCreated:fetchContributorsData});
     listContainer = document.getElementById('contributors-list-container');
     listContainer.replaceChildren();
-    loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows(),skeletonDelay:0});
+    loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows()});
     window.filterContributors = filter => { activeFilter=filter; renderContributors(window.loadedContributors || []); };
     window.searchContributorsLocal = () => renderContributors(window.loadedContributors || []);
     syncBirthYearFilters();

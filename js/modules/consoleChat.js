@@ -185,7 +185,7 @@ async function loadMessagesOnce(animate,uid) {
         finishLoading();
         if(auth?.currentUser?.uid!==uid)return;
         console.error('[CHAT] Mesajlar yüklenemedi:', error);
-        container.innerHTML = `<p class="form-hint chat-hint">${escapeHTML(userErrorMessage(error))}</p>`;
+        showLoadError(container,()=>userErrorMessage(error),()=>loadMessages(),{staleSelector:'.chat-msg'});
     }
     finishLoading();
 }
@@ -206,7 +206,7 @@ function renderChatHeader(channel) {
 function renderMessages(messages, channel, animate = true) {
     const container = el('chat-messages');
     if (!messages.length) {
-        container.innerHTML = `<p class="form-hint chat-hint" data-i18n="chat.empty">${__('chat.empty')}</p>`;
+        crossfade(container, () => { container.innerHTML = `<p class="form-hint chat-hint" data-i18n="chat.empty">${__('chat.empty')}</p>`; });
         return;
     }
     // güne göre grupla
@@ -246,7 +246,7 @@ function renderMessages(messages, channel, animate = true) {
             delay++;
         }
     }
-    container.innerHTML = html;
+    crossfade(container, () => { container.innerHTML = html; });
     container.scrollTop = container.scrollHeight;
 
     const pending = container.querySelector('.chat-task-toggle-btn');
