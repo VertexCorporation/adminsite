@@ -270,7 +270,9 @@ export async function loadBackupHealthStatus() {
 
     try {
         const { data } = await getBackupHealthStatusFn({});
-        if (data?.healthy) {
+        // Metadata recency alone is insufficient; the backend must attest
+        // that the downloaded archive passed bounded checksum/schema checks.
+        if (data?.healthy === true && data?.integrityVerified === true) {
             if (badgeEl) {
                 badgeEl.className = 'status-badge status-badge--success';
                 badgeEl.textContent = __('system.backup_healthy');
@@ -279,6 +281,12 @@ export async function loadBackupHealthStatus() {
                 const dateStr = data.lastBackupDate ? new Date(data.lastBackupDate).toLocaleString() : '';
                 descEl.textContent = `${__('system.backup_last_success')} ${dateStr} (${Math.round((data.sizeBytes || 0) / 1024)} KB)`;
             }
+        } else if (data?.status === 'unverifiable' || (data?.healthy === true && data?.integrityVerified !== true)) {
+            if (badgeEl) {
+                badgeEl.className = 'status-badge status-badge--warning';
+                badgeEl.textContent = __('system.backup_unknown');
+            }
+            if (descEl) descEl.textContent = data?.error || __('system.backup_unknown');
         } else if (data?.status === 'stale') {
             if (badgeEl) {
                 badgeEl.className = 'status-badge status-badge--warning';
