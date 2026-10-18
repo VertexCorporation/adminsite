@@ -34,5 +34,25 @@ export function updateGridVisibleCounts(scope) {
             !el.hidden && getComputedStyle(el).display !== 'none'
         ).length;
         grid.dataset.visiblePanels = String(visible);
+        const width = grid.getBoundingClientRect().width || window.innerWidth;
+        const maximum = Math.max(1, Math.floor((width + 16) / 316));
+        grid.style.setProperty('--panel-columns', String(Math.max(1, Math.min(visible, maximum))));
     });
+}
+
+let adaptiveGridsInitialized = false;
+export function initAdaptiveGrids() {
+    if (adaptiveGridsInitialized) return;
+    adaptiveGridsInitialized = true;
+    for(const grid of document.querySelectorAll('.grid-layout')) {
+        const observer = new MutationObserver(() => updateGridVisibleCounts(grid.parentElement || document));
+        observer.observe(grid,{childList:true,subtree:false});
+        // Attribute watches belong to cards, not grids: computed column writes
+        // must never trigger their own observer in an endless render loop.
+        for(const card of grid.children)observer.observe(card,{
+            attributes:true,attributeFilter:['hidden','style']
+        });
+    }
+    window.addEventListener('resize',()=>updateGridVisibleCounts());
+    updateGridVisibleCounts();
 }
