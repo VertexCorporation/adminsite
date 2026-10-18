@@ -2,7 +2,8 @@ name: console ui verification
 on:
   push:
     branches:
-      - fix/console-ui-unification-51-75
+      - main
+      - 'fix/**'
   pull_request:
     paths:
       - 'css/**'
