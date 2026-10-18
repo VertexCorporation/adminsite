@@ -176,8 +176,12 @@ export function animateViewSwitch(from, to, mutate, {duration = 135} = {}) {
         to?.classList.remove('ui-tab-entering');
         return;
     }
-    const animation = to.animate([{opacity:.86},{opacity:1}],
-        {duration,easing:'cubic-bezier(.2,.8,.2,1)'});
+    // A perceptible but stable screen transition: animate the incoming live
+    // panel only, never an inert screenshot hiding the actual destination.
+    const animation = to.animate([
+        {opacity:.72,transform:'translateY(7px)'},
+        {opacity:1,transform:'translateY(0)'}
+    ],{duration:Math.max(duration,220),easing:'cubic-bezier(.2,.8,.2,1)'});
     let cleaned = false;
     const cleanup = () => {
         if (cleaned) return;
@@ -197,8 +201,10 @@ export function animateViewEntry(view) {
     if (!view?.isConnected || reducedMotion()) return;
     viewAnimations.get(view)?.cancel();
     view.classList.add('ui-tab-entering');
-    const animation = view.animate([{opacity:.86},{opacity:1}],
-        {duration:135,easing:'cubic-bezier(.2,.8,.2,1)'});
+    const animation = view.animate([
+        {opacity:.72,transform:'translateY(7px)'},
+        {opacity:1,transform:'translateY(0)'}
+    ],{duration:220,easing:'cubic-bezier(.2,.8,.2,1)'});
     viewAnimations.set(view,animation);
     animation.finished.catch(()=>{}).finally(()=>{
         if (viewAnimations.get(view) === animation) {
