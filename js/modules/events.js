@@ -130,7 +130,7 @@ export function initEventsModule() {
    frame.className='ui-eventsite-frame';
    frame.title=tr('Eventsite taslak önizlemesi','Eventsite draft preview');
    frame.referrerPolicy='origin';
-   frame.style.cssText='display:block;width:100%;height:clamp(540px,75vh,960px);margin-top:12px;border:1px solid var(--border-color,rgba(127,127,127,.24));border-radius:16px;';
+   frame.style.cssText='width:100%;height:clamp(540px,75vh,960px);margin-top:12px;border:1px solid var(--border-color,rgba(127,127,127,.24));border-radius:16px;';
    frame.setAttribute('sandbox','allow-scripts allow-same-origin');
    frame.loading='eager';
    const origin='https://events.vertexishere.com';
