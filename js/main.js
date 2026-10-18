@@ -2,6 +2,7 @@ import { initEventsModule } from './modules/events.js';
 import { initPeopleModule } from './modules/people.js';
 import { initHomeModule, updateHome } from './modules/home.js';
 import { initScrollEdges } from './utils/scrollEdges.js';
+import { normalizeConsoleAccessResponse } from './utils/console-access.js';
 import { initUiFeedback } from './ui/feedback.js';
 import { displayDepartmentName } from './utils/departments.js';
 import { initSystemSections } from './modules/system.js';
@@ -135,9 +136,7 @@ export function startApp(firebaseConfig) {
                 // Authentication token establishes identity only; Core and
                 // departments must be checked against current server records.
                 if(!deploymentCapabilities.consolePeople)throw new Error('Console authorization endpoint is unavailable.');
-                const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;
-                if(typeof access?.isAdmin!=='boolean'||!Array.isArray(access.departments))
-                    throw new Error('Invalid console authorization response');
+                const access=normalizeConsoleAccessResponse((await consolePeopleCall('getMyConsoleAccess',{})).data);
                 let isAdmin=access.isAdmin;
                 let departments=access.departments;
                 if(epoch!==authEpoch)return;
@@ -179,7 +178,7 @@ export function startApp(firebaseConfig) {
                   personnelUnsubscribe=db.collection('users').doc(user.uid).onSnapshot(async snapshot=>{
                     const profile=snapshot.data()||{};if(!profile.contributorId&&!profile.personnelManaged&&!profile.consoleAccessManaged)return;
                     const next=profile.authzVersion||0;if(next===revision)return;revision=next;
-                    try{const access=(await consolePeopleCall('getMyConsoleAccess',{})).data;if(epoch!==authEpoch)return;if(!access.isAdmin&&!access.departments.length){await auth.signOut();return;}setCurrentUser(access.isAdmin,access.departments);document.body.classList.toggle('admin-mode',access.isAdmin);dom.adminManagerSection.style.display=access.isAdmin?'block':'none';if(access.isAdmin)resetTabFilter();else{await loadDepartmentPermissions();applyTabFilter(getAccessibleTabs(access.departments));}applyPanelGate(access.isAdmin);applyChipVisibility();renderProfile(user,access.isAdmin,access.departments,true);updateHome(user,access.isAdmin,access.departments);document.dispatchEvent(new CustomEvent('vertex:departments',{detail:access.departments}));}
+                    try{const access=normalizeConsoleAccessResponse((await consolePeopleCall('getMyConsoleAccess',{})).data);if(epoch!==authEpoch)return;if(!access.isAdmin&&!access.departments.length){await auth.signOut();return;}setCurrentUser(access.isAdmin,access.departments);document.body.classList.toggle('admin-mode',access.isAdmin);dom.adminManagerSection.style.display=access.isAdmin?'block':'none';if(access.isAdmin)resetTabFilter();else{await loadDepartmentPermissions();applyTabFilter(getAccessibleTabs(access.departments));}applyPanelGate(access.isAdmin);applyChipVisibility();renderProfile(user,access.isAdmin,access.departments,true);updateHome(user,access.isAdmin,access.departments);document.dispatchEvent(new CustomEvent('vertex:departments',{detail:access.departments}));}
                     catch(error){if(epoch===authEpoch&&error.code==='functions/permission-denied')auth.signOut();}
                   },error=>console.warn('[PERSONNEL] Access subscription unavailable',error.code));
                 }
