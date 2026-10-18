@@ -44,16 +44,32 @@ jobs:
           test -s "assets/releases/$release/js/modules/contributors.js"
           test -s "assets/releases/$release/js/modules/roles.js"
           echo "Published release candidate: $release"
-      - name: Commit and push immutable snapshot
+      - name: Commit and push a verified snapshot from latest main
         shell: bash
         run: |
           set -euo pipefail
-          git add index.html assets/releases/
-          if git diff --cached --quiet; then
-            echo 'Immutable release already synchronized.'
-            exit 0
-          fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'chore(console): publish content-addressed frontend release'
-          git push origin HEAD:main
+          # Other agents may push between checkout and publication. Never
+          # push an old manifest or force-update main: refresh and rebuild.
+          for attempt in 1 2 3 4 5; do
+            git fetch --no-tags origin main
+            git reset --hard FETCH_HEAD
+            node scripts/check-syntax.cjs
+            node scripts/release.cjs
+            node scripts/verify-release.cjs
+            git add index.html assets/releases/
+            if git diff --cached --quiet; then
+              echo 'Latest main already has the verified immutable release.'
+              exit 0
+            fi
+            git commit -m 'chore(console): publish content-addressed frontend release'
+            if git push origin HEAD:main; then
+              echo 'Published verified snapshot of current main.'
+              exit 0
+            fi
+            echo "Concurrent main update during snapshot publication (attempt ${attempt}/5); refreshing source and rebuilding."
+            sleep 2
+          done
+          echo 'Snapshot publication still racing after 5 safe retries.' >&2
+          exit 1
