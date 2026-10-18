@@ -34,5 +34,20 @@ export function updateGridVisibleCounts(scope) {
             !el.hidden && getComputedStyle(el).display !== 'none'
         ).length;
         grid.dataset.visiblePanels = String(visible);
+        const width = grid.getBoundingClientRect().width || window.innerWidth;
+        const maximum = width < 680 ? 1 : width < 1080 ? 2 : width < 1500 ? 3 : 4;
+        grid.style.setProperty('--panel-columns', String(Math.max(1, Math.min(visible, maximum))));
     });
+}
+
+let adaptiveGridsInitialized = false;
+export function initAdaptiveGrids() {
+    if (adaptiveGridsInitialized) return;
+    adaptiveGridsInitialized = true;
+    for(const grid of document.querySelectorAll('.grid-layout')) {
+        const observer = new MutationObserver(() => updateGridVisibleCounts(grid.parentElement || document));
+        observer.observe(grid,{childList:true,attributes:true,subtree:false,attributeFilter:['hidden','style']});
+    }
+    window.addEventListener('resize',()=>updateGridVisibleCounts());
+    updateGridVisibleCounts();
 }
