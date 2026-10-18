@@ -162,7 +162,50 @@ export function initEventsModule() {
      }
     }
    };
-   lang.addEventListener('change',paint);paint();box.append(article);
+   lang.addEventListener('change',paint);paint();
+   // Fall back to the local DOM preview until Eventsite's public renderer
+   // announces that its sandboxed draft-preview mode is ready.
+   const notice=document.createElement('p');notice.className='form-hint';
+   notice.setAttribute('role','status');
+   notice.textContent=tr('Eventsite önizlemesi yükleniyor…','Loading Eventsite preview…');
+   const frame=document.createElement('iframe');
+   frame.className='ui-eventsite-frame';
+   frame.title=tr('Eventsite taslak önizlemesi','Eventsite draft preview');
+   frame.referrerPolicy='origin';
+   frame.sandbox='allow-scripts allow-same-origin';
+   frame.loading='eager';
+   const origin='https://events.vertexishere.com';
+   const preview=()=>{frame.src=origin+'/'+lang.value+'/?vertexPreview=1';};
+   const onMessage=message=>{
+     if(message.origin!==origin || message.source!==frame.contentWindow ||
+        message.data?.version!==1)return;
+     if(message.data.type==='vertex:event-preview:ready'){
+       frame.contentWindow.postMessage({
+         type:'vertex:event-preview:render',version:1,event
+       },origin);
+     } else if(message.data.type==='vertex:event-preview:rendered'&&message.data.id===event.id){
+       article.hidden=true;
+       frame.hidden=false;
+       notice.textContent=tr('Gerçek Eventsite görünümü · taslak, kayıt kapalı',
+         'Real Eventsite rendering · draft, registration disabled');
+     }
+   };
+   window.addEventListener('message',onMessage);
+   const observer=new MutationObserver(()=>{
+      if(!frame.isConnected){
+        window.removeEventListener('message',onMessage);
+        observer.disconnect();
+      }
+   });
+   observer.observe(box,{childList:true});
+   frame.hidden=true;frame.src='about:blank';
+   box.append(notice,frame,article);
+   lang.addEventListener('change',()=>{
+       article.hidden=false;frame.hidden=true;
+       notice.textContent=tr('Eventsite önizlemesi yükleniyor…','Loading Eventsite preview…');
+       preview();
+   });
+   preview();
   }catch(e){fail(e);}
  };
  document.getElementById('events-new').onclick=async()=>{
