@@ -9,9 +9,14 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
     const activeField = focus && container.contains(focus) &&
         focus.matches?.('input,textarea,select,[contenteditable],button');
     const oldChildren = [...container.childNodes];
+    // A contributor row has many descendant nodes. The former global 140-node
+    // cutoff silently disabled transitions as soon as the applicant list grew.
+    // Snapshot only the visible section of long lists, not hundreds of buttons.
+    const rows = container.querySelector('.contributor-table-rows');
+    const denseList = !!rows && rows.children.length > 12;
     const animate = !reducedMotion() && !activeField && container.isConnected &&
         oldChildren.length > 0 && container.getBoundingClientRect().height > 0 &&
-        container.querySelectorAll('*').length < 140;
+        (denseList || container.querySelectorAll('*').length < 140);
     if (!animate) { mutate(); return; }
 
     const rect = container.getBoundingClientRect();
@@ -19,7 +24,32 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
     ghost.className = 'ui-crossfade-ghost';
     ghost.setAttribute('aria-hidden', 'true');
     ghost.inert = true;
-    for (const child of oldChildren) ghost.appendChild(child.cloneNode(true));
+    let savedScroll = null;
+    for (const child of oldChildren) {
+        if (denseList && child === rows) {
+            const snapshot = rows.cloneNode(false);
+            const rowHeight = Math.max(1, rows.firstElementChild?.getBoundingClientRect().height || 52);
+            const visible = Math.min(28, Math.max(14,
+                Math.ceil(Math.min(rows.clientHeight || window.innerHeight, window.innerHeight) / rowHeight) + 4));
+            const start = Math.max(0, Math.min(rows.children.length - visible,
+                Math.floor(rows.scrollTop / rowHeight) - 2));
+            if (start) {
+                const spacer = document.createElement('div');
+                const first = rows.children[start];
+                const offset = first.getBoundingClientRect().top -
+                    rows.getBoundingClientRect().top + rows.scrollTop;
+                spacer.style.height = Math.max(0, offset) + 'px';
+                spacer.setAttribute('aria-hidden', 'true');
+                snapshot.appendChild(spacer);
+            }
+            for (let i = start; i < Math.min(rows.children.length, start + visible); i++)
+                snapshot.appendChild(rows.children[i].cloneNode(true));
+            ghost.appendChild(snapshot);
+            savedScroll = {snapshot, top:rows.scrollTop, left:rows.scrollLeft};
+        } else {
+            ghost.appendChild(child.cloneNode(true));
+        }
+    }
     ghost.querySelectorAll('[id],[name]').forEach(node => {
         node.removeAttribute('id'); node.removeAttribute('name');
     });
@@ -28,9 +58,17 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
     const originalHeight = container.style.minHeight;
     if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
     mutate();
-    container.style.minHeight = Math.max(rect.height, container.getBoundingClientRect().height) + 'px';
+    // Avoid a huge empty region on mobile when 100 rows become a short result.
+    const newHeight = container.getBoundingClientRect().height;
+    container.style.minHeight = (denseList
+        ? Math.min(rect.height, Math.max(newHeight, 160))
+        : Math.max(rect.height, newHeight)) + 'px';
     ghost.style.width = '100%';
     container.appendChild(ghost);
+    if (savedScroll) {
+        savedScroll.snapshot.scrollTop = savedScroll.top;
+        savedScroll.snapshot.scrollLeft = savedScroll.left;
+    }
     const options = { duration, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'both' };
     const outgoing = ghost.animate([{ opacity: 1 }, { opacity: 0 }], options);
     const incoming = [...container.children].filter(node => node !== ghost).slice(0, 35)
