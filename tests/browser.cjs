@@ -124,6 +124,7 @@ assert.equal(filterTransition.ghost,true,JSON.stringify(filterTransition));
 assert(filterTransition.oldRows>0&&filterTransition.oldRows<=28,JSON.stringify(filterTransition));
 assert.equal(filterTransition.newRows,43);
 assert.equal(filterTransition.animating,true);
+assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="verified"]').getAttribute('aria-pressed'),'true');
 await waitCrossfade();
 await page.evaluate(()=>{
  window.loadedContributors=window.__savedContributors;
@@ -131,6 +132,7 @@ await page.evaluate(()=>{
  window.filterContributors('all');
 });
 await waitCrossfade();
+assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="all"]').getAttribute('aria-pressed'),'true');
 note('Populated applicant filter transitions use bounded crossfade and preserve real rows');
 await openCert();assert.deepEqual(await page.locator('[data-award]').evaluateAll(es=>es.map(e=>e.dataset.award)),['tenacity','constancy','nobility','majesty']);
 await page.locator('[data-award=tenacity]').click();assert.equal(issueCount(),0);await page.locator('[data-review]').click();await page.waitForSelector('.confirm-ok');assert.equal(issueCount(),0);
