@@ -24,3 +24,16 @@ test('fail closed on missing, contradictory or malformed role data', () => {
     assert.throws(()=>normalize(bad),/Invalid console authorization response/);
   }
 });
+
+test('verified legacy admin responses recover Core sidebar and visible panels', () => {
+  const safe = value => JSON.parse(JSON.stringify(value));
+  // Current backend returns explicit Core; earlier callable deployments
+  // returned the same trusted admin boolean but no Core department label.
+  const legacy = normalize({isAdmin:true,departments:[]});
+  assert.equal(legacy.isAdmin,true);
+  assert.deepEqual(safe(legacy.departments),['Core']);
+  assert.deepEqual(safe(normalize({isAdmin:true,departments:['Array']})).departments,['Core','Array']);
+  assert.deepEqual(safe(normalize({isCore:true,departments:['Array']})).departments,['Core','Array']);
+  assert.throws(()=>normalize({isCore:false,departments:['Core']}),/Invalid console authorization response/);
+  assert.throws(()=>normalize({isAdmin:false,departments:['Core']}),/Invalid console authorization response/);
+});
