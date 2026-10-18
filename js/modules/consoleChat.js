@@ -48,6 +48,42 @@ let pollPending = false;
 let unsubscribeChannelHint = null;
 let hintRefresh = null;
 let latestHintVersion = 0;
+const channelWatchers=new Map();
+let channelLoadPending=null;
+let messagesLoadPending=null;
+function stopOtherChannelHints() {
+    for(const stop of channelWatchers.values())stop();
+    channelWatchers.clear();
+}
+function watchOtherChannels() {
+    if(!db || !auth?.currentUser)return;
+    const wanted=new Set(channels.filter(c=>c.id!==currentChannelId).slice(0,40).map(c=>c.id));
+    for(const [id,stop]of channelWatchers)if(!wanted.has(id)){stop();channelWatchers.delete(id);}
+    for(const id of wanted){
+        if(channelWatchers.has(id))continue;
+        const uid=auth.currentUser.uid;
+        try {
+            const stop=db.collection('chatChannels').doc(id).onSnapshot(snapshot=>{
+                if(auth?.currentUser?.uid!==uid || !snapshot.exists)return;
+                const meta=snapshot.data();
+                const channel=channels.find(c=>c.id===id);
+                if(!channel)return;
+                const next=Number(meta.lastMessageSeq||0);
+                if(!Number.isSafeInteger(next)||next<0)return;
+                channel.lastMessageSeq=next;
+                channel.messageVersion=Number(meta.messageVersion||0);
+                channel.unreadCount=Math.max(0,next-(readSequences.get(id)||channel.lastReadSequence||0));
+                lastChannelsKey='';renderChannelList();
+            },()=>{
+                channelWatchers.get(id)?.();
+                channelWatchers.delete(id);
+                // The guarded polling loop continues if realtime access fails.
+            });
+            channelWatchers.set(id,stop);
+        } catch {/* Polling fallback. */}
+    }
+}
+
 function stopChannelHint() {
     if(unsubscribeChannelHint){unsubscribeChannelHint();unsubscribeChannelHint=null;}
     hintRefresh=null;latestHintVersion=0;
@@ -159,9 +195,17 @@ function initialsOf(name) {
 
 // --- Kanallar ---
 
-async function loadChannels() {
-    const sessionUid=auth?.currentUser?.uid;
-    if(!sessionUid)return;
+function loadChannels() {
+    const uid=auth?.currentUser?.uid;
+    if(!uid)return Promise.resolve();
+    if(channelLoadPending?.uid===uid)return channelLoadPending.promise;
+    const promise=loadChannelsOnce(uid).finally(()=>{
+        if(channelLoadPending?.promise===promise)channelLoadPending=null;
+    });
+    channelLoadPending={uid,promise};
+    return promise;
+}
+async function loadChannelsOnce(sessionUid) {
     const finishLoading = beginPanelLoading(el('chat-channel-list'));
     try {
         const result = await listConsoleChatChannelsFn();
@@ -183,6 +227,7 @@ async function loadChannels() {
             renderChatHeader();
         }
         if (!currentChannelId && channels.length) selectChannel(channels[0].id);
+        watchOtherChannels();
     } catch (error) {
         if(auth?.currentUser?.uid!==sessionUid)return;
         console.error('[CHAT] Kanallar yüklenemedi:', error);
@@ -227,15 +272,25 @@ function selectChannel(channelId) {
     updateNewIndicator(false);
     closeMentionPop();
     watchChannelHint(channelId);
+    watchOtherChannels();
     lastMessagesKey='';
     lastRenderedChannel=null;cachedMessageVersion=-1;
     renderChannelList();
     loadMessages();
 }
 
-async function loadMessages(animate = true) {
-    const sessionUid=auth?.currentUser?.uid;
-    if(!sessionUid)return;
+function loadMessages(animate = true) {
+    const uid=auth?.currentUser?.uid;
+    const key=uid+':'+currentChannelId;
+    if(!uid||!currentChannelId)return Promise.resolve();
+    if(messagesLoadPending?.key===key)return messagesLoadPending.promise;
+    const promise=loadMessagesOnce(animate,uid).finally(()=>{
+        if(messagesLoadPending?.promise===promise)messagesLoadPending=null;
+    });
+    messagesLoadPending={key,promise};
+    return promise;
+}
+async function loadMessagesOnce(animate,sessionUid) {
     const channel = channels.find(c => c.id === currentChannelId);
     renderChatHeader(channel);
     if (!channel) return;
@@ -573,7 +628,7 @@ export function initConsoleChat() {
         const nextUid=user?.uid||null;
         if(nextUid===sessionUid)return;
         sessionUid=nextUid;
-        stopChannelHint();
+        stopChannelHint();stopOtherChannelHints();
         channels=[];currentChannelId=null;cachedMessages=[];cachedChannelId=null;
         cachedMessageVersion=-1;lastChannelsKey='';lastMessagesKey='';lastRenderedChannel=null;
         lastRenderedMessageIds.clear();readSequences.clear();mentionCounts.clear();
