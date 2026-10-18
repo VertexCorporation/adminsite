@@ -526,7 +526,7 @@ function renderManualModelsList() {
 // An indexed, lazily rendered catalogue. Filters share one source and never
 // trigger network requests; collapsed groups do not allocate model-row DOM.
 let catalogGroups=[],catalogRows=[],catalogQuery='',catalogLimit=120;
-let catalogSelection=new Set(),catalogFingerprint=null,filtersReady=false;
+let catalogSelection=new Set(),catalogFingerprint=null,filtersReady=false,catalogFlatMode=false;
 const openProducerGroups=new Set(),openSeriesGroups=new Set();
 const catalogText=(tr,en)=>getLang()==='tr'?tr:en;
 const catalogType=row=>String(row.model.type||row.model.source||'unknown').toLowerCase();
@@ -578,7 +578,7 @@ function filteredCatalogRows(){
     const type=toolbar.querySelector('[data-catalog-type]')?.value||'';
     const status=toolbar.querySelector('[data-catalog-status]')?.value||'';
     const visibility=toolbar.querySelector('[data-catalog-visibility]')?.value||'';
-    if(!q&&!provider&&!type&&!status&&!visibility)return null;
+    if(!q&&!provider&&!type&&!status&&!visibility&&!catalogFlatMode)return null;
     return catalogRows.filter(row=>{
         if(provider&&row.pName!==provider)return false;
         if(type&&catalogType(row)!==type)return false;
@@ -659,9 +659,9 @@ function initCatalogFilters(){
         <div class="model-bulk-toolbar"><span id="model-catalog-selection-count" aria-live="polite"></span><button type="button" class="chrome-btn-outline" id="model-catalog-select-all">${catalogText('Görünenleri seç','Select visible')}</button><button type="button" class="chrome-btn-outline" id="model-catalog-clear">${catalogText('Temizle','Clear')}</button><button type="button" class="chrome-btn-outline" id="model-catalog-copy">${catalogText('Kimlikleri kopyala','Copy IDs')}</button></div>`;
       refreshCatalogOptions();
       for(const [k,v] of Object.entries(prev))toolbar.querySelector('[data-catalog-'+k+']').value=v;
-      toolbar.querySelectorAll('input[data-catalog-search],select').forEach(input=>input.addEventListener('input',()=>{catalogLimit=120;renderAllModelsExplorer();}));
-      toolbar.querySelector('#model-catalog-select-all').onclick=()=>{const rows=filteredCatalogRows()||catalogRows;rows.slice(0,catalogLimit).forEach(r=>catalogSelection.add(r.index));renderAllModelsExplorer();};
-      toolbar.querySelector('#model-catalog-clear').onclick=()=>{catalogSelection.clear();renderAllModelsExplorer();};
+      toolbar.querySelectorAll('input[data-catalog-search],select').forEach(input=>input.addEventListener('input',()=>{catalogFlatMode=false;catalogLimit=120;renderAllModelsExplorer();}));
+      toolbar.querySelector('#model-catalog-select-all').onclick=()=>{catalogFlatMode=true;const rows=filteredCatalogRows()||catalogRows;rows.slice(0,catalogLimit).forEach(r=>catalogSelection.add(r.index));renderAllModelsExplorer();};
+      toolbar.querySelector('#model-catalog-clear').onclick=()=>{catalogSelection.clear();catalogFlatMode=false;toolbar.querySelectorAll('input[data-catalog-search],select').forEach(el=>{el.value='';});renderAllModelsExplorer();};
       toolbar.querySelector('#model-catalog-copy').onclick=async()=>{
         const ids=[...catalogSelection].map(i=>catalogRows[i]?.model.id).filter(Boolean);
         try{await navigator.clipboard.writeText(ids.join('\n'));showToast(()=>catalogText('Model kimlikleri kopyalandı','Model IDs copied'),'success');}
@@ -710,9 +710,9 @@ export async function fetchFullModelsData() {
         const data=await response.json();
         if(request!==modelRequest)return;
         if(!data||typeof data!=='object'||!data.producers||typeof data.producers!=='object'||Array.isArray(data.producers))throw new Error('Invalid model catalogue response');
-        const fingerprint=simpleHash(JSON.stringify(data));
-        if(modelsData&&fingerprint===catalogFingerprint)return; // Valid revalidation without rebuilding DOM.
-        catalogFingerprint=fingerprint;
+        const serialized=JSON.stringify(data);
+        if(modelsData&&serialized===catalogFingerprint)return; // Exact revision comparison, no hash collisions.
+        catalogFingerprint=serialized;
         modelsData=data;
         buildCatalogIndex();
         refreshCatalogOptions();
