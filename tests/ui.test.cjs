@@ -120,3 +120,10 @@ test('navigation and workspace do not run competing opacity animations',()=>{
  assert.match(views,/!isSwitchingTab/);
  assert.match(views,/if \(animateWorkspace\) crossfade/);
 });
+
+test('generic long lists use bounded visual snapshots, not animation suppression',()=>{
+ const transition=read('js/ui/transition.js');
+ assert.match(transition,/function boundedClone\(/);
+ assert.match(transition,/largeList \? boundedClone\(child, budget\)/);
+ assert.doesNotMatch(transition,/\(denseList \|\| container\.querySelectorAll\('\*'\)\.length < 140\)/);
+});

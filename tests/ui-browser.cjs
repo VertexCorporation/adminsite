@@ -27,6 +27,7 @@ const fixture = [
  '<div id="both" data-scroll-fog><div style="width:440px;height:250px">Both axes</div></div>',
  '<input id="required-field" required value="x">',
  '<div id="content"><p>Outgoing content</p></div>',
+ ' <div id="generic"><ul></ul></div>',
  ' <div id="dense"><div class="contributor-table-head">Applicant list</div><div class="contributor-table-rows"></div></div></body></html>'
 ].join('');
 const server = http.createServer((req,res)=>{
@@ -76,6 +77,20 @@ const server = http.createServer((req,res)=>{
    await page.waitForTimeout(300);
    assert.equal(await page.locator('.ui-crossfade-ghost').count(),0);
    assert.equal(await page.locator('#content strong').innerText(),'Incoming content');
+   // Generic result sets must also animate when their nested DOM gets large.
+   await page.evaluate(()=>{
+     const host=document.getElementById('generic');
+     host.querySelector('ul').innerHTML=Array.from({length:70},(_,i)=>
+       '<li><strong>Row '+i+'</strong><span><i>Detail</i></span></li>').join('');
+     window.uiTest.transition.crossfade(host,()=>{
+       host.querySelector('ul').innerHTML='<li><strong>Filtered</strong></li>';
+     });
+   });
+   assert.equal(await page.locator('#generic > .ui-crossfade-ghost').count(),1);
+   assert.equal(await page.locator('#generic > ul li').count(),1);
+   assert(await page.locator('#generic > ul').evaluate(el=>el.getAnimations().length>0));
+   await page.waitForTimeout(250);
+   assert.equal(await page.locator('#generic > .ui-crossfade-ghost').count(),0);
    // 90 rows used to exceed the 140-descendant cutoff and silently skip fade.
    await page.evaluate(()=>{
      const host=document.getElementById('dense');

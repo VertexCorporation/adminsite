@@ -3,6 +3,21 @@ import { reducedMotion } from './motion.js';
 // Opt-in true crossfade. Live form controls are never cloned into the active tree;
 // the outgoing inert image is visual-only and is removed after animation settles.
 const running = new WeakMap();
+
+// Generic lists can contain hundreds of nested elements. Keep the outgoing
+// visual snapshot bounded while the new live content always fades in.
+function boundedClone(node, budget) {
+    if (node.nodeType !== 1) return node.cloneNode(true);
+    if (budget.remaining <= 0) return null;
+    budget.remaining--;
+    const copy = node.cloneNode(false);
+    for (const child of node.childNodes) {
+        if (budget.remaining <= 0) break;
+        const clone = boundedClone(child, budget);
+        if (clone) copy.appendChild(clone);
+    }
+    return copy;
+}
 export function crossfade(container, mutate, { duration = 190 } = {}) {
     running.get(container)?.();
     const focus = document.activeElement;
@@ -15,9 +30,9 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
     // path to small filtered lists that contain complex SVG action icons.
     const rows = container.querySelector('.contributor-table-rows');
     const denseList = !!rows && rows.children.length > 0;
+    const largeList = !denseList && container.querySelectorAll('*').length >= 140;
     const animate = !reducedMotion() && !activeField && container.isConnected &&
-        oldChildren.length > 0 && container.getBoundingClientRect().height > 0 &&
-        (denseList || container.querySelectorAll('*').length < 140);
+        oldChildren.length > 0 && container.getBoundingClientRect().height > 0;
     if (!animate) { mutate(); return; }
 
     const rect = container.getBoundingClientRect();
@@ -26,6 +41,7 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
     ghost.setAttribute('aria-hidden', 'true');
     ghost.inert = true;
     let savedScroll = null;
+    const budget = {remaining:160};
     for (const child of oldChildren) {
         if (denseList && child === rows) {
             const snapshot = rows.cloneNode(false);
@@ -48,7 +64,8 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
             ghost.appendChild(snapshot);
             savedScroll = {snapshot, top:rows.scrollTop, left:rows.scrollLeft};
         } else {
-            ghost.appendChild(child.cloneNode(true));
+            const snapshot = largeList ? boundedClone(child, budget) : child.cloneNode(true);
+            if (snapshot) ghost.appendChild(snapshot);
         }
     }
     ghost.querySelectorAll('[id],[name]').forEach(node => {
