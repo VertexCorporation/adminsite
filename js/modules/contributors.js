@@ -214,13 +214,10 @@ async function loadContributors(append = false) {
 function renderContributors(contributors) {
     refreshRosterAccess();
     syncBirthYearFilters();
-    const query = document.getElementById('contributor-search')?.value.toLowerCase().trim() || '';
+    // All pages are already filtered by the callable. A second browser-side
+    // filter changes search semantics for Turkish characters and can hide
+    // correct matches when local data is deliberately masked.
     const hidden = new Set(getHiddenFieldsFor('contributors.list'));
-    contributors = contributors.filter(p => {
-        const year=filterBirthYear(p),currentYear=new Date().getFullYear();
-        const match = ({all:true,vertex:isActiveContributor(p),verified:!!p.hasVerified,unverified:!p.hasVerified,'age-14-15':year!==null&&year>=currentYear-15&&year<=currentYear-14,'age-16-17':year!==null&&year>=currentYear-17&&year<=currentYear-16,'age-18':year!==null&&year<=currentYear-18,linkedin:!!p.linkedin,github:!!p.github,interview:!!p.interviewDate})[activeFilter];
-        return match && [p.name,p.department,...(!hidden.has('contact')?[p.email]:[]),...(!hidden.has('contact')?[p.about]:[])].some(v=>String(v || '').toLowerCase().includes(query));
-    });
     document.querySelectorAll('#tab-contributors .filter-chip').forEach(b=>{ const active=b.dataset.filter===activeFilter; b.classList.toggle('active',active); b.setAttribute('aria-pressed',String(active)); });
     const canWrite = getEffectivePanelLevel('contributors.list')==='write';
     const admin = isPanelAdmin();
