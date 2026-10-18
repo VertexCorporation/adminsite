@@ -7,6 +7,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await (process.env.VERTEX_BROWSER==='webkit'?webkit:chromium).launch({...(process.env.VERTEX_BROWSER!=='webkit'&&process.env.CHROME_PATH ? {executablePath:process.env.CHROME_PATH} : {}),headless:true});
 const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=true,history=[],people=null,contributorDelay=0,failContributors=false,failNotification=false; let joiningDate=null,failPermissionSave=false,failMaintenance=false,maintenanceState=false,failVerify=false;
 
+let accessClaims={admin:true,departments:['Core']};
 let failMembership=false,failAdmin=false,failContributorReadOnce=0,failChatReadOnce=0;let adminRoster=[{uid:'admin',email:'admin@example.invalid'},{uid:'other-admin',email:'other@example.invalid'}];
 const person={membership:{status:'matched',uid:'auth-person',isVertex:true},id:'person',name:'Example Participant',email:'person@example.invalid',language:'en',hasVerified:false,createdAt:{_seconds:1767272400},department:'Core',interviewDate:'2026-10-10',about:'Local test fixture'};
 const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet'},constancy:{en:'Constancy',tr:'Metanet'},nobility:{en:'Nobility',tr:'Azamet'},majesty:{en:'Majesty',tr:'Asalet'}};
@@ -40,6 +41,7 @@ await page.route('**/*',async route=>{
     if(target){target.hasVerified=request.hasVerified;target.certificateDeliveryStatus=request.hasVerified?'succeeded':'revoked';}
     result={hasVerified:request.hasVerified,status:request.hasVerified?'succeeded':'revoked'};
   }
+  if(name==='getmyconsoleaccess')result={isAdmin:accessClaims.admin===true,isCore:accessClaims.admin===true,departments:accessClaims.departments||[],authzVersion:1};
   if(name==='getserverstatus')result={isUnderMaintenance:maintenanceState};
   if(name==='setserverstatus'){maintenanceState=route.request().postDataJSON().data.maintenanceEnabled;result={success:true};}
   if(name==='togglevertexstatus'){if(failMembership)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});const data=route.request().postDataJSON().data;const next=typeof data.expectedStatus==='boolean'?!data.expectedStatus:true;if(data.contributorId){const target=(people||[person]).find(p=>p.id===data.contributorId);if(target)target.membership.isVertex=next;}result={isVertex:next};}
@@ -289,6 +291,7 @@ await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');r
 await page.locator('[data-details]').click();await page.waitForSelector('.vx-drawer');await page.evaluate(()=>document.getElementById('logout-btn').click());await page.waitForSelector('.vx-drawer',{state:'detached'});await page.waitForSelector('#login-container',{state:'visible'});assert.equal(await page.locator('#admin-panel').isVisible(),false);await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('#admin-panel',{state:'visible'});await selectTab('contributors');await page.waitForSelector('.certificate-manage-btn');note('Logout and admin login auth state');
 for(const claims of [{admin:false,departments:['Senatus']},{admin:false,departments:['Aero']}]) {
  const before=calls.filter(name=>name==='savedepartmentpermissions').length;
+ accessClaims=claims;
  await page.evaluate(async value=>{window.__testClaims=value;await window.firebase.auth().signOut();},claims);
  await page.waitForSelector('#login-container',{state:'visible'});
  await page.locator('#email').fill('member@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();
@@ -299,6 +302,7 @@ for(const claims of [{admin:false,departments:['Senatus']},{admin:false,departme
  if(claims.departments[0]==='Aero')assert.equal(await page.locator('[data-target=tab-system]').isVisible(),false);
  assert.equal(calls.filter(name=>name==='savedepartmentpermissions').length,before);
 }
+accessClaims={admin:true,departments:['Core']};
 await page.evaluate(async()=>{window.__testClaims={admin:true};await window.firebase.auth().signOut();});
 await page.waitForSelector('#login-container',{state:'visible'});await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('#admin-panel',{state:'visible'});await selectTab('contributors');await page.waitForSelector('.certificate-manage-btn');
 note('Real auth flow hides inaccessible submenus for read-only and contributor-only departments without saving defaults');
