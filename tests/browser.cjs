@@ -200,7 +200,7 @@ await page.route('https://events.vertexishere.com/**',route=>route.fulfill({
  'document.body.textContent=e.data.event.title;'+
  'parent.postMessage({type:"vertex:event-preview:rendered",version:1,id:e.data.event.id},origin);});'+
  'parent.postMessage({type:"vertex:event-preview:ready",version:1},origin);'+
- '<\\/script></body></html>'
+ '</scr'+'ipt></body></html>'
 }));
 await selectTab('events');
 await page.locator('[data-nav-panel="events.editor"]').click();
