@@ -33,6 +33,8 @@ jobs:
       # Never push the generated assets or deploy the website.
       - run: node scripts/release.cjs
       - run: npm run verify:release
+      # Release files are committed by the snapshot job, never by this test job.
+      # A source-only PR must fail until its immutable HTML/assets are synced.
       - name: Reject uncommitted HTML release drift
         run: git diff --exit-code -- index.html
       # GitHub's adminsite runner cannot read the private Fulcrum repository.
