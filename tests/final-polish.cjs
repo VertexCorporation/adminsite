@@ -26,7 +26,12 @@ module.exports=async({page,selectTab,note,calls,payloads,setPeople,person,failMa
  note('Drawer toolbar, verified server result, failed verification rollback and explicit deletion (mock)');
  setPeople([{...person,department:'aero'},{...person,id:'second',name:'Second Participant',email:'second@example.invalid',department:'scout'}]);await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});await waitCrossfade();
  assert.deepEqual(await page.locator('.contributor-cell-dept').allTextContents(),['Aero','Scout']);
- if(await page.locator('.dock-btn[data-target=tab-contributors]').getAttribute('aria-expanded')==='false')await page.locator('.dock-btn[data-target=tab-contributors]').click();await page.locator('[data-nav-action=certificates]').click();assert.equal(await page.locator('[data-award]').count(),0);await page.locator('#certificate-person-search').fill('second');assert.equal(await page.locator('[data-person]').count(),1);await page.locator('[data-person=second]').click();await page.waitForSelector('.certificate-drawer.is-open');assert.equal(payloads.filter(p=>p.name==='getvertexcertificatedetails').at(-1).data.contributorId,'second');await page.keyboard.press('Escape');await closeDrawer();
+ if(await page.locator('.dock-btn[data-target=tab-contributors]').getAttribute('aria-expanded')==='false')await page.locator('.dock-btn[data-target=tab-contributors]').click();await page.locator('[data-nav-action=certificates]').click();assert.equal(await page.locator('[data-award]').count(),0);await page.locator('#certificate-person-search').fill('second');
+  // Search is now server-driven, debounced and paginated; wait for the
+  // confirmed person instead of asserting against the previous local list.
+  await page.waitForSelector('[data-person=second]',{state:'attached'});
+  assert.equal(await page.locator('[data-person]').count(),1);
+  await page.locator('[data-person=second]').click();await page.waitForSelector('.certificate-drawer.is-open');assert.equal(payloads.filter(p=>p.name==='getvertexcertificatedetails').at(-1).data.contributorId,'second');await page.keyboard.press('Escape');await closeDrawer();
  setPeople(null);await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});
  note('Certificates require explicit participant selection and preserve the selected recipient');
  await selectTab('system');await page.locator('[data-section=server]').dispatchEvent('click');const maintenance=page.locator('#maintenance-action-btn');assert(await maintenance.evaluate(el=>el.classList.contains('chrome-btn-outline')));
