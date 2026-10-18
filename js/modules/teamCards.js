@@ -8,6 +8,7 @@ import {escapeHTML, showToast, userErrorMessage, __, getLang, onLangChange} from
 import {icon} from '../utils/icons.js';
 import {openDrawer, closeDrawer, confirmDialog} from './shell.js';
 import {setButtonLoading} from '../utils/loading.js';
+import {isoWeek} from '../utils/isoWeek.js';
 
 export const POSITIONS=Object.freeze(['CEO','CTO','COO','CFO','CMO','CDO','CHRO','CCO','CLO','CITO']);
 let teamCards=[];
@@ -250,18 +251,7 @@ export async function initWeeklyStarsPanel() {
 }
 
 function renderWeeklyStars(container, starsData) {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    // ISO hafta hesaplama
-    const target = new Date(now.valueOf());
-    const dayNr = (now.getDay() + 6) % 7;
-    target.setDate(target.getDate() - dayNr + 3);
-    const firstThursday = target.valueOf();
-    target.setMonth(0, 1);
-    if (target.getDay() !== 4) {
-        target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
-    }
-    const currentWeekNumber = 1 + Math.ceil((firstThursday - target) / 604800000);
+    const {year: currentYear, weekNumber: currentWeekNumber} = isoWeek(new Date());
 
     const current = starsData.current;
     const history = Array.isArray(starsData.history) ? starsData.history : [];
