@@ -127,3 +127,23 @@
 
 /* Filtering changes row counts but must not re-anchor the entire viewport. */
 #contributors-list-container, #contributors-list-container > .contributor-table-rows { overflow-anchor: none; }
+
+/* The applicant viewport exists before the first async request: empty,
+   skeleton, populated and filtered states no longer resize the workspace. */
+#contributors-list-container {
+    min-height: 464px;
+    overflow-anchor: none;
+}
+#contributors-list-container > .contributor-table-rows {
+    overflow-anchor: none;
+}
+@media (max-width:1023px) {
+    #contributors-list-container { min-height: 440px; }
+    /* Keep the list's first-load geometry stable on mobile as well. */
+    #contributors-list-container > .contributor-table-rows {
+        max-height: 440px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+    }
+}

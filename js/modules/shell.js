@@ -595,7 +595,20 @@ function initNavigation() {
     const dock=document.createElement('nav');dock.className='mobile-bottom-dock';dock.setAttribute('aria-label',__('navigation.main'));
     dock.innerHTML=['home','contributors','models','news','notifications'].map((id,i)=>`<button type="button" data-mobile-tab="tab-${id}">${icon(['home','users-group','robot','news','bell'][i])}</button>`).join('')+`<button type="button" data-mobile-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`;
     document.querySelector('.app-layout').append(dock);
-    dock.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.hasAttribute('data-mobile-more')){openMore(button);return;}const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);if(source){activateTab(source);const selected=source.closest('.nav-module')?.querySelector('[aria-current=page]');if(selected)selected.click();else if(source.dataset.target==='tab-home'||source.dataset.target==='tab-chat')recordRoute({dataset:{navPanel:source.dataset.target.slice(4),navAction:''}});closeSidebarDrawer(false);}});
+    dock.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.hasAttribute('data-mobile-more')){openMore(button);return;}const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);if(source){
+        const module=source.closest('.nav-module');
+        const selected=module?.querySelector('[data-nav-selected]:not([hidden])') ||
+            module?.querySelector('.sidebar-sub-btn:not([hidden])');
+        // The previous path activated a default page first, then clicked a
+        // submenu and activated a second page in the same interaction.
+        if(selected)selected.click();
+        else {
+            activateTab(source);
+            if(source.dataset.target==='tab-home'||source.dataset.target==='tab-chat')
+                recordRoute({dataset:{navPanel:source.dataset.target.slice(4),navAction:''}});
+        }
+        closeSidebarDrawer(false);
+    }});
     onLangChange(()=>{dock.setAttribute('aria-label',__('navigation.main'));dock.querySelector('[data-mobile-more]').setAttribute('aria-label',__('contributors.more'));syncMobileDock();});
     function openMore(anchor){
         let unsubscribe=()=>{};const body=openModal({title:__('navigation.more'),titleKey:'navigation.more',onAfterClose:()=>unsubscribe()});
