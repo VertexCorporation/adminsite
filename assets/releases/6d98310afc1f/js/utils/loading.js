@@ -1,0 +1,219 @@
+import { showToast } from './ui.js';
+import { crossfade, animateContent } from '../ui/transition.js';
+import { setButtonState } from '../ui/controls.js';
+import { showLoadError, showEmptyState } from '../ui/states.js';
+// js/utils/loading.js
+//
+// Merkezi yükleme sistemi: skeleton + shimmer + boş/hata durumları.
+// Kurallar:
+//  - 150ms'den kısa isteklerde skeleton gösterilmez (flashing önlenir).
+//  - Veri gelince içerik ~180ms fade ile girer (bekletme yapılmaz).
+//  - Konteyner doluysa (stale data) içerik boşaltılmaz; yalnızca
+//    bağlamsal göstergeler (ör. refresh spinner) kullanılır.
+//  - Skeleton konteynerleri aria-busy alır; ekran okuyucusuna gereksiz
+//    tekrar duyuru gönderilmez.
+
+const SKELETON_DELAY = 150;
+
+/** Tek satır iskelet bloğu. */
+export function skeletonText(widthClass = 'w-80') {
+    return `<div class="skeleton sk-text ${widthClass}"></div>`;
+}
+
+export function skeletonAvatar() {
+    return `<div class="skeleton sk-avatar"></div>`;
+}
+
+export function skeletonButton() {
+    return `<div class="skeleton sk-button"></div>`;
+}
+
+/** Tablo satır iskeleti — gerçek satır geometrisi korunur. */
+export function skeletonTableRow() {
+    return `<div class="contributor-skeleton-row" aria-hidden="true"><div class="sk-contributor-name"><div class="skeleton sk-avatar"></div><div class="skeleton sk-text w-60"></div></div><div class="skeleton sk-text w-60"></div><div class="skeleton sk-text w-40"></div><div class="skeleton sk-text w-80"></div><div class="skeleton sk-text w-80"></div><div class="skeleton sk-button"></div></div>`;
+}
+
+export function skeletonListItem() {
+    return `<div class="sk-list-item" aria-hidden="true">
+        <div class="skeleton sk-avatar"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+            <div class="skeleton sk-text w-60"></div>
+            <div class="skeleton sk-text w-40"></div>
+        </div>
+    </div>`;
+}
+
+export function skeletonCard() {
+    return `<div class="sk-card" aria-hidden="true">
+        <div class="skeleton sk-title"></div>
+        <div class="skeleton sk-text w-80"></div>
+        <div class="skeleton sk-text w-full"></div>
+        <div class="skeleton sk-text w-60"></div>
+    </div>`;
+}
+
+export function skeletonFormField() {
+    return `<div class="sk-field" aria-hidden="true">
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+    </div>`;
+}
+
+export function skeletonCertificate() {
+    return `<div class="sk-cert-row" aria-hidden="true">
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+        <div class="skeleton" style="width:44px;height:12px;"></div>
+    </div>`;
+}
+
+export function skeletonChatMessage() {
+    return `<div class="sk-chat-msg" aria-hidden="true">
+        <div class="skeleton"></div>
+        <div class="skeleton" style="width:85%"></div>
+        <div class="skeleton" style="width:60%"></div>
+    </div>`;
+}
+
+/** N adet satır iskeleti üretir. */
+export function skeletonRows(count = 6, rowFactory = skeletonTableRow) {
+    let html = '';
+    for (let i = 0; i < count; i++) html += rowFactory();
+    return html;
+}
+
+
+/**
+ * Yükleme durum makinesi.
+ * @param {HTMLElement} container İçeriğin basılacağı eleman.
+ * @param {object} opts { skeletonHTML, onSkeleton }
+ */
+export function createLoadingController(container, opts = {}) {
+    let timer = null;
+    let skeletonShown = false;
+    let stale = false;
+
+    function start() {
+        if (!container || timer) return;
+        // Konteynerde canlı veri varsa: stale data gösterilmeye devam eder,
+        // tam sayfa iskelet basılmaz.
+        const hasContent = container.children.length > 0 &&
+            !container.querySelector('.skeleton') &&
+            !container.querySelector('.state-block');
+        container.setAttribute('aria-busy','true');
+        if (hasContent) {
+            stale = true;
+            container.classList.add('is-refreshing');
+            return;
+        }
+        stale = false;
+        timer = setTimeout(() => {
+            timer = null;
+            skeletonShown = true;
+            container.setAttribute('aria-busy', 'true');
+            container.innerHTML = opts.skeletonHTML || skeletonRows(6);
+            opts.onSkeleton?.();
+        }, opts.skeletonDelay ?? SKELETON_DELAY);
+    }
+
+    function cancelTimer() {
+        if (timer) { clearTimeout(timer); timer = null; }
+    }
+
+    /** Veri geldi: iskeleti kaldır, içeriği yumuşak 250ms fade ile bas. */
+    function success(renderHTML) {
+        cancelTimer();
+        const wasSkeleton = skeletonShown || !!container.querySelector('.skeleton');
+        skeletonShown = false;
+        stale = false;
+        container.removeAttribute('aria-busy');
+        container.classList.remove('is-refreshing');
+        if (wasSkeleton || container.children.length) crossfade(container, () => { container.innerHTML = renderHTML; });
+        else container.innerHTML = renderHTML;
+    }
+
+    /** Hata durumu: açıklayıcı mesaj + Retry. */
+    function error(message, retryFn, retryLabel = 'Retry') {
+        cancelTimer();
+        skeletonShown = false;
+        container.removeAttribute('aria-busy');
+        container.classList.remove('is-refreshing');
+        if (stale && container.children.length) {
+            stale = false;
+            showToast(message, 'error');
+            return;
+        }
+        stale = false;
+        showLoadError(container, message, retryFn, {retryLabel});
+    }
+
+    /** Boş durum: iskelet gösterilmez, gerçek empty state basılır. */
+    function empty(title, description = '') {
+        cancelTimer();
+        skeletonShown = false;
+        container.removeAttribute('aria-busy');
+        container.classList.remove('is-refreshing');
+        stale = false;
+        showEmptyState(container, title, description);
+    }
+
+    function destroy() {
+        cancelTimer();
+        skeletonShown = false;
+        stale = false;
+        container?.classList.remove('is-refreshing');
+        container?.removeAttribute('aria-busy');
+    }
+
+    return { start, success, error, empty, destroy };
+}
+
+/** Preserve existing callers while all action controls share the same state machine. */
+export function setButtonLoading(btn, loading, loadingLabel = null) {
+    setButtonState(btn, loading ? 'loading' : 'idle');
+}
+export { setButtonState } from '../ui/controls.js';
+
+/** İstek sırası damgası: stale response koruması. */
+export function createRequestGuard() {
+    let latest = 0;
+    return {
+        begin() { return ++latest; },
+        isCurrent(token) { return token === latest; }
+    };
+}
+
+// One loader per list host. Superseded requests cannot erase the UI state of
+// a later refresh, even if the older network response completes last.
+const panelLoaders = new WeakMap();
+export function beginPanelLoading(container, rowFactory = skeletonListItem) {
+    if (!container) return () => {};
+    panelLoaders.get(container)?.cancel();
+    const originalNodes = [...container.childNodes];
+    const controller = createLoadingController(container, {
+        skeletonHTML: skeletonRows(5, rowFactory)
+    });
+    let done = false;
+    const entry = { cancel: () => {
+        done = true;
+        controller.destroy();
+    }};
+    panelLoaders.set(container,entry);
+    controller.start();
+    return () => {
+        if (done || panelLoaders.get(container) !== entry) return;
+        done = true;
+        panelLoaders.delete(container);
+        // Never restore serialized innerHTML: doing so destroys existing form
+        // values, delegated handlers, and live interactive state.
+        if (originalNodes.length && container.querySelector('.skeleton') &&
+            !originalNodes.some(node => node.isConnected)) {
+            container.replaceChildren(...originalNodes);
+        }
+        const changed = originalNodes.length &&
+            container.firstChild !== originalNodes[0] &&
+            !container.querySelector('.skeleton,.ui-crossfade-ghost');
+        controller.destroy();
+        if (changed) animateContent(container);
+    };
+}
