@@ -1,0 +1,239 @@
+/* One owner for core overlay geometry and motion. */
+/* ---------- Overlay ---------- */
+.vx-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.44);
+    z-index: 139;
+    opacity: 0;
+    transition: opacity var(--motion-overlay) var(--ease-standard);
+}
+html[data-theme="light"] .vx-overlay { background: rgba(23, 25, 29, 0.28); }
+.vx-overlay.is-open { opacity: 1; }
+
+/* ---------- Anchored popover ---------- */
+.vx-popover {
+    position: fixed;
+    z-index: 95;
+    min-width: 200px;
+    max-width: 400px;
+    background: var(--bg-elevated);
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-pop);
+    opacity: 0;
+    transform: translateY(4px) scale(.98);
+    transform-origin: top center;
+    pointer-events: none;
+    transition: opacity var(--motion-popover-close) var(--ease-exit),
+                transform var(--motion-popover-close) var(--ease-exit);
+}
+.vx-popover.is-open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    transition: opacity var(--motion-popover) var(--ease-standard),
+                transform var(--motion-popover) var(--ease-standard);
+}
+
+.vx-popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+}
+.vx-popover-title { font-size: var(--fs-component-title); font-weight: 600; }
+.vx-popover-body { padding: var(--space-3) var(--space-4); }
+.vx-popover-body.is-scrollable { max-height: min(60vh, 480px); overflow-y: auto; }
+.vx-popover-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+}
+
+/* ---------- Drawer ---------- */
+.vx-drawer-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity var(--motion-overlay) var(--ease-standard);
+}
+html[data-theme="light"] .vx-drawer-scrim { background: rgba(23, 25, 29, 0.30); }
+.vx-drawer-scrim.is-open { opacity: 1; }
+
+.vx-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 130;
+    width: min(480px, 94vw);
+    background: var(--bg-surface);
+    border-left: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-modal);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    opacity: 0.4;
+    transition: transform var(--motion-drawer) var(--ease-standard), opacity var(--motion-drawer) var(--ease-standard);
+}
+.vx-drawer.is-open { transform: translateX(0); opacity: 1; }
+
+.vx-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+
+.vx-drawer-title { font-size: var(--fs-section-title); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vx-drawer-body { flex: 1; overflow-y: auto; padding: var(--space-5); }
+.vx-drawer-footer {
+    flex-shrink: 0;
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    gap: var(--space-2);
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+    .vx-drawer { width: 100vw; border-left: none; }
+}
+
+/* ---------- Modal / confirmation ---------- */
+.vx-modal {
+    position: fixed;
+    z-index: 140;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -48%) scale(0.97);
+    width: min(440px, calc(100vw - 32px));
+    max-height: min(85vh, 720px);
+    overflow-y: auto;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-modal);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--motion-overlay) var(--ease-standard), transform var(--motion-overlay) var(--ease-standard);
+}
+.vx-modal.is-open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+
+.vx-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--border-subtle);
+}
+.vx-modal-title { font-size: var(--fs-section-title); font-weight: 600; }
+.vx-modal-body { padding: var(--space-5); }
+.vx-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border-subtle);
+    flex-wrap: wrap;
+}
+
+
+.vx-popover.is-closing{pointer-events:none}
+.vx-popover.drawer-popover{z-index:135}
+
+/* The backdrop and panel have a single CSS-owned lifecycle. */
+.vx-popover.is-closing, .vx-drawer[aria-hidden="true"], .vx-modal[aria-hidden="true"] { pointer-events: none; }
+.vx-drawer-body, .vx-modal-body { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+/* Shared elevated-surface variants and confirmation content. */
+.vx-popover { max-height: calc(100dvh - 16px); overflow: auto; }
+.vx-drawer-footer:has([data-more]){display:flex;flex-wrap:wrap;gap:8px}.vx-drawer-footer button{min-height:44px}.vx-drawer-footer .icon{width:17px;height:17px}
+.vx-drawer-footer:has([data-more]){display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:8px}.vx-drawer-footer [data-edit]{grid-column:1/-1}.vx-drawer-footer [data-certificate]{min-width:0}.vx-drawer-footer [data-more]{padding:0;justify-content:center}
+/* ---------- Confirm dialog stilleri ---------- */
+.confirm-dialog-body {
+    padding: var(--space-5);
+}
+.confirm-dialog-icon {
+    width: 40px; height: 40px;
+    border-radius: var(--radius-full);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: var(--space-4);
+    background: var(--bg-elevated); color: var(--text-muted);
+}
+.confirm-dialog-icon.danger {
+    background: var(--status-error-soft);
+    color: var(--status-error);
+}
+.confirm-dialog-title {
+    font-size: var(--fs-section-title);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+.confirm-dialog-desc {
+    font-size: var(--fs-body);
+    color: var(--text-secondary);
+    line-height: var(--lh-normal);
+}
+.confirm-dialog-warning {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    background: var(--status-error-soft);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-secondary);
+    color: var(--status-error);
+    line-height: var(--lh-normal);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+}
+.confirm-dialog-warning > .icon { flex-shrink: 0; margin-top: 1px; }
+.confirm-dialog-rows {
+    margin-top: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+.confirm-dialog-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    font-size: var(--fs-secondary);
+}
+.confirm-dialog-row dt { color: var(--text-muted); flex-shrink: 0; }
+.confirm-dialog-row dd { color: var(--text-primary); text-align: right; word-break: break-all; }
+.confirm-dialog-footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border-subtle);
+}
+/* İptal sol, Onayla sağ */
+.confirm-dialog-footer .cancel-btn { margin-right: auto; }
+
+/* Nested scroll should stay within active surfaces, with one primary
+   scrollport per pane and mobile safe-area breathing room. */
+.vx-drawer, .vx-modal { box-sizing:border-box; }
+.vx-drawer-body, .vx-modal-body { min-height:0; }
+.vx-modal { max-height:min(85dvh,720px); }
+.vx-popover { max-height:calc(100dvh - 2 * var(--space-2)); }
+@media (max-width:720px) {
+    .vx-drawer-footer, .vx-modal-footer { padding-bottom:max(var(--space-4),env(safe-area-inset-bottom)); }
+}
