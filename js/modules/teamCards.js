@@ -247,17 +247,32 @@ function renderTeamProfile(container, profile) {
 /**
  * Haftanın Yıldızları (Weekly Stars) Bölümü Başlatıcı
  */
+let weeklyCache=null;
+let weeklyDirectory=[];
+const starName=person=>typeof person==='string'?person:(person?.name||'');
+const starId=person=>person&&typeof person==='object'?person.id:null;
 export async function initWeeklyStarsPanel() {
     const container = document.getElementById('weekly-stars-container');
     if (!container) return;
-
+    if(!weeklyCache)container.textContent=__('common.loading');
+    container.setAttribute('aria-busy','true');
     try {
-        const { data } = await getWeeklyStarsFn({});
-        renderWeeklyStars(container, data || { current: null, history: [] });
-    } catch (err) {
-        console.warn('[WEEKLY_STARS] Error loading weekly stars:', err);
-        renderWeeklyStars(container, { current: null, history: [] });
-    }
+        const {data}=await getWeeklyStarsFn({});
+        if(!data||!Array.isArray(data.history))throw new Error('Invalid weekly stars result');
+        weeklyCache=data;
+        let directoryError=null;
+        try{
+            const response=await getVertexContributorsFn({});
+            if(!Array.isArray(response.data?.contributors))throw new Error('Invalid participant directory');
+            weeklyDirectory=response.data.contributors.filter(person=>
+                person&&typeof person.id==='string'&&person.name&&person.isVertex===true);
+        }catch(error){directoryError=error;weeklyDirectory=[];}
+        renderWeeklyStars(container,{...data,directory:weeklyDirectory,directoryError});
+    } catch(err) {
+        console.warn('[WEEKLY_STARS] Load failed:',err);
+        if(weeklyCache)showToast(()=>userErrorMessage(err),'error');
+        else showLoadError(container,()=>userErrorMessage(err),initWeeklyStarsPanel);
+    }finally{container.removeAttribute('aria-busy');}
 }
 
 function renderWeeklyStars(container, starsData) {
@@ -286,7 +301,17 @@ function renderWeeklyStars(container, starsData) {
 
                 <div class="form-group-field">
                     <label for="stars-contributors">${__('weekly_stars.contributors_label')}</label>
-                    <input type="text" id="stars-contributors" placeholder="Deniz Örnek, Ayşe Demir" value="${escapeHTML((current?.contributors || []).join(', '))}">
+                    <div id="stars-selected" class="stars-selected" aria-live="polite"></div>
+                    <div class="search-field">
+                        ${icon('search',{size:16})}
+                        <input type="search" id="stars-person-search" autocomplete="off"
+                           placeholder="${getLang()==='tr'?'Katılımcı ara':'Search participants'}" 
+                           aria-label="${__('weekly_stars.contributors_label')}">
+                    </div>
+                    <div id="stars-search-results" class="stars-search-results" role="listbox"></div>
+                    ${starsData.directoryError?`<div class="state-block" role="alert">${getLang()==='tr'?'Katılımcı listesi yüklenemedi. Mevcut kayıtlar korunuyor.':'Could not load participants. Existing records are preserved.'}
+                        <button type="button" class="chrome-btn-outline" id="stars-directory-retry">${__('common.retry')}</button></div>`:''}
+                    <small class="form-hint">${getLang()==='tr'?'En fazla 5 aktif katılımcı. İsimler kalıcı kimlikleriyle ilişkilendirilir.':'Select up to 5 active participants using their permanent IDs.'}</small>
                 </div>
 
                 <div>
@@ -305,7 +330,7 @@ function renderWeeklyStars(container, starsData) {
                         <div class="team-list-row">
                             <div class="team-list-info">
                                 <span class="team-list-name">${escapeHTML(item.title || `Hafta ${item.weekNumber}, ${item.year}`)}</span>
-                                <span class="team-list-meta">${escapeHTML((item.contributors || []).join(', '))}</span>
+                                <span class="team-list-meta">${escapeHTML((item.contributors || []).map(starName).join(', '))}</span>
                             </div>
                         </div>`).join('')}</div>`
                 }
@@ -319,8 +344,7 @@ function renderWeeklyStars(container, starsData) {
         const week = parseInt(container.querySelector('#stars-week').value, 10);
         const year = parseInt(container.querySelector('#stars-year').value, 10);
         const title = container.querySelector('#stars-title').value.trim();
-        const contribRaw = container.querySelector('#stars-contributors').value;
-        const contributors = contribRaw.split(',').map(s => s.trim()).filter(Boolean);
+        const contributors = selected.slice();
 
         const saveBtn = container.querySelector('#save-weekly-stars-btn');
         setButtonLoading(saveBtn, true);
