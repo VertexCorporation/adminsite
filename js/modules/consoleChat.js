@@ -346,7 +346,9 @@ function renderMessages(messages, channel, animate = true) {
        updateNewIndicator(false);
        void markRead(messages.at(-1)?.sequence||0);
     }else{
-       container.scrollTop=Math.max(0,previousScrollTop+(container.scrollHeight-previousScrollHeight));
+       // New messages append below the reader; shifting by new scrollHeight would
+       // jump the viewport away from the message they were reading.
+       container.scrollTop=Math.max(0,previousScrollTop);
        if(grew)updateNewIndicator(true);
     }
     lastRenderedChannel=currentChannelId;
