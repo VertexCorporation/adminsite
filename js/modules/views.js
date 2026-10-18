@@ -35,7 +35,7 @@ export function updateGridVisibleCounts(scope) {
         ).length;
         grid.dataset.visiblePanels = String(visible);
         const width = grid.getBoundingClientRect().width || window.innerWidth;
-        const maximum = width < 680 ? 1 : width < 1080 ? 2 : width < 1500 ? 3 : 4;
+        const maximum = Math.max(1, Math.floor((width + 16) / 316));
         grid.style.setProperty('--panel-columns', String(Math.max(1, Math.min(visible, maximum))));
     });
 }
