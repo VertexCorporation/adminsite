@@ -9,7 +9,39 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
     await page.screenshot({path:path.join(screenshots,`precision-${name}.png`),fullPage:!name.startsWith('sidebar-')});
   };
   await page.setViewportSize({width:1440,height:1000});
-  await page.evaluate(async()=>{(await import('/js/modules/shell.js')).applyTheme('dark');});
+  await page.evaluate(async()=>{
+    (await import('/js/lang.js')).setLang('en');
+    (await import('/js/modules/shell.js')).applyTheme('dark');
+  });
+  // Model search facets must compose without refetching and action clicks
+  // must not toggle native keyboard-accessible details groups.
+  await selectTab('models');
+  await page.evaluate(async()=>(await import('/js/modules/models.js')).fetchFullModelsData());
+  await page.waitForSelector('#model-catalog-filters [data-catalog-search]');
+  await page.locator('[data-catalog-search]').fill('fixture-model');
+  await page.locator('[data-catalog-provider]').selectOption('Vertex');
+  await page.locator('[data-catalog-type]').selectOption('offline');
+  await page.locator('[data-catalog-status]').selectOption('unspecified');
+  await page.locator('[data-catalog-visibility]').selectOption('visible');
+  assert.equal(await page.locator('#all-models-list-container .variant-item').count(),1);
+  await page.locator('[data-catalog-search]').fill('no-such-model');
+  assert.equal(await page.locator('#all-models-list-container .variant-item').count(),0);
+  await page.locator('[data-catalog-search]').fill('fixture-model');
+  await page.locator('#model-catalog-select-all').click();
+  assert.match(await page.locator('#model-catalog-selection-count').innerText(),/^1 /);
+  await page.locator('#model-catalog-clear').click();
+  const producer=page.locator('#all-models-list-container details.producer-group').first();
+  if(!await producer.evaluate(el=>el.open))await producer.locator('summary').first().click();
+  const series=producer.locator('details.series-group').first();
+  if(!await series.evaluate(el=>el.open))await series.locator('summary').click();
+  const openBefore=await series.evaluate(el=>el.open);
+  await producer.locator('.model-series-shell .series-actions .model-actions-trigger').first().click();
+  assert.equal(await series.evaluate(el=>el.open),openBefore);
+  await page.keyboard.press('Escape');
+  await series.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await series.evaluate(el=>el.open),!openBefore);
+  note('Model facets combine, bulk selection works and separate actions preserve accessible group toggles');
   await selectTab('system');
   await page.locator('[data-section=permissions]').dispatchEvent('click');
   await page.waitForSelector('.dept-perm-row');
