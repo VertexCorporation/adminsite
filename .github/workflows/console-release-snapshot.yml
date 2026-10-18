@@ -1,0 +1,42 @@
+name: console release snapshot
+on:
+  push:
+    branches:
+      - fix/console-hardening-41-50-integrated-20261018
+    paths:
+      - 'js/**'
+      - 'css/**'
+      - 'index.html'
+      - 'scripts/release.cjs'
+      - '.github/workflows/console-release-snapshot.yml'
+permissions:
+  contents: write
+jobs:
+  snapshot:
+    if: github.repository == 'VertexCorporation/adminsite'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm install --no-package-lock
+      - run: npm run check:syntax
+      - run: npm run audit:i18n
+      - run: node scripts/release.cjs
+      - run: npm run verify:release
+      - name: Commit verified immutable release to this feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add index.html assets/releases
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "fix: regenerate verified immutable console release"
+            git push origin HEAD:"${GITHUB_REF_NAME}"
+          fi
