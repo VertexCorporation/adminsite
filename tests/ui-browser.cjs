@@ -27,6 +27,7 @@ const fixture = [
  '<div id="both" data-scroll-fog><div style="width:440px;height:250px">Both axes</div></div>',
  '<input id="required-field" required value="x">',
  '<div id="content"><p>Outgoing content</p></div>',
+ '<div id="delay-host"></div>',
  '<div id="view-host"><section id="old-tab" class="active"><h2>Old page</h2><input id="retained-value" value="keep me"></section><section id="new-tab" style="display:none"><h2>New page</h2></section></div>',
  ' <div id="generic"><ul></ul></div>',
  ' <div id="workspace" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px"><article>Old card</article><article hidden>Hidden card</article></div>',
@@ -209,6 +210,20 @@ const server = http.createServer((req,res)=>{
     if(field.hasAttribute('aria-invalid'))throw Error('invalid state was not cleared');
    });
 
+   // The first load cannot flash skeleton for a response under 150ms,
+   // but a genuine slow request must show its skeleton before crossfading.
+   await page.evaluate(()=>{
+     const host=document.getElementById('delay-host');
+     window.uiTest.delayed=window.uiTest.loading.createLoadingController(host);
+     window.uiTest.delayed.start();
+   });
+   assert.equal(await page.locator('#delay-host .skeleton').count(),0);
+   await page.waitForTimeout(180);
+   assert(await page.locator('#delay-host .skeleton').count()>0);
+   await page.evaluate(()=>window.uiTest.delayed.success('<p>Loaded data</p>'));
+   await page.waitForTimeout(240);
+   assert.equal(await page.locator('#delay-host .skeleton').count(),0);
+   assert.equal(await page.locator('#delay-host p').innerText(),'Loaded data');
    // Shared list loader cancels superseded requests; stale refresh never
    // destroys the existing nodes or reattaches them from serialized markup.
    await page.evaluate(()=>{
