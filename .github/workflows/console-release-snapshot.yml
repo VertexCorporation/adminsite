@@ -29,8 +29,12 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+      - name: Check JavaScript syntax before publishing immutable assets
+        run: node scripts/check-syntax.cjs
       - name: Generate content-addressed assets using existing release script
         run: node scripts/release.cjs
+      - name: Verify source, hash and every immutable asset match
+        run: node scripts/verify-release.cjs
       - name: Verify generated import map and assets
         shell: bash
         run: |
