@@ -10,7 +10,7 @@ const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=tru
 let failMembership=false,failAdmin=false,failContributorReadOnce=0,failChatReadOnce=0;let adminRoster=[{uid:'admin',email:'admin@example.invalid'},{uid:'other-admin',email:'other@example.invalid'}];
 const person={membership:{status:'matched',uid:'auth-person',isVertex:true},id:'person',name:'Example Participant',email:'person@example.invalid',language:'en',hasVerified:false,createdAt:{_seconds:1767272400},department:'Core',interviewDate:'2026-10-10',about:'Local test fixture'};
 const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet'},constancy:{en:'Constancy',tr:'Metanet'},nobility:{en:'Nobility',tr:'Azamet'},majesty:{en:'Majesty',tr:'Asalet'}};
-const page=await browser.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|\[AUTH\] Login failed auth\/(?:invalid-credential|too-many-requests|network-request-failed)|Fixture unavailable|Mock delivery outcome uncertain|Fixture permission rejection|Fixture verification unavailable|Fixture maintenance unavailable|400 \(Bad Request\)|functions\/failed-precondition|\[CERTIFICATES\]/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
+const page=await browser.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|\[AUTH\] Login failed auth\/(?:invalid-credential|too-many-requests|network-request-failed)|Fixture unavailable|Mock delivery outcome uncertain|Fixture permission rejection|Fixture verification unavailable|Fixture maintenance unavailable|400 \(Bad Request\)|functions\/failed-precondition|\[CERTIFICATES\]|\[CONSOLE_OPERATION\] \{operation: firebase\.callable, function: (?:getVertexContributors|sendTargetedNotification|toggleContributorVerification|getServerStatus|saveDepartmentPermissions), category: (?:transport|server)/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
 if(process.env.VERTEX_TRACE)await page.context().tracing.start({screenshots:true,snapshots:true,sources:true});
 await page.addInitScript(()=>{
  localStorage.setItem('siteLang','en');
@@ -32,6 +32,11 @@ await page.addInitScript(()=>{
      // server identity scenario, not a permanently privileged Core account.
      const account=window.__testClaims || {admin:true};
      const isCore=account.admin===true;
+     // Exercise the real legacy wire contract as well as the modern Core
+     // contract: older deployed callables sent a verified isAdmin boolean
+     // without including the newer Core department alias.
+     if (isCore && !window.__testModernCoreAccess)
+       return {data:{uid:'admin',isAdmin:true,departments:[],authzVersion:0}};
      return {data:{uid:'admin',departments:isCore?['Core']:(account.departments||[]),
        isAdmin:isCore,isCore,authzVersion:0}};
    }
@@ -130,6 +135,18 @@ const checks=[];
 const note=x=>{checks.push(x);console.log('PASS',x);};
 // Never show a cloned outgoing page while navigating. Our former regression
 // incorrectly demanded this exact source of the user's stray-screen flash.
+await page.locator('.dock-btn[data-target="tab-news"]').click();
+// The legacy server's admin boolean must not leave a visible main nav with
+// disabled, empty submenus. Every authorized destination has live content.
+assert.equal(await page.locator('[data-nav-module="news"]').getAttribute('aria-hidden'),null);
+assert.equal(await page.locator('[data-nav-module="news"] .dock-btn').getAttribute('aria-expanded'),'true');
+assert.equal(await page.locator('[data-nav-module="news"] .sidebar-submenu').getAttribute('inert'),null);
+assert.equal(await page.locator('#tab-news .panel-card[data-panel="news.editor"]').isVisible(),true);
+await page.locator('[data-nav-module="news"] [data-nav-panel="news.published"]').click();
+assert.equal(await page.locator('#tab-news .panel-card[data-panel="news.published"]').isVisible(),true);
+assert.equal(await page.locator('#tab-news .panel-card[data-panel="news.editor"]').isVisible(),false);
+await page.locator('[data-nav-module="news"] [data-nav-panel="news.editor"]').click();
+await page.locator('.dock-btn[data-target="tab-contributors"]').click();
 await page.locator('.dock-btn[data-target="tab-news"]').click();
 const navMotion=await page.evaluate(()=>{
  const host=document.getElementById('tab-scroll-container'), incoming=document.getElementById('tab-news');
