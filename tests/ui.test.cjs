@@ -201,3 +201,12 @@ test('the real application browser regression verifies overlapping tab transitio
  assert.match(browser,/Real navigation animates outgoing and incoming tabs simultaneously/);
  assert.match(browser,/navMotion\.ghost&&navMotion\.inert&&navMotion\.outgoing>0/);
 });
+
+test('legacy people directory also uses one shared loading and crossfade controller',()=>{
+ const src=read('js/modules/people.js');
+ assert.match(src,/const peopleLoaders = new WeakMap\(\)/);
+ assert.match(src,/createLoadingController\(host/);
+ assert.match(src,/loader\(host\)\.success\(/);
+ assert.match(src,/loader\(host\)\.error\(/);
+ assert.doesNotMatch(src,/function loading\(host\)\{[^}]*host\.innerHTML/);
+});
