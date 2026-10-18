@@ -77,7 +77,110 @@ export function initEventsModule() {
   }
  };
  form.onsubmit=async e=>{e.preventDefault();const button=form.querySelector('[type="submit"]');if(button.disabled||getEffectivePanelLevel('events.editor')!=='write')return;setButtonLoading(button,true);try{const event=collect();if(await confirmDialog({title:tr('Değişiklik kaydedilsin mi?','Save changes?'),body:`${event.title} · ${event.status}`})){await eventCallable('saveConsoleEvent',{event,revision:current?.revision||0});fill(null);await refresh();showToast(tr('Kaydedildi','Saved'),'success');}}catch(e){fail(e);}finally{setButtonLoading(button,false);}};
- document.getElementById('events-preview').onclick=()=>{try{const event=collect();const box=document.getElementById('events-preview-content');box.hidden=false;box.replaceChildren();for(const text of [event.title,`${event.date} · ${event.timeZone}`,event.desc,event.detailDesc,event.location]){const p=document.createElement('p');p.textContent=text;box.append(p);}}catch(e){fail(e);}};
+ document.getElementById('events-preview').onclick=()=>{
+  try{
+   const event=collect(),box=document.getElementById('events-preview-content');box.hidden=false;box.replaceChildren();
+   const lang=document.createElement('select');lang.setAttribute('aria-label',tr('Önizleme dili','Preview language'));
+   for(const value of ['tr','en']){const option=document.createElement('option');option.value=value;option.textContent=value.toUpperCase();lang.append(option);}
+   lang.value=getLang()==='tr'?'tr':'en';box.append(lang);
+   const article=document.createElement('article');article.className='ui-event-preview';
+   const add=(parent,tag,value,className='')=>{const node=document.createElement(tag);node.textContent=String(value||'');if(className)node.className=className;parent.append(node);return node;};
+   const paint=()=>{
+    article.replaceChildren();const language=lang.value;
+    const local=(key)=>language==='en'?(event[key+'_en']||event[key]):event[key];
+    if(event.cover&&/^https:\/\//.test(event.cover)){
+     const img=document.createElement('img');img.className='ui-event-cover';
+     img.src=event.cover;img.alt=local('title')||event.title;img.loading='lazy';article.append(img);
+    }
+    const content=document.createElement('div');content.className='ui-event-content';article.append(content);
+    add(content,'span',event.status==='published'?tr('Yayımlanmış','Published'):event.status==='draft'?tr('Taslak','Draft'):tr('İptal','Cancelled'),'form-hint');
+    add(content,'h2',local('title')||event.title);
+    let formatted=event.date||'—';
+    if(event.startsAt)try{formatted=new Intl.DateTimeFormat(language,{dateStyle:'long',timeStyle:'short',timeZone:event.timeZone}).format(new Date(event.startsAt));}catch{}
+    add(content,'p',formatted+' · '+(event.timeZone||'—'),'form-hint');
+    add(content,'p',local('location')||'—');
+    add(content,'p',local('desc'));
+    if(local('detailDesc'))add(content,'p',local('detailDesc'),'ui-event-description');
+    if(event.speakers?.length){
+     add(content,'h3',language==='tr'?'Konuşmacılar':'Speakers');
+     const grid=document.createElement('div');grid.className='ui-event-grid';content.append(grid);
+     for(const speaker of event.speakers){
+      const card=document.createElement('div');card.className='ui-event-card';grid.append(card);
+      add(card,'strong',speaker.name);add(card,'p',language==='en'?(speaker.role_en||speaker.role):speaker.role,'form-hint');
+     }
+    }
+    if(event.ticketCategories?.length){
+     add(content,'h3',language==='tr'?'Biletler':'Tickets');
+     const grid=document.createElement('div');grid.className='ui-event-grid';content.append(grid);
+     for(const ticket of event.ticketCategories){
+      const card=document.createElement('div');card.className='ui-event-card';grid.append(card);
+      add(card,'strong',ticket.name);
+      add(card,'p',ticket.price?String(ticket.price)+' '+(ticket.currency||'TRY'):(language==='tr'?'Ücretsiz':'Free'));
+      if(ticket.description)add(card,'p',ticket.description,'form-hint');
+     }
+    }
+   };
+   lang.addEventListener('change',paint);paint();
+   // Fall back to the local DOM preview until Eventsite's public renderer
+   // announces that its sandboxed draft-preview mode is ready.
+   const notice=document.createElement('p');notice.className='form-hint';
+   notice.setAttribute('role','status');
+   notice.textContent=tr('Eventsite önizlemesi yükleniyor…','Loading Eventsite preview…');
+   const frame=document.createElement('iframe');
+   frame.className='ui-eventsite-frame';
+   frame.title=tr('Eventsite taslak önizlemesi','Eventsite draft preview');
+   frame.referrerPolicy='origin';
+   frame.style.cssText='width:100%;height:clamp(540px,75vh,960px);margin-top:12px;border:1px solid var(--border-color,rgba(127,127,127,.24));border-radius:16px;';
+   frame.setAttribute('sandbox','allow-scripts allow-same-origin');
+   frame.loading='eager';
+   const origin='https://events.vertexishere.com';
+   const preview=()=>{
+     armTimeout();
+     frame.src=origin+'/'+lang.value+'/?vertexPreview=1';
+   };
+   let previewTimer=null;
+   const armTimeout=()=>{
+      clearTimeout(previewTimer);
+      previewTimer=setTimeout(()=>{
+        if(frame.hidden)notice.textContent=tr(
+          'Eventsite önizlemesi henüz kullanılamıyor; yerel taslak gösteriliyor.',
+          'Eventsite preview is unavailable; showing local draft instead.');
+      },7500);
+   };
+   const onMessage=message=>{
+     if(message.origin!==origin || message.source!==frame.contentWindow ||
+        message.data?.version!==1)return;
+     if(message.data.type==='vertex:event-preview:ready'){
+       frame.contentWindow.postMessage({
+         type:'vertex:event-preview:render',version:1,event
+       },origin);
+     } else if(message.data.type==='vertex:event-preview:rendered'&&message.data.id===event.id){
+       clearTimeout(previewTimer);
+       article.hidden=true;
+       frame.hidden=false;
+       notice.textContent=tr('Gerçek Eventsite görünümü · taslak, kayıt kapalı',
+         'Real Eventsite rendering · draft, registration disabled');
+     }
+   };
+   window.addEventListener('message',onMessage);
+   const observer=new MutationObserver(()=>{
+      if(!frame.isConnected){
+        window.removeEventListener('message',onMessage);
+        clearTimeout(previewTimer);
+        observer.disconnect();
+      }
+   });
+   observer.observe(box,{childList:true});
+   frame.hidden=true;frame.src='about:blank';
+   box.append(notice,frame,article);
+   lang.addEventListener('change',()=>{
+       article.hidden=false;frame.hidden=true;
+       notice.textContent=tr('Eventsite önizlemesi yükleniyor…','Loading Eventsite preview…');
+       preview();
+   });
+   preview();
+  }catch(e){fail(e);}
+ };
  document.getElementById('events-new').onclick=()=>fill(null);
  document.getElementById('events-refresh').onclick=()=>refresh().catch(fail);
  const upload=async file=>{
