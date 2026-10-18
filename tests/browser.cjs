@@ -167,6 +167,9 @@ for(let i=0;i<8;i++){await openCert();await page.keyboard.press('Escape');assert
 await page.emulateMedia({colorScheme:'light'});await page.evaluate(async()=>{(await import('/js/modules/shell.js')).applyTheme('system');});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(248, 249, 250)');await page.emulateMedia({colorScheme:'dark'});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(15, 15, 16)');note('System theme follows OS');
 people=[];await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .state-block');note('Empty state');
 failContributors=true;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container button');failContributors=false;people=null;await page.locator('#contributors-list-container button').first().click();await page.waitForSelector('.contributor-row');note('Error and retry state');
+// Close any contributor drawer left open by the preceding certificate/focus tests.
+await page.keyboard.press('Escape');
+await page.waitForSelector('.vx-drawer.is-open',{state:'detached'});
 await page.evaluate(()=>{document.getElementById('contributors-list-container').replaceChildren();});contributorDelay=500;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .skeleton');await page.waitForSelector('.contributor-row');assert.equal(await page.locator('#contributors-list-container .skeleton').count(),0);contributorDelay=0;note('Delayed skeleton to content');
 people=[{...person,name:'Old Response'}];contributorDelay=500;
 await page.evaluate(()=>{import('/js/modules/contributors.js').then(m=>m.fetchContributorsData());});await page.waitForTimeout(75);people=[{...person,name:'Latest Response'}];contributorDelay=0;
