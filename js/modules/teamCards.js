@@ -338,6 +338,67 @@ function renderWeeklyStars(container, starsData) {
         </div>
     `;
 
+    const selected=Array.isArray(current?.contributors)?current.contributors.slice():[];
+    const directory=starsData.directory||[];
+    const selectedHost=container.querySelector('#stars-selected');
+    const search=container.querySelector('#stars-person-search');
+    const results=container.querySelector('#stars-search-results');
+    const drawSelected=()=>{
+        selectedHost.replaceChildren();
+        if(!selected.length){
+            const hint=document.createElement('span');
+            hint.className='form-hint';
+            hint.textContent=getLang()==='tr'?'Katılımcı seçilmedi.':'No participants selected.';
+            selectedHost.append(hint);
+        }
+        selected.forEach((person,index)=>{
+            const chip=document.createElement('span');
+            chip.className='stars-person-chip';
+            chip.append(document.createTextNode(starName(person)+(starId(person)?'':' (legacy)')));
+            const button=document.createElement('button');
+            button.type='button';button.textContent='×';
+            button.setAttribute('aria-label',__('common.delete')+' '+starName(person));
+            button.onclick=()=>{selected.splice(index,1);drawSelected();drawResults();};
+            chip.append(button);selectedHost.append(chip);
+        });
+    };
+    const drawResults=()=>{
+        results.replaceChildren();
+        const query=search.value.trim().toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US');
+        if(!query)return;
+        const matches=directory.filter(person=>!selected.some(entry=>starId(entry)===person.id)&&
+            (person.name+' '+(person.email||'')).toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US').includes(query)).slice(0,20);
+        matches.forEach(person=>{
+            const button=document.createElement('button');
+            button.type='button';button.className='stars-person-result';
+            button.setAttribute('role','option');
+            const name=document.createElement('strong');name.textContent=person.name;
+            const detail=document.createElement('small');
+            detail.textContent=person.email||person.department||person.id;
+            button.append(name,detail);
+            button.onclick=()=>{
+                if(selected.length>=5){
+                    showToast(()=>getLang()==='tr'?'En fazla 5 kişi seçilebilir.':'A maximum of 5 participants may be selected.','error');
+                    return;
+                }
+                selected.push({id:person.id,name:person.name});
+                search.value='';drawSelected();drawResults();
+                search.focus({preventScroll:true});
+            };
+            results.append(button);
+        });
+        if(!matches.length){
+            const empty=document.createElement('p');empty.className='form-hint';
+            empty.textContent=getLang()==='tr'?'Eşleşen aktif katılımcı bulunamadı.':'No matching active participant.';
+            results.append(empty);
+        }
+    };
+    search.addEventListener('input',drawResults);
+    drawSelected();
+    const retryDirectory=container.querySelector('#stars-directory-retry');
+    if(retryDirectory)retryDirectory.onclick=initWeeklyStarsPanel;
+    if(starsData.directoryError)container.querySelector('#save-weekly-stars-btn').disabled=true;
+
     const form = container.querySelector('#weekly-stars-form');
     form.onsubmit = async e => {
         e.preventDefault();
