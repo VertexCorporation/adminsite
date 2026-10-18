@@ -24,7 +24,7 @@ import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscri
 import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getEffectivePanelLevel, initPanelMenus, PANELS } from './modules/roles.js';
 import { initSiteTeamPanel } from './modules/siteTeam.js';
 import { initTeamCardsPanel, loadTeamCards } from './modules/teamCards.js';
-import { updateGridVisibleCounts } from './modules/views.js';
+import { updateGridVisibleCounts, initAdaptiveGrids } from './modules/views.js';
 import { initUserMenu } from './modules/userMenu.js';
 import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
 
@@ -63,7 +63,7 @@ export function startApp(firebaseConfig) {
     initHomeModule();
     initSystemSections();
     initIcons();
-    updateGridVisibleCounts();
+    initAdaptiveGrids();
     const readOnlyObserver = new MutationObserver(records => {
         const panels = new Set();
         for(const record of records) for(const node of record.addedNodes) {
