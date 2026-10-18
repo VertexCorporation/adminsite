@@ -18,6 +18,8 @@ const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet
 const page=await browser.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|\[AUTH\] Login failed auth\/(?:invalid-credential|too-many-requests|network-request-failed)|Fixture unavailable|Mock delivery outcome uncertain|Fixture permission rejection|Fixture verification unavailable|Fixture maintenance unavailable|400 \(Bad Request\)|functions\/failed-precondition|\[CERTIFICATES\]/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
 if(process.env.VERTEX_TRACE)await page.context().tracing.start({screenshots:true,snapshots:true,sources:true});
 await page.addInitScript(()=>{
+ // Sandboxed email preview iframes cannot use localStorage and should never receive app stubs.
+ if(window!==window.top)return;
  localStorage.setItem('siteLang','en');
  const snapshot={docs:[],empty:true,exists:false,data:()=>({}),forEach:()=>{}};
  const chain={orderBy:()=>chain,where:()=>chain,limit:()=>chain,doc:()=>chain,get:async()=>snapshot,onSnapshot:fn=>{setTimeout(()=>fn(snapshot),0);return ()=>{};}};
@@ -192,9 +194,9 @@ await page.waitForSelector('.vx-drawer',{state:'detached'});
 note('Contributor whole-row mouse and keyboard details');
 await page.locator('[data-details]').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Contributor drawer');
 const waitCrossfade = () => page.waitForFunction(() => !document.querySelector('.ui-crossfade-ghost'));
-await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);
-await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),1);
-await page.evaluate(()=>window.filterContributors('verified'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
+await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===0);await waitCrossfade();
+await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===1);await waitCrossfade();
+await page.evaluate(()=>window.filterContributors('verified'));await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===0);await waitCrossfade();await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
 await waitCrossfade();
 // Real contributor renderer: switching between populated chips must animate,
 // not just the single-row fixture used in the historic regression.
