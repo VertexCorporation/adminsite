@@ -76,7 +76,7 @@ function observeChannelVersions() {
         if(realtimeStops.has(id))continue;
         const uid=auth.currentUser.uid;
         try {
-            const unsub=db.collection('chatChannels').doc(id).onSnapshot(snap=>{
+            const unsub=db.collection('chatHints').doc(id).onSnapshot(snap=>{
                 if(auth?.currentUser?.uid!==uid || !snap.exists)return;
                 const ch=channels.find(ch=>ch.id===id);
                 if(!ch)return;
