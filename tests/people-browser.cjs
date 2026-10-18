@@ -20,7 +20,14 @@ await page.route('**/*',async route=>{const url=new URL(route.request().url());i
  return route.fulfill({body:url.pathname.endsWith('.json')?'{}':'',contentType:url.pathname.endsWith('.json')?'application/json':'text/plain'});
 });
 try{
- await page.goto('http://127.0.0.1:'+server.address().port,{waitUntil:'domcontentloaded'});await page.waitForSelector('.contributor-row');page.setDefaultTimeout(10000);
+ await page.goto('http://127.0.0.1:'+server.address().port,{waitUntil:'domcontentloaded'});await page.waitForSelector('.contributor-row',{timeout:12000}).catch(async error=>{
+  console.error('PERSONNEL_FIXTURE_DIAGNOSTICS',JSON.stringify({
+   pageErrors:errors,requests:requests.map(x=>x.name).slice(0,25),
+   visibleText:(await page.locator('body').innerText()).slice(0,1400),
+   hasFirebase:await page.evaluate(()=>Boolean(window.firebase))
+  }));
+  throw error;
+ });page.setDefaultTimeout(10000);
  const navigate=async panel=>{if(await page.locator('[data-target="tab-contributors"]').getAttribute('aria-expanded')!=='true')await page.locator('[data-target="tab-contributors"]').click();await page.locator('[data-nav-panel="'+panel+'"]').click();};
  await navigate('contributors.users');await page.getByText('Example Member',{exact:true}).waitFor();assert.equal(await page.locator('#vertex-status-form').count(),0);await page.locator('[data-user-row]').first().click();await page.locator('.people-details').waitFor();assert((await page.locator('.people-details').textContent()).includes('PRO'));assert.equal(await page.locator('#people-personnel-form').count(),0);await page.keyboard.press('Escape');await page.locator('.vx-drawer').waitFor({state:'detached'});
  await page.locator('#console-users-next').click();await page.getByText('Second Page',{exact:true}).waitFor();await page.locator('#console-users-previous').click();await page.getByText('Example Member',{exact:true}).waitFor();
