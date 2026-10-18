@@ -31,6 +31,7 @@ const DELIVERY_SESSION_KEY = 'vertex:notification:pending';
 let statusRequestId = null;
 let statusPollCount = 0;
 let statusPollTimer = null;
+let latestReceiptRequestId = null;
 const ntr = (tr,en) => getLang()==='tr'?tr:en;
 function deliveryNotice(message, action = null) {
     const submit = document.getElementById('submit-notification-btn');
@@ -68,6 +69,31 @@ function deliveryNotice(message, action = null) {
         }
     }
 }
+function appendReceiptCheck(message,requestId) {
+    latestReceiptRequestId=requestId;
+    deliveryNotice(message);
+    const notice=document.getElementById('notification-delivery-status');
+    if(!notice)return;
+    const check=document.createElement('button');
+    check.type='button';check.className='chrome-btn-outline';
+    check.style.marginLeft='8px';
+    check.textContent=ntr('Cihaz raporlarını güncelle','Refresh app reports');
+    check.onclick=async()=>{
+        if(latestReceiptRequestId!==requestId)return;
+        check.disabled=true;
+        try{
+            const {data}=await getNotificationDeliveryStatusFn({requestId});
+            if(latestReceiptRequestId!==requestId)return;
+            const users=Number(data.deviceReportedCount||0);
+            appendReceiptCheck(message+' · '+
+                ntr(`Uygulama tarafından raporlanan hesap: ${users}`,
+                    `Accounts reporting in-app handling: ${users}`),requestId);
+        }catch(error){
+            showToast(ntr('Cihaz raporları alınamadı.','App reports are unavailable.'),'warning');
+        }finally{check.disabled=false;}
+    };
+    notice.append(check);
+}
 function rememberDelivery(requestId) {
     try { sessionStorage.setItem(DELIVERY_SESSION_KEY, JSON.stringify({uid:auth.currentUser?.uid, requestId})); } catch {}
 }
@@ -85,7 +111,7 @@ async function checkDeliveryStatus(requestId, continuePolling=false) {
     try {
         const response=await getNotificationDeliveryStatusFn({requestId});
         if(requestId!==statusRequestId)return;
-        const {status,kind,successCount,failureCount,failureCodes}=response.data||{};
+        const {status,kind,successCount,failureCount,failureCodes,deviceReportedCount}=response.data||{};
         const errors=Object.entries(failureCodes||{}).filter(([,count])=>count>0)
             .slice(0,3).map(([code,count])=>`${code}: ${count}`).join(', ');
         if(status==='SCHEDULED'&&kind==='SCHEDULED'){
@@ -97,7 +123,11 @@ async function checkDeliveryStatus(requestId, continuePolling=false) {
             const msg=status==='NO_DELIVERIES'
                 ? ntr('FCM tarafından kabul edilen cihaz tokenı yok. Tokenları ve hata kodlarını incele.','FCM accepted no device tokens. Check tokens and failure codes.')
                 : ntr(`FCM ${successCount} tokenı kabul etti, ${failureCount} tokenı reddetti. Cihazda gösterilmesi ayrıca doğrulanmalıdır.`,`FCM accepted ${successCount} tokens and rejected ${failureCount}. Device display is not confirmed.`);
-            clearDelivery();deliveryNotice(errors?`${msg} ${errors}`:msg);
+            const receiptMsg=msg+' · '+
+                ntr(`Uygulama raporu: ${Number(deviceReportedCount||0)} hesap`,
+                    `App handling reports: ${Number(deviceReportedCount||0)} accounts`);
+            clearDelivery();
+            appendReceiptCheck(errors?`${receiptMsg} ${errors}`:receiptMsg,requestId);
             showToast(msg,status==='DELIVERED'?'success':'warning');
             return;
         }
