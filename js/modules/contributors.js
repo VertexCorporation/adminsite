@@ -6,6 +6,7 @@ import { changedContributorFields } from '../utils/contributor-edit.js';
 import { initVertexRoster, refreshRosterAccess } from './vertex-roster.js';
 import { displayDepartmentName, canonicalDepartment } from '../utils/departments.js';
 import { icon } from '../utils/icons.js';
+import { crossfade } from '../ui/transition.js';
 import { openDrawer, closeDrawer, confirmDialog, openPopover, closePopover } from './shell.js';
 import { createLoadingController, skeletonRows, createRequestGuard, setButtonLoading } from '../utils/loading.js';
 import { formatCertificateDate } from './certificates.js';
@@ -86,7 +87,6 @@ const verificationListeners=new Map();
 let activeFilter = 'all';
 let listContainer;
 let refreshBtn;
-let filterTransitionRevision=0,filterTransitionTimer=null,filterHeightTimer=null;
 
 export function initContributorsModule() {
     document.addEventListener('vertex:certificate-selector',openCertificateSelector);
@@ -189,31 +189,12 @@ async function loadContributors() {
 
 function transitionFilteredContributors() {
     if (!listContainer) return;
-    const currentRows=listContainer.querySelector('.contributor-table-rows');
-    const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    clearTimeout(filterTransitionTimer);
-    clearTimeout(filterHeightTimer);
-    const revision=++filterTransitionRevision;
-    if (!currentRows || reduced) { renderContributors(window.loadedContributors || []);return; }
-    // Preserve the old table's height during the crossfade, then release it.
-    listContainer.style.minHeight=listContainer.getBoundingClientRect().height+'px';
-    listContainer.classList.add('is-filter-transitioning');
-    filterTransitionTimer=setTimeout(()=>{
-        if(revision!==filterTransitionRevision)return;
-        renderContributors(window.loadedContributors || [],true);
-        listContainer.classList.remove('is-filter-transitioning');
-        filterHeightTimer=setTimeout(()=>{if(revision===filterTransitionRevision)listContainer.style.minHeight='';},180);
-    },110);
+    // Replace the live rows synchronously while the previous, inert rows fade out.
+    // crossfade() bounds the snapshot and cancels stale transitions on rapid filtering.
+    renderContributors(window.loadedContributors || [], true);
 }
 
 function renderContributors(contributors, fromFilter=false) {
-    if(!fromFilter){
-        ++filterTransitionRevision;
-        clearTimeout(filterTransitionTimer);
-        clearTimeout(filterHeightTimer);
-        listContainer?.classList.remove('is-filter-transitioning');
-        if(listContainer)listContainer.style.minHeight='';
-    }
     refreshRosterAccess();
     syncBirthYearFilters();
     const query = document.getElementById('contributor-search')?.value.toLowerCase().trim() || '';
@@ -229,7 +210,9 @@ function renderContributors(contributors, fromFilter=false) {
     const addButton=document.getElementById('add-manual-application');if(addButton)addButton.hidden=!canWrite;
     const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry){templateEntry.style.display=admin?'':'none';templateEntry.textContent=__('email_templates.title');}
     const headers = ['name','department','birthYear','status','applied','actions'];
-    loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row ${p.hasVerified?'is-verified':''}" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(birthYearLabel(p))}</span><span class="contributor-cell-status status-badge ${p.hasVerified?'success':''}">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.applicationDate?escapeHTML(formatCertificateDate(p.applicationDate)):p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${contributorState(p)==='active'?'is-active':contributorState(p)==='unknown'?'is-unknown':''}" data-membership="${escapeHTML(p.id)}" title="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-label="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-pressed="${isActiveContributor(p)}" data-vertex-state="${contributorState(p)}" ${!deploymentCapabilities.contributorMembershipWrites||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`));
+    const html = (`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row ${p.hasVerified?'is-verified':''}" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(birthYearLabel(p))}</span><span class="contributor-cell-status status-badge ${p.hasVerified?'success':''}">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.applicationDate?escapeHTML(formatCertificateDate(p.applicationDate)):p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${contributorState(p)==='active'?'is-active':contributorState(p)==='unknown'?'is-unknown':''}" data-membership="${escapeHTML(p.id)}" title="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-label="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-pressed="${isActiveContributor(p)}" data-vertex-state="${contributorState(p)}" ${!deploymentCapabilities.contributorMembershipWrites||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`));
+    if (fromFilter) crossfade(listContainer, () => loading.success(html), { duration: 190 });
+    else loading.success(html);
     listContainer.querySelectorAll('[data-membership]').forEach(b=>b.onclick=()=>toggleMembership(contributors.find(p=>p.id===b.dataset.membership),b));
     // Treat the entire row as a detail target without swallowing individual actions.
     // Keyboard users can activate a focused row with Enter or Space.
