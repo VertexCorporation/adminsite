@@ -279,7 +279,8 @@ export async function loadBackupHealthStatus() {
             }
             if (descEl) {
                 const dateStr = data.lastBackupDate ? new Date(data.lastBackupDate).toLocaleString() : '';
-                descEl.textContent = `${__('system.backup_last_success')} ${dateStr} (${Math.round((data.sizeBytes || 0) / 1024)} KB)`;
+                const restoreNote = !data.restoreVerifiedAt ? ` · ${__('system.backup_restore_unverified')}` : '';
+                descEl.textContent = `${__('system.backup_last_success')} ${dateStr} (${Math.round((data.sizeBytes || 0) / 1024)} KB)${restoreNote}`;
             }
         } else if (data?.status === 'unverifiable' || (data?.healthy === true && data?.integrityVerified !== true)) {
             if (badgeEl) {
