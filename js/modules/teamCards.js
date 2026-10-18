@@ -1,7 +1,7 @@
 // Public website directory (siteTeam kind=card). The public homepage and
 // this console now read/write the SAME collection and share fixed role codes.
 import {
-  listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn,
+  auth, listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn,
   getWeeklyStarsFn, setWeeklyStarsFn, getVertexContributorsFn
 } from '../core/firebase.js';
 import {escapeHTML, showToast, userErrorMessage, __, getLang, onLangChange} from '../utils/ui.js';
@@ -435,11 +435,11 @@ export function initTeamCardsPanel() {
     if (addBtn) {
         addBtn.onclick = () => openTeamCardDrawer(null);
     }
-    loadTeamCards();
+    if(auth.currentUser)void loadTeamCards().catch(()=>{});
     // Biographies are edited on each team card; the former founder-only
     // profile editor is intentionally no longer a second source of truth.
     const legacyProfile=document.getElementById('team-profile-container');
-    if(legacyProfile)legacyProfile.textContent='Biyografi ve bağlantıları düzenlemek için yukarıdaki ekip kartının düzenle butonunu kullanın.';
+    if(legacyProfile)legacyProfile.textContent=getLang()==='tr'?'Biyografi ve bağlantıları düzenlemek için yukarıdaki ekip kartının düzenle butonunu kullanın.':'Use the edit button on an executive card above to manage biographies and links.';
     initWeeklyStarsPanel();
     onLangChange(() => {
         renderTeamCardsList();
