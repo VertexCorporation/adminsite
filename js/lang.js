@@ -170,7 +170,7 @@ const LANG = {
     'cert.delivery_webhook_missing': 'Sunucunun Zapier webhook adresi ayarlı değil.',
     'cert.delivery_webhook_invalid': 'Sunucunun Zapier webhook adresi geçersiz.',
     'cert.delivery_signing_missing': 'Sertifika olaylarını imzalayan sunucu anahtarı ayarlı değil.',
-    'cert.delivery_transport_unavailable': 'Sunucunun Zapier bağlantısı doğrulanamadı.'
+    'cert.delivery_transport_unavailable': 'Sunucunun Zapier bağlantısı doğrulanamadı.',
     'errors.not_found': 'İstenen kayıt bulunamadı.',
     'errors.precondition': 'Bu işlem için gerekli koşullar henüz sağlanmadı.',
     'errors.network': 'Sunucuya ulaşılamıyor. Bağlantını kontrol edip tekrar dene.',
@@ -1127,7 +1127,7 @@ const LANG = {
     'cert.delivery_webhook_missing': 'The server is missing the Zapier webhook URL.',
     'cert.delivery_webhook_invalid': 'The server has an invalid Zapier webhook URL.',
     'cert.delivery_signing_missing': 'The server certificate-event signing credential is missing.',
-    'cert.delivery_transport_unavailable': 'The server could not verify its Zapier transport configuration.'
+    'cert.delivery_transport_unavailable': 'The server could not verify its Zapier transport configuration.',
     'errors.not_found': 'The requested record was not found.',
     'errors.precondition': 'The requirements for this action have not been met yet.',
     'errors.network': 'The server is unavailable. Check your connection and try again.',
