@@ -568,3 +568,17 @@
 @media(max-width:1000px){.model-catalog-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.model-catalog-filters .catalog-search{grid-column:1/-1}}
 @media(max-width:600px){.model-catalog-filters{grid-template-columns:minmax(0,1fr)}.model-catalog-filters .catalog-search{grid-column:auto}.model-series-shell{flex-wrap:wrap;gap:0}.model-series-shell>.series-group{width:100%;flex:auto}.model-series-shell>.series-actions{width:100%;padding:0 0 12px 14px}.model-bulk-toolbar button{flex:1 1 100px}}
 @media(prefers-reduced-motion:reduce){.model-series-shell .details-content{animation:none!important}}
+
+/* Native details retain keyboard semantics; content smoothly enters and exits
+   on engines supporting details-content transitions, with safe instant fallback. */
+.producer-group::details-content,.series-group::details-content{
+  display:block;block-size:0;opacity:0;overflow:clip;
+  transition:block-size .22s ease,opacity .18s ease;
+  interpolate-size:allow-keywords;
+}
+.producer-group[open]::details-content,.series-group[open]::details-content{block-size:auto;opacity:1}
+.producer-group>summary,.series-group>summary{border-radius:10px;padding:4px 8px}
+.producer-group>summary:focus-visible,.series-group>summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){
+ .producer-group::details-content,.series-group::details-content{transition:none}
+}
