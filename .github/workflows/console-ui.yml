@@ -10,6 +10,10 @@ on:
       - 'js/**'
       - 'index.html'
       - 'tests/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'assets/releases/**'
       - '.github/workflows/console-ui.yml'
 jobs:
   ui:
@@ -21,11 +25,16 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-      # The existing lockfile contains stale registry integrity values.
+      # Repository lockfile requires regeneration before replacing this install with npm ci.
       - run: npm install --no-package-lock
+      - run: npm run check:syntax
+      - run: npm run audit:i18n
       # Generate the immutable release in CI's temporary checkout only.
       # Never push the generated assets or deploy the website.
       - run: node scripts/release.cjs
+      - run: npm run verify:release
+      - name: Reject uncommitted HTML release drift
+        run: git diff --exit-code -- index.html
       # GitHub's adminsite runner cannot read the private Fulcrum repository.
       # Its four real-contract tests run separately in an isolated private
       # Fulcrum workflow with both repositories checked out (no copied backend).
@@ -42,6 +51,7 @@ jobs:
       - run: node --test tests/ui.test.cjs
       - run: npx playwright install --with-deps chromium
       - run: node tests/ui-browser.cjs
+      - run: node tests/people-browser.cjs
       - name: Full legacy application browser regression
         run: npm run test:browser
         env:
