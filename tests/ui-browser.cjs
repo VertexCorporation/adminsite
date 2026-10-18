@@ -101,11 +101,11 @@ const server = http.createServer((req,res)=>{
        next.classList.add('active');next.style.display='block';
      });
    });
-   assert.equal(await page.locator('#view-host > .ui-view-ghost').count(),1);
+   assert.equal(await page.locator('#view-host > .ui-view-ghost').count(),0);
    assert.equal(await page.locator('#old-tab #retained-value').inputValue(),'keep me');
-   assert.equal(await page.locator('#view-host > .ui-view-ghost').getAttribute('aria-hidden'),'true');
+   assert.equal(await page.locator('#old-tab').isVisible(),false);
+   assert.equal(await page.locator('#new-tab').isVisible(),true);
    assert(await page.locator('#new-tab').evaluate(el=>el.getAnimations().length>0));
-   assert(await page.locator('#view-host > .ui-view-ghost').evaluate(el=>el.getAnimations().length>0));
    await page.evaluate(()=>{
      const old=document.getElementById('old-tab'),next=document.getElementById('new-tab');
      window.uiTest.transition.animateViewSwitch(next,old,()=>{
@@ -113,7 +113,9 @@ const server = http.createServer((req,res)=>{
        old.classList.add('active');old.style.display='block';
      });
    });
-   assert.equal(await page.locator('#view-host > .ui-view-ghost').count(),1);
+   assert.equal(await page.locator('#view-host > .ui-view-ghost').count(),0);
+   assert.equal(await page.locator('#new-tab').isVisible(),false);
+   assert.equal(await page.locator('#old-tab').isVisible(),true);
    await page.waitForTimeout(270);
    assert.equal(await page.locator('#view-host > .ui-view-ghost').count(),0);
    assert.equal(await page.locator('#old-tab #retained-value').inputValue(),'keep me');
@@ -166,6 +168,15 @@ const server = http.createServer((req,res)=>{
    await page.waitForTimeout(300);
    assert.equal(await page.locator('#dense > .ui-crossfade-ghost').count(),0);
    assert.equal(await page.locator('#dense > .contributor-table-rows > .contributor-row').count(),1);
+   await page.evaluate(()=>{
+     const host=document.getElementById('dense');
+     window.uiTest.transition.crossfade(host,()=>{
+       host.querySelector(':scope > .contributor-table-rows').innerHTML=
+         '<div class="contributor-row">Incoming applicant</div>';
+     },{mode:'enter'});
+   });
+   assert.equal(await page.locator('#dense > .ui-crossfade-ghost').count(),0);
+   assert.equal(await page.locator('#dense > .contributor-table-rows').innerText(),'Incoming applicant');
    await page.waitForFunction(()=>document.getElementById('auto-discovered').dataset.fogBottom==='true');
    await page.evaluate(()=>{
      const host=document.getElementById('auto-discovered');

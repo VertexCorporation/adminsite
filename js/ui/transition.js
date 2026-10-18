@@ -18,8 +18,37 @@ function boundedClone(node, budget) {
     }
     return copy;
 }
-export function crossfade(container, mutate, { duration = 190, preserveHeight = true } = {}) {
+export function crossfade(container, mutate, { duration = 190, preserveHeight = true, mode = 'crossfade' } = {}) {
     running.get(container)?.();
+    // Applicant filtering is an update, not a navigation: never leave the
+    // outgoing list rendered over the new list.  An incoming-only opacity
+    // animation preserves the table geometry and does not clone form controls.
+    if (mode === 'enter') {
+        const oldRows = container.querySelector(':scope > .contributor-table-rows');
+        const scrollTop = oldRows?.scrollTop || 0;
+        const scrollLeft = oldRows?.scrollLeft || 0;
+        const hadContent = container.childElementCount > 0;
+        mutate();
+        const rows = container.querySelector(':scope > .contributor-table-rows');
+        if (rows) {
+            rows.scrollTop = Math.min(scrollTop, Math.max(0, rows.scrollHeight - rows.clientHeight));
+            rows.scrollLeft = scrollLeft;
+        }
+        if (!hadContent || !rows || !rows.isConnected || reducedMotion() ||
+            rows.getBoundingClientRect().height === 0) return;
+        const animation = rows.animate([{opacity:.82},{opacity:1}],
+            {duration:140,easing:'cubic-bezier(.2,.8,.2,1)'});
+        let finished = false;
+        const cancel = () => {
+            if (finished) return;
+            finished = true;
+            animation.cancel();
+            if (running.get(container) === cancel) running.delete(container);
+        };
+        running.set(container, cancel);
+        animation.finished.catch(()=>{}).finally(cancel);
+        return;
+    }
     const focus = document.activeElement;
     const activeField = focus && container.contains(focus) &&
         focus.matches?.('input,textarea,select,[contenteditable],button');
@@ -128,84 +157,51 @@ export function crossfade(container, mutate, { duration = 190, preserveHeight = 
 
 
 
-// Real, simultaneous exit/entrance between navigation tabs. The outgoing tab
-// remains the original hidden DOM; the inert snapshot cannot steal focus,
-// duplicate a submission, or destroy fields when navigation is rapid.
+// Never display a snapshot of the previously selected page. The old
+// crossfade ghost was layered above the destination and looked like extra
+// screens being visited, particularly during rapid navigation.
 const viewSwitches = new WeakMap();
-export function animateViewSwitch(from, to, mutate, {duration = 190} = {}) {
+export function animateViewSwitch(from, to, mutate, {duration = 135} = {}) {
     const host = to?.parentElement;
-    if (!host || !from || from === to || !from.classList.contains('active') ||
-        !from.isConnected || !to.isConnected || reducedMotion()) {
-        mutate();
-        return;
-    }
-    viewSwitches.get(host)?.();
-    const before = from.getBoundingClientRect();
-    const parent = host.getBoundingClientRect();
-    if (!before.width || !before.height) { mutate(); return; }
-
-    const budget = {remaining: 480};
-    const ghost = boundedClone(from, budget);
-    ghost.classList.add('ui-view-ghost', 'ui-crossfade-ghost');
-    ghost.removeAttribute('id');
-    ghost.setAttribute('aria-hidden','true');
-    ghost.inert = true;
-    ghost.querySelectorAll('[id],[name],[tabindex]').forEach(el=>{
-        el.removeAttribute('id');
-        el.removeAttribute('name');
-        el.removeAttribute('tabindex');
-    });
-    ghost.style.cssText = 'position:absolute;overflow:hidden;pointer-events:none;' +
-        'z-index:2;display:block;max-width:100%;' +
-        'left:' + (before.left-parent.left+host.scrollLeft) + 'px;' +
-        'top:' + (before.top-parent.top+host.scrollTop) + 'px;' +
-        'width:' + before.width + 'px;height:' + before.height + 'px;';
-    const originalPosition = host.style.position;
-    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
-
-    // Workspace rendering must see the entering flag before the new tab is
-    // activated; otherwise it creates a competing per-card animation.
-    to.classList.add('ui-tab-entering');
-    const hadFocus = from.contains(document.activeElement);
-    mutate();
-    if (hadFocus && !to.contains(document.activeElement)) {
+    // Cancel *before* mutating, including rapid/reduced-motion transitions.
+    if (host) viewSwitches.get(host)?.();
+    const hadFocus = !!from?.contains(document.activeElement);
+    if (to) to.classList.add('ui-tab-entering');
+    mutate(); // exactly one active tab in the live DOM, immediately
+    if (hadFocus && to && !to.contains(document.activeElement)) {
         if (!to.hasAttribute('tabindex')) to.tabIndex = -1;
         to.focus({preventScroll:true});
     }
-    host.appendChild(ghost);
-    const timing = {duration,easing:'cubic-bezier(.2,.8,.2,1)',fill:'both'};
-    const exit = ghost.animate([{opacity:1},{opacity:0}],timing);
-    const entry = to.animate(
-        [{opacity:0,transform:'translateY(3px)'},{opacity:1,transform:'translateY(0)'}],timing);
+    if (!host || !to?.isConnected || reducedMotion()) {
+        to?.classList.remove('ui-tab-entering');
+        return;
+    }
+    const animation = to.animate([{opacity:.86},{opacity:1}],
+        {duration,easing:'cubic-bezier(.2,.8,.2,1)'});
     let cleaned = false;
     const cleanup = () => {
         if (cleaned) return;
         cleaned = true;
-        ghost.remove();
+        animation.cancel();
         to.classList.remove('ui-tab-entering');
-        host.style.position = originalPosition;
-        if (viewSwitches.get(host) === cancel) viewSwitches.delete(host);
+        if (viewSwitches.get(host) === cleanup) viewSwitches.delete(host);
     };
-    const cancel = () => {exit.cancel();entry.cancel();cleanup();};
-    viewSwitches.set(host,cancel);
-    Promise.allSettled([exit.finished,entry.finished]).then(cleanup);
+    viewSwitches.set(host, cleanup);
+    animation.finished.catch(()=>{}).finally(cleanup);
 }
 
-// For navigation panels, keep the *real* DOM and its focus/listeners intact.
-// Crossfade is reserved for replaced content; navigation uses a cheap native
-// opacity entrance after the old panel becomes hidden.
+// Entrance from a state with no previously visible panel is equally free of
+// translation, so a page cannot jump while its data is hydrating.
 const viewAnimations = new WeakMap();
 export function animateViewEntry(view) {
     if (!view?.isConnected || reducedMotion()) return;
     viewAnimations.get(view)?.cancel();
     view.classList.add('ui-tab-entering');
-    const animation = view.animate(
-        [{opacity:0.35, transform:'translateY(4px)'},{opacity:1, transform:'translateY(0)'}],
-        {duration:190, easing:'cubic-bezier(.2,.8,.2,1)'}
-    );
-    viewAnimations.set(view, animation);
+    const animation = view.animate([{opacity:.86},{opacity:1}],
+        {duration:135,easing:'cubic-bezier(.2,.8,.2,1)'});
+    viewAnimations.set(view,animation);
     animation.finished.catch(()=>{}).finally(()=>{
-        if (viewAnimations.get(view)===animation) {
+        if (viewAnimations.get(view) === animation) {
             viewAnimations.delete(view);
             view.classList.remove('ui-tab-entering');
         }
