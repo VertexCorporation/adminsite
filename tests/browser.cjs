@@ -15,10 +15,17 @@ if(process.env.VERTEX_TRACE)await page.context().tracing.start({screenshots:true
 await page.addInitScript(()=>{
  localStorage.setItem('siteLang','en');
  const snapshot={docs:[],empty:true,exists:false,data:()=>({}),forEach:()=>{}};
+ // Seed a real policy fixture; production never invents write permissions.
+ const tabs=['contributors','models','news','notifications','events','subscriptions','system'];
+ const grants=level=>Object.fromEntries(tabs.map(tab=>[tab+'.*',level]));
+ const policy={revision:0,departments:{Core:{panels:grants('write')},Senatus:{panels:grants('read')}}};
+ const configSnapshot=()=>({exists:true,data:()=>policy});
+ const configDoc={get:async()=>configSnapshot(),onSnapshot:fn=>{setTimeout(()=>fn(configSnapshot()),0);return ()=>{};}};
  const chain={orderBy:()=>chain,where:()=>chain,limit:()=>chain,doc:()=>chain,get:async()=>snapshot,onSnapshot:fn=>{setTimeout(()=>fn(snapshot),0);return ()=>{};}};
+ const collection=name=>name==='config'?{...chain,doc:id=>id==='departmentPermissions'?configDoc:chain}:chain;
  const user={uid:'admin',email:'admin@example.invalid',displayName:'Local Admin',getIdTokenResult:async()=>({claims:window.__testClaims || {admin:true}}),getIdToken:async()=>'test-only',updateProfile:async()=>{}};
  const listeners=[];const auth={currentUser:user,onAuthStateChanged:fn=>{listeners.push(fn);setTimeout(()=>fn(user),10);return ()=>{};},signOut:async()=>{auth.currentUser=null;listeners.forEach(fn=>fn(null));},signInWithEmailAndPassword:async()=>{if(window.__testAuthError)throw Object.assign(new Error('Private authentication detail'),{code:window.__testAuthError});auth.currentUser=user;listeners.forEach(fn=>fn(user));}};
- window.firebase={apps:[],initializeApp:()=>{},auth:()=>auth,firestore:()=>({collection:()=>chain}),storage:()=>({}),functions:()=>({}),appCheck:()=>({activate:()=>{},getToken:async()=>({token:'fixture-app-check'})}),app:()=>({functions:()=>({httpsCallable:(name)=>async data=>{
+ window.firebase={apps:[],initializeApp:()=>{},auth:()=>auth,firestore:()=>({collection}),storage:()=>({}),functions:()=>({}),appCheck:()=>({activate:()=>{},getToken:async()=>({token:'fixture-app-check'})}),app:()=>({functions:()=>({httpsCallable:(name)=>async data=>{
    if(name==='getMyConsoleAccess')return {data:{uid:'admin',departments:['Core'],isAdmin:true,isCore:true,authzVersion:0}};
    const response=await fetch('https://'+name.toLowerCase()+'-o5h7dmtija-ew.a.run.app',{
      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:data||{}})
@@ -56,7 +63,10 @@ await page.route('**/*',async route=>{
   if(name==='getserverstatus')result={isUnderMaintenance:maintenanceState};
   if(name==='setserverstatus'){maintenanceState=route.request().postDataJSON().data.maintenanceEnabled;result={success:true};}
   if(name==='togglevertexstatus'){if(failMembership)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});const data=route.request().postDataJSON().data;const next=typeof data.expectedStatus==='boolean'?!data.expectedStatus:true;if(data.contributorId){const target=(people||[person]).find(p=>p.id===data.contributorId);if(target)target.membership.isVertex=next;}result={isVertex:next};}
-  if(name==='savedepartmentpermissions' && failPermissionSave)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture permission rejection'}})});
+  if(name==='savedepartmentpermissions'){
+    if(failPermissionSave)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture permission rejection'}})});
+    result={saved:true,revision:(route.request().postDataJSON()?.data?.expectedRevision||0)+1};
+  }
   if(name==='getvertexcontributors' && failContributorReadOnce-->0)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Temporary contributors service outage'}})});
   if(name==='listconsolechatchannels' && failChatReadOnce-->0)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Temporary chat service outage'}})});
   if(name==='getvertexcontributors'){
