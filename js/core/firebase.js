@@ -14,6 +14,7 @@ let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bu
 let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn;
 let getPanelPermissionsFn, listDepartmentPermissionHistoryFn, restoreDepartmentPermissionsFn;
 let listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn;
+let prepareModelImageCleanupFn, confirmModelImageCleanupFn;
 
 
 /**
@@ -86,15 +87,29 @@ async function callCallableOnce(name,data) {
         throw normalizeCallableError(error);
     }
 }
+let requestSequence=0;
+function classifyCallableError(error){
+    const code=String(error?.code||'').replace(/^functions\//,'');
+    if(['permission-denied','unauthenticated'].includes(code))return 'authorization';
+    if(['invalid-argument','failed-precondition'].includes(code))return 'validation';
+    if(['unavailable','deadline-exceeded','resource-exhausted'].includes(code))return 'transport';
+    if(['unimplemented','not-found'].includes(code))return 'missing-function';
+    return 'server';
+}
 async function callCallable(name,data) {
+    const started=Date.now(), requestId=Date.now().toString(36)+'-'+(++requestSequence).toString(36);
     const attempts=RETRYABLE_READS.has(name)?3:1;
     for(let attempt=0;attempt<attempts;attempt++){
         try{return await callCallableOnce(name,data);}
         catch(error){
             // Mutations are NEVER blindly resent: the server may have committed
             // even when a response times out.
-            if(attempt===attempts-1 || !TRANSIENT_CODES.has(error.code) || !auth?.currentUser)
+            if(attempt===attempts-1 || !TRANSIENT_CODES.has(error.code) || !auth?.currentUser){
+                console.error('[CONSOLE_OPERATION]',{operation:'firebase.callable',function:name,category:classifyCallableError(error),durationMs:Math.max(0,Date.now()-started),release:globalThis.document?.querySelector?.('meta[name="vertex-release"]')?.content||'development',requestId});
+                // No request body, user identity, credentials or remote technical message.
+                error.requestId=requestId;
                 throw error;
+            }
             await retryDelay(attempt===0?450:1200);
         }
     }
@@ -176,6 +191,8 @@ function initFirebase(firebaseConfig) {
     listSiteTeamFn = callable('listSiteTeam');
     setSiteTeamEntryFn = callable('setSiteTeamEntry');
     deleteSiteTeamEntryFn = callable('deleteSiteTeamEntry');
+    prepareModelImageCleanupFn = callable('prepareModelImageCleanup');
+    confirmModelImageCleanupFn = callable('confirmModelImageCleanup');
 }
 
 // Export the initializer function and all the service variables
@@ -229,6 +246,8 @@ export {
     listSiteTeamFn,
     setSiteTeamEntryFn,
     deleteSiteTeamEntryFn,
+    prepareModelImageCleanupFn,
+    confirmModelImageCleanupFn,
     getPanelPermissionsFn,
     listDepartmentPermissionHistoryFn,
     restoreDepartmentPermissionsFn
