@@ -186,14 +186,15 @@ await waitCrossfade();
 // Real contributor renderer: switching between populated chips must animate,
 // not just the single-row fixture used in the historic regression.
 await page.locator('#contributor-search').fill('');
-await page.evaluate(person=>{
+people=Array.from({length:85},(_,i)=>({
+  ...person,id:'filter-fixture-'+i,name:'Applicant '+i,
+  email:'applicant'+i+'@example.invalid',hasVerified:i%2===0
+}));
+await page.evaluate(fixtures=>{
  window.__savedContributors=window.loadedContributors;
- window.loadedContributors=Array.from({length:85},(_,i)=>({
-   ...person,id:'filter-fixture-'+i,name:'Applicant '+i,
-   email:'applicant'+i+'@example.invalid',hasVerified:i%2===0
- }));
+ window.loadedContributors=fixtures;
  window.filterContributors('all');
-},person);
+},people);
 await waitCrossfade();
 const listTopBefore=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().top);
 await page.evaluate(()=>window.filterContributors('verified'));
@@ -213,6 +214,7 @@ assert(filterTransition.height>=460,JSON.stringify(filterTransition));
 assert.equal(await page.locator('#contributors-list-container').evaluate(el=>el.style.minHeight),'');
 assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="verified"]').getAttribute('aria-pressed'),'true');
 await waitCrossfade();
+people=null;
 await page.evaluate(()=>{
  window.loadedContributors=window.__savedContributors;
  delete window.__savedContributors;
