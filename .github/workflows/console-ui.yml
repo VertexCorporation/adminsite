@@ -11,6 +11,8 @@ on:
       - 'index.html'
       - 'tests/**'
       - '.github/workflows/console-ui.yml'
+permissions:
+  contents: write
 jobs:
   ui:
     runs-on: ubuntu-24.04
@@ -46,3 +48,14 @@ jobs:
         run: npm run test:browser
         env:
           VERTEX_BROWSER: chromium
+      # One-time branch-only publication: immutable assets after every regression succeeds.
+      - name: publish verified sidebar release to hotfix branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/sidebar-titlecase-tr-en-20261018'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html assets/releases/
+          if ! git diff --cached --quiet; then
+            git commit -m "build: publish verified bilingual sidebar release"
+            git push origin HEAD:fix/sidebar-titlecase-tr-en-20261018
+          fi
