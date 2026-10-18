@@ -24,7 +24,7 @@ import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscri
 import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getCurrentUserAccess, getEffectivePanelLevel, initPanelMenus, PANELS } from './modules/roles.js';
 import { initSiteTeamPanel } from './modules/siteTeam.js';
 import { initTeamCardsPanel, loadTeamCards } from './modules/teamCards.js';
-import { updateGridVisibleCounts } from './modules/views.js';
+import { updateGridVisibleCounts, initAdaptiveGrids } from './modules/views.js';
 import { initUserMenu } from './modules/userMenu.js';
 import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
 
@@ -65,7 +65,7 @@ export function startApp(firebaseConfig) {
         ['home', initHomeModule],
         ['system-sections', initSystemSections],
         ['icons', initIcons],
-        ['adaptive-grid', updateGridVisibleCounts],
+        ['adaptive-grid', initAdaptiveGrids],
     ];
     // Intentionally not asynchronous: listeners are installed synchronously.
     for (const [name, initialize] of featureInitializers) {
