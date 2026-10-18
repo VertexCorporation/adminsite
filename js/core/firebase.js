@@ -38,9 +38,49 @@ async function getAttestationToken() {
     })();
     try{return await attestationPending;}finally{attestationPending=null;}
 }
+// Only idempotent READ endpoints may be retried automatically. Never retry a
+// mutation: an HTTP timeout can happen after the server has already committed it.
+const RETRYABLE_READS = new Set([
+    'getVertexContributors','listConsoleChatChannels','listConsoleChatMessages',
+    'listConsoleChatDirectory','getPanelPermissions','getMyConsoleAccess',
+    'listUserSubscriptions','listAdmins','listDepartmentUsers','listSiteTeam',
+    'listTeamCards','getServerStatus','getVertexCertificateDetails',
+    'getVertexCertificateEmailTemplates','getBackupHealthStatus',
+    'getTeamProfile','getWeeklyStars','previewContributorRoster'
+]);
+const TRANSIENT_CODES = new Set([
+    'functions/unavailable','functions/deadline-exceeded',
+    'functions/resource-exhausted','functions/internal'
+]);
+function deadline(promise, milliseconds) {
+    let timer;
+    return Promise.race([
+        Promise.resolve(promise),
+        new Promise((_,reject)=>{
+            timer=setTimeout(()=>{
+                const error=new Error('Authentication token request timed out');
+                error.code='functions/deadline-exceeded';
+                reject(error);
+            },milliseconds);
+        })
+    ]).finally(()=>clearTimeout(timer));
+}
+function retryDelay(ms) { return new Promise(resolve=>setTimeout(resolve,ms)); }
 async function callCallable(name, data) {
+    const attempts=RETRYABLE_READS.has(name)?3:1;
+    for(let attempt=0;attempt<attempts;attempt++){
+        try{return await callCallableOnce(name,data);}
+        catch(error){
+            if(attempt===attempts-1 || !TRANSIENT_CODES.has(error.code) || !auth?.currentUser)throw error;
+            // Bounded backoff, so temporary server/network failures recover without
+            // spawning overlapping requests or making users reload the site.
+            await retryDelay(attempt===0?450:1200);
+        }
+    }
+}
+async function callCallableOnce(name, data) {
     const user=auth?.currentUser;
-    const idToken=user?await user.getIdToken():null;
+    const idToken=user?await deadline(user.getIdToken(),10000):null;
     const appToken=user?await getAttestationToken():undefined;
     let res;try{res=await fetch(`https://${name.toLowerCase()}-o5h7dmtija-ew.a.run.app`,{
         method:'POST',headers:{'Content-Type':'application/json',...(idToken?{Authorization:'Bearer '+idToken}:{}),...(appToken?{'X-Firebase-AppCheck':appToken}:{})},body:JSON.stringify({data:data??{}}),signal:AbortSignal.timeout(20000)

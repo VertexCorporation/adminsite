@@ -61,6 +61,26 @@ let loading;
 let inFlight;
 let inFlightContext;
 let lastLoadFailed=false;
+let transientFailures=0;
+let reloadTimer=null;
+let lastFailureAt=0;
+function retryFailedContributors() {
+    if(!lastLoadFailed || !auth?.currentUser || document.hidden ||
+       getEffectivePanelLevel('contributors.list')==='none')return;
+    if(Date.now()-lastFailureAt<10000)return;
+    void fetchContributorsData();
+}
+function scheduleContributorRetry() {
+    clearTimeout(reloadTimer);
+    if(transientFailures>2)return; // Bounded automatic recovery, manual Retry remains.
+    const uid=auth?.currentUser?.uid;
+    if(!uid)return;
+    reloadTimer=setTimeout(()=>{
+        reloadTimer=null;
+        if(auth?.currentUser?.uid===uid && !document.hidden && lastLoadFailed)
+            void fetchContributorsData();
+    },transientFailures*4500);
+}
 const membershipPending=new Set();
 const verificationListeners=new Map();
 let activeFilter = 'all';
@@ -86,6 +106,26 @@ export function initContributorsModule() {
     if (refreshBtn) {
         refreshBtn.addEventListener('click', fetchContributorsData);
     }
+    window.addEventListener('focus',retryFailedContributors);
+    document.addEventListener('visibilitychange',retryFailedContributors);
+    document.addEventListener('vertex:workspace',event=>{
+        if(event.detail?.keys?.includes('contributors.list'))retryFailedContributors();
+    });
+    // A different signed-in person must never see an earlier session's cached
+    // applications while a fresh request is in flight or temporarily unavailable.
+    let lastUid=auth?.currentUser?.uid||null;
+    auth?.onAuthStateChanged(user=>{
+        const uid=user?.uid||null;
+        if(uid===lastUid)return;
+        lastUid=uid;
+        requestGuard.begin();
+        clearTimeout(reloadTimer);reloadTimer=null;
+        inFlight=null;inFlightContext=null;lastLoadFailed=false;transientFailures=0;
+        window.loadedContributors=null;
+        loading.destroy();
+        listContainer.replaceChildren();
+        if(refreshBtn)setButtonLoading(refreshBtn,false);
+    });
 
 }
 
@@ -120,7 +160,8 @@ async function loadContributors() {
         if (!requestGuard.isCurrent(request)) return;
         loading.destroy();
         const contributors = result.data.contributors || [];
-        lastLoadFailed=false;
+        lastLoadFailed=false;transientFailures=0;
+        clearTimeout(reloadTimer);reloadTimer=null;
         window.loadedContributors = contributors;
         renderContributors(contributors);
         const uid=auth.currentUser?.uid;
@@ -131,7 +172,12 @@ async function loadContributors() {
     } catch (error) {
         console.error('[CONTRIBUTORS] Failed to fetch data:', error);
         if (!requestGuard.isCurrent(request)) return;
-        lastLoadFailed=true;
+        lastLoadFailed=true;lastFailureAt=Date.now();
+        if(['functions/unavailable','functions/deadline-exceeded',
+            'functions/resource-exhausted','functions/internal'].includes(error.code)) {
+            transientFailures++;
+            scheduleContributorRetry();
+        }
         if(window.loadedContributors){let error=listContainer.querySelector('.contributors-inline-error');if(!error){error=document.createElement('div');error.className='state-block contributors-inline-error';listContainer.prepend(error);}error.innerHTML=`<p data-i18n="contributors.load_error">${__('contributors.load_error')}</p><button class="chrome-btn-outline" data-i18n="common.retry">${__('common.retry')}</button>`;error.querySelector('button').onclick=fetchContributorsData;listContainer.removeAttribute('aria-busy');}
         else {loading.error(__('contributors.load_error'),fetchContributorsData,__('common.retry'));listContainer.querySelector('h4').dataset.i18n='contributors.load_error';listContainer.querySelector('button').dataset.i18n='common.retry';}
         showToast(() => __('contributors.load_error'), 'error');

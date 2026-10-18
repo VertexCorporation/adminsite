@@ -108,7 +108,11 @@ export function startApp(firebaseConfig) {
         const keys=event.detail.keys;
         const tasks=[['contributors.list',fetchContributorsData],['models.library',fetchFullModelsData],['models.manage',fetchFullModelsData],['news.published',listenForArticles],['news.editor',listenForArticles],['notifications.scheduled',listenForScheduledTasks],['subscriptions.list',refreshSubscriptions],['system.deptUsers',refreshDepartmentUsers],['system.adminList',loadAdminsList],['system.serverStatus',initializeMaintenanceStatus],['system.teamLog',loadTeamCards],['system.deptPerms',loadRolesWorkspace],['chat.channels',refreshConsoleChat]];
         for(const [key,load] of tasks)if(keys.includes(key)&&(key==='chat.channels'||getEffectivePanelLevel(key)!=='none')&&!loadedWorkspaces.has(load)){
-            loadedWorkspaces.add(load);try{Promise.resolve(load()).catch(error=>console.error('[WORKSPACE] Load failed',key,error.code));}catch(error){console.error('[WORKSPACE] Load failed',key,error.code);}
+            loadedWorkspaces.add(load);
+            Promise.resolve().then(load).catch(error=>{
+                loadedWorkspaces.delete(load);
+                console.error('[WORKSPACE] Load failed',key,error.code||'unknown');
+            });
         }
     });
     // --- Step 3: Set up the Core Authentication State Listener ---
