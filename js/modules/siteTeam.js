@@ -24,8 +24,8 @@ async function loadTeam() {
     if (!el('team-mod-list')) return;
     const finishLoading = beginPanelLoading(el('team-mod-list'));
     try {
-        const result = await listSiteTeamFn({});
-        mods = (result.data && result.data.mods) || [];
+        const result = await listSiteTeamFn({manage:true});
+        mods = (result.data && result.data.honors) || [];
         render();
     } catch (error) {
         const list = el('team-mod-list');
@@ -92,7 +92,7 @@ async function add() {
     const btn = el('team-mod-add');
     setButtonLoading(btn,true);
     try {
-        await setSiteTeamEntryFn({ kind: 'mod', name });
+        await setSiteTeamEntryFn({ kind: 'honor', name });
         input.value = '';
         showToast(() => __('team.added'), 'success');
         await loadTeam();
@@ -115,7 +115,7 @@ async function rename(id) {
     const button=list.querySelector('.team-entry-save[data-save="'+CSS.escape(id)+'"]');
     setButtonLoading(button,true);
     try {
-        await setSiteTeamEntryFn({ kind: 'mod', name, id });
+        await setSiteTeamEntryFn({ kind: 'honor', name, id });
         editingId = null;
         showToast(() => __('team.updated'), 'success');
         await loadTeam();
