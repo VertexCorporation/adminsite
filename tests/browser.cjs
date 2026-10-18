@@ -190,6 +190,32 @@ await page.evaluate(()=>{document.getElementById('contributors-list-container').
 people=[{...person,name:'Old Response'}];contributorDelay=500;
 await page.evaluate(()=>{import('/js/modules/contributors.js').then(m=>m.fetchContributorsData());});await page.waitForTimeout(75);people=[{...person,name:'Latest Response'}];contributorDelay=0;
 await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});await page.waitForTimeout(550);assert.equal(await page.locator('.contributor-name').innerText(),'Old Response');await page.locator('#refresh-contributors-btn').click();await page.waitForFunction(()=>document.querySelector('.contributor-name')?.textContent==='Latest Response');people=null;note('Concurrent refreshes coalesce and subsequent refresh loads latest data');
+// Draft-preview integration: the real-site iframe handshake may not trigger
+// publication or registration, and must deliver unsaved form edits securely.
+await page.route('https://events.vertexishere.com/**',route=>route.fulfill({
+ contentType:'text/html',
+ body:'<!doctype html><html><body><script>'+
+ 'const origin=new URL(document.referrer).origin;'+
+ 'window.addEventListener("message",e=>{if(e.origin!==origin||e.data?.type!=="vertex:event-preview:render")return;'+
+ 'document.body.textContent=e.data.event.title;'+
+ 'parent.postMessage({type:"vertex:event-preview:rendered",version:1,id:e.data.event.id},origin);});'+
+ 'parent.postMessage({type:"vertex:event-preview:ready",version:1},origin);'+
+ '<\\/script></body></html>'
+}));
+await selectTab('events');
+await page.locator('[data-nav-panel="events.editor"]').click();
+await page.locator('#event-id').fill('preview_fixture');
+await page.locator('#event-title').fill('Unpublished draft preview');
+await page.locator('#event-desc').fill('Draft details');
+await page.locator('#event-date').fill('2099-06-10');
+await page.locator('#event-location').fill('Online');
+const callsBeforePreview=calls.length;
+await page.locator('#events-preview').click();
+await page.waitForSelector('#events-preview-content .ui-eventsite-frame:not([hidden])');
+assert.equal(await page.frameLocator('#events-preview-content iframe').locator('body').innerText(),
+  'Unpublished draft preview');
+assert.equal(calls.length,callsBeforePreview,'Preview must never persist or publish drafts');
+note('Eventsite draft iframe uses origin-checked postMessage without publication');
 await selectTab('models');await page.locator('[data-model-create]').click();await page.locator('#model-id').fill('fixture-model');assert.equal(await page.locator('#model-id').inputValue(),'fixture-model');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Model editor drawer remains editable');
 await page.locator('#manual-models-list-container .model-actions-trigger').click();await page.locator('.model-menu .menu-item').filter({hasText:'Translations'}).click();await page.waitForSelector('#translation-modal-overlay');assert(await page.locator('#translation-modal-overlay input').count()>0);await page.keyboard.press('Escape');await page.waitForSelector('.vx-modal',{state:'detached'});await page.locator('[data-model-publish]').click();await page.waitForSelector('.confirm-ok');await page.locator('.confirm-cancel').click();assert(!calls.includes('updatemodelslist'));await page.locator('[data-model-publish]').click();await page.waitForSelector('.confirm-ok');await page.locator('.confirm-ok').click();await page.waitForTimeout(150);assert(calls.includes('updatemodelslist'));note('Catalog actions, translation focus surface and explicit publish confirmation (mock)');
 for(const width of [360,1440]){await page.setViewportSize({width,height:900});for(const id of ['models','news','notifications','subscriptions','chat','system']){await selectTab(id);await page.waitForTimeout(300);if(process.env.VERTEX_SCREENSHOTS){fs.mkdirSync(path.resolve(root,process.env.VERTEX_SCREENSHOTS),{recursive:true});await page.screenshot({path:path.resolve(root,process.env.VERTEX_SCREENSHOTS,`vertex-${id}-${width}.png`),fullPage:true});}}}await selectTab('news');for(const id of ['title-en','title-tr','summary-en','summary-tr','content-en','content-tr'])await page.locator('#'+id).fill('Fixture Article');for(const lang of ['en','tr'])await page.locator('#cover-image-'+lang).setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from('fixture')});await page.locator('#news-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert(calls.includes('createnewsarticle'));note('News image upload and publish payload remain functional (mock)');
