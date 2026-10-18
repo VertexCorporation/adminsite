@@ -75,13 +75,13 @@ const note=x=>{checks.push(x);console.log('PASS',x);};
 // fade-in after the outgoing tab has disappeared.
 await page.locator('.dock-btn[data-target="tab-news"]').click();
 const navMotion=await page.evaluate(()=>{
- const host=document.querySelector('.app-main'),ghost=host.querySelector(':scope > .ui-view-ghost'),incoming=document.getElementById('tab-news');
+ const host=document.getElementById('tab-scroll-container'),ghost=host.querySelector(':scope > .ui-view-ghost'),incoming=document.getElementById('tab-news');
  return {ghost:!!ghost,inert:ghost?.inert,outgoing:ghost?.getAnimations().length,incoming:incoming.getAnimations().length,liveOld:!!document.getElementById('tab-contributors')};
 });
 assert(navMotion.ghost&&navMotion.inert&&navMotion.outgoing>0&&navMotion.incoming>0&&navMotion.liveOld,JSON.stringify(navMotion));
-await page.waitForFunction(()=>!document.querySelector('.app-main > .ui-view-ghost'));
+await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
 await page.locator('.dock-btn[data-target="tab-contributors"]').click();
-await page.waitForFunction(()=>!document.querySelector('.app-main > .ui-view-ghost'));
+await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
 note('Real navigation animates outgoing and incoming tabs simultaneously without replacing live forms');
 const issueCount=()=>calls.filter(n=>n==='issuevertexcertificate').length;
 const openCert=async()=>{if(await page.locator('.certificate-drawer').count()){await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});}await page.waitForSelector('.vx-popover.is-closing',{state:'detached'});await page.waitForSelector('.vx-modal[aria-hidden=true]',{state:'detached'});await page.locator('.certificate-manage-btn').first().click();await page.waitForSelector('[data-award]');};
