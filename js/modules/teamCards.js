@@ -17,8 +17,12 @@ import {
     getTeamProfileFn,
     setTeamProfileFn,
     getWeeklyStarsFn,
-    setWeeklyStarsFn
+    setWeeklyStarsFn,
+    setSiteTeamEntryFn,
+    getVertexContributorsFn
 } from '../core/firebase.js';
+import { isoWeek } from '../utils/isoWeek.js';
+import { showLoadError } from '../ui/states.js';
 import { escapeHTML, sanitizeHTML, showToast, userErrorMessage, __, getLang, onLangChange } from '../utils/ui.js';
 import { icon } from '../utils/icons.js';
 import { openDrawer, closeDrawer, confirmDialog } from './shell.js';
@@ -31,6 +35,9 @@ export const POSITIONS = Object.freeze([
 
 let teamCards = [];
 let cardsLoading = false;
+let cardsLoaded = false;
+let cardsError = null;
+let boardCapacity = POSITIONS.length;
 
 /**
  * Ekip kartları listesini Firestore'dan çeker ve ekrana çizer.
@@ -40,22 +47,33 @@ export async function loadTeamCards() {
     if (!listEl) return;
 
     cardsLoading = true;
+    cardsError = null;
     const addBtn = document.getElementById('add-team-card-btn');
+    if (addBtn && !cardsLoaded) addBtn.disabled = true;
+    if (!cardsLoaded) listEl.innerHTML = `<p class="state-block">${__('common.loading')}</p>`;
     const emptyEl = document.getElementById('team-cards-empty');
 
     try {
         const { data } = await listTeamCardsFn({});
-        teamCards = Array.isArray(data?.cards) ? data.cards : [];
+        if (!Array.isArray(data?.cards)) throw new Error('Invalid team cards response');
+        teamCards = data.cards;
+        boardCapacity = Number.isInteger(data.maxAllowed) ? data.maxAllowed : POSITIONS.length;
+        cardsLoaded = true;
     } catch (err) {
-        console.warn('[TEAM_CARDS] Could not fetch cards from backend, using current state:', err);
+        cardsError = err;
+        console.warn('[TEAM_CARDS] Failed to refresh board cards:', err);
     } finally {
         cardsLoading = false;
     }
 
     renderTeamCardsList();
+    if (cardsError) {
+        if (emptyEl) emptyEl.hidden = true;
+        showLoadError(listEl, () => userErrorMessage(cardsError), loadTeamCards, {staleSelector:'.team-list-row'});
+    }
 
     if (addBtn) {
-        const isFull = teamCards.length >= 10;
+        const isFull = !cardsLoaded || teamCards.length >= boardCapacity;
         addBtn.disabled = isFull;
         addBtn.title = isFull ? __('team_cards.all_filled') : __('team_cards.add_btn');
     }
@@ -68,7 +86,7 @@ function renderTeamCardsList() {
 
     if (!teamCards.length) {
         listEl.innerHTML = '';
-        if (emptyEl) emptyEl.hidden = false;
+        if (emptyEl) emptyEl.hidden = !cardsLoaded || Boolean(cardsError);
         return;
     }
 
@@ -132,8 +150,8 @@ function renderTeamCardsList() {
                 showToast(() => __('team_cards.deleted'), 'success');
                 const addBtn = document.getElementById('add-team-card-btn');
                 if (addBtn) {
-                    addBtn.disabled = teamCards.length >= 10;
-                    addBtn.title = teamCards.length >= 10 ? __('team_cards.all_filled') : __('team_cards.add_btn');
+                    addBtn.disabled = teamCards.length >= boardCapacity;
+                    addBtn.title = teamCards.length >= boardCapacity ? __('team_cards.all_filled') : __('team_cards.add_btn');
                 }
             } catch (err) {
                 showToast(() => userErrorMessage(err), 'error');
@@ -285,6 +303,13 @@ export function openTeamCardDrawer(cardToEdit = null) {
                 }
             };
 
+            const selectedFile = photoInput.files?.[0];
+            if (selectedFile) {
+                const imageData = selectedPhoto.split(',')[1];
+                if (!imageData) throw new Error('Invalid photo content');
+                const uploaded = await setSiteTeamEntryFn({kind:'photo', imageData, contentType:selectedFile.type});
+                payload.photoUrl = uploaded.data.imageUrl;
+            }
             await setTeamCardFn(payload);
             closeDrawer();
             showToast(() => __('team_cards.saved'), 'success');
