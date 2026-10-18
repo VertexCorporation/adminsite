@@ -99,7 +99,11 @@ for(const width of [360,390,768,1024,1440,1920]){
    if(dims.scroll>dims.w+1)console.error(await page.evaluate(()=>[...document.querySelectorAll("body *")].filter(el=>el.getBoundingClientRect().right>innerWidth+1).map(el=>({tag:el.tagName,id:el.id,cls:el.className,right:el.getBoundingClientRect().right})).slice(0,20)));assert(dims.scroll<=dims.w+1,`${width}/${theme}/${id}: overflow ${dims.scroll}`);
   }
   await selectTab('contributors');if(process.env.VERTEX_SCREENSHOTS){await page.waitForTimeout(250);fs.mkdirSync(process.env.VERTEX_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.VERTEX_SCREENSHOTS,`before-${width}-${theme}.png`)});}await openCert();
-  await page.waitForTimeout(200);const box=await page.locator('.certificate-drawer').boundingBox();assert(box.x>=0&&box.x+box.width<=width+1&&box.y>=0&&box.y+box.height<=901,JSON.stringify(box));
+  await page.waitForFunction(()=>{
+   const r=document.querySelector('.certificate-drawer')?.getBoundingClientRect();
+   return !!r&&r.left>=-0.5&&r.right<=innerWidth+0.5&&r.top>=-0.5&&r.bottom<=innerHeight+0.5;
+  },null,{timeout:4000});
+  const box=await page.locator('.certificate-drawer').boundingBox();assert(box.x>=0&&box.x+box.width<=width+1&&box.y>=0&&box.y+box.height<=901,JSON.stringify(box));
   if(process.env.VERTEX_SCREENSHOTS){fs.mkdirSync(process.env.VERTEX_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.VERTEX_SCREENSHOTS,`vertex-${width}-${theme}.png`)});}
   await page.keyboard.press('Escape');
  }
