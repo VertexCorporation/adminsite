@@ -664,7 +664,7 @@ function initCatalogFilters(){
       toolbar.querySelector('#model-catalog-clear').onclick=()=>{catalogSelection.clear();renderAllModelsExplorer();};
       toolbar.querySelector('#model-catalog-copy').onclick=async()=>{
         const ids=[...catalogSelection].map(i=>catalogRows[i]?.model.id).filter(Boolean);
-        try{await navigator.clipboard.writeText(ids.join('\\n'));showToast(()=>catalogText('Model kimlikleri kopyalandı','Model IDs copied'),'success');}
+        try{await navigator.clipboard.writeText(ids.join('\n'));showToast(()=>catalogText('Model kimlikleri kopyalandı','Model IDs copied'),'success');}
         catch(error){showToast(()=>userErrorMessage(error),'error');}
       };
       updateCatalogSelection();
