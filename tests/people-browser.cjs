@@ -20,7 +20,10 @@ await page.route('**/*',async route=>{const url=new URL(route.request().url());i
  return route.fulfill({body:url.pathname.endsWith('.json')?'{}':'',contentType:url.pathname.endsWith('.json')?'application/json':'text/plain'});
 });
 try{
- await page.goto('http://127.0.0.1:'+server.address().port,{waitUntil:'domcontentloaded'});await page.waitForSelector('.contributor-row',{timeout:12000}).catch(async error=>{
+ await page.goto('http://127.0.0.1:'+server.address().port,{waitUntil:'domcontentloaded'});
+ // Contributor data loads on workspace entry, not at the initial home screen.
+ await page.locator('.dock-btn[data-target="tab-contributors"]').click();
+ await page.waitForSelector('.contributor-row',{timeout:12000}).catch(async error=>{
   console.error('PERSONNEL_FIXTURE_DIAGNOSTICS',JSON.stringify({
    pageErrors:errors,requests:requests.map(x=>x.name).slice(0,25),
    visibleText:(await page.locator('body').innerText()).slice(0,1400),
