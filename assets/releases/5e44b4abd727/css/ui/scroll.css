@@ -1,0 +1,44 @@
+/* Single owner for vertical, horizontal and two-axis fades.
+   Only data-scoped, observed internal scroll regions receive a mask. */
+@property --fog-top { syntax:'<length>'; inherits:false; initial-value:0px; }
+@property --fog-bottom { syntax:'<length>'; inherits:false; initial-value:0px; }
+@property --fog-left { syntax:'<length>'; inherits:false; initial-value:0px; }
+@property --fog-right { syntax:'<length>'; inherits:false; initial-value:0px; }
+.scroll-fog, .scroll-fog-x {
+    --fog-top:0px; --fog-bottom:0px;
+    --fog-left:0px; --fog-right:0px;
+    --fog-edge:26px;
+    transition: --fog-top var(--motion-normal) var(--ease-standard),
+                --fog-bottom var(--motion-normal) var(--ease-standard),
+                --fog-left var(--motion-normal) var(--ease-standard),
+                --fog-right var(--motion-normal) var(--ease-standard);
+}
+.scroll-fog[data-fog-top="true"] { --fog-top:var(--fog-edge); }
+.scroll-fog[data-fog-bottom="true"] { --fog-bottom:var(--fog-edge); }
+.scroll-fog-x[data-fog-left="true"] { --fog-left:var(--fog-edge); }
+.scroll-fog-x[data-fog-right="true"] { --fog-right:var(--fog-edge); }
+.scroll-fog:not(.scroll-fog-x) {
+    mask-image:linear-gradient(to bottom,transparent,#000 var(--fog-top),
+        #000 calc(100% - var(--fog-bottom)),transparent);
+    -webkit-mask-image:linear-gradient(to bottom,transparent,#000 var(--fog-top),
+        #000 calc(100% - var(--fog-bottom)),transparent);
+}
+.scroll-fog-x:not(.scroll-fog) {
+    mask-image:linear-gradient(to right,transparent,#000 var(--fog-left),
+        #000 calc(100% - var(--fog-right)),transparent);
+    -webkit-mask-image:linear-gradient(to right,transparent,#000 var(--fog-left),
+        #000 calc(100% - var(--fog-right)),transparent);
+}
+.scroll-fog.scroll-fog-x {
+    mask-image:
+        linear-gradient(to right,transparent,#000 var(--fog-left),#000 calc(100% - var(--fog-right)),transparent),
+        linear-gradient(to bottom,transparent,#000 var(--fog-top),#000 calc(100% - var(--fog-bottom)),transparent);
+    mask-composite:intersect;
+    -webkit-mask-image:
+        linear-gradient(to right,transparent,#000 var(--fog-left),#000 calc(100% - var(--fog-right)),transparent),
+        linear-gradient(to bottom,transparent,#000 var(--fog-top),#000 calc(100% - var(--fog-bottom)),transparent);
+    -webkit-mask-composite:source-in;
+}
+@media (prefers-reduced-motion:reduce) {
+    .scroll-fog,.scroll-fog-x { transition:none; }
+}
