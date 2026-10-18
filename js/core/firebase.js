@@ -66,12 +66,27 @@ function deadline(promise, milliseconds) {
     ]).finally(()=>clearTimeout(timer));
 }
 function retryDelay(ms) { return new Promise(resolve=>setTimeout(resolve,ms)); }
+let requestSequence=0;
+function classifyCallableError(error){
+    const code=String(error?.code||'').replace(/^functions\//,'');
+    if(['permission-denied','unauthenticated'].includes(code))return 'authorization';
+    if(['invalid-argument','failed-precondition'].includes(code))return 'validation';
+    if(['unavailable','deadline-exceeded','resource-exhausted'].includes(code))return 'transport';
+    if(code==='unimplemented'||(code==='not-found'&&error?.httpStatus===404))return 'missing-function';
+    return 'server';
+}
 async function callCallable(name, data) {
+    const started=Date.now(), requestId=Date.now().toString(36)+'-'+(++requestSequence).toString(36);
     const attempts=RETRYABLE_READS.has(name)?3:1;
     for(let attempt=0;attempt<attempts;attempt++){
         try{return await callCallableOnce(name,data);}
         catch(error){
-            if(attempt===attempts-1 || !TRANSIENT_CODES.has(error.code) || !auth?.currentUser)throw error;
+            if(attempt===attempts-1 || !TRANSIENT_CODES.has(error.code) || !auth?.currentUser){
+                console.error('[CONSOLE_OPERATION]',{operation:'firebase.callable',function:name,category:classifyCallableError(error),durationMs:Math.max(0,Date.now()-started),release:globalThis.document?.querySelector?.('meta[name="vertex-release"]')?.content||'development',requestId});
+                // Never log the request body, ID token, remote error message or stack.
+                error.requestId=requestId;
+                throw error;
+            }
             // Bounded backoff, so temporary server/network failures recover without
             // spawning overlapping requests or making users reload the site.
             await retryDelay(attempt===0?450:1200);
@@ -92,7 +107,7 @@ async function callCallableOnce(name, data) {
         const e=new Error(err.message||'Callable response failed');e.code='functions/'+status.toLowerCase().replaceAll('_','-');e.httpStatus=res.status;e.details=err.details;
         // Compatibility with the exact pre-code response of the deployed certificate service.
         if(name==='issueVertexCertificate'&&status==='FAILED_PRECONDITION'&&err.message==='Expanded issuance awaits certificate assets and verified Zapier configuration.')e.details={reason:'certificate-delivery-not-ready'};
-        console.error(`[CALLABLE] ${name}: HTTP ${res.status} ${e.code}`);throw e;
+        throw e;
     }
     return {data:json.result};
 }

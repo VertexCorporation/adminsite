@@ -180,6 +180,19 @@ export function openPopover(anchor, opts = {}) {
    DRAWER (sağ panel)
    ================================================================== */
 
+// Central Tab trap also handles dynamically disabled controls and focus escaping
+// via a removed async form field. It never includes hidden/inert elements.
+function trapDialogTab(root,event){
+    if(event.key!=='Tab')return;
+    const items=[...root.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+        .filter(el=>!el.closest('[inert],[aria-hidden="true"]')&&el.getClientRects().length);
+    if(!items.length){event.preventDefault();root.focus({preventScroll:true});return;}
+    const first=items[0],last=items[items.length-1],active=document.activeElement;
+    if(!root.contains(active)){event.preventDefault();(event.shiftKey?last:first).focus({preventScroll:true});}
+    else if(event.shiftKey&&active===first){event.preventDefault();last.focus({preventScroll:true});}
+    else if(!event.shiftKey&&active===last){event.preventDefault();first.focus({preventScroll:true});}
+}
+
 let activeDrawer = null;
 
 export function closeDrawer(restoreFocus = true) {
@@ -205,11 +218,13 @@ export function closeDrawer(restoreFocus = true) {
  * @returns {HTMLElement} drawer body.
  */
 export function openDrawer(opts = {}) {
+    const previousDrawerFocus=activeDrawer?.previouslyFocused;
     if (activeDrawer) closeDrawer(false);
     closePopover({ restoreFocus: true });
 
-    const previouslyFocused = document.activeElement;
+    const previouslyFocused = previousDrawerFocus && document.contains(previousDrawerFocus) ? previousDrawerFocus : document.activeElement;
     const root = document.createElement('div');
+    root.tabIndex=-1;
     root.className = 'vx-drawer';
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
@@ -247,12 +262,7 @@ export function openDrawer(opts = {}) {
     const onKey = (e) => {
         if (activeModal || activePopover) return;
         if (e.key === 'Escape') { e.stopPropagation(); closeDrawer(); }
-        if (e.key === 'Tab') {
-            const items=[...root.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled])')];
-            const first=items[0],last=items[items.length-1];
-            if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
-            else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
-        }
+        trapDialogTab(root,e);
     };
     document.addEventListener('keydown', onKey);
     scrim.addEventListener('mousedown', () => closeDrawer());
@@ -294,15 +304,17 @@ export function closeModal() {
  * @returns {HTMLElement} modal body.
  */
 export function openModal(opts = {}) {
+    const previousModalFocus=activeModal?.previouslyFocused;
     if (activeModal) closeModal();
     document.querySelectorAll('.vx-modal[aria-hidden=true],.vx-overlay.is-closing').forEach(surface=>surface.remove());
     closePopover({ restoreFocus: true });
 
-    const previouslyFocused = document.activeElement;
+    const previouslyFocused = previousModalFocus && document.contains(previousModalFocus) ? previousModalFocus : document.activeElement;
     const overlay = document.createElement('div');
     overlay.className = 'vx-overlay';
     const root = document.createElement('div');
     root.className = `vx-modal${opts.size === 'large' ? ' vx-modal--large' : ''}`;
+    root.tabIndex=-1;
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     root.setAttribute('aria-label', opts.title || '');
@@ -326,14 +338,7 @@ export function openModal(opts = {}) {
     registerSurface('modal');
 
     const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    const trapFocus = (e) => {
-        if (e.key !== 'Tab') return;
-        const items = [...root.querySelectorAll(FOCUSABLE)];
-        if (!items.length) return;
-        const first = items[0], last = items[items.length - 1];
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    };
+    const trapFocus = e => trapDialogTab(root,e);
     const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); closeModal(); } };
 
     document.addEventListener('keydown', trapFocus);
