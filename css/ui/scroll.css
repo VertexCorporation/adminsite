@@ -49,6 +49,7 @@
 .contributor-table-head {
     position:relative; top:auto; background:var(--bg-surface); z-index:1;
     overflow:visible;
+    margin-inline-end:var(--contributor-scrollbar-gutter,0px);
 }
 .contributor-table-rows {
     max-height:420px; overflow-y:auto; scrollbar-gutter:stable;
