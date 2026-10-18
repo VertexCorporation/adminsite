@@ -146,6 +146,8 @@ await page.locator('[data-nav-module="news"] [data-nav-panel="news.published"]')
 assert.equal(await page.locator('#tab-news .panel-card[data-panel="news.published"]').isVisible(),true);
 assert.equal(await page.locator('#tab-news .panel-card[data-panel="news.editor"]').isVisible(),false);
 await page.locator('[data-nav-module="news"] [data-nav-panel="news.editor"]').click();
+await page.locator('.dock-btn[data-target="tab-contributors"]').click();
+await page.locator('.dock-btn[data-target="tab-news"]').click();
 const navMotion=await page.evaluate(()=>{
  const host=document.getElementById('tab-scroll-container'), incoming=document.getElementById('tab-news');
  return {ghost:!!host.querySelector(':scope > .ui-view-ghost'),
