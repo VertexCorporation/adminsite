@@ -67,7 +67,7 @@ function deadline(promise, milliseconds) {
 }
 function retryDelay(ms) { return new Promise(resolve=>setTimeout(resolve,ms)); }
 async function callCallable(name, data) {
-    const attempts=RETRYABLE_READS.has(name)?3:1;
+    const attempts=RETRYABLE_READS.has(name)?(['getVertexCertificateDetails','getVertexCertificateEmailTemplates'].includes(name)?2:3):1;
     for(let attempt=0;attempt<attempts;attempt++){
         try{return await callCallableOnce(name,data);}
         catch(error){
@@ -83,7 +83,7 @@ async function callCallableOnce(name, data) {
     const idToken=user?await deadline(user.getIdToken(),10000):null;
     const appToken=user?await getAttestationToken():undefined;
     let res;try{res=await fetch(`https://${name.toLowerCase()}-o5h7dmtija-ew.a.run.app`,{
-        method:'POST',headers:{'Content-Type':'application/json',...(idToken?{Authorization:'Bearer '+idToken}:{}),...(appToken?{'X-Firebase-AppCheck':appToken}:{})},body:JSON.stringify({data:data??{}}),signal:AbortSignal.timeout(20000)
+        method:'POST',headers:{'Content-Type':'application/json',...(idToken?{Authorization:'Bearer '+idToken}:{}),...(appToken?{'X-Firebase-AppCheck':appToken}:{})},body:JSON.stringify({data:data??{}}),signal:AbortSignal.timeout(['getVertexCertificateDetails','getVertexCertificateEmailTemplates'].includes(name)?18000:20000)
     });}catch(error){const e=new Error('Callable transport failed');e.code=error.name==='TimeoutError'?'functions/deadline-exceeded':'functions/unavailable';throw e;}
     let json;try{json=await res.json();}catch{json=null;}
     if(!res.ok||json?.error||!json||!Object.hasOwn(json,'result')){
