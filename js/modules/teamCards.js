@@ -345,7 +345,7 @@ export function initTeamCardsPanel() {
     const addBtn=document.getElementById('add-team-card-btn');
     if(addBtn)addBtn.onclick=()=>openTeamCardDrawer(null);
     // Live data is requested only after Core authorization and workspace navigation.
-    if(auth.currentUser)void loadTeamCards().catch(()=>{});
+    if (auth.currentUser) void loadTeamCards().catch(()=>{});
     document.addEventListener('vertex:workspace',event=>{
         if(auth.currentUser&&event.detail?.keys?.includes('system.teamLog'))
             void initWeeklyStarsPanel();
