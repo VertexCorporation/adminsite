@@ -496,7 +496,7 @@ async function toggleMembership(person,button) {
 }
 function openCertificateSelector() {
     if (!isPanelAdmin()) return;
-    let disposeCertificate, query='', scroll=0, people=[], cursor=null, pending=false;
+    let disposeCertificate, query='', scroll=0, people=Array.isArray(window.loadedContributors)?window.loadedContributors.filter(p=>p?.id).slice(0,50):[], cursor=null, pending=false;
     let generation=0, debounce=null;
     const body=openDrawer({title:__('cert.select_person'),onAfterClose(){
         generation++;clearTimeout(debounce);disposeCertificate?.();unsubscribe();
@@ -533,14 +533,14 @@ function openCertificateSelector() {
         async function loadPage(reset){
             if(pending&&!reset)return;
             const token=++generation;
-            if(reset){people=[];cursor=null;scroll=0;}
+            if(reset){cursor=null;scroll=0;} // Retain current results until the fresh query finishes.
             pending=true;render();
             try {
                 const {data}=await getVertexContributorsFn({
                     pageSize:25, filter:'all', search:query, cursor
                 });
                 if(token!==generation || !body.classList.contains('certificate-selector-body'))return;
-                people=[...people,...(data.contributors||[]).filter(p=>!people.some(existing=>existing.id===p.id))];
+                people=reset?(data.contributors||[]):[...people,...(data.contributors||[]).filter(p=>!people.some(existing=>existing.id===p.id))];
                 cursor=data.nextCursor||null;
             } catch(error) {
                 if(token===generation)showToast(()=>userErrorMessage(error),'error');
@@ -556,7 +556,7 @@ function openCertificateSelector() {
             debounce=setTimeout(()=>{if(body.isConnected)void loadPage(true);},300);
         };
         search.focus();
-        if(!people.length)await loadPage(true);else render();
+        render();void loadPage(true);
     }
     void paint();
 }
