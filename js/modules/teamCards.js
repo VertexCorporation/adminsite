@@ -87,7 +87,8 @@ export function openTeamCardDrawer(existing=null){
  '<div class="form-section"><label class="form-section-title" for="team-card-photo-input">'+__('team_cards.photo_label')+'</label>'+
  '<div style="display:flex;gap:16px;align-items:center"><div class="team-list-avatar" id="team-card-photo-preview" style="width:64px;height:64px;">'+
  (existing?.imageUrl?'<img src="'+escapeHTML(existing.imageUrl)+'" alt="">':icon('user',{size:25}))+'</div>'+
- '<input type="file" id="team-card-photo-input" accept="image/jpeg,image/png,image/webp" '+(!editing?'required':'')+' aria-describedby="team-card-photo-hint">'+
+ '<input type="file" id="team-card-photo-input" accept="image/jpeg,image/png,image/webp" hidden aria-describedby="team-card-photo-hint">'+
+ '<button type="button" id="team-card-choose-photo" class="chrome-btn-outline">'+icon('upload',{size:16})+' '+__('team_cards.photo_upload_btn')+'</button>'+
  '</div><small id="team-card-photo-hint">JPEG, PNG, WebP · maksimum 2 MB</small></div>'+
  '<div class="form-group-field"><label for="team-card-name">'+__('team_cards.name_label')+'</label>'+
  '<input type="text" id="team-card-name" required maxlength="60" value="'+escapeHTML(existing?.name||'')+'"></div>'+
@@ -106,6 +107,7 @@ export function openTeamCardDrawer(existing=null){
  '<input type="url" id="team-card-'+key+'" placeholder="https://" value="'+escapeHTML(links[key]||'')+'"></div>').join('')+
  '</div></form>';
  const fileInput=body.querySelector('#team-card-photo-input');
+ body.querySelector('#team-card-choose-photo').addEventListener('click',()=>fileInput.click());
  fileInput.addEventListener('change',()=>{
    const file=fileInput.files?.[0];if(!file){pickedFile=null;return;}
    if(file.size>2*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type)){
@@ -142,97 +144,6 @@ export function openTeamCardDrawer(existing=null){
    }catch(error){showToast(()=>userErrorMessage(error),'error');}
    finally{saving=false;setButtonLoading(submit,false);}
  });
-}
-
-/**
- * Mustafa Çakı Yönetici Profili Bölümü Başlatıcı
- */
-export async function initTeamProfilePanel() {
-    const container = document.getElementById('team-profile-container');
-    if (!container) return;
-
-    try {
-        const { data } = await getTeamProfileFn({ slug: 'mustafa_caki' });
-        renderTeamProfile(container, data);
-    } catch (err) {
-        console.warn('[TEAM_PROFILE] Error loading profile:', err);
-        renderTeamProfile(container, {
-            name: 'Mustafa Çakı',
-            position: 'CEO',
-            bio: 'Vertex Kurucu Ortağı & CEO.',
-            photoUrl: 'assets/team/MUSTAFACAKI.webp',
-            socialLinks: {
-                linkedin: 'https://www.linkedin.com/in/mustawtfa/',
-                instagram: 'https://www.instagram.com/mustawtfa/'
-            }
-        });
-    }
-}
-
-function renderTeamProfile(container, profile) {
-    const avatarHtml = profile.photoUrl
-        ? `<img src="${escapeHTML(profile.photoUrl)}" alt="${escapeHTML(profile.name || 'Mustafa Çakı')}">`
-        : icon('user', { size: 32 });
-
-    container.innerHTML = `
-        <form id="team-profile-form" class="form-stack">
-            <div style="display:flex;gap:16px;align-items:center;">
-                <div class="team-list-avatar" style="width:64px;height:64px;">
-                    ${avatarHtml}
-                </div>
-                <div>
-                    <h4 style="margin:0;font-size:16px;font-weight:600;">${escapeHTML(profile.name || 'Mustafa Çakı')}</h4>
-                    <span class="position-badge" style="margin-top:4px;">${escapeHTML(profile.position || 'CEO')}</span>
-                </div>
-            </div>
-
-            <div class="form-group-field">
-                <label for="profile-bio">${__('team_profile.bio_label')}</label>
-                <textarea id="profile-bio" rows="4" maxlength="3000" class="auto-resize-textarea">${escapeHTML(profile.bio || '')}</textarea>
-            </div>
-
-            <div class="form-grid two-col">
-                <div class="form-group-field">
-                    <label for="profile-linkedin">${__('team_cards.linkedin_label')}</label>
-                    <input type="url" id="profile-linkedin" value="${escapeHTML(profile.socialLinks?.linkedin || '')}">
-                </div>
-                <div class="form-group-field">
-                    <label for="profile-instagram">${__('team_cards.instagram_label')}</label>
-                    <input type="url" id="profile-instagram" value="${escapeHTML(profile.socialLinks?.instagram || '')}">
-                </div>
-            </div>
-
-            <div>
-                <button type="submit" class="chrome-btn-primary" id="save-team-profile-btn">
-                    ${__('team_profile.save_btn')}
-                </button>
-            </div>
-        </form>
-    `;
-
-    const form = container.querySelector('#team-profile-form');
-    form.onsubmit = async e => {
-        e.preventDefault();
-        const bio = container.querySelector('#profile-bio').value.trim();
-        const linkedin = container.querySelector('#profile-linkedin').value.trim();
-        const instagram = container.querySelector('#profile-instagram').value.trim();
-        const saveBtn = container.querySelector('#save-team-profile-btn');
-
-        setButtonLoading(saveBtn, true);
-        try {
-            await setTeamProfileFn({
-                slug: 'mustafa_caki',
-                bio,
-                photoUrl: profile.photoUrl || 'assets/team/MUSTAFACAKI.webp',
-                socialLinks: { linkedin, instagram }
-            });
-            showToast(() => __('team_profile.saved'), 'success');
-        } catch (err) {
-            showToast(() => userErrorMessage(err), 'error');
-        } finally {
-            setButtonLoading(saveBtn, false);
-        }
-    };
 }
 
 /**
@@ -344,10 +255,7 @@ export function initTeamCardsPanel() {
     // Managed reads require an authenticated Core session. main.js loads this
     // workspace when the authorized user navigates to it.
     if (auth.currentUser) void loadTeamCards().catch(()=>{});
-    // Biographies are edited on each team card; the former founder-only
-    // profile editor is intentionally no longer a second source of truth.
-    const legacyProfile=document.getElementById('team-profile-container');
-    if(legacyProfile)legacyProfile.textContent='Biyografi ve bağlantıları düzenlemek için yukarıdaki ekip kartının düzenle butonunu kullanın.';
+    // Biographies are edited in each executive's card drawer.
     initWeeklyStarsPanel();
     onLangChange(() => {
         renderTeamCardsList();
