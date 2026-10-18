@@ -84,6 +84,9 @@ function scheduleContributorRetry() {
 const membershipPending=new Set();
 const verificationListeners=new Map();
 let activeFilter = 'all';
+let nextContributorCursor = null;
+let activeContributorSearch = '';
+let contributorSearchTimer = null;
 let listContainer;
 let refreshBtn;
 
@@ -94,8 +97,11 @@ export function initContributorsModule() {
     listContainer = document.getElementById('contributors-list-container');
     listContainer.replaceChildren();
     loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows(),crossfadeOptions:{mode:'enter'}});
-    window.filterContributors = filter => { activeFilter=filter; renderContributors(window.loadedContributors || []); };
-    window.searchContributorsLocal = () => renderContributors(window.loadedContributors || []);
+    window.filterContributors = filter => { activeFilter=filter; void fetchContributorsData(); };
+    window.searchContributorsLocal = () => {
+        clearTimeout(contributorSearchTimer);
+        contributorSearchTimer=setTimeout(()=>void fetchContributorsData(),350);
+    };
     syncBirthYearFilters();
     refreshBtn = document.getElementById('refresh-contributors-btn');
     if(refreshBtn&&!document.getElementById('certificate-email-templates-btn')){
@@ -122,6 +128,7 @@ export function initContributorsModule() {
         clearTimeout(reloadTimer);reloadTimer=null;
         inFlight=null;inFlightContext=null;lastLoadFailed=false;transientFailures=0;
         window.loadedContributors=null;
+        nextContributorCursor=null;activeContributorSearch='';
         loading.destroy();
         listContainer.replaceChildren();
         if(refreshBtn)setButtonLoading(refreshBtn,false);
@@ -145,21 +152,33 @@ export function fetchContributorsData() {
     const context=JSON.stringify([auth.currentUser?.uid,isPanelAdmin(),getHiddenFieldsFor('contributors.list')]);
     if(inFlight&&inFlightContext===context)return inFlight;
     inFlightContext=context;
-    const promise=loadContributors().finally(()=>{if(inFlight===promise)inFlight=null;});
+    const promise=loadContributors(false).finally(()=>{if(inFlight===promise)inFlight=null;});
     inFlight=promise;return promise;
 }
-async function loadContributors() {
+async function loadContributors(append = false) {
     if (!listContainer) return;
-
+    if (append && !nextContributorCursor) return;
     const request = requestGuard.begin();
-    loading.start();
+    const cursor = append ? nextContributorCursor : null;
+    const search = (document.getElementById('contributor-search')?.value || '').trim();
+    if (!append) {
+        loading.start();
+        nextContributorCursor = null;
+        activeContributorSearch = search;
+    }
     if (refreshBtn) setButtonLoading(refreshBtn,true);
 
     try {
-        const result = await getVertexContributorsFn();
+        const result = await getVertexContributorsFn({
+            cursor, pageSize:40, filter:activeFilter, search
+        });
         if (!requestGuard.isCurrent(request)) return;
         loading.destroy();
-        const contributors = result.data.contributors || [];
+        const incoming = result.data.contributors || [];
+        const contributors = append ? [...(window.loadedContributors||[]),
+            ...incoming.filter(person => !(window.loadedContributors||[]).some(existing=>existing.id===person.id))]
+            : incoming;
+        nextContributorCursor = result.data.nextCursor || null;
         lastLoadFailed=false;transientFailures=0;
         clearTimeout(reloadTimer);reloadTimer=null;
         window.loadedContributors = contributors;
@@ -202,7 +221,14 @@ function renderContributors(contributors) {
     const addButton=document.getElementById('add-manual-application');if(addButton)addButton.hidden=!canWrite;
     const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry){templateEntry.style.display=admin?'':'none';templateEntry.textContent=__('email_templates.title');}
     const headers = ['name','department','birthYear','status','applied','actions'];
-    loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row ${p.hasVerified?'is-verified':''}" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(birthYearLabel(p))}</span><span class="contributor-cell-status status-badge ${p.hasVerified?'success':''}">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.applicationDate?escapeHTML(formatCertificateDate(p.applicationDate)):p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${contributorState(p)==='active'?'is-active':contributorState(p)==='unknown'?'is-unknown':''}" data-membership="${escapeHTML(p.id)}" title="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-label="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-pressed="${isActiveContributor(p)}" data-vertex-state="${contributorState(p)}" ${!deploymentCapabilities.contributorMembershipWrites||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`));
+    loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row ${p.hasVerified?'is-verified':''}" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(birthYearLabel(p))}</span><span class="contributor-cell-status status-badge ${p.hasVerified?'success':''}">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.applicationDate?escapeHTML(formatCertificateDate(p.applicationDate)):p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${contributorState(p)==='active'?'is-active':contributorState(p)==='unknown'?'is-unknown':''}" data-membership="${escapeHTML(p.id)}" title="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-label="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-pressed="${isActiveContributor(p)}" data-vertex-state="${contributorState(p)}" ${!deploymentCapabilities.contributorMembershipWrites||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`)
+        +(nextContributorCursor?`<div class="form-submit-row"><button type="button" class="chrome-btn-outline contributor-next-page">${document.documentElement.lang==='en'?'Load more':'Daha fazla yükle'}</button></div>`:''));
+    listContainer.querySelector('.contributor-next-page')?.addEventListener('click',async e=>{
+        const button=e.currentTarget;
+        if(button.disabled)return;
+        button.disabled=true;
+        try { await loadContributors(true); } finally { if(button.isConnected)button.disabled=false; }
+    });
     listContainer.querySelectorAll('[data-membership]').forEach(b=>b.onclick=()=>toggleMembership(contributors.find(p=>p.id===b.dataset.membership),b));
     listContainer.querySelectorAll('[data-details]').forEach(b=>b.onclick=()=>openContributorDetails(contributors.find(p=>p.id===b.dataset.details)));
     listContainer.querySelectorAll('.certificate-manage-btn').forEach(b=>b.onclick=()=>openCertificates(contributors.find(p=>p.id===b.dataset.id),fetchContributorsData,b));
