@@ -1,0 +1,149 @@
+/* Shared rhythm for new and existing console panels. */
+:where(.panel-card,.vx-drawer,.vx-modal,.toolbar,.form-group-field,.card-title-row) { min-width: 0; }
+:where(.panel-card,.vx-drawer,.vx-modal) { overflow-wrap: break-word; }
+.grid-layout > .panel-card:not([hidden]) { align-self: start; }
+:where(.vx-drawer-body,.vx-modal-body) { min-height: 0; }
+:where(.panel-card,.vx-drawer-body,.vx-modal-body) :is(p,h1,h2,h3,h4,label) { overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+    .vx-drawer-header,.vx-drawer-footer,.vx-modal-header,.vx-modal-footer { padding-left: var(--space-4); padding-right: var(--space-4); }
+    :where(.toolbar,.form-submit-row) > * { min-width: 0; }
+}
+
+/* Stale data stays visible with a slim non-blocking activity line. */
+.is-refreshing { position: relative; }
+.is-refreshing::before {
+    content: ''; position: absolute; z-index: 2; left: 0; top: 0;
+    width: 36%; height: 2px; border-radius: var(--radius-full);
+    background: var(--text-muted); opacity: .55; pointer-events: none;
+    animation: ui-refresh 1.2s var(--ease-standard) infinite alternate;
+}
+@keyframes ui-refresh { from { transform: translateX(0); } to { transform: translateX(178%); } }
+@media (prefers-reduced-motion: reduce) { .is-refreshing::before { animation: none; width: 100%; } }
+
+.ui-crossfade-ghost {
+    position: absolute; top: 0; left: 0; width: 100%;
+    pointer-events: none; overflow: hidden; z-index: 1;
+}
+
+
+/* Shared panel rhythm. Brand artwork retains its own typography. */
+:where(.grid-layout) { align-items: start; }
+:where(.grid-layout > .panel-card) { height: auto; align-self: start; }
+:where(.panel-card) :is(.panel-header h3,.card-title-row h3) {
+    font-size: var(--fs-section-title);
+    line-height: var(--lh-tight);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+}
+:where(.panel-card,.vx-drawer,.vx-modal) :is(.form-hint,.text-muted,.field-help) {
+    font-size: var(--fs-secondary);
+    line-height: var(--lh-normal);
+    color: var(--text-secondary);
+}
+:where(.panel-card) :is(.form-section,.form-stack) { min-width: 0; }
+:where(.form-stack) { display: flex; flex-direction: column; gap: var(--form-gap); }
+:where(.form-stack > .form-section) { min-width: 0; }
+:where(.team-list,.team-list-row,.team-list-info,.team-list-actions) { min-width: 0; }
+:where(.team-list-name,.team-list-meta,.position-badge) { overflow-wrap: anywhere; }
+:where(.grid-layout > .panel-card:empty) { min-height: 0; padding-block: var(--space-4); }
+
+@media (max-width: 1023px) {
+    :where(.grid-layout) { gap: var(--card-gap); }
+    :where(.form-grid.two-col) { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    :where(.vx-modal,.vx-drawer) { max-width: 100vw; }
+}
+@media (max-width: 720px) {
+    :where(.grid-layout) { gap: var(--space-3); }
+    :where(.form-grid.two-col) { grid-template-columns: minmax(0,1fr); }
+    :where(.vx-drawer-body,.vx-modal-body) { padding: var(--space-4); }
+    :where(.panel-card) { padding: var(--space-4); }
+    :where(.panel-card) :is(.form-hint,.field-help) { overflow-wrap: anywhere; }
+}
+
+
+/* Responsive panel contract shared across management modules. */
+:where(.grid-layout,.panel-card,.form-stack,.form-group-field,.form-grid,.toolbar) > * {
+    min-width:0;
+}
+:where(.panel-card,.vx-drawer-body,.vx-modal-body) :is(table,pre,code) {
+    max-width:100%;
+}
+:where(.vx-drawer-body,.vx-modal-body,.panel-card) :is(.form-hint,.field-error-msg,.state-block) {
+    overflow-wrap:anywhere;
+    line-height:var(--lh-normal);
+}
+:where(.panel-card,.vx-drawer-body,.vx-modal-body) .state-block h4 {
+    font-size:var(--fs-component-title);
+}
+:where(.panel-card,.vx-drawer-body,.vx-modal-body) .state-block p {
+    font-size:var(--fs-secondary);
+}
+@media (max-width:430px) {
+    :where(.panel-card) { padding:var(--space-3); }
+    :where(.vx-drawer-body,.vx-modal-body) { padding:var(--space-3); }
+    :where(.form-submit-row) { flex-wrap:wrap; }
+    :where(.form-submit-row) > button { flex:1 1 140px; min-height:var(--touch-target); }
+}
+
+/* Spacing and typography contract (70–73). Component-specific layouts retain
+   their structure; arbitrary forced height and stretched cards do not. */
+:where(.panel-card,.vx-drawer,.vx-modal) :is(.form-block-group,.form-section) {
+    min-width:0;
+}
+:where(.panel-card,.vx-drawer,.vx-modal) :is(
+    .form-block-group + .form-block-group,.form-section + .form-section
+) { margin-block-start:var(--form-section-gap); }
+:where(.panel-card,.vx-drawer,.vx-modal) :is(.form-group-field,.form-input-wrapper) {
+    min-width:0;
+}
+:where(.panel-card,.vx-drawer,.vx-modal) :is(
+    .panel-header h3,.card-title-row h3,.vx-drawer-title,.vx-modal-title
+) {
+    font-size:var(--fs-section-title); line-height:var(--lh-tight);
+    font-weight:600;
+}
+:where(.panel-card,.vx-drawer,.vx-modal) :is(
+    .form-hint,.intro-description,.field-help,.meta-text,.state-block p
+) {
+    font-size:var(--fs-secondary); line-height:var(--lh-normal);
+}
+:where(.grid-layout > .panel-card,.grid-layout > section.panel-card) {
+    min-height:0; height:auto; align-self:start;
+}
+:where(.panel-card,.vx-drawer,.vx-modal) :is(.toolbar,.form-submit-row,.card-title-row) {
+    min-width:0; column-gap:var(--space-3); row-gap:var(--space-2);
+}
+@media (max-width:1023px) {
+    :where(.panel-card,.vx-drawer,.vx-modal) :is(.toolbar,.card-title-row) {
+        flex-wrap:wrap;
+    }
+}
+@media (max-width:720px) {
+    :where(.panel-card,.vx-drawer,.vx-modal) :is(.form-grid,.form-grid.two-col) {
+        grid-template-columns:minmax(0,1fr);
+    }
+}
+
+/* Filtering changes row counts but must not re-anchor the entire viewport. */
+#contributors-list-container, #contributors-list-container > .contributor-table-rows { overflow-anchor: none; }
+
+/* The applicant viewport exists before the first async request: empty,
+   skeleton, populated and filtered states no longer resize the workspace. */
+#contributors-list-container {
+    min-height: 464px;
+    overflow-anchor: none;
+}
+#contributors-list-container > .contributor-table-rows {
+    overflow-anchor: none;
+}
+@media (max-width:1023px) {
+    #contributors-list-container { min-height: 440px; }
+    /* Keep the list's first-load geometry stable on mobile as well. */
+    #contributors-list-container > .contributor-table-rows {
+        max-height: 440px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+    }
+}
