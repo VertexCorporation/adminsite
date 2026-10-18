@@ -259,54 +259,31 @@ async function handleMaintenanceToggle() {
  * Yapılandırma varlığı ile gerçek yedekleme sağlığını ayırır.
  */
 export async function loadBackupHealthStatus() {
-    const card = document.getElementById('gcs-backup-status');
-    if (!card) return;
-
-    const descEl = document.getElementById('gcs-backup-desc');
-    const badgeEl = document.getElementById('gcs-backup-badge');
-    const refreshBtn = document.getElementById('refresh-backup-btn');
-
-    if (refreshBtn) setButtonLoading(refreshBtn, true);
-
+    const card=document.getElementById('gcs-backup-status');
+    if(!card)return;
+    const desc=document.getElementById('gcs-backup-desc');
+    const badge=document.getElementById('gcs-backup-badge');
+    const stamp=document.getElementById('gcs-backup-timestamp');
+    const button=document.getElementById('refresh-backup-btn');
+    setButtonLoading(button,true);
     try {
-        const { data } = await getBackupHealthStatusFn({});
-        if (data?.healthy) {
-            if (badgeEl) {
-                badgeEl.className = 'status-badge status-badge--success';
-                badgeEl.textContent = __('system.backup_healthy');
-            }
-            if (descEl) {
-                const dateStr = data.lastBackupDate ? new Date(data.lastBackupDate).toLocaleString() : '';
-                descEl.textContent = `${__('system.backup_last_success')} ${dateStr} (${Math.round((data.sizeBytes || 0) / 1024)} KB)`;
-            }
-        } else if (data?.status === 'stale') {
-            if (badgeEl) {
-                badgeEl.className = 'status-badge status-badge--warning';
-                badgeEl.textContent = __('system.backup_stale');
-            }
-            if (descEl) {
-                descEl.textContent = data.error || __('system.backup_unknown');
-            }
-        } else {
-            if (badgeEl) {
-                badgeEl.className = 'status-badge';
-                badgeEl.textContent = __('system.backup_configured');
-            }
-            if (descEl) {
-                descEl.textContent = data?.error || __('system.backup_unknown');
-            }
-        }
-    } catch (err) {
-        if (badgeEl) {
-            badgeEl.className = 'status-badge';
-            badgeEl.textContent = __('cert.status_unknown');
-        }
-        if (descEl) {
-            descEl.textContent = userErrorMessage(err);
-        }
-    } finally {
-        if (refreshBtn) setButtonLoading(refreshBtn, false);
-    }
+        const {data}=await getBackupHealthStatusFn({});
+        if(!data || typeof data.status!=='string')throw Object.assign(new Error('Invalid backup health response'),{code:'functions/internal'});
+        const state=data.status;
+        const verified=state==='healthy' && data.healthy===true && Boolean(data.lastBackupDate) && Number(data.sizeBytes)>0;
+        const label=verified?'system.backup_healthy':state==='stale'?'system.backup_stale':state==='unconfigured'?'system.backup_unconfigured':'system.backup_unverified';
+        if(badge){badge.className='status-badge'+(verified?' status-badge--success':state==='stale'?' status-badge--warning':'');badge.textContent=__(label);}
+        const locale=document.documentElement.lang==='tr'?'tr-TR':'en-GB';
+        const date=value=>{const d=new Date(value);return Number.isNaN(d.getTime())?'—':d.toLocaleString(locale);};
+        if(desc)desc.textContent=data.lastBackupDate?
+            `${__('system.backup_last_success')} ${date(data.lastBackupDate)} · ${(Number(data.sizeBytes)/1024).toFixed(1)} KB`:
+            data.error || __('system.backup_unknown');
+        if(stamp)stamp.textContent=`${__('system.backup_checked')}: ${data.checkedAt?date(data.checkedAt):'—'} · ${data.restoreVerifiedAt?__('system.backup_restore_verified')+': '+date(data.restoreVerifiedAt):__('system.backup_restore_unknown')}`;
+    }catch(error){
+        if(badge){badge.className='status-badge';badge.textContent=__('system.backup_unverified');}
+        if(desc)desc.textContent=userErrorMessage(error);
+        if(stamp)stamp.textContent='';
+    }finally{setButtonLoading(button,false);}
 }
 
 /**
