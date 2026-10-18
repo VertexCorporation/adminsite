@@ -26,20 +26,10 @@ let listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn;
  * cloudfunctions.net alias'i kota/revizyon sorunlarinda kiriliyor;
  * run.app URL'leri bagimsiz calisir ve CORS basliklariyla doner.
  */
-let attestationPending, attestationRetryAt=0;
-async function getAttestationToken() {
-    if(!appCheck?.getToken || Date.now()<attestationRetryAt)return;
-    if(attestationPending)return attestationPending;
-    attestationPending=(async()=>{
-        let timer;
-        try{return (await Promise.race([appCheck.getToken(false),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Attestation timeout')),2500);})]))?.token;}
-        catch(error){attestationRetryAt=Date.now()+60000;console.warn('[APP_CHECK] Attestation unavailable',{code:error.code||'app-check/unavailable'});}
-        finally{clearTimeout(timer);}
-    })();
-    try{return await attestationPending;}finally{attestationPending=null;}
-}
-// Only idempotent READ endpoints may be retried automatically. Never retry a
-// mutation: an HTTP timeout can happen after the server has already committed it.
+// Firebase Functions SDK owns endpoint discovery, Auth and App Check headers,
+// CORS and HTTP error decoding. No hard-coded Cloud Run service names.
+const CALLABLE_TIMEOUT_MS = 20000;
+const callableCache = new Map();
 const RETRYABLE_READS = new Set([
     'getVertexContributors','listConsoleChatChannels','listConsoleChatMessages',
     'listConsoleChatDirectory','getPanelPermissions','getMyConsoleAccess',
@@ -52,51 +42,63 @@ const TRANSIENT_CODES = new Set([
     'functions/unavailable','functions/deadline-exceeded',
     'functions/resource-exhausted','functions/internal'
 ]);
-function deadline(promise, milliseconds) {
-    let timer;
-    return Promise.race([
-        Promise.resolve(promise),
-        new Promise((_,reject)=>{
-            timer=setTimeout(()=>{
-                const error=new Error('Authentication token request timed out');
-                error.code='functions/deadline-exceeded';
-                reject(error);
-            },milliseconds);
-        })
-    ]).finally(()=>clearTimeout(timer));
-}
 function retryDelay(ms) { return new Promise(resolve=>setTimeout(resolve,ms)); }
-async function callCallable(name, data) {
+function normalizeCallableError(error) {
+    if (error?.code?.startsWith('functions/')) {
+        if (error.code === 'functions/failed-precondition' &&
+            error.message === 'Expanded issuance awaits certificate assets and verified Zapier configuration.') {
+            error.details ||= {reason:'certificate-delivery-not-ready'};
+        }
+        return error;
+    }
+    const code = String(error?.code || '');
+    const failed = new Error(error?.message || 'Could not connect to Vertex services.');
+    failed.code = code.startsWith('app-check/') ? 'functions/failed-precondition'
+        : code.startsWith('auth/') ? 'functions/unauthenticated'
+        : ['AbortError','TimeoutError'].includes(error?.name) ? 'functions/deadline-exceeded'
+        : 'functions/unavailable';
+    failed.reason = code.startsWith('app-check/') ? 'app-check-unavailable' : code.startsWith('auth/') ? 'authentication-unavailable' : 'network-unavailable';
+    return failed;
+}
+function getCallable(name) {
+    if (!functions?.httpsCallable) {
+        const err=new Error('Firebase Functions SDK is not initialized.');
+        err.code='functions/unavailable';
+        throw err;
+    }
+    let fn=callableCache.get(name);
+    if (!fn) {
+        fn=functions.httpsCallable(name,{timeout:CALLABLE_TIMEOUT_MS});
+        callableCache.set(name,fn);
+    }
+    return fn;
+}
+async function callCallableOnce(name,data) {
+    try {
+        const result=await getCallable(name)(data??{});
+        if (!result || !Object.hasOwn(result,'data')) {
+            const error=new Error('Invalid callable response.');
+            error.code='functions/internal';
+            throw error;
+        }
+        return result;
+    } catch(error) {
+        throw normalizeCallableError(error);
+    }
+}
+async function callCallable(name,data) {
     const attempts=RETRYABLE_READS.has(name)?3:1;
     for(let attempt=0;attempt<attempts;attempt++){
         try{return await callCallableOnce(name,data);}
         catch(error){
-            if(attempt===attempts-1 || !TRANSIENT_CODES.has(error.code) || !auth?.currentUser)throw error;
-            // Bounded backoff, so temporary server/network failures recover without
-            // spawning overlapping requests or making users reload the site.
+            // Mutations are NEVER blindly resent: the server may have committed
+            // even when a response times out.
+            if(attempt===attempts-1 || !TRANSIENT_CODES.has(error.code) || !auth?.currentUser)
+                throw error;
             await retryDelay(attempt===0?450:1200);
         }
     }
 }
-async function callCallableOnce(name, data) {
-    const user=auth?.currentUser;
-    const idToken=user?await deadline(user.getIdToken(),10000):null;
-    const appToken=user?await getAttestationToken():undefined;
-    let res;try{res=await fetch(`https://${name.toLowerCase()}-o5h7dmtija-ew.a.run.app`,{
-        method:'POST',headers:{'Content-Type':'application/json',...(idToken?{Authorization:'Bearer '+idToken}:{}),...(appToken?{'X-Firebase-AppCheck':appToken}:{})},body:JSON.stringify({data:data??{}}),signal:AbortSignal.timeout(20000)
-    });}catch(error){const e=new Error('Callable transport failed');e.code=error.name==='TimeoutError'?'functions/deadline-exceeded':'functions/unavailable';throw e;}
-    let json;try{json=await res.json();}catch{json=null;}
-    if(!res.ok||json?.error||!json||!Object.hasOwn(json,'result')){
-        const err=json?.error||{};
-        const status=err.status||(res.status===401?'UNAUTHENTICATED':res.status===403?'PERMISSION_DENIED':res.status===404?'NOT_FOUND':res.status===429?'RESOURCE_EXHAUSTED':res.status===503?'UNAVAILABLE':'INTERNAL');
-        const e=new Error(err.message||'Callable response failed');e.code='functions/'+status.toLowerCase().replaceAll('_','-');e.httpStatus=res.status;e.details=err.details;
-        // Compatibility with the exact pre-code response of the deployed certificate service.
-        if(name==='issueVertexCertificate'&&status==='FAILED_PRECONDITION'&&err.message==='Expanded issuance awaits certificate assets and verified Zapier configuration.')e.details={reason:'certificate-delivery-not-ready'};
-        console.error(`[CALLABLE] ${name}: HTTP ${res.status} ${e.code}`);throw e;
-    }
-    return {data:json.result};
-}
-
 // httpsCallable yerine gecen sarmalayici: cagrilinca callCallable'i isletir
 // (initFirebase'de binding'e Promise degil FONKSIYON atanir).
 const callable = (name) => (data) => callCallable(name, data);
@@ -113,7 +115,7 @@ function initFirebase(firebaseConfig) {
     auth = firebase.auth();
     db = firebase.firestore();
     storage = firebase.storage();
-    functions = firebase.functions(); // Default region functions
+    functions = firebase.app().functions(firebaseConfig.functionsRegion || 'europe-west1');
 
     // Activate App Check
     try {
@@ -127,7 +129,7 @@ function initFirebase(firebaseConfig) {
     }
 
     // Initialize Cloud Functions with the correct region
-    const europeFunctions = firebase.app().functions('europe-west1');
+    callableCache.clear();
     sendTargetedNotificationFn = callable('sendTargetedNotification');
     scheduleNotificationFn = callable('scheduleNotification');
     listScheduledNotificationsFn = callable('listScheduledNotifications');
