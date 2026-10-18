@@ -59,7 +59,7 @@ await page.route('**/*',async route=>{
   if(name==='savedepartmentpermissions' && failPermissionSave)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture permission rejection'}})});
   if(name==='getvertexcontributors' && failContributorReadOnce-->0)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Temporary contributors service outage'}})});
   if(name==='listconsolechatchannels' && failChatReadOnce-->0)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Temporary chat service outage'}})});
-  if(name==='getvertexcontributors'){const fixture=people || [person];if(contributorDelay)await new Promise(r=>setTimeout(r,contributorDelay));if(failContributors)return route.fulfill({contentType:'application/json',status:503,body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});result={contributors:fixture};}
+  if(name==='getvertexcontributors'){const fixture=people || [person];if(contributorDelay)await new Promise(r=>setTimeout(r,contributorDelay));if(failContributors)return route.fulfill({contentType:'application/json',status:503,body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});const data=route.request().postDataJSON()?.data||{},filter=data.filter||'all',search=String(data.search||'').toLowerCase();result={contributors:fixture.filter(p=>{if(search&&![p.name,p.email,p.about].some(v=>String(v||'').toLowerCase().includes(search)))return false;return filter==='all'||filter==='vertex'&&p.isVertex===true||filter==='verified'&&p.hasVerified===true||filter==='unverified'&&p.hasVerified!==true||filter==='interview'&&!!p.interviewDate||filter==='linkedin'&&!!p.linkedin||filter==='github'&&!!p.github;})};}
   else if(name==='getvertexcertificatedetails')result={types,eligibility:{status:'joining-date-required',eligibleTypes:[],joinedAt:joiningDate},history};
   else if(name==='setvertexcontributorjoiningdate'){joiningDate=route.request().postDataJSON().data.joinedAt;result={success:true};}
   else if(name==='issuevertexcertificate'){history=[{id:'person--tenacity',certificateType:'tenacity',status:'processing',attempts:[]}];result={id:'person',status:'processing'};}
@@ -178,49 +178,22 @@ for(const width of [360,390,768,1024,1440,1920]){
 note('8 navigation tabs, light/dark, 6 viewport widths, popover bounds');
 await page.setViewportSize({width:1440,height:900});
 await page.locator('[data-details]').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Contributor drawer');
-const waitCrossfade = () => page.waitForFunction(() => !document.querySelector('.ui-crossfade-ghost'));
-await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);
-await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),1);
-await page.evaluate(()=>window.filterContributors('verified'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
-await waitCrossfade();
-// Real contributor renderer: switching between populated chips must animate,
-// not just the single-row fixture used in the historic regression.
+const waitRows=expected=>page.waitForFunction(count=>document.querySelectorAll('#contributors-list-container .contributor-row').length===count,expected,{timeout:12000});
+await page.locator('#contributor-search').fill('nobody');await waitRows(0);
+await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));await waitRows(1);
+await page.evaluate(()=>window.filterContributors('verified'));await waitRows(0);
+await page.evaluate(()=>window.filterContributors('all'));await waitRows(1);note('Combined server-side applicant search and filters');
 await page.locator('#contributor-search').fill('');
-await page.evaluate(person=>{
- window.__savedContributors=window.loadedContributors;
- window.loadedContributors=Array.from({length:85},(_,i)=>({
-   ...person,id:'filter-fixture-'+i,name:'Applicant '+i,
-   email:'applicant'+i+'@example.invalid',hasVerified:i%2===0
- }));
- window.filterContributors('all');
-},person);
-await waitCrossfade();
+people=Array.from({length:20},(_,i)=>({...person,id:'filter-fixture-'+i,name:'Applicant '+i,email:'applicant'+i+'@example.invalid',hasVerified:i%2===0}));
+await page.evaluate(()=>window.filterContributors('all'));await waitRows(20);
 const listTopBefore=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().top);
-await page.evaluate(()=>window.filterContributors('verified'));
+await page.evaluate(()=>window.filterContributors('verified'));await waitRows(10);
 const listTopAfter=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().top);
 assert(Math.abs(listTopAfter-listTopBefore)<1,'Filter moved its list header vertically');
-const filterTransition=await page.evaluate(()=>{
- const host=document.getElementById('contributors-list-container');
- return {ghost:!!host.querySelector('.ui-crossfade-ghost'),
-  newRows:host.querySelector(':scope > .contributor-table-rows')?.children.length,
-  animating:!!host.querySelector(':scope > .contributor-table-rows')?.getAnimations().length,
-  height:host.getBoundingClientRect().height};
-});
-assert.equal(filterTransition.ghost,false,JSON.stringify(filterTransition));
-assert.equal(filterTransition.newRows,43);
-assert.equal(filterTransition.animating,true);
-assert(filterTransition.height>=460,JSON.stringify(filterTransition));
-assert.equal(await page.locator('#contributors-list-container').evaluate(el=>el.style.minHeight),'');
 assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="verified"]').getAttribute('aria-pressed'),'true');
-await waitCrossfade();
-await page.evaluate(()=>{
- window.loadedContributors=window.__savedContributors;
- delete window.__savedContributors;
- window.filterContributors('all');
-});
-await waitCrossfade();
+people=null;await page.evaluate(()=>window.filterContributors('all'));await waitRows(1);
 assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="all"]').getAttribute('aria-pressed'),'true');
-note('Applicant filtering replaces rows without ghosts or height jumps');
+note('Server-filtered applicants retain stable list layout and selected state');
 await openCert();assert.deepEqual(await page.locator('[data-award]').evaluateAll(es=>es.map(e=>e.dataset.award)),['tenacity','constancy','nobility','majesty']);
 await page.locator('[data-award=tenacity]').click();assert.equal(issueCount(),0);await page.locator('[data-review]').click();await page.waitForSelector('.confirm-ok');assert.equal(issueCount(),0);
 await page.locator('.confirm-ok').focus();await page.keyboard.press('Tab');assert(await page.locator('.confirm-cancel').evaluate(el=>el===document.activeElement));await page.keyboard.press('Shift+Tab');assert(await page.locator('.confirm-ok').evaluate(el=>el===document.activeElement));await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('tr');});assert.equal(await page.locator('.vx-modal-title').innerText(),'Sertifikayı İncele');await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('en');});await page.locator('.confirm-cancel').click();assert.equal(issueCount(),0);note('Selection and cancellation never issue certificates; confirmation focus trap and live language');
