@@ -73,7 +73,18 @@ export async function getAuthToken(auth) {
 export function userErrorMessage(error, context='') {
     const code=String(error?.code||'').replace('functions/','').replace('auth/','');
     const reason=error?.details?.reason;
-    if(reason==='certificate-delivery-not-ready')return __('cert.delivery_not_ready');
+    if(reason==='certificate-delivery-not-ready') {
+        const blockers={
+            'expansion-disabled':'cert.delivery_expansion_disabled',
+            'contract-version-mismatch':'cert.delivery_contract_mismatch',
+            'webhook-not-configured':'cert.delivery_webhook_missing',
+            'webhook-invalid':'cert.delivery_webhook_invalid',
+            'signing-secret-not-configured':'cert.delivery_signing_missing',
+            'transport-not-ready':'cert.delivery_transport_unavailable'
+        };
+        const detail=blockers[error?.details?.blocker];
+        return detail ? __('cert.delivery_not_ready')+' '+__(detail) : __('cert.delivery_not_ready');
+    }
     if(error?.reason==='app-check-unavailable' || reason==='app-check-unavailable')
         return getLang()==='en' ? 'Security verification could not be completed. Check your connection and try again.' : 'Güvenlik doğrulaması tamamlanamadı. Bağlantınızı kontrol edip yeniden deneyin.';
     if(error?.reason==='authentication-unavailable' || reason==='authentication-unavailable')
