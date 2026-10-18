@@ -237,3 +237,20 @@ html[data-theme="light"] .vx-drawer-scrim { background: rgba(23, 25, 29, 0.30); 
 @media (max-width:720px) {
     .vx-drawer-footer, .vx-modal-footer { padding-bottom:max(var(--space-4),env(safe-area-inset-bottom)); }
 }
+
+/* The account menu's contents reveal in sync with its floating surface. */
+.vx-popover.account-popover .user-menu-header,
+.vx-popover.account-popover .menu-list {
+    opacity:0;transform:translateY(-4px);
+    transition:opacity var(--motion-popover) var(--ease-standard),
+               transform var(--motion-popover) var(--ease-standard);
+}
+.vx-popover.account-popover.is-open .user-menu-header,
+.vx-popover.account-popover.is-open .menu-list {
+    opacity:1;transform:translateY(0);
+}
+.vx-popover.account-popover.is-closing .menu-list{transition-delay:0ms}
+@media(prefers-reduced-motion:reduce){
+ .vx-popover.account-popover .user-menu-header,
+ .vx-popover.account-popover .menu-list{transition:none;transform:none}
+}
