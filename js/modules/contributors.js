@@ -515,7 +515,7 @@ async function toggleMembership(person,button) {
 }
 function openCertificateSelector() {
     if (!isPanelAdmin()) return;
-    let disposeCertificate, query='', scroll=0, people=[], cursor=null, pending=false;
+    let disposeCertificate, query='', scroll=0, people=Array.isArray(window.loadedContributors)?window.loadedContributors.filter(p=>p?.id).slice(0,50):[], cursor=null, pending=false;
     let generation=0, debounce=null;
     const body=openDrawer({title:__('cert.select_person'),onAfterClose(){
         generation++;clearTimeout(debounce);disposeCertificate?.();unsubscribe();
@@ -533,8 +533,9 @@ function openCertificateSelector() {
         const search=body.querySelector('input'),list=body.querySelector('.certificate-person-list');
         function render(){
             if(!body.classList.contains('certificate-selector-body'))return;
-            const shown=people.filter(p=>[p.name,p.email,p.id].some(value=>String(value||'').toLocaleLowerCase().includes(query.toLocaleLowerCase().trim())));
-            list.innerHTML=shown.map(p=>`<button class="certificate-person-row" data-person="${escapeHTML(p.id)}"><span><strong>${escapeHTML(p.name)}</strong><small>${escapeHTML(p.email||'')}</small></span>${icon('award')}</button>`).join('')
+            const normalized=query.trim().toLocaleLowerCase('tr');
+            const visible=normalized?people.filter(p=>[p.name,p.email,p.id].some(value=>String(value||'').toLocaleLowerCase('tr').includes(normalized))):people;
+            list.innerHTML=visible.map(p=>`<button class="certificate-person-row" data-person="${escapeHTML(p.id)}"><span><strong>${escapeHTML(p.name)}</strong><small>${escapeHTML(p.email||'')}</small></span>${icon('award')}</button>`).join('')
                 || `<p class="state-block">${pending?__('common.loading'):__('contributors.empty')}</p>`;
             if(cursor)list.insertAdjacentHTML('beforeend',`<button type="button" class="chrome-btn-outline certificate-next-page">${document.documentElement.lang==='en'?'Load more':'Daha fazla yükle'}</button>`);
             list.scrollTop=scroll;
@@ -551,14 +552,14 @@ function openCertificateSelector() {
         async function loadPage(reset){
             if(pending&&!reset)return;
             const token=++generation;
-            if(reset){people=[];cursor=null;scroll=0;}
+            if(reset){cursor=null;scroll=0;} // Preserve local results until the new server query returns.
             pending=true;render();
             try {
                 const {data}=await getVertexContributorsFn({
                     pageSize:25, filter:'all', search:query, cursor
                 });
                 if(token!==generation || !body.classList.contains('certificate-selector-body'))return;
-                people=[...people,...(data.contributors||[]).filter(p=>!people.some(existing=>existing.id===p.id))];
+                people=reset?(data.contributors||[]):[...people,...(data.contributors||[]).filter(p=>!people.some(existing=>existing.id===p.id))];
                 cursor=data.nextCursor||null;
             } catch(error) {
                 if(token===generation)showToast(()=>userErrorMessage(error),'error');
@@ -569,14 +570,14 @@ function openCertificateSelector() {
         search.oninput=()=>{
             query=search.value;scroll=0;
             clearTimeout(debounce);
-            ++generation;pending=true;cursor=null;
+            ++generation;pending=false;cursor=null;
             // Instant filter feedback for the current authorized page; the
             // server search follows so matches from other pages also appear.
             render();
             debounce=setTimeout(()=>{if(body.isConnected)void loadPage(true);},300);
         };
         search.focus();
-        if(!people.length)await loadPage(true);else render();
+        render();void loadPage(true);
     }
     void paint();
 }
