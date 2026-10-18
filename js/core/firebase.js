@@ -46,7 +46,7 @@ const RETRYABLE_READS = new Set([
     'listUserSubscriptions','listAdmins','listDepartmentUsers','listSiteTeam',
     'listTeamCards','getServerStatus','getVertexCertificateDetails',
     'getVertexCertificateEmailTemplates','getBackupHealthStatus',
-    'getTeamProfile','getWeeklyStars','previewContributorRoster'
+    'getTeamProfile','listTeamProfiles','getWeeklyStars','previewContributorRoster'
 ]);
 const TRANSIENT_CODES = new Set([
     'functions/unavailable','functions/deadline-exceeded',
@@ -242,6 +242,7 @@ export const listTeamCardsFn = callable('listTeamCards');
 export const setTeamCardFn = callable('setTeamCard');
 export const deleteTeamCardFn = callable('deleteTeamCard');
 export const getTeamProfileFn = callable('getTeamProfile');
+export const listTeamProfilesFn = callable('listTeamProfiles');
 export const setTeamProfileFn = callable('setTeamProfile');
 export const getWeeklyStarsFn = callable('getWeeklyStars');
 export const setWeeklyStarsFn = callable('setWeeklyStars');
