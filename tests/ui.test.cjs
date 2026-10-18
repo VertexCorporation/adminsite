@@ -237,3 +237,17 @@ test('form, responsive and panel interaction owners use shared accessible states
  assert.match(read('css/ui/layout.css'),/--form-section-gap/);
  assert.match(read('css/ui/overlay.css'),/safe-area-inset-bottom/);
 });
+
+test('sub-navigation renders the chosen workspace before the incoming tab',()=>{
+ const shell=read('js/modules/shell.js');
+ assert.match(shell,/const activateTab = \(button, destination = null\)/);
+ assert.match(shell,/destination\.setAttribute\('data-nav-selected', ''\)/);
+ assert.match(shell,/activateTab\(parent, child\)/);
+ assert.doesNotMatch(shell,/showWorkspace\(document\.getElementById\(parent\.dataset\.target\),keys\)/);
+});
+test('applicant crossfade does not retain outgoing list height',()=>{
+ assert.match(read('js/ui/transition.js'),/preserveHeight = true/);
+ assert.match(read('js/utils/loading.js'),/opts\.crossfadeOptions/);
+ assert.match(read('js/modules/contributors.js'),/crossfadeOptions:\{preserveHeight:false\}/);
+ assert.match(read('css/ui/layout.css'),/overflow-anchor: none/);
+});

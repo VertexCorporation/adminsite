@@ -85,6 +85,26 @@ await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > 
 await page.locator('.dock-btn[data-target="tab-contributors"]').click();
 await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
 note('Real navigation animates outgoing and incoming tabs simultaneously without replacing live forms');
+// Deep sub-navigation must select the final workspace before the new page
+// enters. No intermediary contributor panel may be rendered.
+await page.locator('.dock-btn[data-target="tab-news"]').click();
+await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
+const atomicDestination=await page.evaluate(()=>{
+ const seen=[];
+ const listener=event=>{const keys=event.detail?.keys||[];if(keys.some(k=>k.startsWith('contributors.')))seen.push(keys.join(','));};
+ document.addEventListener('vertex:workspace',listener);
+ document.querySelector('[data-nav-panel="contributors.vertexStatus"]').click();
+ document.removeEventListener('vertex:workspace',listener);
+ const tab=document.getElementById('tab-contributors');
+ return {seen,workspace:tab.dataset.workspace,active:tab.classList.contains('active'),
+  nestedGhost:!!tab.querySelector('.grid-layout > .ui-crossfade-ghost')};
+});
+assert.deepEqual(atomicDestination.seen,['contributors.vertexStatus'],JSON.stringify(atomicDestination));
+assert.equal(atomicDestination.workspace,'contributors.vertexStatus');
+assert(atomicDestination.active&&!atomicDestination.nestedGhost,JSON.stringify(atomicDestination));
+await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
+await page.locator('[data-nav-panel="contributors.list"][data-nav-action=""]').click();
+note('Contributor sub-navigation enters its final workspace without an intermediate layout');
 const issueCount=()=>calls.filter(n=>n==='issuevertexcertificate').length;
 const openCert=async()=>{if(await page.locator('.certificate-drawer').count()){await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});}await page.waitForSelector('.vx-popover.is-closing',{state:'detached'});await page.waitForSelector('.vx-modal[aria-hidden=true]',{state:'detached'});await page.locator('.certificate-manage-btn').first().click();await page.waitForSelector('[data-award]');};
 const selectTab=async id=>{if(await page.evaluate(()=>innerWidth<1024)){const dock=page.locator(`[data-mobile-tab="tab-${id}"]`);if(await dock.count()&&await dock.isVisible())await dock.click();else{await page.locator('[data-mobile-more]').click();if(id==='profile')await page.locator('[data-more-profile]').click();else await page.locator(`.mobile-more-pages section[data-more-module="tab-${id}"] button`).first().click();await page.waitForSelector('.vx-modal',{state:'detached'});}}else await page.locator(`[data-target="tab-${id}"]`).click();};
@@ -147,7 +167,10 @@ await page.evaluate(person=>{
  window.filterContributors('all');
 },person);
 await waitCrossfade();
+const listTopBefore=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().top);
 await page.evaluate(()=>window.filterContributors('verified'));
+const listTopAfter=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().top);
+assert(Math.abs(listTopAfter-listTopBefore)<1,'Filter moved its list header vertically');
 const filterTransition=await page.evaluate(()=>{
  const host=document.getElementById('contributors-list-container');
  const ghost=host.querySelector('.ui-crossfade-ghost');
@@ -158,6 +181,7 @@ const filterTransition=await page.evaluate(()=>{
 assert.equal(filterTransition.ghost,true,JSON.stringify(filterTransition));
 assert(filterTransition.oldRows>0&&filterTransition.oldRows<=28,JSON.stringify(filterTransition));
 assert.equal(filterTransition.newRows,43);
+assert.equal(await page.locator('#contributors-list-container').evaluate(el=>el.style.minHeight),'');
 assert.equal(filterTransition.animating,true);
 assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="verified"]').getAttribute('aria-pressed'),'true');
 await waitCrossfade();

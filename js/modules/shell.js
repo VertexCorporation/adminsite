@@ -567,12 +567,19 @@ function initNavigation() {
         unlockScroll('navigation');
         if (restore && mobileTrigger?.isConnected) mobileTrigger.focus({preventScroll:true});
     };
-    const activateTab = button => {
+    const activateTab = (button, destination = null) => {
+        if (!button) return;
         const target = document.getElementById(button.dataset.target);
         if (!target || button.style.display === 'none') return;
         const changed = !target.classList.contains('active');
         const outgoing = changed ? document.querySelector('.tab-panel.active') : null;
         const update = () => {
+            // Commit the exact sub-workspace before the incoming tab is painted.
+            if (destination) {
+                const module = button.closest('.nav-module');
+                module?.querySelectorAll('[data-nav-selected]').forEach(el => el.removeAttribute('data-nav-selected'));
+                destination.setAttribute('data-nav-selected', '');
+            }
             document.querySelectorAll('.tab-panel,.dock-btn').forEach(el => el.classList.remove('active'));
             target.classList.add('active'); button.classList.add('active');
             refreshNavigation();
@@ -643,14 +650,15 @@ function initNavigation() {
         const child = event.target.closest('[data-nav-panel]');
         if (!child || child.hidden) return;
         const parent = child.closest('.nav-module').querySelector('.dock-btn');
-        activateTab(parent); child.closest('.nav-module').querySelectorAll('.sidebar-sub-btn').forEach(el=>{el.removeAttribute('aria-current');el.removeAttribute('data-nav-selected');});child.setAttribute('data-nav-selected','');child.setAttribute('aria-current','page');
+        activateTab(parent, child);
         recordRoute(child);syncTopbarTitle();
         const action = child.dataset.navAction;
         if(action!=='certificates')closeDrawer(false);
         if (parent.dataset.target === 'tab-system') document.dispatchEvent(new CustomEvent('vertex:system-section',{detail:action}));
         const keys = child.dataset.navPanel.split(',');
-        showWorkspace(document.getElementById(parent.dataset.target),keys);
-        const card = [...document.querySelectorAll('.panel-card[data-panel]')].find(el => keys.includes(el.dataset.panel) && el.style.display !== 'none');
+        // refreshNavigation has already rendered the destination. Avoid a
+        // second content transition over the incoming page animation.
+        const card = [...document.getElementById(parent.dataset.target).querySelectorAll('.panel-card[data-panel]')].find(el => keys.includes(el.dataset.panel) && !el.hidden && el.style.display !== 'none');
         closeSidebarDrawer(false);
         if (action === 'model-editor') {card?.focus({preventScroll:true});}
         else {

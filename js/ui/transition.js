@@ -18,7 +18,7 @@ function boundedClone(node, budget) {
     }
     return copy;
 }
-export function crossfade(container, mutate, { duration = 190 } = {}) {
+export function crossfade(container, mutate, { duration = 190, preserveHeight = true } = {}) {
     running.get(container)?.();
     const focus = document.activeElement;
     const activeField = focus && container.contains(focus) &&
@@ -88,14 +88,25 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
     mutate();
     // Avoid a huge empty region on mobile when 100 rows become a short result.
     const newHeight = container.getBoundingClientRect().height;
-    container.style.minHeight = (denseList || largeList
-        ? Math.min(rect.height, Math.max(newHeight, 160))
-        : Math.max(rect.height, newHeight)) + 'px';
+    // For live applicant filters, reserve no outgoing height: keeping the
+    // old 420px list then releasing it at animation end caused a jump.
+    if (preserveHeight) {
+        container.style.minHeight = (denseList || largeList
+            ? Math.min(rect.height, Math.max(newHeight, 160))
+            : Math.max(rect.height, newHeight)) + 'px';
+    } else {
+        ghost.style.maxHeight = Math.max(0, newHeight) + 'px';
+    }
     ghost.style.width = '100%';
     container.appendChild(ghost);
     if (savedScroll) {
         savedScroll.snapshot.scrollTop = savedScroll.top;
         savedScroll.snapshot.scrollLeft = savedScroll.left;
+        const newRows = container.querySelector(':scope > .contributor-table-rows');
+        if (newRows) {
+            newRows.scrollTop = Math.min(savedScroll.top, Math.max(0, newRows.scrollHeight - newRows.clientHeight));
+            newRows.scrollLeft = savedScroll.left;
+        }
     }
     const options = { duration, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'both' };
     const outgoing = ghost.animate([{ opacity: 1 }, { opacity: 0 }], options);

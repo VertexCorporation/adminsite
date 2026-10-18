@@ -124,3 +124,6 @@
         grid-template-columns:minmax(0,1fr);
     }
 }
+
+/* Filtering changes row counts but must not re-anchor the entire viewport. */
+#contributors-list-container, #contributors-list-container > .contributor-table-rows { overflow-anchor: none; }
