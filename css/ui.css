@@ -35,3 +35,7 @@
 @media(max-width:600px){.ui-news-history-row{align-items:flex-start;flex-direction:column;}}
 
 .chat-mentions{font-size:.72rem;padding:2px 6px;border:1px solid var(--border-subtle,rgba(120,120,120,.32));border-radius:999px;font-weight:600;}
+
+.ui-eventsite-frame{display:block;width:100%;height:clamp(540px,75vh,960px);min-height:540px;margin-top:12px;border:1px solid var(--border-subtle,rgba(120,120,120,.24));border-radius:16px;background:var(--card-bg,var(--surface-primary,#151515));}
+.ui-eventsite-frame[hidden]{display:none!important;}
+@media(max-width:600px){.ui-eventsite-frame{height:72vh;min-height:500px;}}
