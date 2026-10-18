@@ -754,7 +754,7 @@ export async function fetchFullModelsData() {
         window.loadedManualModels = allManualModels;
         window.loadedAllModels = modelsData;
         renderManualModelsList();
-        renderAllModelsExplorer();
+        crossfade(dom.allModelsListContainer, () => renderAllModelsExplorer());
 
         console.log(`[MODELS] Derived and sorted ${allManualModels.length} manual models from database.`);
 
