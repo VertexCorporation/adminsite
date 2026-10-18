@@ -15,6 +15,7 @@ import {
     setTeamCardFn,
     deleteTeamCardFn,
     getTeamProfileFn,
+    listTeamProfilesFn,
     setTeamProfileFn,
     getWeeklyStarsFn,
     setWeeklyStarsFn,
@@ -326,42 +327,56 @@ export function openTeamCardDrawer(cardToEdit = null) {
 /**
  * Mustafa Çakı Yönetici Profili Bölümü Başlatıcı
  */
+let profileCache = null;
 export async function initTeamProfilePanel() {
     const container = document.getElementById('team-profile-container');
     if (!container) return;
-
+    if (!profileCache) container.innerHTML = `<p class="state-block">${__('common.loading')}</p>`;
     try {
-        const { data } = await getTeamProfileFn({ slug: 'mustafa_caki' });
-        renderTeamProfile(container, data);
+        const [{data: profilesData},{data: boardData}] = await Promise.all([
+            listTeamProfilesFn({}), listTeamCardsFn({})
+        ]);
+        if (!Array.isArray(profilesData?.profiles) || !Array.isArray(boardData?.cards)) throw new Error('Invalid profile list');
+        const profiles = profilesData.profiles;
+        const choices = [...profiles, ...boardData.cards
+            .filter(card => !profiles.some(profile => profile.cardId === card.id || profile.slug === card.id))
+            .map(card => ({slug: card.id, cardId:card.id, name:card.name, position:card.position,
+                photoUrl:card.photoUrl||card.imageUrl||'', socialLinks:card.socialLinks||{}, bio:''}))];
+        profileCache = choices;
+        const currentSlug = container.querySelector('#team-profile-select')?.value;
+        renderTeamProfile(container, choices.find(profile=>profile.slug===currentSlug) || choices[0] || null, choices);
     } catch (err) {
-        console.warn('[TEAM_PROFILE] Error loading profile:', err);
-        renderTeamProfile(container, {
-            name: 'Mustafa Çakı',
-            position: 'CEO',
-            bio: 'Vertex Kurucu Ortağı & CEO.',
-            photoUrl: 'assets/team/MUSTAFACAKI.webp',
-            socialLinks: {
-                linkedin: 'https://www.linkedin.com/in/mustawtfa/',
-                instagram: 'https://www.instagram.com/mustawtfa/'
-            }
-        });
+        console.warn('[TEAM_PROFILE] Error loading profiles:', err);
+        if (profileCache) {
+            showToast(() => userErrorMessage(err), 'error');
+        } else {
+            showLoadError(container, () => userErrorMessage(err), initTeamProfilePanel);
+        }
     }
 }
 
-function renderTeamProfile(container, profile) {
+function renderTeamProfile(container, profile, choices = []) {
+    if (!profile) {
+        container.innerHTML = `<p class="state-block">${getLang()==='tr'?'Henüz yönetici profili veya kartı bulunmuyor.':'No executive profiles or cards yet.'}</p>`;
+        return;
+    }
     const avatarHtml = profile.photoUrl
-        ? `<img src="${escapeHTML(profile.photoUrl)}" alt="${escapeHTML(profile.name || 'Mustafa Çakı')}">`
+        ? `<img src="${escapeHTML(profile.photoUrl)}" alt="${escapeHTML(profile.name || '')}">`
         : icon('user', { size: 32 });
 
     container.innerHTML = `
         <form id="team-profile-form" class="form-stack">
+            <div class="form-group-field">
+                <label for="team-profile-select">${getLang()==='tr'?'Yönetici seç':'Select executive'}</label>
+                <select id="team-profile-select">${choices.map(choice=>`<option value="${escapeHTML(choice.slug)}" ${choice.slug===profile.slug?'selected':''}>${escapeHTML(choice.name || choice.slug)}${choice.position?' — '+escapeHTML(choice.position):''}</option>`).join('')}</select>
+            </div>
             <div style="display:flex;gap:16px;align-items:center;">
                 <div class="team-list-avatar" style="width:64px;height:64px;">
                     ${avatarHtml}
                 </div>
                 <div>
-                    <h4 style="margin:0;font-size:16px;font-weight:600;">${escapeHTML(profile.name || 'Mustafa Çakı')}</h4>
-                    <span class="position-badge" style="margin-top:4px;">${escapeHTML(profile.position || 'CEO')}</span>
+                    <h4 style="margin:0;font-size:16px;font-weight:600;">${escapeHTML(profile.name || '—')}</h4>
+                    <span class="position-badge" style="margin-top:4px;">${escapeHTML(profile.position || '—')}</span>
                 </div>
             </div>
 
@@ -389,6 +404,10 @@ function renderTeamProfile(container, profile) {
         </form>
     `;
 
+    container.querySelector('#team-profile-select').onchange = event => {
+        const selected = choices.find(choice => choice.slug === event.target.value);
+        if (selected) renderTeamProfile(container, selected, choices);
+    };
     const form = container.querySelector('#team-profile-form');
     form.onsubmit = async e => {
         e.preventDefault();
@@ -400,12 +419,16 @@ function renderTeamProfile(container, profile) {
         setButtonLoading(saveBtn, true);
         try {
             await setTeamProfileFn({
-                slug: 'mustafa_caki',
+                slug: profile.slug,
+                cardId: profile.cardId || undefined,
+                name: profile.name,
+                position: profile.position || '',
                 bio,
-                photoUrl: profile.photoUrl || 'assets/team/MUSTAFACAKI.webp',
+                photoUrl: profile.photoUrl || '',
                 socialLinks: { linkedin, instagram }
             });
             showToast(() => __('team_profile.saved'), 'success');
+            await initTeamProfilePanel();
         } catch (err) {
             showToast(() => userErrorMessage(err), 'error');
         } finally {
