@@ -11,4 +11,4 @@ for(const [date,year,weekNumber] of [
  ['2024-12-30',2025,1],['2025-12-31',2026,1],
  ['2026-01-01',2026,1],['2026-12-31',2026,53]
 ])test(date+' ISO week-year',()=>assert.deepEqual(JSON.parse(JSON.stringify(isoWeek(date+'T12:00:00Z'))),{year,weekNumber}));
-test('invalid date',()=>assert.throws(()=>isoWeek('invalid'),TypeError));
+test('invalid date',()=>assert.throws(()=>isoWeek('invalid'),{name:'TypeError',message:'Invalid date'}));
