@@ -15,10 +15,15 @@ import {
     setTeamCardFn,
     deleteTeamCardFn,
     getTeamProfileFn,
+    listTeamProfilesFn,
     setTeamProfileFn,
     getWeeklyStarsFn,
-    setWeeklyStarsFn
+    setWeeklyStarsFn,
+    setSiteTeamEntryFn,
+    getVertexContributorsFn
 } from '../core/firebase.js';
+import { isoWeek } from '../utils/isoWeek.js';
+import { showLoadError } from '../ui/states.js';
 import { escapeHTML, sanitizeHTML, showToast, userErrorMessage, __, getLang, onLangChange } from '../utils/ui.js';
 import { icon } from '../utils/icons.js';
 import { openDrawer, closeDrawer, confirmDialog } from './shell.js';
@@ -31,6 +36,9 @@ export const POSITIONS = Object.freeze([
 
 let teamCards = [];
 let cardsLoading = false;
+let cardsLoaded = false;
+let cardsError = null;
+let boardCapacity = POSITIONS.length;
 
 /**
  * Ekip kartları listesini Firestore'dan çeker ve ekrana çizer.
@@ -40,22 +48,33 @@ export async function loadTeamCards() {
     if (!listEl) return;
 
     cardsLoading = true;
+    cardsError = null;
     const addBtn = document.getElementById('add-team-card-btn');
+    if (addBtn && !cardsLoaded) addBtn.disabled = true;
+    if (!cardsLoaded) listEl.innerHTML = `<p class="state-block">${__('common.loading')}</p>`;
     const emptyEl = document.getElementById('team-cards-empty');
 
     try {
         const { data } = await listTeamCardsFn({});
-        teamCards = Array.isArray(data?.cards) ? data.cards : [];
+        if (!Array.isArray(data?.cards)) throw new Error('Invalid team cards response');
+        teamCards = data.cards;
+        boardCapacity = Number.isInteger(data.maxAllowed) ? data.maxAllowed : POSITIONS.length;
+        cardsLoaded = true;
     } catch (err) {
-        console.warn('[TEAM_CARDS] Could not fetch cards from backend, using current state:', err);
+        cardsError = err;
+        console.warn('[TEAM_CARDS] Failed to refresh board cards:', err);
     } finally {
         cardsLoading = false;
     }
 
     renderTeamCardsList();
+    if (cardsError) {
+        if (emptyEl) emptyEl.hidden = true;
+        showLoadError(listEl, () => userErrorMessage(cardsError), loadTeamCards, {staleSelector:'.team-list-row'});
+    }
 
     if (addBtn) {
-        const isFull = teamCards.length >= 10;
+        const isFull = !cardsLoaded || teamCards.length >= boardCapacity;
         addBtn.disabled = isFull;
         addBtn.title = isFull ? __('team_cards.all_filled') : __('team_cards.add_btn');
     }
@@ -68,7 +87,7 @@ function renderTeamCardsList() {
 
     if (!teamCards.length) {
         listEl.innerHTML = '';
-        if (emptyEl) emptyEl.hidden = false;
+        if (emptyEl) emptyEl.hidden = !cardsLoaded || Boolean(cardsError);
         return;
     }
 
@@ -132,8 +151,8 @@ function renderTeamCardsList() {
                 showToast(() => __('team_cards.deleted'), 'success');
                 const addBtn = document.getElementById('add-team-card-btn');
                 if (addBtn) {
-                    addBtn.disabled = teamCards.length >= 10;
-                    addBtn.title = teamCards.length >= 10 ? __('team_cards.all_filled') : __('team_cards.add_btn');
+                    addBtn.disabled = teamCards.length >= boardCapacity;
+                    addBtn.title = teamCards.length >= boardCapacity ? __('team_cards.all_filled') : __('team_cards.add_btn');
                 }
             } catch (err) {
                 showToast(() => userErrorMessage(err), 'error');
@@ -285,6 +304,13 @@ export function openTeamCardDrawer(cardToEdit = null) {
                 }
             };
 
+            const selectedFile = photoInput.files?.[0];
+            if (selectedFile) {
+                const imageData = selectedPhoto.split(',')[1];
+                if (!imageData) throw new Error('Invalid photo content');
+                const uploaded = await setSiteTeamEntryFn({kind:'photo', imageData, contentType:selectedFile.type});
+                payload.photoUrl = uploaded.data.imageUrl;
+            }
             await setTeamCardFn(payload);
             closeDrawer();
             showToast(() => __('team_cards.saved'), 'success');
@@ -301,42 +327,56 @@ export function openTeamCardDrawer(cardToEdit = null) {
 /**
  * Mustafa Çakı Yönetici Profili Bölümü Başlatıcı
  */
+let profileCache = null;
 export async function initTeamProfilePanel() {
     const container = document.getElementById('team-profile-container');
     if (!container) return;
-
+    if (!profileCache) container.innerHTML = `<p class="state-block">${__('common.loading')}</p>`;
     try {
-        const { data } = await getTeamProfileFn({ slug: 'mustafa_caki' });
-        renderTeamProfile(container, data);
+        const [{data: profilesData},{data: boardData}] = await Promise.all([
+            listTeamProfilesFn({}), listTeamCardsFn({})
+        ]);
+        if (!Array.isArray(profilesData?.profiles) || !Array.isArray(boardData?.cards)) throw new Error('Invalid profile list');
+        const profiles = profilesData.profiles;
+        const choices = [...profiles, ...boardData.cards
+            .filter(card => !profiles.some(profile => profile.cardId === card.id || profile.slug === card.id))
+            .map(card => ({slug: card.id, cardId:card.id, name:card.name, position:card.position,
+                photoUrl:card.photoUrl||card.imageUrl||'', socialLinks:card.socialLinks||{}, bio:''}))];
+        profileCache = choices;
+        const currentSlug = container.querySelector('#team-profile-select')?.value;
+        renderTeamProfile(container, choices.find(profile=>profile.slug===currentSlug) || choices[0] || null, choices);
     } catch (err) {
-        console.warn('[TEAM_PROFILE] Error loading profile:', err);
-        renderTeamProfile(container, {
-            name: 'Mustafa Çakı',
-            position: 'CEO',
-            bio: 'Vertex Kurucu Ortağı & CEO.',
-            photoUrl: 'assets/team/MUSTAFACAKI.webp',
-            socialLinks: {
-                linkedin: 'https://www.linkedin.com/in/mustawtfa/',
-                instagram: 'https://www.instagram.com/mustawtfa/'
-            }
-        });
+        console.warn('[TEAM_PROFILE] Error loading profiles:', err);
+        if (profileCache) {
+            showToast(() => userErrorMessage(err), 'error');
+        } else {
+            showLoadError(container, () => userErrorMessage(err), initTeamProfilePanel);
+        }
     }
 }
 
-function renderTeamProfile(container, profile) {
+function renderTeamProfile(container, profile, choices = []) {
+    if (!profile) {
+        container.innerHTML = `<p class="state-block">${getLang()==='tr'?'Henüz yönetici profili veya kartı bulunmuyor.':'No executive profiles or cards yet.'}</p>`;
+        return;
+    }
     const avatarHtml = profile.photoUrl
-        ? `<img src="${escapeHTML(profile.photoUrl)}" alt="${escapeHTML(profile.name || 'Mustafa Çakı')}">`
+        ? `<img src="${escapeHTML(profile.photoUrl)}" alt="${escapeHTML(profile.name || '')}">`
         : icon('user', { size: 32 });
 
     container.innerHTML = `
         <form id="team-profile-form" class="form-stack">
+            <div class="form-group-field">
+                <label for="team-profile-select">${getLang()==='tr'?'Yönetici seç':'Select executive'}</label>
+                <select id="team-profile-select">${choices.map(choice=>`<option value="${escapeHTML(choice.slug)}" ${choice.slug===profile.slug?'selected':''}>${escapeHTML(choice.name || choice.slug)}${choice.position?' — '+escapeHTML(choice.position):''}</option>`).join('')}</select>
+            </div>
             <div style="display:flex;gap:16px;align-items:center;">
                 <div class="team-list-avatar" style="width:64px;height:64px;">
                     ${avatarHtml}
                 </div>
                 <div>
-                    <h4 style="margin:0;font-size:16px;font-weight:600;">${escapeHTML(profile.name || 'Mustafa Çakı')}</h4>
-                    <span class="position-badge" style="margin-top:4px;">${escapeHTML(profile.position || 'CEO')}</span>
+                    <h4 style="margin:0;font-size:16px;font-weight:600;">${escapeHTML(profile.name || '—')}</h4>
+                    <span class="position-badge" style="margin-top:4px;">${escapeHTML(profile.position || '—')}</span>
                 </div>
             </div>
 
@@ -364,6 +404,10 @@ function renderTeamProfile(container, profile) {
         </form>
     `;
 
+    container.querySelector('#team-profile-select').onchange = event => {
+        const selected = choices.find(choice => choice.slug === event.target.value);
+        if (selected) renderTeamProfile(container, selected, choices);
+    };
     const form = container.querySelector('#team-profile-form');
     form.onsubmit = async e => {
         e.preventDefault();
@@ -375,12 +419,16 @@ function renderTeamProfile(container, profile) {
         setButtonLoading(saveBtn, true);
         try {
             await setTeamProfileFn({
-                slug: 'mustafa_caki',
+                slug: profile.slug,
+                cardId: profile.cardId || undefined,
+                name: profile.name,
+                position: profile.position || '',
                 bio,
-                photoUrl: profile.photoUrl || 'assets/team/MUSTAFACAKI.webp',
+                photoUrl: profile.photoUrl || '',
                 socialLinks: { linkedin, instagram }
             });
             showToast(() => __('team_profile.saved'), 'success');
+            await initTeamProfilePanel();
         } catch (err) {
             showToast(() => userErrorMessage(err), 'error');
         } finally {
@@ -389,6 +437,10 @@ function renderTeamProfile(container, profile) {
     };
 }
 
+// Keep previously loaded records on transient read failures.
+let weeklyCache = null;
+const starName = item => typeof item === 'string' ? item : (item?.name || '');
+const starId = item => typeof item === 'object' && item !== null ? item.id : null;
 /**
  * Haftanın Yıldızları (Weekly Stars) Bölümü Başlatıcı
  */
@@ -396,29 +448,31 @@ export async function initWeeklyStarsPanel() {
     const container = document.getElementById('weekly-stars-container');
     if (!container) return;
 
+    if (!weeklyCache) container.innerHTML = `<p class="state-block">${__('common.loading')}</p>`;
     try {
         const { data } = await getWeeklyStarsFn({});
-        renderWeeklyStars(container, data || { current: null, history: [] });
+        if (!data || !Array.isArray(data.history)) throw new Error('Invalid weekly stars response');
+        weeklyCache = data;
+        let directory = [];
+        let directoryError = null;
+        try {
+            const response = await getVertexContributorsFn({});
+            if (!Array.isArray(response.data?.contributors)) throw new Error('Invalid participant directory');
+            directory = response.data.contributors.filter(person => person && typeof person.id === 'string' && person.name);
+        } catch (error) { directoryError = error; }
+        renderWeeklyStars(container, {...weeklyCache, directory, directoryError});
     } catch (err) {
-        console.warn('[WEEKLY_STARS] Error loading weekly stars:', err);
-        renderWeeklyStars(container, { current: null, history: [] });
+        console.warn('[WEEKLY_STARS] Failed to load weekly stars:', err);
+        if (weeklyCache) {
+            showToast(() => userErrorMessage(err), 'error');
+            return;
+        }
+        showLoadError(container, () => userErrorMessage(err), initWeeklyStarsPanel);
     }
 }
 
 function renderWeeklyStars(container, starsData) {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    // ISO hafta hesaplama
-    const target = new Date(now.valueOf());
-    const dayNr = (now.getDay() + 6) % 7;
-    target.setDate(target.getDate() - dayNr + 3);
-    const firstThursday = target.valueOf();
-    target.setMonth(0, 1);
-    if (target.getDay() !== 4) {
-        target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
-    }
-    const currentWeekNumber = 1 + Math.ceil((firstThursday - target) / 604800000);
-
+    const {year: currentYear, weekNumber: currentWeekNumber} = isoWeek(new Date());
     const current = starsData.current;
     const history = Array.isArray(starsData.history) ? starsData.history : [];
 
@@ -442,7 +496,14 @@ function renderWeeklyStars(container, starsData) {
 
                 <div class="form-group-field">
                     <label for="stars-contributors">${__('weekly_stars.contributors_label')}</label>
-                    <input type="text" id="stars-contributors" placeholder="Deniz Örnek, Ayşe Demir" value="${escapeHTML((current?.contributors || []).join(', '))}">
+                    <div id="stars-selected" class="stars-selected" aria-live="polite"></div>
+                    <div class="search-field">
+                        ${icon('search', {size:16})}
+                        <input type="search" id="stars-person-search" autocomplete="off" placeholder="${getLang()==='tr'?'Katılımcı adıyla ara':'Search participants'}" aria-label="${__('weekly_stars.contributors_label')}">
+                    </div>
+                    <div id="stars-search-results" class="stars-search-results" role="listbox"></div>
+                    ${starsData.directoryError ? `<p class="state-block" role="alert">${escapeHTML(getLang()==='tr'?'Katılımcılar yüklenemedi. Kayıtlar korundu; yeniden deneyin.':'Participants could not be loaded. Existing records are preserved; retry.')}</p>` : ''}
+                    <p class="form-hint">${getLang()==='tr'?'En fazla 5 kişi; seçimler kalıcı katılımcı kimliğiyle kaydedilir.':'Up to five people; selections use permanent participant IDs.'}</p>
                 </div>
 
                 <div>
@@ -461,7 +522,7 @@ function renderWeeklyStars(container, starsData) {
                         <div class="team-list-row">
                             <div class="team-list-info">
                                 <span class="team-list-name">${escapeHTML(item.title || `Hafta ${item.weekNumber}, ${item.year}`)}</span>
-                                <span class="team-list-meta">${escapeHTML((item.contributors || []).join(', '))}</span>
+                                <span class="team-list-meta">${escapeHTML((item.contributors || []).map(starName).join(', '))}</span>
                             </div>
                         </div>`).join('')}</div>`
                 }
@@ -469,14 +530,48 @@ function renderWeeklyStars(container, starsData) {
         </div>
     `;
 
+    const selected = [...(Array.isArray(current?.contributors) ? current.contributors : [])];
+    const directory = starsData.directory || [];
+    const selectedHost = container.querySelector('#stars-selected');
+    const search = container.querySelector('#stars-person-search');
+    const results = container.querySelector('#stars-search-results');
+    const drawSelected = () => {
+        selectedHost.innerHTML = selected.map((person, index) => `<span class="stars-person-chip">${escapeHTML(starName(person))}${starId(person)?'':' (legacy)'}<button type="button" data-remove-star="${index}" aria-label="${__('common.delete')}">×</button></span>`).join('') || `<span class="form-hint">${getLang()==='tr'?'Henüz katılımcı seçilmedi.':'No participants selected.'}</span>`;
+        selectedHost.querySelectorAll('[data-remove-star]').forEach(button => button.onclick = () => {
+            selected.splice(Number(button.dataset.removeStar), 1);
+            drawSelected();
+            drawResults();
+        });
+    };
+    const drawResults = () => {
+        const query = search.value.trim().toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US');
+        results.innerHTML = !query ? '' : directory.filter(person =>
+            !selected.some(chosen => starId(chosen)===person.id) &&
+            (person.name+' '+(person.email||'')).toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US').includes(query)
+        ).slice(0,20).map(person => `<button type="button" class="stars-person-result" role="option" data-star-id="${escapeHTML(person.id)}"><strong>${escapeHTML(person.name)}</strong><small>${escapeHTML(person.email||person.department||'')}</small></button>`).join('');
+        results.querySelectorAll('[data-star-id]').forEach(button => button.onclick = () => {
+            if (selected.length >= 5) {
+                showToast(() => getLang()==='tr'?'En fazla 5 kişi seçilebilir.':'Select up to 5 people.', 'error');
+                return;
+            }
+            const person = directory.find(item => item.id===button.dataset.starId);
+            if (!person) return;
+            selected.push({id:person.id, name:person.name});
+            search.value = '';
+            drawSelected();
+            drawResults();
+            search.focus({preventScroll:true});
+        });
+    };
+    search.oninput = drawResults;
+    drawSelected();
     const form = container.querySelector('#weekly-stars-form');
     form.onsubmit = async e => {
         e.preventDefault();
         const week = parseInt(container.querySelector('#stars-week').value, 10);
         const year = parseInt(container.querySelector('#stars-year').value, 10);
         const title = container.querySelector('#stars-title').value.trim();
-        const contribRaw = container.querySelector('#stars-contributors').value;
-        const contributors = contribRaw.split(',').map(s => s.trim()).filter(Boolean);
+        const contributors = selected.slice();
 
         const saveBtn = container.querySelector('#save-weekly-stars-btn');
         setButtonLoading(saveBtn, true);
