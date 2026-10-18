@@ -529,21 +529,23 @@ function renderAllModelsExplorer() {
         dom.allModelsListContainer.innerHTML = `<p class="form-hint" data-i18n="models.empty_database">${__('models.empty_database')}</p>`;
         return;
     }
-    let explorerHTML = '';
+    const wasOpen = new Set([...dom.allModelsListContainer.querySelectorAll('.producer-group[open]')].map(group => group.dataset.producer));
+    let explorerHTML = `<div class="models-explorer-toolbar"><label for="models-explorer-search">${document.documentElement.lang==='tr'?'Model veya üretici ara':'Search models or providers'}</label><input id="models-explorer-search" type="search" autocomplete="off" placeholder="${document.documentElement.lang==='tr'?'Model, seri, kimlik...':'Model, series, ID...'}"></div>`;
     for (const pName of Object.keys(modelsData.producers).sort()) {
-        explorerHTML += `<details class="producer-group"><summary>${sanitizeHTML(pName)}</summary><div class="details-content">`;
+        const producerCount = Object.entries(modelsData.producers[pName]).filter(([key])=>key!=='series_description').reduce((sum,[,series])=>sum+Object.keys(series).filter(key=>!['hidden','series_description'].includes(key)).length,0);
+        explorerHTML += `<details class="producer-group" data-producer="${sanitizeHTML(pName)}" ${wasOpen.has(pName)?'open':''}><summary><span>${sanitizeHTML(pName)}</span><span class="models-group-count">${producerCount}</span></summary><div class="details-content">`;
         for (const sName of Object.keys(modelsData.producers[pName]).sort()) {
             if (sName === 'series_description') continue;
             const seriesObj = modelsData.producers[pName][sName];
             const isHidden = seriesObj.hidden === true;
-            explorerHTML += `<details class="series-group ${isHidden ? 'hidden-series' : ''}">
-                <summary>
+            explorerHTML += `<section class="series-group ${isHidden ? 'hidden-series' : ''}" data-series="${sanitizeHTML(sName)}">
+                <div class="series-heading">
                     <span class="series-name">${sanitizeHTML(sName)} ${isHidden ? __('common.hide') : ''}</span>
                     <div class="series-actions">
                         <button class="edit-series-desc-btn" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}">${__('models.edit_desc')}</button>
                         <button class="${isHidden ? 'unhide-series-btn' : 'hide-series-btn'}" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}">${isHidden ? __('common.unhide') : __('common.hide')}</button>
                     </div>
-                </summary>
+                </div>
                 <div class="details-content">`;
 
             if (!isHidden) {
@@ -563,12 +565,31 @@ function renderAllModelsExplorer() {
                     </div>`;
                 }
             }
-            explorerHTML += `</div></details>`;
+            explorerHTML += `</div></section>`;
         }
         explorerHTML += `</div></details>`;
     }
     dom.allModelsListContainer.innerHTML = explorerHTML;
     compactModelActions(dom.allModelsListContainer);
+    const filterInput = dom.allModelsListContainer.querySelector('#models-explorer-search');
+    filterInput.oninput = () => {
+        const query = filterInput.value.trim().toLocaleLowerCase(document.documentElement.lang==='tr'?'tr-TR':'en-US');
+        dom.allModelsListContainer.querySelectorAll('.producer-group').forEach(group => {
+            let matching = 0;
+            group.querySelectorAll('.series-group').forEach(series => {
+                let seriesMatches = 0;
+                series.querySelectorAll('.variant-item').forEach(item => {
+                    const matches = !query || [group.dataset.producer,series.dataset.series,item.textContent].join(' ').toLocaleLowerCase().includes(query);
+                    item.hidden = !matches;
+                    if (matches) seriesMatches++;
+                });
+                series.hidden = Boolean(query) && !seriesMatches;
+                matching += seriesMatches;
+            });
+            group.hidden = Boolean(query) && !matching;
+            if (query && matching) group.open = true;
+        });
+    };
     });
 }
 
