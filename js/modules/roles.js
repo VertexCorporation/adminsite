@@ -2,8 +2,8 @@ import { beginPanelLoading } from '../utils/loading.js';
 // js/modules/roles.js
 
 import { icon } from '../utils/icons.js';
-import { openPopover, closePopover } from './shell.js';
-import { db, saveDepartmentPermissionsFn, getPanelPermissionsFn } from '../core/firebase.js';
+import { openPopover, closePopover, confirmDialog } from './shell.js';
+import { db, saveDepartmentPermissionsFn, getPanelPermissionsFn, listDepartmentPermissionHistoryFn, restoreDepartmentPermissionsFn } from '../core/firebase.js';
 import { userErrorMessage, showToast, __, onLangChange, getLang } from '../utils/ui.js';
 
 const TABS = [
@@ -319,7 +319,9 @@ function renderMatrixTable() {
     if (!container || !departmentPermissions) return;
     container.setAttribute('aria-busy','false');
     const focus = document.activeElement?.dataset;
-    let html = '<div class="permission-status-row"><span id="permission-save-status" role="status" aria-live="polite"></span></div><div class="dept-perms-table panel-matrix" role="table" aria-label="'+__('perms.dept_col')+'"><div class="dept-perms-header" role="row"><span role="columnheader">'+__('perms.dept_col')+'</span>';
+    let html = '<div class="permission-status-row"><span id="permission-save-status" role="status" aria-live="polite"></span>'+
+        (currentUser.isAdmin ? '<button type="button" class="chrome-btn-outline permission-history-trigger" aria-expanded="false">'+(document.documentElement.lang==='en'?'Change history':'Değişiklik geçmişi')+'</button>' : '')+
+        '</div><div class="dept-perms-table panel-matrix" role="table" aria-label="'+__('perms.dept_col')+'"><div class="dept-perms-header" role="row"><span role="columnheader">'+__('perms.dept_col')+'</span>';
     TABS.forEach(tab => {html += `<span class="dept-perm-th" role="columnheader">${__(tab.key)}</span>`;});
     html += '<span role="columnheader" class="sr-only">'+__('common.actions')+'</span></div>';
     let group = null;
@@ -335,12 +337,64 @@ function renderMatrixTable() {
     });
     container.innerHTML = html + '</div>';
     paintSaveState();
+    container.querySelector('.permission-history-trigger')?.addEventListener('click',()=>void showPermissionHistory());
     container.querySelectorAll('.perm-cycle').forEach(button=>button.onclick=()=>handleMatrixCycle(button));
     container.querySelectorAll('[data-preset-dept]').forEach(button=>button.onclick=()=>openPopover(button,{render(pop){
         pop.innerHTML='<div class="menu-list">'+LEVELS.map(level=>`<button type="button" class="menu-item" data-dept="${button.dataset.presetDept}" data-preset="${level}">${icon(level==='none'?'circle-off':level==='read'?'eye':'pencil')}<span>${__('perms.preset_'+level)}</span></button>`).join('')+'</div>';
         pop.querySelectorAll('[data-preset]').forEach(item=>item.onclick=()=>{closePopover();handlePreset(item);});
     }}));
     if (focus?.dept && focus?.tab) container.querySelector(`[data-dept="${focus.dept}"][data-tab="${focus.tab}"]`)?.focus({preventScroll:true});
+}
+async function showPermissionHistory() {
+    if (!currentUser.isAdmin || saving || saveState==='pending')return;
+    const container=document.getElementById('dept-permissions-container');
+    const trigger=container?.querySelector('.permission-history-trigger');
+    if(!trigger)return;
+    const existing=container.querySelector('.permission-history-list');
+    if(existing){existing.remove();trigger.setAttribute('aria-expanded','false');return;}
+    trigger.disabled=true;
+    try {
+        const {data}=await listDepartmentPermissionHistoryFn();
+        const panel=document.createElement('section');
+        panel.className='permission-history-list';
+        panel.setAttribute('aria-label',document.documentElement.lang==='en'?'Permission revision history':'Yetki revizyon geçmişi');
+        const entries=(data.entries||[]);
+        panel.innerHTML=entries.map(entry=>`<div class="permission-history-item">
+            <span><strong>r${Number(entry.revision)}</strong> · ${escapePermissionText(entry.actorEmail||entry.actorUid||'')}
+            · ${escapePermissionText(entry.action||'update')} · ${Number(entry.changes?.length||0)}
+            · ${escapePermissionText(entry.createdAt?new Date((entry.createdAt.seconds||entry.createdAt._seconds||0)*1000).toLocaleString(document.documentElement.lang==='en'?'en-US':'tr-TR'):'')}</span>
+            <button type="button" class="chrome-btn-outline" data-restore-revision="${Number(entry.revision)}">${document.documentElement.lang==='en'?'Restore':'Geri yükle'}</button>
+        </div>`).join('') || `<p class="form-hint">${document.documentElement.lang==='en'?'No changes have been recorded.':'Henüz değişiklik kaydı yok.'}</p>`;
+        container.querySelector('.permission-status-row')?.after(panel);
+        trigger.setAttribute('aria-expanded','true');
+        panel.querySelectorAll('[data-restore-revision]').forEach(button=>button.onclick=async()=>{
+            const targetRevision=Number(button.dataset.restoreRevision);
+            if(!Number.isSafeInteger(targetRevision) || saving)return;
+            const approved=await confirmDialog(()=>({
+                title:document.documentElement.lang==='en'?'Restore permissions':'Yetkileri geri yükle',
+                body:document.documentElement.lang==='en'
+                    ?`Restore permission revision ${targetRevision}? This will create a new audited revision.`
+                    :`Yetki revizyonu ${targetRevision} geri yüklensin mi? Yeni bir denetim kaydı oluşturulacak.`
+            }));
+            if(!approved)return;
+            button.disabled=true;
+            try {
+                await restoreDepartmentPermissionsFn({targetRevision,expectedRevision:serverRevision});
+                await readDepartmentPermissions();
+                confirmedPermissions=structuredClone(departmentPermissions);
+                permissionRevision=0;saveState='saved';
+                renderMatrixTable();renderPanelMenuContent();
+                showToast(()=>document.documentElement.lang==='en'?'Permissions restored.':'Yetkiler geri yüklendi.','success');
+            } catch(error) {
+                showToast(()=>userErrorMessage(error),'error');
+                button.disabled=false;
+            }
+        });
+    } catch(error) {showToast(()=>userErrorMessage(error),'error');}
+    finally {if(trigger.isConnected)trigger.disabled=false;}
+}
+function escapePermissionText(value) {
+    return String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 }
 function ensureDeptEntry(deptId) {
     if (!departmentPermissions[deptId]) departmentPermissions[deptId] = {panels:{}};
