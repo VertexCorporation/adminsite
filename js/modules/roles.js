@@ -4,7 +4,7 @@ import { beginPanelLoading } from '../utils/loading.js';
 import { icon } from '../utils/icons.js';
 import { openPopover, closePopover } from './shell.js';
 import { db, saveDepartmentPermissionsFn, getPanelPermissionsFn } from '../core/firebase.js';
-import { userErrorMessage, showToast, __, onLangChange } from '../utils/ui.js';
+import { userErrorMessage, showToast, __, onLangChange, getLang } from '../utils/ui.js';
 
 const TABS = [
     { id: 'contributors', icon: 'group', key: 'nav.contributors' },
@@ -135,24 +135,27 @@ function nextLevel(level) {
 // --- Kullanıcı bağlamı ---
 
 export function setCurrentUser(isAdmin, departments) {
-    currentUser = {
-        isAdmin: !!isAdmin,
-        departments: Array.isArray(departments) ? departments : []
-    };
+    const allowed = Array.isArray(departments) ? [...new Set(departments.filter(d => DEPARTMENTS.some(x=>x.id===d)))] : [];
+    currentUser = Object.freeze({
+        // Only the server-confirmed Core grant is privileged; tokens are not.
+        isAdmin: isAdmin === true && allowed.includes('Core'),
+        departments: Object.freeze(allowed)
+    });
+    document.dispatchEvent(new CustomEvent('vertex:access-changed', {detail: getCurrentUserAccess()}));
 }
-
+export function getCurrentUserAccess() {
+    return {isCore: currentUser.isAdmin, departments: [...currentUser.departments]};
+}
 export function isPanelAdmin() {
     return currentUser.isAdmin;
 }
-
 export function getEffectivePanelLevel(panelKey) {
-    if (currentUser.isAdmin) return 'write';
-    if (['contributors.users','contributors.vertexStatus'].includes(panelKey)) return 'none';
-    if (!departmentPermissions) return 'none';
-    return bestLevel(panelKey, currentUser.departments);
+    if(currentUser.isAdmin)return 'write';
+    if(['contributors.users','contributors.vertexStatus'].includes(panelKey))return 'none';
+    if(!departmentPermissions)return 'none';
+    return bestLevel(panelKey,currentUser.departments);
 }
-
-/** Kullanıcının rankları için gizlenen filtre çipleri (birleşim). */
+/** The view hides only fields the server has already stripped. */
 export function getHiddenFieldsFor(panelKey) {
     if (currentUser.isAdmin || !departmentPermissions) return [];
     return [...new Set(currentUser.departments.flatMap(dept => departmentPermissions[dept]?.hiddenFields?.[panelKey] || []))];
@@ -168,6 +171,7 @@ export function getHiddenChipsFor(panelKey) {
 }
 
 export function getAccessibleTabs(departments) {
+    if (currentUser.isAdmin && departments.includes('Core')) return TABS.map(tab => tab.id);
     if (!departmentPermissions) return [];
     return TABS
         .filter(tab => (PANELS[tab.id] || []).some(panel => bestLevel(`${tab.id}.${panel.id}`, departments) !== 'none'))
@@ -443,9 +447,9 @@ function renderPanelMenuContent() {
         html+=`<div class="visibility-controls"><div class="permission-department-picker"><span>${__('perms.choose_department')}</span><button type="button" class="chrome-btn-outline" data-select-department aria-haspopup="dialog">${__(DEPARTMENTS.find(dept=>dept.id===menuContentDept).nameKey)}${icon('chevron-down',{size:14})}</button></div>`;
         for(const [bucket,list,title] of [['hiddenFields',options.fieldGroups,'perms.menu_content'],['hiddenChips',options.chips,'perms.menu_chips']]) {
             const hidden=new Set(deptData[bucket]?.[panelKey]||[]);
-            html+=`<fieldset><legend>${__(title)}</legend>`+list.map(option=>`<label class="perm-hidden-choice"><input type="checkbox" data-cfg="${bucket}" data-tag="${option.tag||option.id}" ${hidden.has(option.tag||option.id)?'checked':''}><span>${__(option.key)}</span></label>`).join('')+'</fieldset>';
+            html+=`<fieldset><legend>${__(title)}</legend><p class="form-hint">${bucket==='hiddenFields'?(getLang()==='tr'?'Güvenlik: alanlar sunucuda kaldırılır.':'Security: fields are removed on the server.'):(getLang()==='tr'?'Yalnızca görünüm: filtre düğmeleri gizlenir.':'Display only: filter controls are hidden.')}</p>`+list.map(option=>`<label class="perm-hidden-choice"><input type="checkbox" data-cfg="${bucket}" data-tag="${option.tag||option.id}" ${hidden.has(option.tag||option.id)?'checked':''}><span>${__(option.key)}</span></label>`).join('')+'</fieldset>';
         }
-        html+=`<p class="form-hint">${__('perms.hidden_hint')}</p></div>`;
+        html+=`</div>`;
     }
     pop.innerHTML=html;
     pop.querySelectorAll('[data-menu-dept]').forEach(button=>button.onclick=()=>{if(!currentUser.isAdmin)return;ensureDeptEntry(button.dataset.menuDept)[panelKey]=nextLevel(button.dataset.menuLevel);scheduleSave();renderMatrixTable();renderPanelMenuContent();});
