@@ -1111,7 +1111,7 @@ async function resumeImageCleanups(){
     for(const cleanupId of pendingImageCleanups()){
         try{
             const result=await confirmModelImageCleanupFn({cleanupId});
-            if(result.data?.state==='complete'||result.data?.processed===false)clearImageCleanup(cleanupId);
+            if(result.data?.state==='complete')clearImageCleanup(cleanupId);
         }catch{/* The server job remains durable; retry on a later session. */}
     }
 }
