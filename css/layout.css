@@ -209,7 +209,7 @@
     padding: var(--space-5) var(--content-pad-x) var(--space-7);
 }
 
-.tab-panel { display: none; animation: tabFade var(--motion-normal) var(--ease-standard); }
+.tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
 .panel-section-title {

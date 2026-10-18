@@ -1,4 +1,6 @@
-import { escapeHTML } from './ui.js';
+import { escapeHTML, showToast } from './ui.js';
+import { crossfade, animateContent } from '../ui/transition.js';
+import { setButtonState } from '../ui/controls.js';
 import { icon } from './icons.js';
 // js/utils/loading.js
 //
@@ -89,6 +91,7 @@ export function skeletonRows(count = 6, rowFactory = skeletonTableRow) {
 export function createLoadingController(container, opts = {}) {
     let timer = null;
     let skeletonShown = false;
+    let stale = false;
 
     function start() {
         if (!container || timer) return;
@@ -98,7 +101,12 @@ export function createLoadingController(container, opts = {}) {
             !container.querySelector('.skeleton') &&
             !container.querySelector('.state-block');
         container.setAttribute('aria-busy','true');
-        if (hasContent) return;
+        if (hasContent) {
+            stale = true;
+            container.classList.add('is-refreshing');
+            return;
+        }
+        stale = false;
         timer = setTimeout(() => {
             timer = null;
             skeletonShown = true;
@@ -117,15 +125,11 @@ export function createLoadingController(container, opts = {}) {
         cancelTimer();
         const wasSkeleton = skeletonShown || !!container.querySelector('.skeleton');
         skeletonShown = false;
+        stale = false;
         container.removeAttribute('aria-busy');
-        container.innerHTML = renderHTML;
-        if (wasSkeleton) {
-            const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-            if (!prefersReduced) {
-                container.classList.add('content-entering');
-                setTimeout(() => container.classList.remove('content-entering'), 260);
-            }
-        }
+        container.classList.remove('is-refreshing');
+        if (wasSkeleton || container.children.length) crossfade(container, () => { container.innerHTML = renderHTML; });
+        else container.innerHTML = renderHTML;
     }
 
     /** Hata durumu: açıklayıcı mesaj + Retry. */
@@ -133,12 +137,21 @@ export function createLoadingController(container, opts = {}) {
         cancelTimer();
         skeletonShown = false;
         container.removeAttribute('aria-busy');
-        container.innerHTML = `<div class="state-block">
-            ${icon('alert-circle',{size:28})}
-            <h4>${escapeHTML(message)}</h4>
-            ${retryFn ? `<button type="button" class="chrome-btn-outline retry-btn">${retryLabel}</button>` : ''}
-        </div>`;
-        container.querySelector('.retry-btn')?.addEventListener('click', retryFn);
+        container.classList.remove('is-refreshing');
+        if (stale && container.children.length) {
+            stale = false;
+            showToast(message, 'error');
+            return;
+        }
+        stale = false;
+        crossfade(container, () => {
+            container.innerHTML = `<div class="state-block" role="alert">
+                ${icon('alert-circle',{size:28})}
+                <h4>${escapeHTML(message)}</h4>
+                ${retryFn ? `<button type="button" class="chrome-btn-outline retry-btn">${escapeHTML(retryLabel)}</button>` : ''}
+            </div>`;
+            container.querySelector('.retry-btn')?.addEventListener('click', retryFn);
+        });
     }
 
     /** Boş durum: iskelet gösterilmez, gerçek empty state basılır. */
@@ -146,37 +159,31 @@ export function createLoadingController(container, opts = {}) {
         cancelTimer();
         skeletonShown = false;
         container.removeAttribute('aria-busy');
-        container.innerHTML = `<div class="state-block">
+        container.classList.remove('is-refreshing');
+        stale = false;
+        crossfade(container, () => { container.innerHTML = `<div class="state-block">
             ${icon('users-group',{size:28})}
             <h4>${escapeHTML(title)}</h4>
             ${description ? `<p>${escapeHTML(description)}</p>` : ''}
-        </div>`;
+        </div>`; });
     }
 
     function destroy() {
         cancelTimer();
         skeletonShown = false;
+        stale = false;
+        container?.classList.remove('is-refreshing');
         container?.removeAttribute('aria-busy');
     }
 
     return { start, success, error, empty, destroy };
 }
 
-const busyButtons = new WeakMap();
-/** Preserve the live icon, label, dimensions and the original disabled state. */
+/** Preserve existing callers while all action controls share the same state machine. */
 export function setButtonLoading(btn, loading, loadingLabel = null) {
-    if (!btn) return;
-    if (loading) {
-        if (busyButtons.has(btn)) return;
-        busyButtons.set(btn, {disabled:btn.disabled});
-        btn.disabled = true;
-        btn.setAttribute('aria-busy','true');
-        btn.classList.add('button-pending');
-    } else {
-        const state=busyButtons.get(btn);if(!state)return;
-        btn.disabled=state.disabled;btn.removeAttribute('aria-busy');btn.classList.remove('button-pending');busyButtons.delete(btn);
-    }
+    setButtonState(btn, loading ? 'loading' : 'idle');
 }
+export { setButtonState } from '../ui/controls.js';
 
 /** İstek sırası damgası: stale response koruması. */
 export function createRequestGuard() {
@@ -187,23 +194,37 @@ export function createRequestGuard() {
     };
 }
 
+// One loader per list host. Superseded requests cannot erase the UI state of
+// a later refresh, even if the older network response completes last.
+const panelLoaders = new WeakMap();
 export function beginPanelLoading(container, rowFactory = skeletonListItem) {
     if (!container) return () => {};
-    container.setAttribute('aria-busy','true');
-    const current = container.innerHTML;
-    const stale = container.children.length && !container.querySelector('.form-hint,.state-block,.skeleton');
-    let shown=false;
-    const timer=setTimeout(()=>{if(!stale){shown=true;container.innerHTML=skeletonRows(5,rowFactory);}},150);
+    panelLoaders.get(container)?.cancel();
+    const originalNodes = [...container.childNodes];
+    const controller = createLoadingController(container, {
+        skeletonHTML: skeletonRows(5, rowFactory)
+    });
+    let done = false;
+    const entry = { cancel: () => {
+        done = true;
+        controller.destroy();
+    }};
+    panelLoaders.set(container,entry);
+    controller.start();
     return () => {
-        clearTimeout(timer);
-        container.removeAttribute('aria-busy');
-        if (shown) {
-            if (container.querySelector('.skeleton')) container.innerHTML = current;
-            const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-            if (!prefersReduced) {
-                container.classList.add('content-entering');
-                setTimeout(() => container.classList.remove('content-entering'), 260);
-            }
+        if (done || panelLoaders.get(container) !== entry) return;
+        done = true;
+        panelLoaders.delete(container);
+        // Never restore serialized innerHTML: doing so destroys existing form
+        // values, delegated handlers, and live interactive state.
+        if (originalNodes.length && container.querySelector('.skeleton') &&
+            !originalNodes.some(node => node.isConnected)) {
+            container.replaceChildren(...originalNodes);
         }
+        const changed = originalNodes.length &&
+            container.firstChild !== originalNodes[0] &&
+            !container.querySelector('.skeleton,.ui-crossfade-ghost');
+        controller.destroy();
+        if (changed) animateContent(container);
     };
 }

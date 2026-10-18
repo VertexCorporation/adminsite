@@ -1,4 +1,5 @@
-import { beginPanelLoading, skeletonListItem, skeletonChatMessage } from '../utils/loading.js';
+import { crossfade } from '../ui/transition.js';
+import { beginPanelLoading, skeletonListItem, skeletonChatMessage, setButtonLoading } from '../utils/loading.js';
 // js/modules/models.js
 
 /**
@@ -300,13 +301,13 @@ async function handleModelFormSubmit(e) {
     if (!canEditModels("models.manage")) return;
     e.preventDefault();
     if(dom.modelSubmitBtn.disabled)return;
-    dom.modelSubmitBtn.disabled = true;
+    setButtonLoading(dom.modelSubmitBtn,true);
     dom.modelSubmitBtn.textContent = __('system.saving');
 
     const modelId = dom.modelIdInput.value.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
     if (!modelId) {
         showToast(() => __('models.slug_error'), 'error');
-        dom.modelSubmitBtn.disabled = false;
+        setButtonLoading(dom.modelSubmitBtn,false);
         dom.modelSubmitBtn.textContent = currentEditingModelId ? __('models.update_btn') : __('models.save_btn');
         return;
     }
@@ -424,7 +425,7 @@ async function handleModelFormSubmit(e) {
         console.error("[MODELS] Error saving model:", error);
         showToast(() => __('system.error'), 'error');
     } finally {
-        dom.modelSubmitBtn.disabled = false;
+        setButtonLoading(dom.modelSubmitBtn,false);
         dom.modelSubmitBtn.textContent=__(currentEditingModelId?'models.update_btn':'models.save_btn');
     }
 }
@@ -488,6 +489,7 @@ function renderManualModelsList() {
         roleplayCountBadge.textContent = `${__('models.roleplay_count')} ${roleplayCount}`;
     }
 
+    crossfade(dom.manualModelsListContainer, () => {
     dom.manualModelsListContainer.innerHTML = '';
     if (!allManualModels || allManualModels.length === 0) {
         dom.manualModelsListContainer.innerHTML = `<p class="form-hint" data-i18n="models.no_models">${__('models.no_models')}</p>`;
@@ -514,6 +516,7 @@ function renderManualModelsList() {
         dom.manualModelsListContainer.appendChild(item);
     });
     compactModelActions(dom.manualModelsListContainer);
+    });
 }
 
 /**
@@ -521,6 +524,7 @@ function renderManualModelsList() {
  * Uses a template string with sanitized data to prevent XSS vulnerabilities.
  */
 function renderAllModelsExplorer() {
+    crossfade(dom.allModelsListContainer, () => {
     if (!modelsData || !modelsData.producers) {
         dom.allModelsListContainer.innerHTML = `<p class="form-hint" data-i18n="models.empty_database">${__('models.empty_database')}</p>`;
         return;
@@ -565,6 +569,7 @@ function renderAllModelsExplorer() {
     }
     dom.allModelsListContainer.innerHTML = explorerHTML;
     compactModelActions(dom.allModelsListContainer);
+    });
 }
 
 
@@ -661,7 +666,7 @@ export async function fetchFullModelsData() {
 async function handleSaveSeriesDescription(seriesPath, formElement) {
     if (!canEditModels("models.library")) return;
     const saveButton = formElement.querySelector('button[type="submit"]');
-    saveButton.disabled = true;
+    setButtonLoading(saveButton,true);
     saveButton.textContent = __('system.saving');
 
     const { pName, sName } = seriesPath;
@@ -688,7 +693,7 @@ async function handleSaveSeriesDescription(seriesPath, formElement) {
 
     if (updates.length === 0) {
         showToast(() => __('models.no_changes'), "info");
-        saveButton.disabled = false;
+        setButtonLoading(saveButton,false);
         saveButton.textContent = __('models.save_series');
         return;
     }
@@ -732,7 +737,7 @@ async function handleSaveSeriesDescription(seriesPath, formElement) {
         console.error('[MODELS_DEBUG] Error:', error);
         showToast(() => userErrorMessage(error), 'error');
     } finally {
-        saveButton.disabled = false;
+        setButtonLoading(saveButton,false);
         saveButton.textContent = __('models.save_series');
     }
 }
@@ -744,7 +749,7 @@ async function handleSaveSeriesDescription(seriesPath, formElement) {
 async function handleSaveTranslations(modelPath, formElement, modelSource) {
     if (!canEditModels("models.library")) return;
     const saveButton = formElement.querySelector('button[type="submit"]');
-    saveButton.disabled = true;
+    setButtonLoading(saveButton,true);
     saveButton.textContent = __('system.saving');
 
     const { pName, sName, vName } = modelPath;
@@ -753,7 +758,7 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
     const modelVariant = modelsData?.producers?.[pName]?.[sName]?.[vName];
     if (!modelVariant) {
         showToast(() => __('models.not_found'), 'error');
-        saveButton.disabled = false;
+        setButtonLoading(saveButton,false);
         return;
     }
 
@@ -801,7 +806,7 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
 
     if (updates.length === 0) {
         showToast(() => __('models.no_changes'), "info");
-        saveButton.disabled = false;
+        setButtonLoading(saveButton,false);
         saveButton.textContent = __('models.save_translations');
         return;
     }
@@ -859,7 +864,7 @@ async function handleSaveTranslations(modelPath, formElement, modelSource) {
         console.error('[MODELS_DEBUG] Error:', error);
         showToast(() => userErrorMessage(error), 'error');
     } finally {
-        saveButton.disabled = false;
+        setButtonLoading(saveButton,false);
         saveButton.textContent = __('models.save_translations');
     }
 }

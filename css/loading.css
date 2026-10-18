@@ -143,3 +143,17 @@
 @media (prefers-reduced-motion: reduce) {
     .skeleton::after { animation: none; transform: none; opacity: 0.5; }
 }
+
+
+/* Skeleton geometry follows live list/card families without delaying data. */
+.skeleton { contain:paint; }
+:is(.people-loading,.sk-list-item,.sk-cert-row,.contributor-skeleton-row) .skeleton { flex-shrink:0; }
+:is(.sk-list-item,.sk-chat-msg,.sk-card) { min-width:0; }
+.sk-chat-msg { width:min(480px,80%); }
+.sk-chat-msg:nth-child(even) { margin-left:auto; width:min(410px,72%); }
+.sk-chat-msg .skeleton { max-width:100%; }
+@media (max-width:720px) {
+    .contributor-skeleton-row { grid-template-columns:minmax(0,1fr) 80px; gap:10px; min-height:92px; height:auto; }
+    .sk-chat-msg { max-width:90%; }
+    .sk-card { padding:var(--space-3); }
+}

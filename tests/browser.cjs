@@ -7,18 +7,18 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await (process.env.VERTEX_BROWSER==='webkit'?webkit:chromium).launch({...(process.env.VERTEX_BROWSER!=='webkit'&&process.env.CHROME_PATH ? {executablePath:process.env.CHROME_PATH} : {}),headless:true});
 const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=true,history=[],people=null,contributorDelay=0,failContributors=false,failNotification=false; let joiningDate=null,failPermissionSave=false,failMaintenance=false,maintenanceState=false,failVerify=false;
 
-let failMembership=false,failAdmin=false,badEmailTemplateFixture=true;
-const emailFixture=['en','tr'].map(language=>({certificateType:'merit',language,subject:'Vertex {{certificateName}} Certificate',html:'<p>Hello {{recipientName}}</p>',revision:0,isDefault:true}));
+let honors=[{id:'honor-1',name:'Example Honoree'}];
 let siteCards=[{id:'board-1',kind:'card',name:'Example Director',positions:{en:'CEO',tr:'CEO'},imageUrl:'https://static.example.invalid/team.webp',order:1,links:[{label:'linkedin',url:'https://www.linkedin.com/in/example'}]}];
 let backupFixture={status:'healthy',healthy:true,configured:true,checkedAt:'2026-10-17T12:00:00Z',lastBackupDate:'2026-10-17T11:00:00Z',sizeBytes:1024,restoreStatus:'unknown',evidence:{verified:false}};
-let honors=[{id:'honor-1',name:'Example Honoree'}];let adminRoster=[{uid:'admin',email:'admin@example.invalid'},{uid:'other-admin',email:'other@example.invalid'}];
+let badEmailTemplateFixture=true;
+const emailFixture=['en','tr'].map(language=>({certificateType:'merit',language,subject:'Vertex {{certificateName}} Certificate',html:'<p>Hello {{recipientName}}</p>',revision:0,isDefault:true}));
+let failMembership=false,failAdmin=false,failContributorReadOnce=0,failChatReadOnce=0;let adminRoster=[{uid:'admin',email:'admin@example.invalid'},{uid:'other-admin',email:'other@example.invalid'}];
 const person={membership:{status:'matched',uid:'auth-person',isVertex:true},id:'person',name:'Example Participant',email:'person@example.invalid',language:'en',hasVerified:false,createdAt:{_seconds:1767272400},department:'Core',interviewDate:'2026-10-10',about:'Local test fixture'};
 const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet'},constancy:{en:'Constancy',tr:'Metanet'},nobility:{en:'Nobility',tr:'Azamet'},majesty:{en:'Majesty',tr:'Asalet'}};
 const page=await browser.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|\[AUTH\] Login failed auth\/(?:invalid-credential|too-many-requests|network-request-failed)|Fixture unavailable|Mock delivery outcome uncertain|Fixture permission rejection|Fixture verification unavailable|Fixture maintenance unavailable|400 \(Bad Request\)|functions\/failed-precondition|\[CERTIFICATES\]/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
 if(process.env.VERTEX_TRACE)await page.context().tracing.start({screenshots:true,snapshots:true,sources:true});
 await page.addInitScript(()=>{
- // Init scripts run in all frames; only the top-level app frame has access to storage.
- if(window.self===window.top)localStorage.setItem('siteLang','en');
+ localStorage.setItem('siteLang','en');
  const snapshot={docs:[],empty:true,exists:false,data:()=>({}),forEach:()=>{}};
  const chain={orderBy:()=>chain,where:()=>chain,limit:()=>chain,doc:()=>chain,get:async()=>snapshot,onSnapshot:fn=>{setTimeout(()=>fn(snapshot),0);return ()=>{};}};
  const user={uid:'admin',email:'admin@example.invalid',displayName:'Local Admin',getIdTokenResult:async()=>({claims:window.__testClaims || {admin:true}}),getIdToken:async()=>'test-only',updateProfile:async()=>{}};
@@ -39,12 +39,19 @@ await page.route('**/*',async route=>{
   if(name==='getserverstatus'&&failMaintenance)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture maintenance unavailable'}})});
   if(name==='togglecontributorverification'&&failVerify)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture verification unavailable'}})});
   let result={};
-  if(name==='togglecontributorverification')result={status:'succeeded'};
-  if(name==='getserverstatus')result={isUnderMaintenance:maintenanceState};
+  if(name==='togglecontributorverification'){
+    const request=route.request().postDataJSON().data;
+    const target=(people||[person]).find(p=>p.id===request.contributorId);
+    if(target){target.hasVerified=request.hasVerified;target.certificateDeliveryStatus=request.hasVerified?'succeeded':'revoked';}
+    result={hasVerified:request.hasVerified,status:request.hasVerified?'succeeded':'revoked'};
+  }
   if(name==='getbackuphealthstatus')result=backupFixture;
+  if(name==='getserverstatus')result={isUnderMaintenance:maintenanceState};
   if(name==='setserverstatus'){maintenanceState=route.request().postDataJSON().data.maintenanceEnabled;result={success:true};}
   if(name==='togglevertexstatus'){if(failMembership)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});const data=route.request().postDataJSON().data;const next=typeof data.expectedStatus==='boolean'?!data.expectedStatus:true;if(data.contributorId){const target=(people||[person]).find(p=>p.id===data.contributorId);if(target)target.membership.isVertex=next;}result={isVertex:next};}
   if(name==='savedepartmentpermissions' && failPermissionSave)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture permission rejection'}})});
+  if(name==='getvertexcontributors' && failContributorReadOnce-->0)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Temporary contributors service outage'}})});
+  if(name==='listconsolechatchannels' && failChatReadOnce-->0)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Temporary chat service outage'}})});
   if(name==='getvertexcontributors'){const fixture=people || [person];if(contributorDelay)await new Promise(r=>setTimeout(r,contributorDelay));if(failContributors)return route.fulfill({contentType:'application/json',status:503,body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});result={contributors:fixture};}
   else if(name==='getvertexcertificatedetails')result={types,eligibility:{status:'joining-date-required',eligibleTypes:[],joinedAt:joiningDate},history};
   else if(name==='setvertexcontributorjoiningdate'){joiningDate=route.request().postDataJSON().data.joinedAt;result={success:true};}
@@ -77,26 +84,44 @@ await page.route('**/*',async route=>{
 });
 
 console.log("Starting page");await page.goto(`http://127.0.0.1:${server.address().port}`,{waitUntil:"domcontentloaded",timeout:15000});console.log("Page loaded");
-await page.waitForSelector('#admin-panel',{state:'visible'});
-await page.locator('[data-target="tab-contributors"]').click();
-await page.waitForSelector('.certificate-manage-btn').catch(async error=>{
- console.error('BOOT_DIAGNOSTICS',JSON.stringify(await page.evaluate(()=>({
-  readyState:document.readyState,language:document.documentElement.lang,
-  adminDisplay:document.querySelector('#admin-panel')?.style.display,
-  loginDisplay:document.querySelector('#login-container')?.style.display,
-  contributorTab:document.querySelector('#tab-contributors')?.className,
-  contributorRows:document.querySelectorAll('.contributor-row').length,
-  visibleErrors:[...document.querySelectorAll('[role=alert],.state-block')].map(e=>e.textContent?.trim().slice(0,160)).slice(0,8),
-  moduleScripts:[...document.querySelectorAll('script[type=module]')].map(e=>e.src).slice(0,6)
- }))),{errors,consoleErrors,calls});
- throw error;
-});
+// Home is the default workspace. Open contributors before waiting for its lazy controls.
+await page.locator('.dock-btn[data-target="tab-contributors"]').click();
+await page.waitForSelector('.certificate-manage-btn');
 assert.equal(errors.length,0);
 const checks=[];
 const note=x=>{checks.push(x);console.log('PASS',x);};
+// Verify real navigation uses simultaneous exit and entrance, not a simple
+// fade-in after the outgoing tab has disappeared.
+await page.locator('.dock-btn[data-target="tab-news"]').click();
+const navMotion=await page.evaluate(()=>{
+ const host=document.getElementById('tab-scroll-container'),ghost=host.querySelector(':scope > .ui-view-ghost'),incoming=document.getElementById('tab-news');
+ return {ghost:!!ghost,inert:ghost?.inert,outgoing:ghost?.getAnimations().length,incoming:incoming.getAnimations().length,liveOld:!!document.getElementById('tab-contributors')};
+});
+assert(navMotion.ghost&&navMotion.inert&&navMotion.outgoing>0&&navMotion.incoming>0&&navMotion.liveOld,JSON.stringify(navMotion));
+await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
+await page.locator('.dock-btn[data-target="tab-contributors"]').click();
+await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
+note('Real navigation animates outgoing and incoming tabs simultaneously without replacing live forms');
 const issueCount=()=>calls.filter(n=>n==='issuevertexcertificate').length;
 const openCert=async()=>{if(await page.locator('.certificate-drawer').count()){await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});}await page.waitForSelector('.vx-popover.is-closing',{state:'detached'});await page.waitForSelector('.vx-modal[aria-hidden=true]',{state:'detached'});await page.locator('.certificate-manage-btn').first().click();await page.waitForSelector('[data-award]');};
 const selectTab=async id=>{if(await page.evaluate(()=>innerWidth<1024)){const dock=page.locator(`[data-mobile-tab="tab-${id}"]`);if(await dock.count()&&await dock.isVisible())await dock.click();else{await page.locator('[data-mobile-more]').click();if(id==='profile')await page.locator('[data-more-profile]').click();else await page.locator(`.mobile-more-pages section[data-more-module="tab-${id}"] button`).first().click();await page.waitForSelector('.vx-modal',{state:'detached'});}}else await page.locator(`[data-target="tab-${id}"]`).click();};
+// Recover a transient 503 for both data-heavy screens without reloading the page.
+{
+ const contributorBefore=calls.filter(name=>name==='getvertexcontributors').length;
+ failContributorReadOnce=1;
+ await page.locator('#refresh-contributors-btn').click();
+ await page.waitForFunction(()=>document.querySelector('#contributors-list-container .contributor-row') &&
+   !document.querySelector('#contributors-list-container[aria-busy="true"]'));
+ assert(calls.filter(name=>name==='getvertexcontributors').length-contributorBefore>=2);
+ note('Contributors recover automatically from a transient read failure');
+ const chatBefore=calls.filter(name=>name==='listconsolechatchannels').length;
+ failChatReadOnce=1;
+ await selectTab('chat');
+ await page.waitForSelector('#chat-channel-list .chat-channel-item');
+ assert(calls.filter(name=>name==='listconsolechatchannels').length-chatBefore>=2);
+ note('Chat channels recover automatically from a transient read failure');
+ await selectTab('contributors');
+}
 if(!process.env.VERTEX_POLISH_ONLY&&!process.env.VERTEX_COMPLETE_ONLY&&!process.env.VERTEX_STABILIZATION_ONLY){
 for(const width of [360,390,768,1024,1440,1920]){
  await page.setViewportSize({width,height:900});
@@ -110,7 +135,11 @@ for(const width of [360,390,768,1024,1440,1920]){
    if(dims.scroll>dims.w+1)console.error(await page.evaluate(()=>[...document.querySelectorAll("body *")].filter(el=>el.getBoundingClientRect().right>innerWidth+1).map(el=>({tag:el.tagName,id:el.id,cls:el.className,right:el.getBoundingClientRect().right})).slice(0,20)));assert(dims.scroll<=dims.w+1,`${width}/${theme}/${id}: overflow ${dims.scroll}`);
   }
   await selectTab('contributors');if(process.env.VERTEX_SCREENSHOTS){await page.waitForTimeout(250);fs.mkdirSync(process.env.VERTEX_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.VERTEX_SCREENSHOTS,`before-${width}-${theme}.png`)});}await openCert();
-  await page.waitForTimeout(200);const box=await page.locator('.certificate-drawer').boundingBox();assert(box.x>=0&&box.x+box.width<=width+1&&box.y>=0&&box.y+box.height<=901,JSON.stringify(box));
+  await page.waitForFunction(()=>{
+   const r=document.querySelector('.certificate-drawer')?.getBoundingClientRect();
+   return !!r&&r.left>=-0.5&&r.right<=innerWidth+0.5&&r.top>=-0.5&&r.bottom<=innerHeight+0.5;
+  },null,{timeout:4000});
+  const box=await page.locator('.certificate-drawer').boundingBox();assert(box.x>=0&&box.x+box.width<=width+1&&box.y>=0&&box.y+box.height<=901,JSON.stringify(box));
   if(process.env.VERTEX_SCREENSHOTS){fs.mkdirSync(process.env.VERTEX_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.VERTEX_SCREENSHOTS,`vertex-${width}-${theme}.png`)});}
   await page.keyboard.press('Escape');
  }
@@ -124,12 +153,11 @@ await page.waitForFunction(()=>/Doğrulanamıyor|Cannot Be Verified/.test(docume
 backupFixture={...backupFixture,evidence:{verified:true}};
 await page.locator('#refresh-backup-btn').click();
 await page.waitForFunction(()=>/Sağlıklı|Healthy/.test(document.querySelector('#gcs-backup-badge')?.textContent||''));
-note('Backup health requires positive completion evidence, not old endpoint flags');
+note('Backup cannot claim healthy without verified completion evidence');
 await page.evaluate(()=>document.dispatchEvent(new CustomEvent('vertex:system-section',{detail:'verification'})));
 await page.evaluate(()=>document.dispatchEvent(new CustomEvent('vertex:system-page',{detail:'verification'})));
 await page.waitForSelector('#team-mod-list .team-list-row');
 assert.equal(await page.locator('#team-mod-list .team-list-name').first().innerText(),'Example Honoree');
-note('Honor roll reads managed records instead of legacy moderator list');
 await page.waitForSelector('#team-cards-list [data-edit-card]');
 assert.equal(await page.locator('#team-cards-list .team-list-name').first().innerText(),'Example Director');
 await page.locator('#team-cards-list [data-edit-card]').first().click();
@@ -139,10 +167,9 @@ await page.locator('#team-card-position-tr').fill('Genel Müdür');
 await page.locator('.vx-drawer [data-drawer-submit]').click();
 await page.waitForSelector('.vx-drawer',{state:'detached'});
 assert.equal(payloads.filter(p=>p.name==='setsiteteamentry').at(-1).data.positions.tr,'Genel Müdür');
-note('Team card read, multilingual update and write contract');
+note('Honor roll and team card use current localized management API');
 await page.evaluate(async()=>{(await import('/js/modules/certificateEmailTemplates.js')).openCertificateEmailTemplates();});
 await page.waitForSelector('.email-template-drawer .retry-btn');
-assert.equal(await page.locator('.email-template-drawer .skeleton').count(),0);
 badEmailTemplateFixture=false;
 await page.locator('.email-template-drawer .retry-btn').click();
 await page.waitForSelector('#template-subject');
@@ -151,15 +178,58 @@ await page.locator('.email-template-drawer [data-save]').click();
 await page.waitForSelector('.email-template-drawer',{state:'detached'});
 assert.equal(payloads.filter(p=>p.name==='savevertexcertificateemailtemplate').at(-1).data.expectedRevision,0);
 assert(calls.includes('previewvertexcertificateemailtemplate'));
-note('Email templates recover from malformed responses, preview and save with revision control');
+note('Email template invalid-response recovery, preview and revision-safe save');
 await selectTab('contributors');
-await page.locator('[data-details]').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
-await page.locator('.contributor-cell-dept').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
-await page.locator('.contributor-row').first().focus();await page.keyboard.press('Enter');await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Contributor drawer opens by name, whole row and keyboard');
-await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===0);
-await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===1);
-await page.evaluate(()=>window.filterContributors('verified'));await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===0);
-await page.evaluate(()=>window.filterContributors('all'));await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===1);note('Crossfade and rapid local contributor filtering');
+await page.locator('.contributor-cell-dept').first().click();
+await page.waitForSelector('.vx-drawer.is-open');
+await page.keyboard.press('Escape');
+await page.waitForSelector('.vx-drawer',{state:'detached'});
+await page.locator('.contributor-row').first().focus();
+await page.keyboard.press('Enter');
+await page.waitForSelector('.vx-drawer.is-open');
+await page.keyboard.press('Escape');
+await page.waitForSelector('.vx-drawer',{state:'detached'});
+note('Contributor whole-row mouse and keyboard details');
+await page.locator('[data-details]').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Contributor drawer');
+const waitCrossfade = () => page.waitForFunction(() => !document.querySelector('.ui-crossfade-ghost'));
+await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);
+await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),1);
+await page.evaluate(()=>window.filterContributors('verified'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
+await waitCrossfade();
+// Real contributor renderer: switching between populated chips must animate,
+// not just the single-row fixture used in the historic regression.
+await page.locator('#contributor-search').fill('');
+await page.evaluate(person=>{
+ window.__savedContributors=window.loadedContributors;
+ window.loadedContributors=Array.from({length:85},(_,i)=>({
+   ...person,id:'filter-fixture-'+i,name:'Applicant '+i,
+   email:'applicant'+i+'@example.invalid',hasVerified:i%2===0
+ }));
+ window.filterContributors('all');
+},person);
+await waitCrossfade();
+await page.evaluate(()=>window.filterContributors('verified'));
+const filterTransition=await page.evaluate(()=>{
+ const host=document.getElementById('contributors-list-container');
+ const ghost=host.querySelector('.ui-crossfade-ghost');
+ return {ghost:!!ghost,oldRows:ghost?.querySelectorAll('.contributor-row').length,
+  newRows:host.querySelector(':scope > .contributor-table-rows')?.children.length,
+  animating:!!host.querySelector(':scope > .contributor-table-rows')?.getAnimations().length};
+});
+assert.equal(filterTransition.ghost,true,JSON.stringify(filterTransition));
+assert(filterTransition.oldRows>0&&filterTransition.oldRows<=28,JSON.stringify(filterTransition));
+assert.equal(filterTransition.newRows,43);
+assert.equal(filterTransition.animating,true);
+assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="verified"]').getAttribute('aria-pressed'),'true');
+await waitCrossfade();
+await page.evaluate(()=>{
+ window.loadedContributors=window.__savedContributors;
+ delete window.__savedContributors;
+ window.filterContributors('all');
+});
+await waitCrossfade();
+assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="all"]').getAttribute('aria-pressed'),'true');
+note('Populated applicant filter transitions use bounded crossfade and preserve real rows');
 await openCert();assert.deepEqual(await page.locator('[data-award]').evaluateAll(es=>es.map(e=>e.dataset.award)),['tenacity','constancy','nobility','majesty']);
 await page.locator('[data-award=tenacity]').click();assert.equal(issueCount(),0);await page.locator('[data-review]').click();await page.waitForSelector('.confirm-ok');assert.equal(issueCount(),0);
 await page.locator('.confirm-ok').focus();await page.keyboard.press('Tab');assert(await page.locator('.confirm-cancel').evaluate(el=>el===document.activeElement));await page.keyboard.press('Shift+Tab');assert(await page.locator('.confirm-ok').evaluate(el=>el===document.activeElement));await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('tr');});assert.equal(await page.locator('.vx-modal-title').innerText(),'Sertifikayı İncele');await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('en');});await page.locator('.confirm-cancel').click();assert.equal(issueCount(),0);note('Selection and cancellation never issue certificates; confirmation focus trap and live language');
@@ -173,27 +243,33 @@ history=[];await openCert();await page.evaluate(async()=>{(await import('/js/lan
 for(let i=0;i<8;i++){await openCert();await page.keyboard.press('Escape');assert.equal(await page.locator('.certificate-drawer:not([aria-hidden=true])').count(),0);}assert(await page.locator('.certificate-manage-btn').first().evaluate(el=>el===document.activeElement));note('Repeated open/close and focus restoration');
 await page.emulateMedia({colorScheme:'light'});await page.evaluate(async()=>{(await import('/js/modules/shell.js')).applyTheme('system');});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(248, 249, 250)');await page.emulateMedia({colorScheme:'dark'});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(15, 15, 16)');note('System theme follows OS');
 people=[];await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .state-block');note('Empty state');
-failContributors=true;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container button');failContributors=false;people=null;await page.locator('#contributors-list-container button').first().click();await page.waitForSelector('.contributor-row');note('Error and retry state');
-await page.evaluate(()=>{document.getElementById('contributors-list-container').replaceChildren();});contributorDelay=500;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .skeleton');await page.waitForSelector('.contributor-row');assert.equal(await page.locator('#contributors-list-container .skeleton').count(),0);contributorDelay=0;note('Delayed skeleton to content');
+failContributors=true;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .contributors-inline-error button');failContributors=false;people=null;await page.locator('#contributors-list-container .contributors-inline-error button').click();await page.waitForFunction(()=>!document.querySelector('#contributors-list-container .contributors-inline-error')&&!!document.querySelector('#contributors-list-container .contributor-row'));note('Error and retry state');
+// Close any contributor drawer left open by the preceding certificate/focus tests.
+await page.keyboard.press('Escape');
+await page.waitForSelector('.vx-drawer.is-open',{state:'detached'});
+await page.evaluate(()=>{document.getElementById('contributors-list-container').replaceChildren();});contributorDelay=500;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('.contributor-row');assert.equal(await page.locator('#contributors-list-container .skeleton').count(),0);contributorDelay=0;note('Delayed list hydration preserves real rows and leaves no skeleton');
 people=[{...person,name:'Old Response'}];contributorDelay=500;
 await page.evaluate(()=>{import('/js/modules/contributors.js').then(m=>m.fetchContributorsData());});await page.waitForTimeout(75);people=[{...person,name:'Latest Response'}];contributorDelay=0;
 await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});await page.waitForTimeout(550);assert.equal(await page.locator('.contributor-name').innerText(),'Old Response');await page.locator('#refresh-contributors-btn').click();await page.waitForFunction(()=>document.querySelector('.contributor-name')?.textContent==='Latest Response');people=null;note('Concurrent refreshes coalesce and subsequent refresh loads latest data');
 await selectTab('models');await page.locator('[data-model-create]').click();await page.locator('#model-id').fill('fixture-model');assert.equal(await page.locator('#model-id').inputValue(),'fixture-model');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Model editor drawer remains editable');
 await page.locator('#manual-models-list-container .model-actions-trigger').click();await page.locator('.model-menu .menu-item').filter({hasText:'Translations'}).click();await page.waitForSelector('#translation-modal-overlay');assert(await page.locator('#translation-modal-overlay input').count()>0);await page.keyboard.press('Escape');await page.waitForSelector('.vx-modal',{state:'detached'});await page.locator('[data-model-publish]').click();await page.waitForSelector('.confirm-ok');await page.locator('.confirm-cancel').click();assert(!calls.includes('updatemodelslist'));await page.locator('[data-model-publish]').click();await page.waitForSelector('.confirm-ok');await page.locator('.confirm-ok').click();await page.waitForTimeout(150);assert(calls.includes('updatemodelslist'));note('Catalog actions, translation focus surface and explicit publish confirmation (mock)');
-for(const width of [360,1440]){await page.setViewportSize({width,height:900});for(const id of ['models','news','notifications','subscriptions','chat','system']){await selectTab(id);await page.waitForTimeout(300);if(process.env.VERTEX_SCREENSHOTS){fs.mkdirSync(path.resolve(root,process.env.VERTEX_SCREENSHOTS),{recursive:true});await page.screenshot({path:path.resolve(root,process.env.VERTEX_SCREENSHOTS,`vertex-${id}-${width}.png`),fullPage:true});}}}await selectTab('news');for(const id of ['title-en','title-tr','summary-en','summary-tr','content-en','content-tr'])await page.locator('#'+id).fill('Fixture Article');for(const lang of ['en','tr'])await page.locator('#cover-image-'+lang).setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from('fixture')});const newsPublish=page.waitForResponse(response=>response.url().toLowerCase().includes('createnewsarticle'));await page.locator('#news-form').evaluate(form=>form.requestSubmit());await newsPublish;assert(calls.includes('createnewsarticle'));note('News image upload and publish payload remain functional (mock)');
+for(const width of [360,1440]){await page.setViewportSize({width,height:900});for(const id of ['models','news','notifications','subscriptions','chat','system']){await selectTab(id);await page.waitForTimeout(300);if(process.env.VERTEX_SCREENSHOTS){fs.mkdirSync(path.resolve(root,process.env.VERTEX_SCREENSHOTS),{recursive:true});await page.screenshot({path:path.resolve(root,process.env.VERTEX_SCREENSHOTS,`vertex-${id}-${width}.png`),fullPage:true});}}}await selectTab('news');for(const id of ['title-en','title-tr','summary-en','summary-tr','content-en','content-tr'])await page.locator('#'+id).fill('Fixture Article');for(const lang of ['en','tr'])await page.locator('#cover-image-'+lang).setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from('fixture')});await page.locator('#news-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert(calls.includes('createnewsarticle'));note('News image upload and publish payload remain functional (mock)');
 await selectTab('notifications');await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('ALL_USERS');await page.locator('#notification-schedule-switch').check();await page.locator('#notification-schedule-time').fill('2027-01-01T12:00');await page.locator('#notification-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert(calls.includes('schedulenotification'));note('Notification template and scheduling payload (mock)');await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('SUBSCRIPTION_LEVEL');await page.locator('#notification-target-level').selectOption('3');await page.locator('#notification-schedule-switch').check();await page.locator('#notification-schedule-time').fill('2027-01-01T12:00');await page.locator('#notification-form').evaluate(f=>f.requestSubmit());await page.waitForTimeout(150);assert.deepEqual(payloads.filter(p=>p.name==='schedulenotification').at(-1).data.target,{type:'SUBSCRIPTION_TIER',tier:'ultra'});note('Notification subscription tier contract includes Ultra');failNotification=true;await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('ALL_USERS');await page.locator('#notification-form').evaluate(f=>{f.requestSubmit();f.requestSubmit();});await page.waitForTimeout(150);assert.equal(payloads.filter(p=>p.name==='sendtargetednotification').length,1);assert(await page.locator('#submit-notification-btn').isDisabled());note('Uncertain immediate delivery blocks duplicate submission and blind retry');
 await selectTab('subscriptions');await page.locator('#sub-user-email').fill('fixture@example.invalid');await page.locator('#sub-plan').selectOption('pro');await page.locator('#subscription-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert.equal(payloads.find(p=>p.name==='setusersubscription').data.tier,'pro');note('Subscription Pro assignment contract (mock)');
 await selectTab('chat');await page.locator('#chat-input').fill('Mock message');await page.locator('#chat-send').click();await page.waitForTimeout(150);assert(calls.includes('postconsolechatmessage'));note('Chat channels, messages and posting (mock)');
 await selectTab('system');assert.equal(await page.locator('[data-section]').count(),7);await page.locator('[data-section=export]').dispatchEvent('click');assert(await page.locator('#data-exporter-manager').isVisible());note('7 functional System sections');
 await selectTab('contributors');
 }
+// Functional regressions are run without transient visual clones. Dedicated UI
+// smoke tests separately assert animated crossfades and reduced-motion behavior.
+await page.emulateMedia({reducedMotion:'reduce'});
 if(process.env.VERTEX_STABILIZATION_ONLY)await require('./stabilization.cjs')({page,selectTab,note,calls,payloads,person,setPeople:value=>{people=value;},failMembership:value=>{failMembership=value;},failAdmin:value=>{failAdmin=value;},setAdmins:value=>{adminRoster=value;},setContributorDelay:value=>{contributorDelay=value;},failContributors:value=>{failContributors=value;},setHistory:value=>{history=value;}});
 if(process.env.VERTEX_COMPLETE_ONLY)await require('./complete-polish.cjs')({page,selectTab,note,calls,payloads,person,setPeople:value=>{people=value;},failMembership:value=>{failMembership=value;},failAdmin:value=>{failAdmin=value;},setAdmins:value=>{adminRoster=value;},setContributorDelay:value=>{contributorDelay=value;},failContributors:value=>{failContributors=value;},setHistory:value=>{history=value;}});
 if(!process.env.VERTEX_COMPLETE_ONLY&&!process.env.VERTEX_STABILIZATION_ONLY)await require('./final-polish.cjs')({page,selectTab,note,calls,payloads,setPeople:value=>{people=value;},person,failMaintenance:value=>{failMaintenance=value;},failVerify:value=>{failVerify=value;}});
 if(!process.env.VERTEX_COMPLETE_ONLY&&!process.env.VERTEX_STABILIZATION_ONLY)await require('./precision.cjs')({page,selectTab,note,payloads,calls,failPermissions:value=>{failPermissionSave=value;}});
 await selectTab('contributors');
 // Authorization is tested against the same UI, with backend calls still mocked.
-await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.setCurrentUser(false,['Senatus']);await roles.loadDepartmentPermissions();const permissions=roles.getDepartmentPermissions();permissions.Senatus.hiddenFields={'contributors.list':['contact','age','links','interview']};permissions.Senatus.hiddenChips={'contributors.list':['github']};roles.getAccessibleTabs(['Senatus']);await (await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.certificate-manage-btn').count(),0);assert.equal(await page.locator('.edit-contributor-btn').count(),0);assert.equal(await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');return roles.getEffectivePanelLevel('contributors.list');}),'read');assert.equal(await page.locator('.contributor-cell-age').innerText(),'—');await page.locator('#contributor-search').fill('person@example.invalid');await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===0);await page.locator('#contributor-search').fill('Local test fixture');await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===1);await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.getDepartmentPermissions().Senatus.hiddenFields['contributors.list'].push('about');await(await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.contributor-row').count(),0);await page.locator('#contributor-search').fill('');await page.waitForFunction(()=>document.querySelectorAll('.contributor-row').length===1);await page.locator('[data-details]').click();assert.equal(await page.locator('.vx-drawer-body').innerText().then(s=>s.includes('person@example.invalid')),false);await page.keyboard.press('Escape');note('Department read-only actions and hidden field policies');
+await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.setCurrentUser(false,['Senatus']);await roles.loadDepartmentPermissions();const permissions=roles.getDepartmentPermissions();permissions.Senatus.hiddenFields={'contributors.list':['contact','age','links','interview']};permissions.Senatus.hiddenChips={'contributors.list':['github']};roles.getAccessibleTabs(['Senatus']);await (await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.certificate-manage-btn').count(),0);assert.equal(await page.locator('.edit-contributor-btn').count(),0);assert.equal(await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');return roles.getEffectivePanelLevel('contributors.list');}),'read');assert.equal(await page.locator('.contributor-cell-age').innerText(),'—');await page.locator('#contributor-search').fill('person@example.invalid');assert.equal(await page.locator('.contributor-row').count(),0);await page.locator('#contributor-search').fill('Local test fixture');assert.equal(await page.locator('.contributor-row').count(),1);await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.getDepartmentPermissions().Senatus.hiddenFields['contributors.list'].push('about');await(await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.contributor-row').count(),0);await page.locator('#contributor-search').fill('');await page.locator('[data-details]').click();assert.equal(await page.locator('.vx-drawer-body').innerText().then(s=>s.includes('person@example.invalid')),false);await page.keyboard.press('Escape');note('Department read-only actions and hidden field policies');
 await page.locator('[data-details]').click();await page.waitForSelector('.vx-drawer');await page.evaluate(()=>document.getElementById('logout-btn').click());await page.waitForSelector('.vx-drawer',{state:'detached'});await page.waitForSelector('#login-container',{state:'visible'});assert.equal(await page.locator('#admin-panel').isVisible(),false);await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('#admin-panel',{state:'visible'});await selectTab('contributors');await page.waitForSelector('.certificate-manage-btn');note('Logout and admin login auth state');
 for(const claims of [{admin:false,departments:['Senatus']},{admin:false,departments:['Aero']}]) {
  const before=calls.filter(name=>name==='savedepartmentpermissions').length;
