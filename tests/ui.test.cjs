@@ -179,3 +179,19 @@ test('workspace outgoing snapshots retain grid geometry and exclude hidden panel
  assert.match(src,/ghost\.style\.gridTemplateColumns = containerStyle\.gridTemplateColumns/);
  assert.match(src,/child\.hidden \|\| getComputedStyle\(child\)\.display === 'none'/);
 });
+
+test('events use shared content crossfade and restore registration button state',()=>{
+ const src=read('js/modules/events.js');
+ assert.match(src,/crossfade\(list, \(\) => \{/);
+ assert.match(src,/crossfade\(box,\(\)=>\{/);
+ assert.match(src,/finally\{setButtonLoading\(button,false\);\}\};/);
+});
+test('notification listener uses central stale-data retry instead of appending errors',()=>{
+ const src=read('js/modules/notification.js');
+ assert.match(src,/showLoadError\(dom\.scheduledTasksListContainer/);
+ assert.doesNotMatch(src,/insertAdjacentHTML\('beforeend',`<div class="task-error"/);
+});
+test('contributors suppress skeleton flashes for sub-150ms responses',()=>{
+ const src=read('js/modules/contributors.js');
+ assert.doesNotMatch(src,/skeletonDelay:0/);
+});

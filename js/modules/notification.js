@@ -1,4 +1,5 @@
 import { crossfade } from '../ui/transition.js';
+import { showLoadError } from '../ui/states.js';
 import { confirmDialog } from './shell.js';
 import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
 // js/modules/notification.js
@@ -262,8 +263,8 @@ export function listenForScheduledTasks() {
         }, error => {
         finishLoading();
             console.error("[CLIENT] Error listening for scheduled tasks:", error);
-            dom.scheduledTasksListContainer.insertAdjacentHTML('beforeend',`<div class="task-error"><p data-i18n="notif.tasks_error">${__('notif.tasks_error')}</p><button class="chrome-btn-outline" data-tasks-retry>${__('common.retry')}</button></div>`);
-            dom.scheduledTasksListContainer.querySelector('[data-tasks-retry]').onclick=listenForScheduledTasks;
+            showLoadError(dom.scheduledTasksListContainer,()=>__('notif.tasks_error'),
+                listenForScheduledTasks,{staleSelector:'.task-item'});
         });
 }
 
