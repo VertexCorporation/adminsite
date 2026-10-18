@@ -49,17 +49,6 @@ export function initScrollEdges() {
         element.dataset.fogRight = String(!!right);
         element.dataset.fogTop = String(!!top);
         element.dataset.fogBottom = String(!!bottom);
-        // Header and row content share the same grid tracks. Reserve exactly
-        // the *measured* scrollbar gutter on the header without creating a
-        // second (nonfunctional) scrolling region in that header.
-        if (element.classList.contains('contributor-table-rows')) {
-            const head = element.previousElementSibling;
-            if (head?.classList.contains('contributor-table-head')) {
-                const gutter = Math.max(0, element.offsetWidth - element.clientWidth) + 'px';
-                if (head.style.getPropertyValue('--contributor-scrollbar-gutter') !== gutter)
-                    head.style.setProperty('--contributor-scrollbar-gutter', gutter);
-            }
-        }
     };
     const resize = new ResizeObserver(entries => entries.forEach(({target}) => paint(target)));
     let frame = null;
