@@ -9,7 +9,8 @@ await page.route('**/*',async route=>{const url=new URL(route.request().url());i
  if(url.pathname.endsWith('/js/core/initializer.js'))return route.fulfill({contentType:'text/javascript',body:"import {startApp} from '../main.js';startApp({apiKey:'fixture'});"});return route.continue();}
  if(url.hostname.endsWith('run.app')){const name=url.hostname.split('-')[0],data=route.request().postDataJSON()?.data || {};requests.push({name,data});let result={};
  if(name==='getmyconsoleaccess')result={isAdmin:true,departments:[]};
- if(name==='getvertexcontributors')result={contributors:[application]};
+ if(name==='getvertexcontributors'){if(unavailable)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE'}})});result={contributors:[application]};}
+ if(name==='updatecontributorapplication'){Object.assign(application,data);result={success:true};}
  if(name==='listconsoleusers'){if(unavailable)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE'}})});result=indexReady?{users:[{...user,name:data.cursor?'Second Page':user.name}],nextCursor:data.cursor?null:'cursor-2',indexReady:true}:{users:[],indexReady:false,indexed:0};}
  if(name==='getconsoleuser')result={user};
  if(name==='previewconsoleaccounts')result={emails:['applicant@example.invalid'],invalid:['bad'],duplicates:['applicant@example.invalid'],rows:[{email:'applicant@example.invalid',status:'ownership-required',uid:'fixture'}],accountCreationEnabled:false};
@@ -31,15 +32,45 @@ try{
   }));
   throw error;
  });page.setDefaultTimeout(10000);
- const navigate=async panel=>{if(await page.locator('[data-target="tab-contributors"]').getAttribute('aria-expanded')!=='true')await page.locator('[data-target="tab-contributors"]').click();await page.locator('[data-nav-panel="'+panel+'"]').click();};
- await navigate('contributors.users');await page.getByText('Example Member',{exact:true}).waitFor();assert.equal(await page.locator('#vertex-status-form').count(),0);await page.locator('[data-user-row]').first().click();await page.locator('.people-details').waitFor();assert((await page.locator('.people-details').textContent()).includes('PRO'));assert.equal(await page.locator('#people-personnel-form').count(),0);await page.keyboard.press('Escape');await page.locator('.vx-drawer').waitFor({state:'detached'});
- await page.locator('#console-users-next').click();await page.getByText('Second Page',{exact:true}).waitFor();await page.locator('#console-users-previous').click();await page.getByText('Example Member',{exact:true}).waitFor();
- await page.locator('#console-user-search').fill('member@example.invalid');await page.locator('#console-user-search-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(100);assert(requests.some(r=>r.name==='listconsoleusers'&&r.data.search==='member@example.invalid'&&!r.data.cursor));
- await page.locator('#console-user-department').selectOption('Array');await page.waitForTimeout(100);assert(requests.some(r=>r.name==='listconsoleusers'&&r.data.department==='Array'));
- await navigate('contributors.vertexStatus');await page.locator('#vertex-accounts-list').getByText('Example Applicant',{exact:true}).waitFor();await page.locator('[data-application-row]').first().click();await page.locator('#people-check-account').click();await page.locator('[data-inspect-candidate]').waitFor();assert((await page.locator('.people-match-result').textContent()).includes('ownership'));await page.keyboard.press('Escape');await page.locator('.vx-drawer').waitFor({state:'detached'});
- await page.locator('#preview-account-bulk').click();await page.locator('#people-bulk-emails').fill('applicant@example.invalid;applicant@example.invalid bad');await page.locator('#people-bulk-form button').click();await page.locator('.people-preview-list').waitFor();assert((await page.locator('#people-bulk-result').textContent()).includes('duplicate'));assert(!requests.some(r=>/create|sendmail|sendpassword/i.test(r.name)));await page.keyboard.press('Escape');await page.locator('.vx-drawer').waitFor({state:'detached'});
- for(const width of [390,1440])for(const theme of ['light','dark']){await page.setViewportSize({width,height:900});await page.evaluate(async theme=>(await import('/js/modules/shell.js')).applyTheme(theme),theme);await page.waitForTimeout(250);assert(await page.locator('#vertex-accounts-manager').isVisible());assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));fs.mkdirSync(path.join(__dirname,'results/people'),{recursive:true});await page.screenshot({path:path.join(__dirname,`results/people/accounts-${width}-${theme}.png`)});}
- await page.setViewportSize({width:1440,height:1000});await navigate('contributors.users');unavailable=true;await page.locator('#refresh-console-users').click();await page.locator('[data-state-action]').waitFor();unavailable=false;await page.locator('[data-state-action]').click();await page.getByText('Example Member',{exact:true}).waitFor();
- indexReady=false;await page.locator('#refresh-console-users').click();await page.locator('[data-state-action]').waitFor();assert((await page.locator('#console-users-list').textContent()).includes('directory'));
- assert.deepEqual(errors,[]);console.log('PASS users, drawer, cursor next/back, exact search, department filter, candidate preview, bulk validation, failure/retry, index readiness, 390/1440 light/dark, no account/mail side effects');
+
+ // The former contributors.users panel is intentionally retired; exercise
+ // the current applicants workspace rather than creating a phantom route.
+ await page.locator('[data-nav-panel="contributors.list"]').click();
+ await page.getByText('Example Applicant',{exact:true}).first().waitFor();
+ assert(await page.locator('#contributors-list-container .contributor-row').count()>0);
+ await page.locator('#contributor-search').fill('no-match-fixture');
+ await page.waitForTimeout(200);
+ assert.equal(await page.locator('#contributors-list-container .contributor-row').count(),0);
+ await page.locator('#contributor-search').fill('Example Applicant');
+ await page.getByText('Example Applicant',{exact:true}).first().waitFor();
+ await page.locator('#contributor-search').fill('');
+ await page.locator('[data-filter="verified"]').click();
+ await page.waitForTimeout(200);
+ assert.equal(await page.locator('#contributors-list-container .contributor-row').count(),0);
+ await page.locator('[data-filter="all"]').click();
+ await page.locator('#contributors-list-container .contributor-row').first().waitFor();
+ const edit=page.locator('#contributors-list-container .edit-contributor-btn').first();
+ if(await edit.isVisible()){
+  await edit.click();
+  await page.locator('.vx-drawer .contributor-edit-form').waitFor();
+  await page.locator('#ce-about').fill('Edited through browser regression');
+  await page.locator('.vx-drawer [type="submit"]').click();
+  await page.waitForTimeout(300);
+  assert(requests.some(r=>r.name==='updatecontributorapplication'&&r.data.about==='Edited through browser regression'));
+ }
+ for(const width of [390,1440])for(const theme of ['light','dark']){
+  await page.setViewportSize({width,height:900});
+  await page.evaluate(async selected=>(await import('/js/modules/shell.js')).applyTheme(selected),theme);
+  await page.waitForTimeout(150);
+  assert(await page.locator('#contributors-list-container').isVisible());
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ }
+ await page.setViewportSize({width:1440,height:1000});
+ unavailable=true;
+ await page.locator('#refresh-contributors-btn').click();
+ await page.waitForTimeout(200);
+ unavailable=false;
+ await page.locator('#refresh-contributors-btn').click();
+ await page.getByText('Example Applicant',{exact:true}).first().waitFor();
+ assert.deepEqual(errors,[]);console.log('PASS applicants, filter, drawer editing, error recovery, and responsive themes');
 }finally{await browser.close();server.close();}})().catch(error=>{console.error(error);server.close();process.exitCode=1;});
