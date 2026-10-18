@@ -224,6 +224,7 @@ const server = http.createServer((req,res)=>{
      next();
      if(host.firstElementChild!==original || host.hasAttribute('aria-busy'))
         throw Error('live node was overwritten or busy state was left behind');
+     host.innerHTML='<strong>Incoming content</strong>';
    });
    // Async content preserves stale data, and skeletons are not shown instantly.
    await page.evaluate(async()=>{
