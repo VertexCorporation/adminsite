@@ -209,6 +209,22 @@ const server = http.createServer((req,res)=>{
     if(field.hasAttribute('aria-invalid'))throw Error('invalid state was not cleared');
    });
 
+   // Shared list loader cancels superseded requests; stale refresh never
+   // destroys the existing nodes or reattaches them from serialized markup.
+   await page.evaluate(()=>{
+     const host=document.getElementById('content');
+     host.innerHTML='<button id="old-live-button">Existing interactive record</button>';
+     const original=host.firstElementChild;
+     const stale=window.uiTest.loading.beginPanelLoading(host);
+     if(!host.classList.contains('is-refreshing'))throw Error('stale refresh not visible');
+     const next=window.uiTest.loading.beginPanelLoading(host);
+     stale();
+     if(host.firstElementChild!==original || host.getAttribute('aria-busy')!=='true')
+        throw Error('old request disrupted the latest refresh');
+     next();
+     if(host.firstElementChild!==original || host.hasAttribute('aria-busy'))
+        throw Error('live node was overwritten or busy state was left behind');
+   });
    // Async content preserves stale data, and skeletons are not shown instantly.
    await page.evaluate(async()=>{
     const host=document.getElementById('content');

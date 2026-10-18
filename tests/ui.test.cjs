@@ -195,3 +195,9 @@ test('contributors suppress skeleton flashes for sub-150ms responses',()=>{
  const src=read('js/modules/contributors.js');
  assert.doesNotMatch(src,/skeletonDelay:0/);
 });
+
+test('the real application browser regression verifies overlapping tab transitions',()=>{
+ const browser=read('tests/browser.cjs');
+ assert.match(browser,/Real navigation animates outgoing and incoming tabs simultaneously/);
+ assert.match(browser,/navMotion\.ghost&&navMotion\.inert&&navMotion\.outgoing>0/);
+});

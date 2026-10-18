@@ -71,6 +71,18 @@ await page.waitForSelector('.certificate-manage-btn');
 assert.equal(errors.length,0);
 const checks=[];
 const note=x=>{checks.push(x);console.log('PASS',x);};
+// Verify real navigation uses simultaneous exit and entrance, not a simple
+// fade-in after the outgoing tab has disappeared.
+await page.locator('.dock-btn[data-target="tab-news"]').click();
+const navMotion=await page.evaluate(()=>{
+ const host=document.querySelector('.app-main'),ghost=host.querySelector(':scope > .ui-view-ghost'),incoming=document.getElementById('tab-news');
+ return {ghost:!!ghost,inert:ghost?.inert,outgoing:ghost?.getAnimations().length,incoming:incoming.getAnimations().length,liveOld:!!document.getElementById('tab-contributors')};
+});
+assert(navMotion.ghost&&navMotion.inert&&navMotion.outgoing>0&&navMotion.incoming>0&&navMotion.liveOld,JSON.stringify(navMotion));
+await page.waitForFunction(()=>!document.querySelector('.app-main > .ui-view-ghost'));
+await page.locator('.dock-btn[data-target="tab-contributors"]').click();
+await page.waitForFunction(()=>!document.querySelector('.app-main > .ui-view-ghost'));
+note('Real navigation animates outgoing and incoming tabs simultaneously without replacing live forms');
 const issueCount=()=>calls.filter(n=>n==='issuevertexcertificate').length;
 const openCert=async()=>{if(await page.locator('.certificate-drawer').count()){await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});}await page.waitForSelector('.vx-popover.is-closing',{state:'detached'});await page.waitForSelector('.vx-modal[aria-hidden=true]',{state:'detached'});await page.locator('.certificate-manage-btn').first().click();await page.waitForSelector('[data-award]');};
 const selectTab=async id=>{if(await page.evaluate(()=>innerWidth<1024)){const dock=page.locator(`[data-mobile-tab="tab-${id}"]`);if(await dock.count()&&await dock.isVisible())await dock.click();else{await page.locator('[data-mobile-more]').click();if(id==='profile')await page.locator('[data-more-profile]').click();else await page.locator(`.mobile-more-pages section[data-more-module="tab-${id}"] button`).first().click();await page.waitForSelector('.vx-modal',{state:'detached'});}}else await page.locator(`[data-target="tab-${id}"]`).click();};
