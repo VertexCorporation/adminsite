@@ -414,6 +414,10 @@ function renderTeamProfile(container, profile) {
     };
 }
 
+// Keep previously loaded records on transient read failures.
+let weeklyCache = null;
+const starName = item => typeof item === 'string' ? item : (item?.name || '');
+const starId = item => typeof item === 'object' && item !== null ? item.id : null;
 /**
  * Haftanın Yıldızları (Weekly Stars) Bölümü Başlatıcı
  */
@@ -421,29 +425,31 @@ export async function initWeeklyStarsPanel() {
     const container = document.getElementById('weekly-stars-container');
     if (!container) return;
 
+    if (!weeklyCache) container.innerHTML = `<p class="state-block">${__('common.loading')}</p>`;
     try {
         const { data } = await getWeeklyStarsFn({});
-        renderWeeklyStars(container, data || { current: null, history: [] });
+        if (!data || !Array.isArray(data.history)) throw new Error('Invalid weekly stars response');
+        weeklyCache = data;
+        let directory = [];
+        let directoryError = null;
+        try {
+            const response = await getVertexContributorsFn({});
+            if (!Array.isArray(response.data?.contributors)) throw new Error('Invalid participant directory');
+            directory = response.data.contributors.filter(person => person && typeof person.id === 'string' && person.name);
+        } catch (error) { directoryError = error; }
+        renderWeeklyStars(container, {...weeklyCache, directory, directoryError});
     } catch (err) {
-        console.warn('[WEEKLY_STARS] Error loading weekly stars:', err);
-        renderWeeklyStars(container, { current: null, history: [] });
+        console.warn('[WEEKLY_STARS] Failed to load weekly stars:', err);
+        if (weeklyCache) {
+            showToast(() => userErrorMessage(err), 'error');
+            return;
+        }
+        showLoadError(container, () => userErrorMessage(err), initWeeklyStarsPanel);
     }
 }
 
 function renderWeeklyStars(container, starsData) {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    // ISO hafta hesaplama
-    const target = new Date(now.valueOf());
-    const dayNr = (now.getDay() + 6) % 7;
-    target.setDate(target.getDate() - dayNr + 3);
-    const firstThursday = target.valueOf();
-    target.setMonth(0, 1);
-    if (target.getDay() !== 4) {
-        target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
-    }
-    const currentWeekNumber = 1 + Math.ceil((firstThursday - target) / 604800000);
-
+    const {year: currentYear, weekNumber: currentWeekNumber} = isoWeek(new Date());
     const current = starsData.current;
     const history = Array.isArray(starsData.history) ? starsData.history : [];
 
@@ -467,7 +473,14 @@ function renderWeeklyStars(container, starsData) {
 
                 <div class="form-group-field">
                     <label for="stars-contributors">${__('weekly_stars.contributors_label')}</label>
-                    <input type="text" id="stars-contributors" placeholder="Deniz Örnek, Ayşe Demir" value="${escapeHTML((current?.contributors || []).join(', '))}">
+                    <div id="stars-selected" class="stars-selected" aria-live="polite"></div>
+                    <div class="search-field">
+                        ${icon('search', {size:16})}
+                        <input type="search" id="stars-person-search" autocomplete="off" placeholder="${getLang()==='tr'?'Katılımcı adıyla ara':'Search participants'}" aria-label="${__('weekly_stars.contributors_label')}">
+                    </div>
+                    <div id="stars-search-results" class="stars-search-results" role="listbox"></div>
+                    ${starsData.directoryError ? `<p class="state-block" role="alert">${escapeHTML(getLang()==='tr'?'Katılımcılar yüklenemedi. Kayıtlar korundu; yeniden deneyin.':'Participants could not be loaded. Existing records are preserved; retry.')}</p>` : ''}
+                    <p class="form-hint">${getLang()==='tr'?'En fazla 5 kişi; seçimler kalıcı katılımcı kimliğiyle kaydedilir.':'Up to five people; selections use permanent participant IDs.'}</p>
                 </div>
 
                 <div>
@@ -486,7 +499,7 @@ function renderWeeklyStars(container, starsData) {
                         <div class="team-list-row">
                             <div class="team-list-info">
                                 <span class="team-list-name">${escapeHTML(item.title || `Hafta ${item.weekNumber}, ${item.year}`)}</span>
-                                <span class="team-list-meta">${escapeHTML((item.contributors || []).join(', '))}</span>
+                                <span class="team-list-meta">${escapeHTML((item.contributors || []).map(starName).join(', '))}</span>
                             </div>
                         </div>`).join('')}</div>`
                 }
@@ -494,14 +507,48 @@ function renderWeeklyStars(container, starsData) {
         </div>
     `;
 
+    const selected = [...(Array.isArray(current?.contributors) ? current.contributors : [])];
+    const directory = starsData.directory || [];
+    const selectedHost = container.querySelector('#stars-selected');
+    const search = container.querySelector('#stars-person-search');
+    const results = container.querySelector('#stars-search-results');
+    const drawSelected = () => {
+        selectedHost.innerHTML = selected.map((person, index) => `<span class="stars-person-chip">${escapeHTML(starName(person))}${starId(person)?'':' (legacy)'}<button type="button" data-remove-star="${index}" aria-label="${__('common.delete')}">×</button></span>`).join('') || `<span class="form-hint">${getLang()==='tr'?'Henüz katılımcı seçilmedi.':'No participants selected.'}</span>`;
+        selectedHost.querySelectorAll('[data-remove-star]').forEach(button => button.onclick = () => {
+            selected.splice(Number(button.dataset.removeStar), 1);
+            drawSelected();
+            drawResults();
+        });
+    };
+    const drawResults = () => {
+        const query = search.value.trim().toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US');
+        results.innerHTML = !query ? '' : directory.filter(person =>
+            !selected.some(chosen => starId(chosen)===person.id) &&
+            (person.name+' '+(person.email||'')).toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US').includes(query)
+        ).slice(0,20).map(person => `<button type="button" class="stars-person-result" role="option" data-star-id="${escapeHTML(person.id)}"><strong>${escapeHTML(person.name)}</strong><small>${escapeHTML(person.email||person.department||'')}</small></button>`).join('');
+        results.querySelectorAll('[data-star-id]').forEach(button => button.onclick = () => {
+            if (selected.length >= 5) {
+                showToast(() => getLang()==='tr'?'En fazla 5 kişi seçilebilir.':'Select up to 5 people.', 'error');
+                return;
+            }
+            const person = directory.find(item => item.id===button.dataset.starId);
+            if (!person) return;
+            selected.push({id:person.id, name:person.name});
+            search.value = '';
+            drawSelected();
+            drawResults();
+            search.focus({preventScroll:true});
+        });
+    };
+    search.oninput = drawResults;
+    drawSelected();
     const form = container.querySelector('#weekly-stars-form');
     form.onsubmit = async e => {
         e.preventDefault();
         const week = parseInt(container.querySelector('#stars-week').value, 10);
         const year = parseInt(container.querySelector('#stars-year').value, 10);
         const title = container.querySelector('#stars-title').value.trim();
-        const contribRaw = container.querySelector('#stars-contributors').value;
-        const contributors = contribRaw.split(',').map(s => s.trim()).filter(Boolean);
+        const contributors = selected.slice();
 
         const saveBtn = container.querySelector('#save-weekly-stars-btn');
         setButtonLoading(saveBtn, true);
