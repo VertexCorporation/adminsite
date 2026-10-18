@@ -4,7 +4,7 @@ import { confirmDialog } from './shell.js';
 import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
 // js/modules/notification.js
 
-import { db, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn } from '../core/firebase.js';
+import { db, auth, sendTargetedNotificationFn, scheduleNotificationFn, cancelScheduledNotificationFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
 import { showToast, userErrorMessage, __, getLang, onLangChange, escapeHTML } from '../utils/ui.js';
 
@@ -12,6 +12,135 @@ let unsubscribeFromScheduledTasks = null;
 let submissionPending = false;
 let deliveryUncertain = false;
 const cancellingTasks=new Set();
+const DELIVERY_SESSION_KEY = 'vertex:notification:pending';
+let statusRequestId = null;
+let statusPollCount = 0;
+let statusPollTimer = null;
+let latestReceiptRequestId = null;
+const ntr = (tr,en) => getLang()==='tr'?tr:en;
+function deliveryNotice(message, action = null) {
+    const submit = document.getElementById('submit-notification-btn');
+    if (!submit) return;
+    let notice = document.getElementById('notification-delivery-status');
+    if (!notice) {
+        notice = document.createElement('div');
+        notice.id = 'notification-delivery-status';
+        notice.className = 'form-hint';
+        notice.setAttribute('role', 'status');
+        notice.setAttribute('aria-live', 'polite');
+        submit.insertAdjacentElement('afterend',notice);
+    }
+    notice.replaceChildren(document.createTextNode(message));
+    if (action && statusRequestId) {
+        const check=document.createElement('button');check.type='button';
+        check.className='chrome-btn-outline';check.style.marginLeft='8px';
+        check.textContent=ntr('Durumu kontrol et','Check status');
+        check.onclick=()=>void checkDeliveryStatus(statusRequestId, true);
+        notice.append(check);
+        if(action==='repair') {
+            const retry=document.createElement('button');retry.type='button';
+            retry.className='chrome-btn-outline';retry.style.marginLeft='8px';
+            retry.textContent=ntr('Kuyruğu onar','Repair queue');
+            retry.onclick=async()=>{
+                retry.disabled=true;
+                try {
+                    await reconcileNotificationQueueFn({requestId:statusRequestId});
+                    statusPollCount=0;void checkDeliveryStatus(statusRequestId,true);
+                } catch(error){
+                    deliveryNotice(ntr('Kuyruk onarılamadı. Sunucu kayıtlarını incele.','Queue could not be repaired. Review server logs.'),'repair');
+                } finally {if(retry.isConnected)retry.disabled=false;}
+            };
+            notice.append(retry);
+        }
+    }
+}
+function appendReceiptCheck(message,requestId) {
+    latestReceiptRequestId=requestId;
+    deliveryNotice(message);
+    const notice=document.getElementById('notification-delivery-status');
+    if(!notice)return;
+    const check=document.createElement('button');
+    check.type='button';check.className='chrome-btn-outline';
+    check.style.marginLeft='8px';
+    check.textContent=ntr('Cihaz raporlarını güncelle','Refresh app reports');
+    check.onclick=async()=>{
+        if(latestReceiptRequestId!==requestId)return;
+        check.disabled=true;
+        try{
+            const {data}=await getNotificationDeliveryStatusFn({requestId});
+            if(latestReceiptRequestId!==requestId)return;
+            const users=Number(data.deviceReportedCount||0);
+            appendReceiptCheck(message+' · '+
+                ntr(`Uygulama tarafından raporlanan hesap: ${users}`,
+                    `Accounts reporting in-app handling: ${users}`),requestId);
+        }catch(error){
+            showToast(ntr('Cihaz raporları alınamadı.','App reports are unavailable.'),'warning');
+        }finally{check.disabled=false;}
+    };
+    notice.append(check);
+}
+function rememberDelivery(requestId) {
+    try { sessionStorage.setItem(DELIVERY_SESSION_KEY, JSON.stringify({uid:auth.currentUser?.uid, requestId})); } catch {}
+}
+function clearDelivery() {
+    try { sessionStorage.removeItem(DELIVERY_SESSION_KEY); } catch {}
+    statusRequestId=null;
+    deliveryUncertain=false;
+    const submit = document.getElementById('submit-notification-btn');
+    if(submit) submit.disabled=false;
+    handleScheduleSwitchChange();
+}
+async function checkDeliveryStatus(requestId, continuePolling=false) {
+    if (!requestId || requestId !== statusRequestId) return;
+    if(statusPollTimer){clearTimeout(statusPollTimer);statusPollTimer=null;}
+    try {
+        const response=await getNotificationDeliveryStatusFn({requestId});
+        if(requestId!==statusRequestId)return;
+        const {status,kind,successCount,failureCount,failureCodes,deviceReportedCount}=response.data||{};
+        const errors=Object.entries(failureCodes||{}).filter(([,count])=>count>0)
+            .slice(0,3).map(([code,count])=>`${code}: ${count}`).join(', ');
+        if(status==='SCHEDULED'&&kind==='SCHEDULED'){
+            clearDelivery();deliveryNotice(ntr('Bildirim planlandı.','Notification scheduled.'));
+            showToast(ntr('Bildirim planlandı.','Notification scheduled.'),'success');
+            return;
+        }
+        if(status==='DELIVERED'||status==='NO_DELIVERIES'||status==='SENT') {
+            const msg=status==='NO_DELIVERIES'
+                ? ntr('FCM tarafından kabul edilen cihaz tokenı yok. Tokenları ve hata kodlarını incele.','FCM accepted no device tokens. Check tokens and failure codes.')
+                : ntr(`FCM ${successCount} tokenı kabul etti, ${failureCount} tokenı reddetti. Cihazda gösterilmesi ayrıca doğrulanmalıdır.`,`FCM accepted ${successCount} tokens and rejected ${failureCount}. Device display is not confirmed.`);
+            const receiptMsg=msg+' · '+
+                ntr(`Uygulama raporu: ${Number(deviceReportedCount||0)} hesap`,
+                    `App handling reports: ${Number(deviceReportedCount||0)} accounts`);
+            clearDelivery();
+            appendReceiptCheck(errors?`${receiptMsg} ${errors}`:receiptMsg,requestId);
+            showToast(msg,status==='DELIVERED'?'success':'warning');
+            return;
+        }
+        if(status==='QUEUE_FAILED') {
+            deliveryUncertain=true;
+            deliveryNotice(ntr('Bildirim kuyruğa alınamadı. Aynı işlem kimliğiyle kuyruğu onarmayı deneyin.','Delivery was not queued. You can repair the queue using the same request ID.'),'repair');
+            handleScheduleSwitchChange();
+            return;
+        }
+        if(status==='FAILED_UNCERTAIN'||status==='QUEUE_UNCERTAIN') {
+            deliveryUncertain=true;
+            deliveryNotice(ntr('Teslimat doğrulanamadı. Aynı bildirimi yeniden göndermeden önce sunucu kaydını incele.','Delivery is uncertain. Review the server record before sending again.'),status==='QUEUE_UNCERTAIN'?'repair':true);
+            handleScheduleSwitchChange();
+            return;
+        }
+        deliveryUncertain=true;
+        deliveryNotice(ntr('Bildirim kuyruğa alındı. Teslimat sonucu bekleniyor.','Notification queued. Waiting for delivery result.'),true);
+        handleScheduleSwitchChange();
+        if(continuePolling && ++statusPollCount<24)
+            statusPollTimer=setTimeout(()=>void checkDeliveryStatus(requestId,true),5000);
+    } catch(error) {
+        if(requestId!==statusRequestId)return;
+        deliveryNotice(ntr('Gönderimin sonucu sorgulanamadı. Aynı bildirimi tekrar gönderme.','Unable to check delivery. Do not resend blindly.'),true);
+    }
+}
+
+
+
 
 /**
  * Handles changes in the notification schedule switch.
@@ -174,22 +303,42 @@ async function handleNotificationFormSubmit(e) {
             scheduleTimeISO = scheduledDate.toISOString();
         }
 
-        const apiPayload = { payload, target, scheduleTime: scheduleTimeISO };
+        const requestId=(globalThis.crypto?.randomUUID?.() || 
+            Array.from(globalThis.crypto.getRandomValues(new Uint8Array(16)),
+                b=>b.toString(16).padStart(2,'0')).join('')).replaceAll('-','');
+        const apiPayload = {payload,target,requestId};
+        if(isScheduled)apiPayload.scheduleTime=scheduleTimeISO;
         const apiFunction = isScheduled ? scheduleNotificationFn : sendTargetedNotificationFn;
-        if (!isScheduled) delete apiPayload.scheduleTime;
 
-        showToast(isScheduled ? __('notif.scheduling') : __('notif.sending'), 'info');
+        // Persist the ID before the first network request. A timeout could occur
+        // after FCM accepted the message or Cloud Tasks created the job.
+        statusRequestId=requestId;
+        deliveryUncertain=true;
+        rememberDelivery(requestId);
+        deliveryNotice(__('notif.sending'));
+        showToast(isScheduled ? __('notif.scheduling') : __('notif.sending'),'info');
         let result;
         try { result = await apiFunction(apiPayload); }
-        catch (error) {
-            // A network/500 failure can follow partial delivery; never invite a blind resend.
-            if (!isScheduled && !['functions/invalid-argument','functions/permission-denied','functions/unauthenticated'].includes(error.code)) deliveryUncertain = true;
+        catch(error){
+            if(['functions/invalid-argument','functions/permission-denied',
+                'functions/unauthenticated'].includes(error.code))clearDelivery();
+            else deliveryNotice(__('notif.uncertain'),true);
             throw error;
         }
-        showToast(() => __('notif.success'), 'success');
-
         dom.notificationForm.reset();
+        dom.notificationTemplateSelector.value='';
+        handleTemplateSelection();
         handleTargetTypeChange();
+        if(result.data?.queued){
+            statusPollCount=0;
+            void checkDeliveryStatus(requestId,true);
+        } else {
+            // Legacy backend compatibility. Without a queued status record,
+            // FCM counts cannot demonstrate actual device display.
+            clearDelivery();
+            deliveryNotice(ntr('İstek işlendi. Cihazda gösterim doğrulanmadı.',
+                'Request processed. Device display is not confirmed.'));
+        }
         handleScheduleSwitchChange();
     } catch (error) {
         console.error("[CLIENT] Error submitting notification:", error);
@@ -282,6 +431,26 @@ export function stopListeningForScheduledTasks() {
  * Initializes all event listeners for the notification module.
  */
 export function initNotificationModule() {
+    let lastUid=null;
+    auth?.onAuthStateChanged(user=>{
+        const nextUid=user?.uid||null;
+        if(nextUid===lastUid)return;
+        lastUid=nextUid;
+        if(statusPollTimer){clearTimeout(statusPollTimer);statusPollTimer=null;}
+        statusRequestId=null;deliveryUncertain=false;statusPollCount=0;
+        const submit=document.getElementById('submit-notification-btn');
+        if(submit)submit.disabled=false;
+        if(!nextUid){deliveryNotice('');return;}
+        try{
+            const pending=JSON.parse(sessionStorage.getItem(DELIVERY_SESSION_KEY)||'null');
+            if(pending?.uid===nextUid && /^[a-zA-Z0-9_-]{12,100}$/.test(pending.requestId)){
+                statusRequestId=pending.requestId;deliveryUncertain=true;
+                deliveryNotice(ntr('Önceki bildirimin durumunu kontrol et.','Check the prior notification status.'),true);
+                void checkDeliveryStatus(statusRequestId,true);
+            }
+        }catch{}
+        handleScheduleSwitchChange();
+    });
     dom.notificationForm.addEventListener('submit', handleNotificationFormSubmit);
     dom.notificationScheduleSwitch.addEventListener('change', handleScheduleSwitchChange);
     dom.notificationTargetType.addEventListener('change', handleTargetTypeChange);
