@@ -1,7 +1,7 @@
 // Public website directory (siteTeam kind=card). The public homepage and
 // this console now read/write the SAME collection and share fixed role codes.
 import {
-  listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn,
+  auth, listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn,
   getWeeklyStarsFn, setWeeklyStarsFn
 } from '../core/firebase.js';
 import {escapeHTML, showToast, userErrorMessage, __, getLang, onLangChange} from '../utils/ui.js';
@@ -27,6 +27,7 @@ export async function loadTeamCards(){
  }catch(error){
    console.error('[TEAM_DIRECTORY] Could not load managed public cards',error);
    errorNotice(userErrorMessage(error));
+   throw error;
  }finally{cardsLoading=false;}
  const addBtn=byId('add-team-card-btn');
  if(addBtn){addBtn.disabled=teamCards.length>=10;addBtn.title=addBtn.disabled?__('team_cards.all_filled'):__('team_cards.add_btn');}
@@ -340,7 +341,9 @@ export function initTeamCardsPanel() {
     if (addBtn) {
         addBtn.onclick = () => openTeamCardDrawer(null);
     }
-    loadTeamCards();
+    // Managed reads require an authenticated Core session. main.js loads this
+    // workspace when the authorized user navigates to it.
+    if (auth.currentUser) void loadTeamCards().catch(()=>{});
     // Biographies are edited on each team card; the former founder-only
     // profile editor is intentionally no longer a second source of truth.
     const legacyProfile=document.getElementById('team-profile-container');
