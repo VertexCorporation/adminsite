@@ -173,3 +173,9 @@ test('async admin and notification buttons do not replace the label while pendin
  assert.doesNotMatch(notif,/submitBtn\.textContent = __\('notif\.submitting'\)/);
  assert.doesNotMatch(read('js/modules/events.js'),/events-preview'[\s\S]{0,750}finally\{setButtonLoading\(button,false\)/);
 });
+
+test('workspace outgoing snapshots retain grid geometry and exclude hidden panels',()=>{
+ const src=read('js/ui/transition.js');
+ assert.match(src,/ghost\.style\.gridTemplateColumns = containerStyle\.gridTemplateColumns/);
+ assert.match(src,/child\.hidden \|\| getComputedStyle\(child\)\.display === 'none'/);
+});

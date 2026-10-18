@@ -42,7 +42,17 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
     ghost.inert = true;
     let savedScroll = null;
     const budget = {remaining:160};
+    const containerStyle = getComputedStyle(container);
+    // Workspace outgoing cards retain their grid geometry rather than stacking.
+    if (containerStyle.display === 'grid') {
+        ghost.style.display = 'grid';
+        ghost.style.gridTemplateColumns = containerStyle.gridTemplateColumns;
+        ghost.style.gap = containerStyle.gap;
+        ghost.style.alignItems = containerStyle.alignItems;
+    }
     for (const child of oldChildren) {
+        if (child.nodeType === 1 &&
+            (child.hidden || getComputedStyle(child).display === 'none')) continue;
         if (denseList && child === rows) {
             const snapshot = rows.cloneNode(false);
             const rowHeight = Math.max(1, rows.firstElementChild?.getBoundingClientRect().height || 52);

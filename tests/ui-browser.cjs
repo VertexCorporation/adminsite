@@ -29,6 +29,7 @@ const fixture = [
  '<div id="content"><p>Outgoing content</p></div>',
  '<div id="view-host"><section id="old-tab" class="active"><h2>Old page</h2><input id="retained-value" value="keep me"></section><section id="new-tab" style="display:none"><h2>New page</h2></section></div>',
  ' <div id="generic"><ul></ul></div>',
+ ' <div id="workspace" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px"><article>Old card</article><article hidden>Hidden card</article></div>',
  ' <div id="dense"><div class="contributor-table-head">Applicant list</div><div class="contributor-table-rows"></div></div></body></html>'
 ].join('');
 const server = http.createServer((req,res)=>{
@@ -78,6 +79,16 @@ const server = http.createServer((req,res)=>{
    await page.waitForTimeout(300);
    assert.equal(await page.locator('.ui-crossfade-ghost').count(),0);
    assert.equal(await page.locator('#content strong').innerText(),'Incoming content');
+   await page.evaluate(()=>{
+     const host=document.getElementById('workspace');
+     window.uiTest.transition.crossfade(host,()=>{
+       host.innerHTML='<article>New workspace card</article>';
+     });
+   });
+   assert.equal(await page.locator('#workspace > .ui-crossfade-ghost').count(),1);
+   assert.equal(await page.locator('#workspace > .ui-crossfade-ghost > article').count(),1);
+   assert.equal(await page.locator('#workspace > .ui-crossfade-ghost').evaluate(el=>getComputedStyle(el).display),'grid');
+   await page.waitForTimeout(250);
    // A real exit+entry pair must overlap, remain inert, and never replace the
    // existing input (including across rapid navigation).
    await page.evaluate(()=>{
