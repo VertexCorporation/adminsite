@@ -138,3 +138,15 @@ test('contributor editing and manual applicant intake share safe async button st
  assert.match(intake,/setButtonLoading\(save,false\)/);
  assert.doesNotMatch(intake,/save\.disabled\s*=\s*true/);
 });
+
+test('navigation tabs use simultaneous outgoing and incoming animation with live DOM retained',()=>{
+ const transitions=read('js/ui/transition.js');
+ const shell=read('js/modules/shell.js');
+ assert.match(transitions,/export function animateViewSwitch\(/);
+ assert.match(transitions,/ghost\.animate\(\[\{opacity:1\},\{opacity:0\}\]/);
+ assert.match(transitions,/to\.animate\(/);
+ assert.match(transitions,/ghost\.inert = true/);
+ assert.match(transitions,/viewSwitches\.get\(host\)\?\.\(\)/);
+ assert.match(shell,/animateViewSwitch\(outgoing,target,update\)/);
+ assert.doesNotMatch(shell,/if \(changed\) animateViewEntry\(target\);\s*refreshNavigation\(\)/);
+});

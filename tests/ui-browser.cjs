@@ -27,6 +27,7 @@ const fixture = [
  '<div id="both" data-scroll-fog><div style="width:440px;height:250px">Both axes</div></div>',
  '<input id="required-field" required value="x">',
  '<div id="content"><p>Outgoing content</p></div>',
+ '<div id="view-host"><section id="old-tab" class="active"><h2>Old page</h2><input id="retained-value" value="keep me"></section><section id="new-tab" style="display:none"><h2>New page</h2></section></div>',
  ' <div id="generic"><ul></ul></div>',
  ' <div id="dense"><div class="contributor-table-head">Applicant list</div><div class="contributor-table-rows"></div></div></body></html>'
 ].join('');
@@ -77,6 +78,31 @@ const server = http.createServer((req,res)=>{
    await page.waitForTimeout(300);
    assert.equal(await page.locator('.ui-crossfade-ghost').count(),0);
    assert.equal(await page.locator('#content strong').innerText(),'Incoming content');
+   // A real exit+entry pair must overlap, remain inert, and never replace the
+   // existing input (including across rapid navigation).
+   await page.evaluate(()=>{
+     const old=document.getElementById('old-tab'),next=document.getElementById('new-tab');
+     window.uiTest.transition.animateViewSwitch(old,next,()=>{
+       old.classList.remove('active');old.style.display='none';
+       next.classList.add('active');next.style.display='block';
+     });
+   });
+   assert.equal(await page.locator('#view-host > .ui-view-ghost').count(),1);
+   assert.equal(await page.locator('#old-tab #retained-value').inputValue(),'keep me');
+   assert.equal(await page.locator('#view-host > .ui-view-ghost').getAttribute('aria-hidden'),'true');
+   assert(await page.locator('#new-tab').evaluate(el=>el.getAnimations().length>0));
+   assert(await page.locator('#view-host > .ui-view-ghost').evaluate(el=>el.getAnimations().length>0));
+   await page.evaluate(()=>{
+     const old=document.getElementById('old-tab'),next=document.getElementById('new-tab');
+     window.uiTest.transition.animateViewSwitch(next,old,()=>{
+       next.classList.remove('active');next.style.display='none';
+       old.classList.add('active');old.style.display='block';
+     });
+   });
+   assert.equal(await page.locator('#view-host > .ui-view-ghost').count(),1);
+   await page.waitForTimeout(270);
+   assert.equal(await page.locator('#view-host > .ui-view-ghost').count(),0);
+   assert.equal(await page.locator('#old-tab #retained-value').inputValue(),'keep me');
    // Generic result sets must also animate when their nested DOM gets large.
    await page.evaluate(()=>{
      const host=document.getElementById('generic');
