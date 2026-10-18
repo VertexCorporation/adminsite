@@ -309,7 +309,7 @@ function renderMatrixTable() {
     if (!container || !departmentPermissions) return;
     container.setAttribute('aria-busy','false');
     const focus = document.activeElement?.dataset;
-    let html = '<div class="permission-status-row"><span id="permission-save-status" role="status" aria-live="polite"></span></div><div class="dept-perms-table panel-matrix" role="table" aria-label="'+__('perms.dept_col')+'"><div class="dept-perms-header" role="row"><span role="columnheader">'+__('perms.dept_col')+'</span>';
+    let html = '<div class="permission-status-row"><span id="permission-save-status" role="status" aria-live="polite"></span></div><div class="dept-perms-table panel-matrix" style="--permission-module-count:${TABS.length}" role="table" aria-label="'+__('perms.dept_col')+'"><div class="dept-perms-header" role="row"><span role="columnheader">'+__('perms.dept_col')+'</span>';
     TABS.forEach(tab => {html += `<span class="dept-perm-th" role="columnheader">${__(tab.key)}</span>`;});
     html += '<span role="columnheader" class="sr-only">'+__('common.actions')+'</span></div>';
     let group = null;
