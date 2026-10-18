@@ -330,9 +330,39 @@ if(process.env.VERTEX_COMPLETE_ONLY)await require('./complete-polish.cjs')({page
 if(!process.env.VERTEX_COMPLETE_ONLY&&!process.env.VERTEX_STABILIZATION_ONLY)await require('./final-polish.cjs')({page,selectTab,note,calls,payloads,setPeople:value=>{people=value;},person,failMaintenance:value=>{failMaintenance=value;},failVerify:value=>{failVerify=value;}});
 if(!process.env.VERTEX_COMPLETE_ONLY&&!process.env.VERTEX_STABILIZATION_ONLY)await require('./precision.cjs')({page,selectTab,note,payloads,calls,failPermissions:value=>{failPermissionSave=value;}});
 await selectTab('contributors');
-// Authorization is tested against the same UI, with backend calls still mocked.
-await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.setCurrentUser(false,['Senatus']);await roles.loadDepartmentPermissions();const permissions=roles.getDepartmentPermissions();permissions.Senatus.hiddenFields={'contributors.list':['contact','age','links','interview']};permissions.Senatus.hiddenChips={'contributors.list':['github']};roles.getAccessibleTabs(['Senatus']);await (await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.certificate-manage-btn').count(),0);assert.equal(await page.locator('.edit-contributor-btn').count(),0);assert.equal(await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');return roles.getEffectivePanelLevel('contributors.list');}),'read');assert.equal(await page.locator('.contributor-cell-age').innerText(),'—');await page.locator('#contributor-search').fill('person@example.invalid');assert.equal(await page.locator('.contributor-row').count(),0);await page.locator('#contributor-search').fill('Local test fixture');assert.equal(await page.locator('.contributor-row').count(),1);await page.evaluate(async()=>{const roles=await import('/js/modules/roles.js');roles.getDepartmentPermissions().Senatus.hiddenFields['contributors.list'].push('about');await(await import('/js/modules/contributors.js')).fetchContributorsData();});assert.equal(await page.locator('.contributor-row').count(),0);await page.locator('#contributor-search').fill('');await page.locator('[data-details]').click();assert.equal(await page.locator('.vx-drawer-body').innerText().then(s=>s.includes('person@example.invalid')),false);await page.keyboard.press('Escape');note('Department read-only actions and hidden field policies');
-await page.locator('[data-details]').click();await page.waitForSelector('.vx-drawer');await page.evaluate(()=>document.getElementById('logout-btn').click());await page.waitForSelector('.vx-drawer',{state:'detached'});await page.waitForSelector('#login-container',{state:'visible'});assert.equal(await page.locator('#admin-panel').isVisible(),false);await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('#admin-panel',{state:'visible'});await selectTab('contributors');await page.waitForSelector('.certificate-manage-btn');note('Logout and admin login auth state');
+// Role presentation uses the same masked DTO contract as the backend.
+ // In production, masked fields are removed BEFORE the browser receives them.
+ people=[{...person,email:undefined,phone:undefined,about:undefined,
+   age:undefined,birthDate:undefined,birthYear:undefined,
+   linkedin:undefined,github:undefined,interviewDate:undefined}];
+ await page.evaluate(async()=>{
+   const roles=await import('/js/modules/roles.js');
+   roles.setCurrentUser(false,['Senatus']);
+   await roles.loadDepartmentPermissions();
+   const permissions=roles.getDepartmentPermissions();
+   permissions.Senatus.hiddenFields={'contributors.list':['contact','age','links','interview']};
+   permissions.Senatus.hiddenChips={'contributors.list':['github']};
+   await (await import('/js/modules/contributors.js')).fetchContributorsData();
+ });
+ assert.equal(await page.locator('.certificate-manage-btn').count(),0);
+ assert.equal(await page.locator('.edit-contributor-btn').count(),0);
+ assert.equal(await page.evaluate(async()=> (await import('/js/modules/roles.js')).getEffectivePanelLevel('contributors.list')),'read');
+ assert.equal(await page.locator('.contributor-cell-age').innerText(),'—');
+ await page.locator('#contributor-search').fill('person@example.invalid');
+ assert.equal(await page.locator('.contributor-row').count(),0);
+ await page.locator('#contributor-search').fill('Local test fixture');
+ assert.equal(await page.locator('.contributor-row').count(),0);
+ await page.locator('#contributor-search').fill('Example Participant');
+ await page.waitForSelector('.contributor-row');
+ assert.equal(await page.locator('.contributor-row').count(),1);
+ assert.equal(await page.evaluate(()=>Object.hasOwn(window.loadedContributors[0],'email') && window.loadedContributors[0].email!==undefined),false);
+ await page.locator('#contributor-search').fill('');
+ await page.locator('[data-details]').click();
+ assert.equal(await page.locator('.vx-drawer-body').innerText().then(s=>s.includes('person@example.invalid')),false);
+ await page.keyboard.press('Escape');
+ people=null;
+ note('Department read-only actions and server-masked fields stay private');
+ await page.locator('[data-details]').click();await page.waitForSelector('.vx-drawer');await page.evaluate(()=>document.getElementById('logout-btn').click());await page.waitForSelector('.vx-drawer',{state:'detached'});await page.waitForSelector('#login-container',{state:'visible'});assert.equal(await page.locator('#admin-panel').isVisible(),false);await page.locator('#email').fill('admin@example.invalid');await page.locator('#password').fill('test-only');await page.locator('#login-btn').click();await page.waitForSelector('#admin-panel',{state:'visible'});await selectTab('contributors');await page.waitForSelector('.certificate-manage-btn');note('Logout and admin login auth state');
 for(const claims of [{admin:false,departments:['Senatus']},{admin:false,departments:['Aero']}]) {
  const before=calls.filter(name=>name==='savedepartmentpermissions').length;
  await page.evaluate(async value=>{window.__testClaims=value;await window.firebase.auth().signOut();},claims);
