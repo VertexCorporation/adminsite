@@ -78,7 +78,7 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
     mutate();
     // Avoid a huge empty region on mobile when 100 rows become a short result.
     const newHeight = container.getBoundingClientRect().height;
-    container.style.minHeight = (denseList
+    container.style.minHeight = (denseList || largeList
         ? Math.min(rect.height, Math.max(newHeight, 160))
         : Math.max(rect.height, newHeight)) + 'px';
     ghost.style.width = '100%';
