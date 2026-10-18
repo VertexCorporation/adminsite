@@ -116,12 +116,16 @@ function levelFor(dept, panelKey) {
 }
 
 function bestLevel(panelKey, deptList) {
-    let best = 'none';
-    for (const dept of deptList || []) {
+    // READ is additive; WRITE requires every assigned department to allow it.
+    const assigned = [...new Set(deptList || [])];
+    if (!assigned.length) return 'none';
+    let anyRead = false, allWrite = true;
+    for (const dept of assigned) {
         const level = levelFor(dept, panelKey);
-        if (LEVEL_RANK[level] > LEVEL_RANK[best]) best = level;
+        if (LEVEL_RANK[level] >= LEVEL_RANK.read) anyRead = true;
+        if (level !== 'write') allWrite = false;
     }
-    return best;
+    return allWrite ? 'write' : anyRead ? 'read' : 'none';
 }
 
 function nextLevel(level) {
@@ -222,21 +226,24 @@ function normalizeDoc(raw) {
     return departments;
 }
 
-function seedDefaults() {
-    const writePanels = {};
-    const readPanels = {};
-    TABS.forEach(tab => {
-        writePanels[wildcardKey(tab.id)] = 'write';
-        readPanels[wildcardKey(tab.id)] = 'read';
-    });
-    return {
-        Core: { panels: writePanels },
-        Senatus: { panels: readPanels },
-        Aero: { panels: { 'contributors.list': 'write' } }
-    };
-}
 
 let permissionLoad = null;let permissionError=null;
+let serverRevision = 0;
+let permissionsWatcher = null;
+function watchPermissionRevision() {
+    if (permissionsWatcher || !db) return;
+    permissionsWatcher = db.collection('config').doc('departmentPermissions').onSnapshot(snapshot => {
+        const remoteRevision = Number.isSafeInteger(snapshot.data()?.revision) ? snapshot.data().revision : 0;
+        if (remoteRevision === serverRevision) return;
+        // Never silently merge two administrators' drafts.
+        if (saving || permissionRevision > 0 && saveState !== 'saved') {
+            saveState = 'failed';paintSaveState();
+            showToast(() => __('perms.failed') + ' — ' + (document.documentElement.lang==='en'?'Permissions changed in another session. Refresh.':'Yetkiler başka bir oturumda değişti. Yenileyin.'), 'error');
+            return;
+        }
+        void loadDepartmentPermissions();
+    }, () => { /* Callable is the fallback when config reads are blocked. */ });
+}
 export function loadDepartmentPermissions() {
     if (!permissionLoad) permissionLoad = readDepartmentPermissions().finally(() => {permissionLoad=null;});
     return permissionLoad;
@@ -246,10 +253,9 @@ async function readDepartmentPermissions() {
     try {
         const doc = await db.collection('config').doc('departmentPermissions').get();
         departmentPermissions = doc.exists ? normalizeDoc(doc.data()) : {};
-        if (!doc.exists || !Object.keys(departmentPermissions).length) {
-            departmentPermissions = seedDefaults();
-            // Defaults stay local until an explicit user edit; opening this page never writes permissions.
-        }
+        serverRevision = Number.isSafeInteger(doc.data()?.revision) ? doc.data().revision : 0;
+        // No implicit local defaults: absent server configuration is deny-by-default.
+        watchPermissionRevision();
         console.log('[ROLES] Panel permissions loaded:', departmentPermissions);
     } catch (directError) {
         // Firestore 'config' okuma kuralı engelliyse callable'a düş (deploy edilmişse).
@@ -257,9 +263,7 @@ async function readDepartmentPermissions() {
         try {
             const result = await getPanelPermissionsFn();
             departmentPermissions = normalizeDoc(result.data.departments || {});
-            if (!Object.keys(departmentPermissions).length) {
-                departmentPermissions = seedDefaults();
-            }
+            serverRevision = Number.isSafeInteger(result.data.revision) ? result.data.revision : 0;
             console.log('[ROLES] Panel permissions loaded via fallback:', departmentPermissions);
         } catch (fallbackError) {
             console.error('[ROLES] Panel permissions yüklenemedi:', fallbackError);
@@ -269,10 +273,12 @@ async function readDepartmentPermissions() {
     }
 }
 
-export async function saveDepartmentPermissions(permissions) {
+export async function saveDepartmentPermissions(permissions, expectedRevision = serverRevision) {
     try {
-        await saveDepartmentPermissionsFn({ departments: permissions });
+        const result = await saveDepartmentPermissionsFn({ departments: permissions, expectedRevision });
         // Acknowledging this snapshot must not overwrite a newer local draft.
+        serverRevision = result.data.revision;
+        return result.data;
     } catch (error) {
         console.error('[ROLES] Failed to save permissions:', error);
         const message = () => {
@@ -353,10 +359,22 @@ async function flushPermissions() {
     const snapshot=structuredClone(departmentPermissions);
     saving=true;saveState='saving';paintSaveState();
     try {
-        await saveDepartmentPermissions(snapshot);
+        await saveDepartmentPermissions(snapshot, serverRevision);
         confirmedPermissions=structuredClone(snapshot);
         saveState=revision===permissionRevision?'saved':'pending';
-    } catch {
+    } catch (error) {
+        if (error.code === 'functions/aborted') {
+            // Keep neither a stale approval nor an accidental overwrite.
+            clearTimeout(saveTimeout);
+            permissionRevision = revision;
+            await readDepartmentPermissions();
+            confirmedPermissions = structuredClone(departmentPermissions);
+            saveState='failed';renderMatrixTable();renderPanelMenuContent();
+            showToast(() => document.documentElement.lang==='en'
+                ? 'Permissions were changed elsewhere. The latest server version was loaded.'
+                : 'Yetkiler başka bir oturumda değişti. Güncel sunucu sürümü yüklendi.', 'error');
+            return;
+        }
         // Only roll back the failed draft if it has not been superseded.
         if (revision===permissionRevision) {
             departmentPermissions=structuredClone(confirmedPermissions || {});
