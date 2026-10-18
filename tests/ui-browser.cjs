@@ -16,7 +16,9 @@ const fixture = [
  '#horizontal{width:220px;overflow-x:auto;display:flex;gap:16px}',
  '#horizontal>span{flex:0 0 180px;padding:12px}',
  '#content{width:240px;min-height:70px;border:1px solid}',
- '#both{width:220px;height:80px;overflow:auto}</style></head><body>',
+ '#both{width:220px;height:80px;overflow:auto}',
+ '#dense .contributor-table-rows{max-height:180px;overflow-y:auto}',
+ '#dense .contributor-row{height:36px}</style></head><body>',
  '<div id="toast-container"></div>',
  '<button id="action" class="chrome-btn-outline">Save</button>',
  '<label><input id="choice" type="checkbox"> Selection</label>',
@@ -24,7 +26,8 @@ const fixture = [
  '<div id="horizontal" data-scroll-fog><span>First</span><span>Second</span><span>Third</span></div>',
  '<div id="both" data-scroll-fog><div style="width:440px;height:250px">Both axes</div></div>',
  '<input id="required-field" required value="x">',
- '<div id="content"><p>Outgoing content</p></div></body></html>'
+ '<div id="content"><p>Outgoing content</p></div>',
+ ' <div id="dense"><div class="contributor-table-head">Applicant list</div><div class="contributor-table-rows"></div></div></body></html>'
 ].join('');
 const server = http.createServer((req,res)=>{
  const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
@@ -73,6 +76,41 @@ const server = http.createServer((req,res)=>{
    await page.waitForTimeout(300);
    assert.equal(await page.locator('.ui-crossfade-ghost').count(),0);
    assert.equal(await page.locator('#content strong').innerText(),'Incoming content');
+   // 90 rows used to exceed the 140-descendant cutoff and silently skip fade.
+   await page.evaluate(()=>{
+     const host=document.getElementById('dense');
+     const rows=host.querySelector('.contributor-table-rows');
+     rows.innerHTML=Array.from({length:90},(_,i)=>
+       '<div class="contributor-row" data-row="'+i+'"><button type="button"><span>Applicant '+i+'</span><i>✓</i></button><span><b>Active</b></span></div>').join('');
+     rows.scrollTop=350;
+     window.uiTest.transition.crossfade(host,()=>{
+       rows.innerHTML=Array.from({length:38},(_,i)=>
+         '<div class="contributor-row" data-row="'+i+'"><button type="button"><span>Filtered '+i+'</span><i>✓</i></button><span><b>Active</b></span></div>').join('');
+     });
+   });
+   assert.equal(await page.locator('#dense > .ui-crossfade-ghost').count(),1);
+   const dense=await page.evaluate(()=>{
+     const host=document.getElementById('dense');
+     return {
+       outgoing:host.querySelector('.ui-crossfade-ghost .contributor-table-rows').children.length,
+       incoming:host.querySelector(':scope > .contributor-table-rows').children.length,
+       animating:host.querySelector(':scope > .contributor-table-rows').getAnimations().length > 0
+     };
+   });
+   assert(dense.outgoing <= 29,JSON.stringify(dense));
+   assert.equal(dense.incoming,38);
+   assert.equal(dense.animating,true);
+   await page.evaluate(()=>{
+     const host=document.getElementById('dense');
+     window.uiTest.transition.crossfade(host,()=>{
+       host.querySelector(':scope > .contributor-table-rows').innerHTML=
+         '<div class="contributor-row">Final result</div>';
+     });
+   });
+   assert.equal(await page.locator('#dense > .ui-crossfade-ghost').count(),1);
+   await page.waitForTimeout(300);
+   assert.equal(await page.locator('#dense > .ui-crossfade-ghost').count(),0);
+   assert.equal(await page.locator('#dense > .contributor-table-rows > .contributor-row').count(),1);
    await page.waitForFunction(()=>document.getElementById('vertical').dataset.fogBottom==='true');
    assert.equal(await page.locator('#horizontal').getAttribute('data-fog-right'),'true');
    await page.evaluate(()=>{

@@ -22,6 +22,14 @@ test('overlay cleanup uses CSS motion and lifecycle events',()=>{
  assert.match(read('js/ui/motion.js'), /getComputedStyle\(element\)/);
  assert.match(read('js/ui/motion.js'), /transitionend/);
 });
+test('long applicant filters retain an optimized visible crossfade',()=>{
+ const src=read('js/ui/transition.js');
+ assert.match(src,/contributor-table-rows/);
+ assert.match(src,/rows\.children\.length > 12/);
+ assert.match(src,/snapshot\.appendChild/);
+ assert.doesNotMatch(src,/oldChildren\.length > 0[^;]+container\.querySelectorAll\('\*'\)\.length < 140;/);
+});
+
 test('crossfade is visual only and stale data is preserved',()=>{
  assert.match(read('js/utils/loading.js'), /crossfade\(container/);
  assert.match(read('js/utils/loading.js'), /if \(stale && container\.children\.length\)/);
