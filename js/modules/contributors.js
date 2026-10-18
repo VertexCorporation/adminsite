@@ -97,8 +97,14 @@ export function initContributorsModule() {
     listContainer = document.getElementById('contributors-list-container');
     listContainer.replaceChildren();
     loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows(),crossfadeOptions:{mode:'enter'}});
-    window.filterContributors = filter => { activeFilter=filter; void fetchContributorsData(); };
+    window.filterContributors = filter => {
+        activeFilter=filter;
+        // Immediate feedback using only the currently authorized, server-masked page.
+        if(window.loadedContributors)renderContributors(window.loadedContributors);
+        void fetchContributorsData();
+    };
     window.searchContributorsLocal = () => {
+        if(window.loadedContributors)renderContributors(window.loadedContributors);
         clearTimeout(contributorSearchTimer);
         contributorSearchTimer=setTimeout(()=>void fetchContributorsData(),350);
     };
@@ -149,7 +155,7 @@ export function applyChipVisibility() {
 export function fetchContributorsData() {
     const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry)templateEntry.style.display=isPanelAdmin()?'':'none';
     if(getEffectivePanelLevel('contributors.list')==='none')return Promise.resolve();
-    const context=JSON.stringify([auth.currentUser?.uid,isPanelAdmin(),getHiddenFieldsFor('contributors.list')]);
+    const context=JSON.stringify([auth.currentUser?.uid,isPanelAdmin(),getHiddenFieldsFor('contributors.list'),activeFilter,(document.getElementById('contributor-search')?.value||'').trim()]);
     if(inFlight&&inFlightContext===context)return inFlight;
     inFlightContext=context;
     const promise=loadContributors(false).finally(()=>{if(inFlight===promise)inFlight=null;});
