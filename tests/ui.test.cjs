@@ -240,10 +240,10 @@ test('sub-navigation renders the chosen workspace before the incoming tab',()=>{
  assert.match(shell,/activateTab\(parent, child\)/);
  assert.doesNotMatch(shell,/showWorkspace\(document\.getElementById\(parent\.dataset\.target\),keys\)/);
 });
-test('applicant filters use incoming-only animation and fixed hydration viewport',()=>{
+test('applicant filters use bounded true crossfade and fixed hydration viewport',()=>{
  assert.match(read('js/ui/transition.js'),/mode === 'enter'/);
  assert.match(read('js/utils/loading.js'),/opts\.crossfadeOptions/);
- assert.match(read('js/modules/contributors.js'),/crossfadeOptions:\{mode:'enter'\}/);
+ assert.match(read('js/modules/contributors.js'),/crossfadeOptions:\{mode:'crossfade',preserveHeight:false,duration:170\}/);
  const css=read('css/ui/layout.css');
  assert.match(css,/min-height: 464px/);
  assert.match(css,/overflow-anchor: none/);
