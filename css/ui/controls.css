@@ -352,3 +352,19 @@ input[type="checkbox"][role="switch"]:checked::after {
 @media (prefers-reduced-motion:reduce) {
     input[type="checkbox"][role="switch"]::after { transition:none; }
 }
+
+/* Team editor — identity-backed multi-select, shared across light/dark modes. */
+.stars-selected{display:flex;flex-wrap:wrap;gap:8px;min-height:34px;margin:8px 0}
+.stars-person-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 8px 5px 12px;
+    border:1px solid var(--border-subtle);background:var(--bg-elevated);
+    border-radius:var(--radius-full);color:var(--text-primary);font-size:var(--fs-secondary)}
+.stars-person-chip button{width:28px;height:28px;min-height:28px;min-width:28px;
+    color:inherit;background:transparent;border:0;border-radius:50%;cursor:pointer;font-size:18px}
+.stars-person-chip button:is(:hover,:focus-visible){background:var(--bg-hover)}
+.stars-search-results{display:grid;gap:6px;max-height:min(240px,35dvh);overflow:auto;margin-top:8px}
+.stars-person-result{display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:8px;min-height:44px;padding:10px 12px;cursor:pointer;
+    background:var(--bg-elevated);border:1px solid var(--border-subtle);
+    border-radius:var(--radius-md);color:var(--text-primary);text-align:start}
+.stars-person-result:is(:hover,:focus-visible){background:var(--bg-hover)}
+.stars-person-result small{color:var(--text-secondary);overflow-wrap:anywhere}
