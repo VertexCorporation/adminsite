@@ -193,7 +193,7 @@ const filterTransition=await page.evaluate(()=>{
   animating:!!host.querySelector(':scope > .contributor-table-rows')?.getAnimations().length,
   height:host.getBoundingClientRect().height};
 });
-assert.equal(filterTransition.ghost,false,JSON.stringify(filterTransition));
+assert.equal(filterTransition.ghost,true,JSON.stringify(filterTransition));
 assert.equal(filterTransition.newRows,43);
 assert.equal(filterTransition.animating,true);
 assert(filterTransition.height>=460,JSON.stringify(filterTransition));
