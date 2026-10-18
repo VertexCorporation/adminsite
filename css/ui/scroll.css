@@ -42,3 +42,25 @@
 @media (prefers-reduced-motion:reduce) {
     .scroll-fog,.scroll-fog-x { transition:none; }
 }
+
+/* Internal scrolling is owned by this sheet, not stabilization overrides.
+   Preserve browser scroll chaining for ordinary nested lists; contain it
+   inside overlays so a modal cannot move the underlying document. */
+.contributor-table-head {
+    position:relative; top:auto; background:var(--bg-surface); z-index:1;
+    overflow:hidden; scrollbar-gutter:stable;
+}
+.contributor-table-rows {
+    max-height:420px; overflow-y:auto; scrollbar-gutter:stable;
+}
+:where(.vx-drawer-body,.vx-modal-body,.vx-popover-body.is-scrollable) {
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+}
+:where(.scroll-fog,.scroll-fog-x) { scrollbar-width:thin; }
+@media (max-width:1023px) {
+    .contributor-table-rows { max-height:none; overflow:visible; scrollbar-gutter:auto; }
+}
+@media (prefers-reduced-motion:reduce) {
+    .scroll-fog,.scroll-fog-x { transition:none; }
+}

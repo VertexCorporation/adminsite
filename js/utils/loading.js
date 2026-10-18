@@ -1,7 +1,7 @@
-import { escapeHTML, showToast } from './ui.js';
+import { showToast } from './ui.js';
 import { crossfade, animateContent } from '../ui/transition.js';
 import { setButtonState } from '../ui/controls.js';
-import { icon } from './icons.js';
+import { showLoadError, showEmptyState } from '../ui/states.js';
 // js/utils/loading.js
 //
 // Merkezi yükleme sistemi: skeleton + shimmer + boş/hata durumları.
@@ -144,14 +144,7 @@ export function createLoadingController(container, opts = {}) {
             return;
         }
         stale = false;
-        crossfade(container, () => {
-            container.innerHTML = `<div class="state-block" role="alert">
-                ${icon('alert-circle',{size:28})}
-                <h4>${escapeHTML(message)}</h4>
-                ${retryFn ? `<button type="button" class="chrome-btn-outline retry-btn">${escapeHTML(retryLabel)}</button>` : ''}
-            </div>`;
-            container.querySelector('.retry-btn')?.addEventListener('click', retryFn);
-        });
+        showLoadError(container, message, retryFn, {retryLabel});
     }
 
     /** Boş durum: iskelet gösterilmez, gerçek empty state basılır. */
@@ -161,11 +154,7 @@ export function createLoadingController(container, opts = {}) {
         container.removeAttribute('aria-busy');
         container.classList.remove('is-refreshing');
         stale = false;
-        crossfade(container, () => { container.innerHTML = `<div class="state-block">
-            ${icon('users-group',{size:28})}
-            <h4>${escapeHTML(title)}</h4>
-            ${description ? `<p>${escapeHTML(description)}</p>` : ''}
-        </div>`; });
+        showEmptyState(container, title, description);
     }
 
     function destroy() {

@@ -227,3 +227,13 @@ html[data-theme="light"] .vx-drawer-scrim { background: rgba(23, 25, 29, 0.30); 
 }
 /* İptal sol, Onayla sağ */
 .confirm-dialog-footer .cancel-btn { margin-right: auto; }
+
+/* Nested scroll should stay within active surfaces, with one primary
+   scrollport per pane and mobile safe-area breathing room. */
+.vx-drawer, .vx-modal { box-sizing:border-box; }
+.vx-drawer-body, .vx-modal-body { min-height:0; }
+.vx-modal { max-height:min(85dvh,720px); }
+.vx-popover { max-height:calc(100dvh - 2 * var(--space-2)); }
+@media (max-width:720px) {
+    .vx-drawer-footer, .vx-modal-footer { padding-bottom:max(var(--space-4),env(safe-area-inset-bottom)); }
+}

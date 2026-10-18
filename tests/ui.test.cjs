@@ -210,3 +210,30 @@ test('legacy people directory also uses one shared loading and crossfade control
  assert.match(src,/loader\(host\)\.error\(/);
  assert.doesNotMatch(src,/function loading\(host\)\{[^}]*host\.innerHTML/);
 });
+
+test('error, empty and success states share the inert animated state renderer',()=>{
+ const src=read('js/ui/states.js'), loading=read('js/utils/loading.js');
+ assert.match(src,/export function renderUiState/);
+ assert.match(src,/crossfade\(container, \(\) => container\.replaceChildren\(state\)\)/);
+ assert.match(src,/export function showEmptyState/);
+ assert.match(src,/export function showSuccessState/);
+ assert.match(loading,/showLoadError\(container, message, retryFn/);
+ assert.match(loading,/showEmptyState\(container, title, description\)/);
+});
+test('scroll fog discovers dynamic internal scrollports and avoids scrolling the table header',()=>{
+ const src=read('js/utils/scrollEdges.js');
+ assert.match(src,/const DISCOVER =/);
+ assert.match(src,/\[style\*="overflow"\]/);
+ assert.match(src,/attributeFilter:/);
+ assert.match(src,/scrollable\(style\.overflowX\)/);
+ assert.match(read('css/ui/scroll.css'),/\.contributor-table-head/);
+ assert.doesNotMatch(read('css/stabilization.css'),/\.contributor-table-head\{/);
+});
+test('form, responsive and panel interaction owners use shared accessible states',()=>{
+ const form=read('css/ui/controls.css');
+ assert.match(form,/input\[type="checkbox"\]\[role="switch"\]:checked::after/);
+ assert.match(form,/\.chip-checkbox:has\(input:focus-visible\)/);
+ assert.match(read('js/ui/feedback.js'),/stopImmediatePropagation\(\)/);
+ assert.match(read('css/ui/layout.css'),/--form-section-gap/);
+ assert.match(read('css/ui/overlay.css'),/safe-area-inset-bottom/);
+});

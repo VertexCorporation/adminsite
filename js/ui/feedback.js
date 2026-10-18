@@ -1,5 +1,5 @@
-// Shared progressive enhancement for dynamically rendered forms and actions.
-// No automatic request submission or permission-state mutation is performed.
+// Delegated enhancement for asynchronously rendered controls. The owner of
+// each overlay remains responsible for its actions and permission decisions.
 let initialized = false;
 export function initUiFeedback() {
     if (initialized) return;
@@ -15,11 +15,21 @@ export function initUiFeedback() {
         if (event.target?.matches?.('input,select,textarea'))
             event.target.setAttribute('aria-invalid','true');
     }, true);
-    // Esc closes browser-native disclosure only when a custom overlay is absent.
-    // Each owned overlay handles its own Escape and focus restoration.
     document.addEventListener('click', event => {
-        const btn = event.target.closest?.('button[aria-expanded="true"]');
-        if (!btn || btn.disabled) return;
-        btn.dataset.uiActive = 'true';
+        const button = event.target.closest?.('button[aria-expanded],button[aria-controls]');
+        if (!button || button.disabled) return;
+        // Do not allow a second action to sneak through while a controller is
+        // already pending; never re-enable a permission-disabled control.
+        if (button.matches('[aria-busy="true"],[data-state="loading"]')) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+        }
+        queueMicrotask(() => {
+            if (!button.isConnected) return;
+            const expanded = button.getAttribute('aria-expanded');
+            if (expanded === 'true') button.dataset.uiActive = 'true';
+            else if (expanded === 'false') delete button.dataset.uiActive;
+        });
     }, true);
 }

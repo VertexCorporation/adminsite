@@ -25,6 +25,8 @@ const fixture = [
  '<div id="vertical" data-scroll-fog><div style="height:420px">Scrollable vertical content</div></div>',
  '<div id="horizontal" data-scroll-fog><span>First</span><span>Second</span><span>Third</span></div>',
  '<div id="both" data-scroll-fog><div style="width:440px;height:250px">Both axes</div></div>',
+ '<div id="auto-discovered" style="height:70px;width:160px;overflow:auto"><div style="height:230px">Dynamic scrollport</div></div>',
+ '<div id="state-host"><p>Previous error content</p></div>',
  '<input id="required-field" required value="x">',
  '<div id="content"><p>Outgoing content</p></div>',
  '<div id="delay-host"></div>',
@@ -164,6 +166,25 @@ const server = http.createServer((req,res)=>{
    await page.waitForTimeout(300);
    assert.equal(await page.locator('#dense > .ui-crossfade-ghost').count(),0);
    assert.equal(await page.locator('#dense > .contributor-table-rows > .contributor-row').count(),1);
+   await page.waitForFunction(()=>document.getElementById('auto-discovered').dataset.fogBottom==='true');
+   await page.evaluate(()=>{
+     const host=document.getElementById('auto-discovered');
+     host.scrollTop=200;host.dispatchEvent(new Event('scroll'));
+   });
+   assert.equal(await page.locator('#auto-discovered').getAttribute('data-fog-top'),'true');
+   await page.evaluate(async()=>{
+     const {showLoadError,showEmptyState,showSuccessState}=await import('/js/ui/states.js');
+     const host=document.getElementById('state-host');
+     showLoadError(host,'Service unavailable',async()=>{});
+     if(!host.querySelector('[role="alert"]'))throw Error('animated error surface missing');
+     if(!host.querySelector('button'))throw Error('retry action missing');
+     showEmptyState(host,'No records');
+     if(!host.querySelector('[role="status"]'))throw Error('empty state missing');
+     showSuccessState(host,'Completed');
+     if(!host.textContent.includes('Completed'))throw Error('success state missing');
+   });
+   await page.waitForTimeout(230);
+   assert.equal(await page.locator('#state-host .ui-crossfade-ghost').count(),0);
    await page.waitForFunction(()=>document.getElementById('vertical').dataset.fogBottom==='true');
    assert.equal(await page.locator('#horizontal').getAttribute('data-fog-right'),'true');
    await page.evaluate(()=>{
