@@ -495,33 +495,65 @@ async function toggleMembership(person,button) {
     finally{membershipPending.delete(person.id);setButtonLoading(button,false);renderContributors(window.loadedContributors||[]);}
 }
 function openCertificateSelector() {
-    if(!isPanelAdmin())return;
-    let disposeCertificate,query='',scroll=0;
-    const body=openDrawer({title:__('cert.select_person'),onAfterClose(){disposeCertificate?.();unsubscribe();}});
+    if (!isPanelAdmin()) return;
+    let disposeCertificate, query='', scroll=0, people=[], cursor=null, pending=false;
+    let generation=0, debounce=null;
+    const body=openDrawer({title:__('cert.select_person'),onAfterClose(){
+        generation++;clearTimeout(debounce);disposeCertificate?.();unsubscribe();
+    }});
     const root=body.closest('.vx-drawer');
     const unsubscribe=onLangChange(()=>{if(body.classList.contains('certificate-selector-body'))paint();});
     async function paint(){
         if(!body.isConnected)return;
         root.classList.remove('certificate-drawer');root.querySelector('[data-cert-back]')?.remove();root.querySelector('.vx-drawer-footer')?.remove();
-        root.querySelector('.vx-drawer-title').textContent=__('cert.select_person');root.setAttribute('aria-label',__('cert.select_person'));
+        root.querySelector('.vx-drawer-title').textContent=__('cert.select_person');
+        root.setAttribute('aria-label',__('cert.select_person'));
         body.classList.add('certificate-selector-body');
         body.innerHTML=`<button type="button" class="chrome-btn-outline template-manage-entry" data-email-templates>${__('email_templates.title')}</button><div class="certificate-person-search"><label for="certificate-person-search">${__('cert.search_person')}</label><div class="search-field">${icon('search')}<input id="certificate-person-search" type="search" placeholder="${__('cert.search_person')}" value="${escapeHTML(query)}"></div></div><div class="certificate-person-list"></div>`;
         body.querySelector('[data-email-templates]').onclick=openCertificateEmailTemplates;
         const search=body.querySelector('input'),list=body.querySelector('.certificate-person-list');
-        function results(){
+        function render(){
             if(!body.classList.contains('certificate-selector-body'))return;
-            const people=(window.loadedContributors||[]).filter(p=>[p.name,p.email].some(v=>String(v||'').toLowerCase().includes(query.toLowerCase())));
-            list.innerHTML=people.map(p=>`<button class="certificate-person-row" data-person="${escapeHTML(p.id)}"><span><strong>${escapeHTML(p.name)}</strong><small>${escapeHTML(p.email||'')}</small></span>${icon('award')}</button>`).join('')||`<p class="state-block">${__('contributors.empty')}</p>`;
+            list.innerHTML=people.map(p=>`<button class="certificate-person-row" data-person="${escapeHTML(p.id)}"><span><strong>${escapeHTML(p.name)}</strong><small>${escapeHTML(p.email||'')}</small></span>${icon('award')}</button>`).join('')
+                || `<p class="state-block">${pending?__('common.loading'):__('contributors.empty')}</p>`;
+            if(cursor)list.insertAdjacentHTML('beforeend',`<button type="button" class="chrome-btn-outline certificate-next-page">${document.documentElement.lang==='en'?'Load more':'Daha fazla yükle'}</button>`);
             list.scrollTop=scroll;
-            list.querySelectorAll('[data-person]').forEach(b=>b.onclick=()=>{
+            list.querySelectorAll('[data-person]').forEach(button=>button.onclick=()=>{
+                const selected=people.find(p=>p.id===button.dataset.person);
+                if(!selected)return;
                 scroll=list.scrollTop;body.classList.remove('certificate-selector-body');
-                openCertificates((window.loadedContributors||[]).find(p=>p.id===b.dataset.person),fetchContributorsData,b,{body,onBack(){paint();},onDispose(fn){disposeCertificate=fn;}});
+                openCertificates(selected,fetchContributorsData,button,{
+                    body,onBack(){paint();},onDispose(fn){disposeCertificate=fn;}
+                });
             });
+            list.querySelector('.certificate-next-page')?.addEventListener('click',()=>loadPage(false));
         }
-        search.oninput=()=>{query=search.value;scroll=0;results();};
+        async function loadPage(reset){
+            if(pending&&!reset)return;
+            const token=++generation;
+            if(reset){people=[];cursor=null;scroll=0;}
+            pending=true;render();
+            try {
+                const {data}=await getVertexContributorsFn({
+                    pageSize:25, filter:'all', search:query, cursor
+                });
+                if(token!==generation || !body.classList.contains('certificate-selector-body'))return;
+                people=[...people,...(data.contributors||[]).filter(p=>!people.some(existing=>existing.id===p.id))];
+                cursor=data.nextCursor||null;
+            } catch(error) {
+                if(token===generation)showToast(()=>userErrorMessage(error),'error');
+            } finally {
+                if(token===generation){pending=false;render();}
+            }
+        }
+        search.oninput=()=>{
+            query=search.value;scroll=0;
+            clearTimeout(debounce);
+            ++generation;pending=false;
+            debounce=setTimeout(()=>{if(body.isConnected)void loadPage(true);},300);
+        };
         search.focus();
-        if(!window.loadedContributors){const load=createLoadingController(list,{skeletonHTML:skeletonRows(5)});load.start();await fetchContributorsData();if(!body.isConnected||!body.classList.contains('certificate-selector-body'))return;load.destroy();if(lastLoadFailed){load.error(__('contributors.load_error'),paint,__('common.retry'));return;}}
-        results();
+        if(!people.length)await loadPage(true);else render();
     }
-    paint();
+    void paint();
 }
