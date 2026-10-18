@@ -9,7 +9,7 @@ await page.route('**/*',async route=>{const url=new URL(route.request().url());i
  if(url.pathname.endsWith('/js/core/initializer.js'))return route.fulfill({contentType:'text/javascript',body:"import {startApp} from '../main.js';startApp({apiKey:'fixture'});"});return route.continue();}
  if(url.hostname.endsWith('run.app')){const name=url.hostname.split('-')[0],data=route.request().postDataJSON()?.data || {};requests.push({name,data});let result={};
  if(name==='getmyconsoleaccess')result={isAdmin:true,departments:[]};
- if(name==='getvertexcontributors'){if(unavailable)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE'}})});result={contributors:[application]};}
+ if(name==='getvertexcontributors'){if(unavailable)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE'}})});result={contributors:((!data.search||[application.name,application.email].some(v=>v.toLowerCase().includes(String(data.search).toLowerCase())))&&(!data.filter||data.filter==='all'||data.filter==='vertex'||(data.filter==='verified'&&application.hasVerified===true))?[application]:[])};}
  if(name==='updatecontributorapplication'){Object.assign(application,data);result={success:true};}
  if(name==='listconsoleusers'){if(unavailable)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE'}})});result=indexReady?{users:[{...user,name:data.cursor?'Second Page':user.name}],nextCursor:data.cursor?null:'cursor-2',indexReady:true}:{users:[],indexReady:false,indexed:0};}
  if(name==='getconsoleuser')result={user};
@@ -39,8 +39,7 @@ try{
  await page.getByText('Example Applicant',{exact:true}).first().waitFor();
  assert(await page.locator('#contributors-list-container .contributor-row').count()>0);
  await page.locator('#contributor-search').fill('no-match-fixture');
- await page.waitForTimeout(200);
- assert.equal(await page.locator('#contributors-list-container .contributor-row').count(),0);
+ await page.waitForFunction(()=>document.querySelectorAll('#contributors-list-container .contributor-row').length===0);
  await page.locator('#contributor-search').fill('Example Applicant');
  await page.getByText('Example Applicant',{exact:true}).first().waitFor();
  await page.locator('#contributor-search').fill('');
