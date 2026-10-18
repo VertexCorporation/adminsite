@@ -9,6 +9,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
     await page.screenshot({path:path.join(screenshots,`precision-${name}.png`),fullPage:!name.startsWith('sidebar-')});
   };
   await page.setViewportSize({width:1440,height:1000});
+  await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('en');});
   await page.evaluate(async()=>{(await import('/js/modules/shell.js')).applyTheme('dark');});
   await selectTab('system');
   await page.locator('[data-section=permissions]').dispatchEvent('click');
