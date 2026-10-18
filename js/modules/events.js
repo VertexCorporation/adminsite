@@ -172,7 +172,7 @@ export function initEventsModule() {
    frame.className='ui-eventsite-frame';
    frame.title=tr('Eventsite taslak önizlemesi','Eventsite draft preview');
    frame.referrerPolicy='origin';
-   frame.sandbox='allow-scripts allow-same-origin';
+   frame.setAttribute('sandbox','allow-scripts allow-same-origin');
    frame.loading='eager';
    const origin='https://events.vertexishere.com';
    const preview=()=>{frame.src=origin+'/'+lang.value+'/?vertexPreview=1';};
