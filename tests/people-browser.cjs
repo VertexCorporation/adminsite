@@ -35,7 +35,7 @@ try{
 
  // The former contributors.users panel is intentionally retired; exercise
  // the current applicants workspace rather than creating a phantom route.
- await page.locator('[data-nav-panel="contributors.list"]').click();
+ await page.locator('[data-nav-panel="contributors.list"][data-nav-action=""]').click();
  await page.getByText('Example Applicant',{exact:true}).first().waitFor();
  assert(await page.locator('#contributors-list-container .contributor-row').count()>0);
  await page.locator('#contributor-search').fill('no-match-fixture');
