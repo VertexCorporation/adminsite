@@ -26,7 +26,15 @@ await page.addInitScript(()=>{
  const user={uid:'admin',email:'admin@example.invalid',displayName:'Local Admin',getIdTokenResult:async()=>({claims:window.__testClaims || {admin:true}}),getIdToken:async()=>'test-only',updateProfile:async()=>{}};
  const listeners=[];const auth={currentUser:user,onAuthStateChanged:fn=>{listeners.push(fn);setTimeout(()=>fn(user),10);return ()=>{};},signOut:async()=>{auth.currentUser=null;listeners.forEach(fn=>fn(null));},signInWithEmailAndPassword:async()=>{if(window.__testAuthError)throw Object.assign(new Error('Private authentication detail'),{code:window.__testAuthError});auth.currentUser=user;listeners.forEach(fn=>fn(user));}};
  window.firebase={apps:[],initializeApp:()=>{},auth:()=>auth,firestore:()=>({collection}),storage:()=>({}),functions:()=>({}),appCheck:()=>({activate:()=>{},getToken:async()=>({token:'fixture-app-check'})}),app:()=>({functions:()=>({httpsCallable:(name)=>async data=>{
-   if(name==='getMyConsoleAccess')return {data:{uid:'admin',departments:['Core'],isAdmin:true,isCore:true,authzVersion:0}};
+   if(name==='getMyConsoleAccess'){
+     // A real callable resolves CURRENT server-owned membership on every
+     // authentication change. The synthetic fixture follows the test's
+     // server identity scenario, not a permanently privileged Core account.
+     const account=window.__testClaims || {admin:true};
+     const isCore=account.admin===true;
+     return {data:{uid:'admin',departments:isCore?['Core']:(account.departments||[]),
+       isAdmin:isCore,isCore,authzVersion:0}};
+   }
    const response=await fetch('https://'+name.toLowerCase()+'-o5h7dmtija-ew.a.run.app',{
      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:data||{}})
    });
