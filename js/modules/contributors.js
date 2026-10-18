@@ -514,7 +514,9 @@ function openCertificateSelector() {
         const search=body.querySelector('input'),list=body.querySelector('.certificate-person-list');
         function render(){
             if(!body.classList.contains('certificate-selector-body'))return;
-            list.innerHTML=people.map(p=>`<button class="certificate-person-row" data-person="${escapeHTML(p.id)}"><span><strong>${escapeHTML(p.name)}</strong><small>${escapeHTML(p.email||'')}</small></span>${icon('award')}</button>`).join('')
+            const normalized=query.trim().toLocaleLowerCase('tr');
+            const visible=normalized?people.filter(p=>[p.name,p.email].some(value=>String(value||'').toLocaleLowerCase('tr').includes(normalized))):people;
+            list.innerHTML=visible.map(p=>`<button class="certificate-person-row" data-person="${escapeHTML(p.id)}"><span><strong>${escapeHTML(p.name)}</strong><small>${escapeHTML(p.email||'')}</small></span>${icon('award')}</button>`).join('')
                 || `<p class="state-block">${pending?__('common.loading'):__('contributors.empty')}</p>`;
             if(cursor)list.insertAdjacentHTML('beforeend',`<button type="button" class="chrome-btn-outline certificate-next-page">${document.documentElement.lang==='en'?'Load more':'Daha fazla yükle'}</button>`);
             list.scrollTop=scroll;
@@ -550,6 +552,7 @@ function openCertificateSelector() {
             query=search.value;scroll=0;
             clearTimeout(debounce);
             ++generation;pending=false;
+            render(); // Filter current results immediately; fetch remote matches after debounce.
             debounce=setTimeout(()=>{if(body.isConnected)void loadPage(true);},300);
         };
         search.focus();
