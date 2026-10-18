@@ -12,7 +12,7 @@ import { beginPanelLoading, skeletonListItem, skeletonChatMessage, setButtonLoad
  * main model explorer and manual model editor.
  */
 
-import { storage, getModelImageUploadUrlFn, blockOnlineModelFn, updateModelsListFn, auth } from '../core/firebase.js';
+import { storage, getModelImageUploadUrlFn, blockOnlineModelFn, updateModelsListFn, prepareModelImageCleanupFn, confirmModelImageCleanupFn, auth } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
 import { showToast, userErrorMessage, __, getLang, onLangChange, getAuthToken, sanitizeHTML, simpleHash } from '../utils/ui.js';
 import { icon } from '../utils/icons.js';
@@ -972,6 +972,27 @@ function openDescriptionEditor(seriesPath) {
  * Handles the deletion of a manual model via the Curator API.
  * @param {string} id - The ID of the model to delete.
  */
+const MODEL_CLEANUP_JOURNAL='vertex-model-cleanup-pending-v1';
+function pendingModelCleanups(){
+    try{
+        const entries=JSON.parse(localStorage.getItem(MODEL_CLEANUP_JOURNAL)||'[]');
+        return Array.isArray(entries)?entries.filter(id=>typeof id==='string'&&/^[a-f0-9]{64}$/.test(id)).slice(-20):[];
+    }catch{return [];}
+}
+function rememberModelCleanup(id){
+    try{localStorage.setItem(MODEL_CLEANUP_JOURNAL,JSON.stringify([...new Set([...pendingModelCleanups(),id])].slice(-20)));}catch{}
+}
+function clearModelCleanup(id){
+    try{localStorage.setItem(MODEL_CLEANUP_JOURNAL,JSON.stringify(pendingModelCleanups().filter(x=>x!==id)));}catch{}
+}
+async function retryPendingModelCleanups(){
+    if(!canEditModels('models.library'))return;
+    for(const cleanupId of pendingModelCleanups()){
+        try{await confirmModelImageCleanupFn({cleanupId});clearModelCleanup(cleanupId);}
+        catch{break;} // Keep the journal until backend can accept the confirmation.
+    }
+}
+
 async function handleDeleteModel(id) {
     if (!canEditModels("models.library")) return;
     const modelToDelete = allManualModels.find(m => m.id === id);
@@ -979,6 +1000,16 @@ async function handleDeleteModel(id) {
 
     showToast(() => __('models.deleting'), 'info');
     try {
+        let cleanupId=null, legacyCleanup=false, cleanupPending=false;
+        if(modelToDelete.imagePath){
+            try {
+                const result=await prepareModelImageCleanupFn({modelId:id,modelType:modelToDelete.type,imagePath:modelToDelete.imagePath});
+                cleanupId=result.data.cleanupId||null;
+            }catch(error){
+                if(error.code==='functions/not-found' && error.httpStatus===404)legacyCleanup=true;
+                else throw error; // Never delete Curator data without first staging cleanup.
+            }
+        }
         const token = await getAuthToken(auth);
         const response = await fetch(`${CURATOR_API_URL}/${id}`, {
             method: 'DELETE',
@@ -986,8 +1017,21 @@ async function handleDeleteModel(id) {
         });
         if (!response.ok) throw new Error((await response.json()).error || 'API delete failed');
 
-        if (modelToDelete.imagePath) {
-            try { await storage.ref(modelToDelete.imagePath).delete(); } catch (storageError) { console.warn(`[MODELS] Could not delete image from storage: ${storageError.message}`); }
+        if (cleanupId) {
+            // Confirm only after Curator positively acknowledges deletion.
+            // Keep the opaque ID locally if network fails; retry next session.
+            rememberModelCleanup(cleanupId);
+            try {
+                await confirmModelImageCleanupFn({cleanupId});
+                clearModelCleanup(cleanupId);
+            } catch {
+                cleanupPending=true;
+            }
+        } else if (legacyCleanup && modelToDelete.imagePath) {
+            // Pre-migration compatibility. Remove only once the new secure
+            // cleanup functions are deployed; legacy cannot guarantee retries.
+            try { await storage.ref(modelToDelete.imagePath).delete(); }
+            catch { cleanupPending=true; }
         }
 
         //  If the deleted model was an offline model, flag attributions.
@@ -996,10 +1040,10 @@ async function handleDeleteModel(id) {
         }
 
         if (currentEditingModelId === id) resetModelForm();
-        showToast(() => __('models.deleted'), 'success');
+        showToast(() => __(cleanupPending?'models.cleanup_pending':'models.deleted'),cleanupPending?'info':'success');
         await fetchFullModelsData();
     } catch (error) {
-        console.error(`[MODELS] Error deleting model ${id}:`, error);
+        console.error('[MODELS] Model delete failed', {code:String(error?.code||'unknown')});
         showToast(() => userErrorMessage(error), 'error');
     }
 }
@@ -1184,6 +1228,7 @@ function openTranslationEditor(modelPath) {
  */
 export function initModelsModule() {
     initModelWorkspace();
+    auth?.onAuthStateChanged?.(user=>{if(user)void retryPendingModelCleanups();});
     dom.modelForm.addEventListener('submit', handleModelFormSubmit);
     dom.modelTypeSwitch.addEventListener('change', handleModelTypeChange);
     dom.modelCancelBtn.addEventListener('click', resetModelForm);

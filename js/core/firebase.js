@@ -14,6 +14,7 @@ let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bu
 let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn;
 let getPanelPermissionsFn;
 let listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn;
+let prepareModelImageCleanupFn, confirmModelImageCleanupFn;
 
 
 /**
@@ -187,6 +188,8 @@ function initFirebase(firebaseConfig) {
     listSiteTeamFn = callable('listSiteTeam');
     setSiteTeamEntryFn = callable('setSiteTeamEntry');
     deleteSiteTeamEntryFn = callable('deleteSiteTeamEntry');
+    prepareModelImageCleanupFn = callable('prepareModelImageCleanup');
+    confirmModelImageCleanupFn = callable('confirmModelImageCleanup');
 }
 
 // Export the initializer function and all the service variables
@@ -240,6 +243,8 @@ export {
     listSiteTeamFn,
     setSiteTeamEntryFn,
     deleteSiteTeamEntryFn,
+    prepareModelImageCleanupFn,
+    confirmModelImageCleanupFn,
     getPanelPermissionsFn
 };
 
