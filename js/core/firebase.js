@@ -12,7 +12,7 @@ let updateContributorApplicationFn, createManualVertexContributorFn;
 let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
 let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn;
 let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn;
-let getPanelPermissionsFn;
+let getPanelPermissionsFn, listDepartmentPermissionHistoryFn, restoreDepartmentPermissionsFn;
 let listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn;
 
 
@@ -157,6 +157,8 @@ function initFirebase(firebaseConfig) {
     setUserDepartmentsFn = callable('setUserDepartments');
     listDepartmentUsersFn = callable('listDepartmentUsers');
     saveDepartmentPermissionsFn = callable('saveDepartmentPermissions');
+    listDepartmentPermissionHistoryFn = callable('listDepartmentPermissionHistory');
+    restoreDepartmentPermissionsFn = callable('restoreDepartmentPermissions');
     setUserSubscriptionFn = callable('setUserSubscription');
     removeUserSubscriptionFn = callable('removeUserSubscription');
     listUserSubscriptionsFn = callable('listUserSubscriptions');
@@ -227,7 +229,9 @@ export {
     listSiteTeamFn,
     setSiteTeamEntryFn,
     deleteSiteTeamEntryFn,
-    getPanelPermissionsFn
+    getPanelPermissionsFn,
+    listDepartmentPermissionHistoryFn,
+    restoreDepartmentPermissionsFn
 };
 
 export const issueVertexCertificateFn = callable('issueVertexCertificate');
