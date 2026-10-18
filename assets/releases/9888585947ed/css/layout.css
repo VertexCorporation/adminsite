@@ -1,0 +1,383 @@
+/* ================================================================
+   VERTEX KONSOL — LAYOUT
+   Uygulama kabuğu: sol sidebar (240px) + sabit topbar (56px) +
+   merkez çalışma alanı (max 1480px). Normal CSS Grid/Flexbox düzeni;
+   mutlak konumlanmış panel/drag sistemi yoktur.
+   ================================================================ */
+
+/* ---------- Giriş ekranı ---------- */
+#login-container {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: var(--bg-app);
+    z-index: 60;
+    overflow-y: auto;
+}
+
+.login-box {
+    width: 100%;
+    max-width: 400px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6) var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.login-header { text-align: center; display: flex; flex-direction: column; gap: var(--space-3); align-items: center; }
+
+.logo-orb {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+}
+
+.login-header h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.14em; }
+.login-header h2 { font-size: var(--fs-metadata); font-weight: 500; color: var(--text-muted); letter-spacing: 0.02em; }
+
+.form-wrapper { display: flex; flex-direction: column; gap: var(--space-3); }
+#login-btn { width: 100%; margin-top: var(--space-2); }
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--text-muted);
+    font-size: var(--fs-metadata);
+}
+.divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-subtle);
+}
+
+.social-login-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+
+/* ---------- Başlatıcı yükleme ekranı ---------- */
+.vx-app-loader {position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:var(--bg-app);opacity:1;transition:opacity 180ms ease}
+.vx-loader-mark {position:relative;width:94px;height:94px}
+.vx-loader-logo {position:absolute;inset:4.5px;width:85px;height:85px;object-fit:contain;pointer-events:none;user-select:none;filter:brightness(0) invert(1)}
+.vx-loader-base {opacity:.48}
+.vx-loader-sweep {animation:vertex-soft-sweep 2100ms linear infinite;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 45%,#000 55%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,#000 45%,#000 55%,transparent 100%);-webkit-mask-size:260% 100%;mask-size:260% 100%}
+@keyframes vertex-soft-sweep {0%{-webkit-mask-position:120% 0;mask-position:120% 0;opacity:0}10%{opacity:1}66%{-webkit-mask-position:-20% 0;mask-position:-20% 0;opacity:1}100%{-webkit-mask-position:-20% 0;mask-position:-20% 0;opacity:0}}
+.vx-app-loader.is-leaving,.vx-app-loader.hidden {opacity:0;pointer-events:none}
+.vertex-brand-logo {object-fit:contain;filter:brightness(0) invert(1);flex-shrink:0}
+[data-theme="light"] .vx-loader-logo,[data-theme="light"] .vertex-brand-logo {filter:brightness(0)}
+@media(prefers-color-scheme:light){[data-theme="system"] .vx-loader-logo,[data-theme="system"] .vertex-brand-logo{filter:brightness(0)}}
+@media(prefers-reduced-motion:reduce){.vx-loader-sweep{animation:none;display:none}.vx-loader-base{opacity:1}.vx-app-loader{transition:none}}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* ---------- Uygulama kabuğu ---------- */
+#admin-panel { display: none; min-height: 100vh; background: var(--bg-app); }
+
+.app-layout {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    grid-template-rows: var(--topbar-height) 1fr;
+    grid-template-areas:
+        "sidebar topbar"
+        "sidebar main";
+    min-height: 100vh;
+}
+
+/* ---------- Sidebar ---------- */
+.app-sidebar {
+    grid-area: sidebar;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    z-index: 40;
+}
+
+.sidebar-brand {
+    height: var(--topbar-height);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-4);
+    flex-shrink: 0;
+}
+.sidebar-brand .brand-symbol {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+.sidebar-brand-title {
+    font-size: var(--fs-component-title);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--text-primary);
+}
+.sidebar-brand-title span { color: var(--text-muted); font-weight: 500; }
+
+.sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-2) var(--space-3);
+    display: flex;
+
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.sidebar-group-label {
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: var(--space-3) var(--space-3) var(--space-1);
+}
+
+/* Navigasyon düğmeleri (eski .dock-btn sınıf adı korunur) */
+.sidebar-nav .dock-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: 0 var(--space-3);
+    height: 42px;
+    border-radius: var(--radius-lg);
+    color: var(--text-secondary);
+    font-size: var(--fs-component-title);
+    font-weight: 500;
+    transition: background-color var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard);
+    position: relative;
+}
+.sidebar-nav .dock-btn .icon { flex-shrink: 0; }
+.sidebar-nav .dock-btn:hover { background: var(--bg-nav-hover); color: var(--text-primary); }
+.sidebar-nav .dock-btn.active { background: var(--bg-elevated); color: var(--text-primary); font-weight: 600; }
+
+
+.sidebar-footer { flex-shrink: 0; border-top: 1px solid var(--border-subtle); padding: var(--space-3); }
+
+/* ---------- Topbar ---------- */
+.app-header {
+    grid-area: topbar;
+    height: var(--topbar-height);
+    background: var(--bg-app);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-5);
+    position: sticky;
+    top: 0;
+    z-index: 30;
+}
+
+.topbar-left { display: flex; align-items: center; gap: var(--space-3); min-width: 0; flex: 1; }
+.topbar-page-title {
+    font-size: var(--fs-section-title);
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.topbar-actions { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+
+/* Mobil menü düğmesi (yalnızca <1024px görünür) */
+#nav-toggle { display: none; }
+
+/* ---------- Ana içerik ---------- */
+.app-main {
+    grid-area: main;
+    min-width: 0;
+    padding: var(--space-5) var(--content-pad-x) var(--space-7);
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.panel-section-title {
+    max-width: var(--content-max);
+    margin-bottom: var(--space-5);
+}
+.panel-section-title h2 { font-size: var(--fs-page-title); font-weight: 600; }
+.panel-section-title p {
+    margin-top: var(--space-1);
+    font-size: var(--fs-secondary);
+    color: var(--text-secondary);
+}
+
+.grid-layout {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--space-4);
+    max-width: var(--content-max);
+}
+
+.col-span-4 { grid-column: span 4; }
+.col-span-5 { grid-column: span 5; }
+.col-span-6 { grid-column: span 6; }
+.col-span-7 { grid-column: span 7; }
+.col-span-8 { grid-column: span 8; }
+.col-span-12 { grid-column: span 12; }
+
+/* When the honor roll is the only visible card in its grid, use all available width.
+   Access-control hiding uses inline display:none, so check both hidden mechanisms. */
+.grid-layout:not(:has(> .panel-card:not(#team-log-manager):not([hidden]):not([style*="display: none"]))) > #team-log-manager:not([hidden]) {
+    grid-column: 1 / -1;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1023px) {
+    :root { --content-pad-x: 20px; }
+
+    /* Sidebar overlay drawer'a dönüşür */
+    .app-layout {
+        grid-template-columns: 1fr;
+        grid-template-areas: "topbar" "main";
+    }
+
+    .app-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: min(300px, 84vw);
+        transform: translateX(-100%);
+        transition: transform var(--motion-drawer) var(--ease-standard);
+        box-shadow: none;
+    }
+    .app-sidebar.open {
+        transform: translateX(0);
+        box-shadow: var(--shadow-modal);
+    }
+
+    #nav-toggle { display: inline-flex; }
+
+    .grid-layout { grid-template-columns: repeat(6, 1fr); }
+    .col-span-4, .col-span-5, .col-span-7, .col-span-8 { grid-column: span 6; }
+    .col-span-6, .col-span-12 { grid-column: span 6; }
+}
+
+@media (max-width: 720px) {
+    .app-main { padding: var(--space-4) var(--space-4) var(--space-6); }
+    .grid-layout { grid-template-columns: 1fr; gap: var(--space-3); }
+    .col-span-4, .col-span-5, .col-span-6, .col-span-7, .col-span-8, .col-span-12 { grid-column: 1 / -1; }
+    .app-header { padding: 0 var(--space-4); }
+    .panel-section-title h2 { font-size: 20px; }
+}
+
+
+.tab-scroll-container { min-width:0; max-width:var(--content-max); margin:auto; }
+.app-header .brand-container { display:none; }
+.app-sidebar .brand-container { height:56px; display:flex; gap:12px; align-items:center; padding:16px; }
+.brand-info h1 {font-size:14px; letter-spacing:.06em;}
+.brand-info .system-tag {font-size:11px; color:var(--text-muted);}
+.topbar-page-title {flex:1;}
+.sidebar-nav .dock-btn {flex-shrink:0;}
+@media(max-width:720px){ .header-control-buttons{gap:4px;} #logout-btn > span{display:none;} .topbar-select-label{display:none;} }
+.app-layout {grid-template-columns:var(--sidebar-width) minmax(0,1fr);}
+.app-header {min-width:0;}
+.topbar-page-title {min-width:0;}
+@media(max-width:1023px){.app-layout{grid-template-columns:minmax(0,1fr);}}
+@media(max-width:720px){.app-header{gap:8px;padding:0 12px;} .topbar-page-title{font-size:14px;} .topbar-actions{gap:4px;}}
+
+[hidden]{display:none!important;}
+
+/* Grouped navigation shares the existing tab and panel contracts. */
+.sidebar-brand-title,.brand-info h1{letter-spacing:.015em}
+.app-sidebar .brand-container{height:76px;padding:16px 20px}
+.brand-container .brand-symbol{display:flex;align-items:center;flex-shrink:0}
+.brand-info{display:flex;flex-direction:column;gap:4px}
+.sidebar-group{display:flex;flex-direction:column;gap:3px}
+.sidebar-group-label{margin:0;padding:14px 12px 6px;font-size:10px;letter-spacing:.07em}
+.sidebar-nav .dock-btn .icon,.sidebar-footer .dock-btn .icon{width:20px;height:20px}
+.sidebar-nav .dock-btn .nav-chevron{margin-left:auto;width:14px;height:14px;transition:transform var(--motion-normal) var(--ease-standard);color:var(--text-muted)}
+.nav-module.expanded .nav-chevron{transform:rotate(180deg)}
+.sidebar-submenu{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows var(--motion-overlay) var(--ease-standard),opacity var(--motion-fast) var(--ease-standard)}
+.nav-module.expanded .sidebar-submenu{grid-template-rows:1fr;opacity:1}
+.sidebar-submenu-inner{overflow:hidden;min-height:0;display:flex;flex-direction:column;padding:6px 0 8px 32px;gap:5px}
+.sidebar-sub-btn{display:flex;text-align:left;align-items:center;min-height:36px;padding:8px 12px;border-radius:10px;font-size:var(--fs-secondary);color:var(--text-secondary);transition:background-color var(--motion-fast) var(--ease-standard),color var(--motion-fast) var(--ease-standard)}
+.sidebar-sub-btn:hover{background:var(--bg-nav-hover);color:var(--text-primary)}
+.sidebar-sub-btn[aria-current="page"]{background:var(--bg-nav-child);color:var(--text-primary)}
+.sidebar-footer .dock-btn{display:flex;gap:12px;align-items:center;width:100%;height:42px;border-radius:12px;padding:0 12px;color:var(--text-secondary)}
+.sidebar-footer .dock-btn:hover{background:var(--bg-nav-hover)}
+.sidebar-footer .dock-btn.active{background:var(--bg-elevated);color:var(--text-primary)}
+.nav-scrim{position:fixed;inset:0;z-index:35;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity var(--motion-drawer) var(--ease-standard)}
+.nav-scrim.is-open{opacity:1;pointer-events:auto}
+@media(max-width:1023px){.app-sidebar{width:min(var(--sidebar-width),84vw);height:100dvh}}
+.app-sidebar .sidebar-close{display:none;margin-left:auto;flex-shrink:0}
+@media(max-width:1023px){.app-sidebar .sidebar-close{display:inline-flex;width:28px;min-width:28px;height:32px}.app-sidebar .brand-container{padding-left:16px;padding-right:10px;gap:8px}.brand-info h1{font-size:12px}}
+
+.brand-info h1{white-space:nowrap}
+
+.brand-info h1{white-space:nowrap;font-size:14px;letter-spacing:.06em}
+.dock-btn.active{background:var(--bg-nav-parent)}
+
+.mobile-bottom-dock{display:none}
+@media(max-width:1023px){.mobile-bottom-dock{position:fixed;z-index:45;bottom:calc(12px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:6px;background:var(--bg-surface);border:1px solid var(--border-strong);border-radius:18px;box-shadow:var(--shadow-popover);max-width:calc(100vw - 24px)}.mobile-bottom-dock button{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;color:var(--text-secondary)}.mobile-bottom-dock button[aria-current="page"]{background:var(--bg-nav-child);color:var(--text-primary)}.mobile-bottom-dock button:hover{background:var(--bg-nav-hover)}.mobile-bottom-dock button[hidden]{display:none}.app-main{padding-bottom:100px}.app-header{gap:6px}.topbar-page-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+@media(max-width:360px){.app-header{padding-left:10px;padding-right:10px}.header-control-buttons{gap:2px}#lang-toggle-btn{gap:4px;padding:0 7px}.topbar-page-title{font-size:12px}#user-menu-trigger{padding:0 4px}}
+@media(max-height:500px) and (max-width:1023px){.mobile-bottom-dock{bottom:6px;opacity:.95}}
+.nav-module:not(.expanded) .sidebar-submenu-inner{padding-top:0;padding-bottom:0}
+.brand-container{gap:12px}.brand-info .vertex-wordmark{display:flex;flex-direction:column;font-family:Ubuntu,sans-serif;font-size:18px;font-weight:500;line-height:1.1;letter-spacing:.07em;white-space:nowrap;margin:0;gap:1px}
+@media(max-width:1023px){.brand-info .vertex-wordmark{font-size:17px}}
+@font-face{font-family:Ubuntu;font-style:normal;font-weight:500;font-display:swap;src:url('../assets/fonts/ubuntu-medium.ttf') format('truetype')}
+
+/* ================================================================
+   LAYOUT — Tek / Çift Panel Tam Genişlik Sistemi (A1)
+   data-visible-panels attribute'u JS tarafından güncellenir.
+   ================================================================ */
+
+/* Tek görünür panel → tam genişlik */
+.grid-layout > .panel-card:only-child,
+.grid-layout > .panel-card:where(:first-child:nth-last-child(1)) {
+    grid-column: 1 / -1 !important;
+}
+
+/* data-visible-panels="1": görünür (hidden olmayan) tek panel */
+.grid-layout[data-visible-panels="1"] > .panel-card:not([hidden]) {
+    grid-column: 1 / -1;
+}
+
+/* data-visible-panels="2": iki panel simetrik bölünme */
+.grid-layout[data-visible-panels="2"] > .panel-card:not([hidden]) {
+    grid-column: span 6;
+}
+
+/* Tek panel modunda form alanlarının aşırı geniş olmasını önle */
+.grid-layout[data-visible-panels="1"] > .panel-card:not([hidden]) .form-group-field input,
+.grid-layout[data-visible-panels="1"] > .panel-card:not([hidden]) .form-group-field select,
+.grid-layout[data-visible-panels="1"] > .panel-card:not([hidden]) .form-group-field textarea {
+    max-width: min(100%, 560px);
+}
+
+/* Responsive: küçük ekranda her zaman tam genişlik */
+@media (max-width: 767px) {
+    .grid-layout[data-visible-panels="2"] > .panel-card:not([hidden]) {
+        grid-column: 1 / -1;
+    }
+}
+
+/* The actual number of visible cards owns the desktop grid; no stale spans. */
+.grid-layout[data-visible-panels]{grid-template-columns:repeat(var(--visible-panel-count,1),minmax(0,1fr))}
+.grid-layout[data-visible-panels]>.panel-card:not([hidden]){grid-column:auto!important;min-width:0}
+@media(max-width:1023px){
+ .grid-layout[data-visible-panels]:not([data-visible-panels="1"]){grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:720px){.grid-layout[data-visible-panels]{grid-template-columns:minmax(0,1fr)!important}}
