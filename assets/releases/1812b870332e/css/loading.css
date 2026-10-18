@@ -1,0 +1,159 @@
+/* ================================================================
+   VERTEX KONSOL — LOADING (skeleton + shimmer)
+   Tek, yumuşak ve senkron ışık dalgası. 1600ms / infinite /
+   düşük kontrast / soldan sağa. Aynı animasyon tanımı, gecikme
+   farkı yok — böylece bir paneldeki tüm iskeletler birlikte
+   nabız atar; bağımsız yanıp sönme olmaz.
+   ================================================================ */
+
+.skeleton {
+    position: relative;
+    display: block;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-xs);
+    overflow: hidden;
+    color: transparent;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Senkron shimmer: tek dalga, tüm iskeletler aynı fazda */
+.skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--bg-hover) 45%,
+        var(--bg-hover) 55%,
+        transparent 100%
+    );
+    opacity: 0.7;
+    animation: skeletonWave 1600ms var(--ease-standard) infinite;
+}
+
+@keyframes skeletonWave {
+    0% { transform: translateX(-100%); }
+    60% { transform: translateX(100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ---------- Varyantlar ---------- */
+.sk-text { height: 12px; margin: 4px 0; }
+.sk-text.w-40 { width: 40%; }
+.sk-text.w-60 { width: 60%; }
+.sk-text.w-80 { width: 80%; }
+.sk-text.w-full { width: 100%; }
+.sk-title { height: 16px; width: 55%; margin: 0 0 10px; }
+
+.sk-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.sk-button { height: var(--control-height); width: 110px; border-radius: var(--radius-sm); }
+
+.sk-row {
+    display: grid;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    height: 52px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.sk-list-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.sk-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+}
+
+.sk-field { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-4); }
+.sk-field .skeleton:first-child { height: 12px; width: 30%; }
+.sk-field .skeleton:last-child { height: var(--input-height); border-radius: var(--radius-sm); }
+
+/* Katılımcı satır iskeleti: gerçek satır geometrisi korunur */
+.contributor-skeleton-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 2fr) minmax(90px, 1fr) 56px 110px 130px auto;
+    align-items: center;
+    gap: var(--space-3);
+    height: 52px;
+    padding: 0 var(--space-2);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Sertifika iskeleti */
+.sk-cert-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+}
+.sk-cert-row .skeleton:first-child { width: 28px; height: 28px; border-radius: var(--radius-sm); }
+.sk-cert-row .skeleton:nth-child(2) { height: 12px; flex: 1; }
+
+/* Sohbet mesaj iskeleti */
+.sk-chat-msg {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+    max-width: 70%;
+}
+.sk-chat-msg .skeleton:first-child { width: 88px; height: 10px; }
+.sk-chat-msg .skeleton { height: 12px; }
+
+/* Yerleşim bozulmasın: skeleton konteynerleri aria-busy alır */
+[aria-busy="true"] { }
+
+/* ---------- Boş durum / hata durumları ---------- */
+.state-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-7) var(--space-5);
+    text-align: center;
+    color: var(--text-muted);
+}
+.state-block .icon { color: var(--text-disabled); }
+.state-block h4 { font-size: var(--fs-component-title); font-weight: 600; color: var(--text-secondary); }
+.state-block p { font-size: var(--fs-secondary); max-width: 420px; }
+.state-block .chrome-btn-outline { margin-top: var(--space-2); }
+
+/* prefers-reduced-motion: shimmer durur, sabit iskelet kalır */
+@media (prefers-reduced-motion: reduce) {
+    .skeleton::after { animation: none; transform: none; opacity: 0.5; }
+}
+
+
+/* Skeleton geometry follows live list/card families without delaying data. */
+.skeleton { contain:paint; }
+:is(.people-loading,.sk-list-item,.sk-cert-row,.contributor-skeleton-row) .skeleton { flex-shrink:0; }
+:is(.sk-list-item,.sk-chat-msg,.sk-card) { min-width:0; }
+.sk-chat-msg { width:min(480px,80%); }
+.sk-chat-msg:nth-child(even) { margin-left:auto; width:min(410px,72%); }
+.sk-chat-msg .skeleton { max-width:100%; }
+@media (max-width:720px) {
+    .contributor-skeleton-row { grid-template-columns:minmax(0,1fr) 80px; gap:10px; min-height:92px; height:auto; }
+    .sk-chat-msg { max-width:90%; }
+    .sk-card { padding:var(--space-3); }
+}
