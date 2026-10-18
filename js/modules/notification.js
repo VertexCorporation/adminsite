@@ -437,6 +437,10 @@ async function handleNotificationFormSubmit(e) {
         }
 
         dom.notificationForm.reset();
+        // Reset both native controls and JS-driven template fields so reselecting
+        // the same template triggers a new change and restores its content.
+        dom.notificationTemplateSelector.value = '';
+        handleTemplateSelection();
         handleTargetTypeChange();
         handleScheduleSwitchChange();
     } catch (error) {
