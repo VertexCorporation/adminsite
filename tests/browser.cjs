@@ -59,7 +59,28 @@ await page.route('**/*',async route=>{
   if(name==='savedepartmentpermissions' && failPermissionSave)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture permission rejection'}})});
   if(name==='getvertexcontributors' && failContributorReadOnce-->0)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Temporary contributors service outage'}})});
   if(name==='listconsolechatchannels' && failChatReadOnce-->0)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Temporary chat service outage'}})});
-  if(name==='getvertexcontributors'){const fixture=people || [person];if(contributorDelay)await new Promise(r=>setTimeout(r,contributorDelay));if(failContributors)return route.fulfill({contentType:'application/json',status:503,body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});result={contributors:fixture};}
+  if(name==='getvertexcontributors'){
+    const input=route.request().postDataJSON()?.data||{};
+    const text=String(input.search||'').trim().toLocaleLowerCase('tr');
+    const filter=input.filter||'all';
+    const thisYear=new Date().getFullYear();
+    const fixture=(people||[person]).filter(p=>{
+      const active=p.membership?.isVertex===true||p.isVertex===true;
+      const year=Number(p.birthYear||String(p.birthDate||'').slice(0,4))||null;
+      const accepted=({
+        all:true,vertex:active,verified:p.hasVerified===true,unverified:p.hasVerified!==true,
+        'age-14-15':year!==null&&year>=thisYear-15&&year<=thisYear-14,
+        'age-16-17':year!==null&&year>=thisYear-17&&year<=thisYear-16,
+        'age-18':year!==null&&year<=thisYear-18,
+        linkedin:!!p.linkedin,github:!!p.github,interview:!!p.interviewDate
+      })[filter];
+      return !!accepted&&(!text||[p.name,p.email,p.department,p.about]
+        .some(v=>String(v||'').toLocaleLowerCase('tr').includes(text)));
+    });
+    if(contributorDelay)await new Promise(r=>setTimeout(r,contributorDelay));
+    if(failContributors)return route.fulfill({contentType:'application/json',status:503,body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});
+    result={contributors:fixture};
+  }
   else if(name==='getvertexcertificatedetails')result={types,eligibility:{status:'joining-date-required',eligibleTypes:[],joinedAt:joiningDate},history};
   else if(name==='setvertexcontributorjoiningdate'){joiningDate=route.request().postDataJSON().data.joinedAt;result={success:true};}
   else if(name==='issuevertexcertificate'){history=[{id:'person--tenacity',certificateType:'tenacity',status:'processing',attempts:[]}];result={id:'person',status:'processing'};}
