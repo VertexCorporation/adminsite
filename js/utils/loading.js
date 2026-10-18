@@ -128,7 +128,7 @@ export function createLoadingController(container, opts = {}) {
         stale = false;
         container.removeAttribute('aria-busy');
         container.classList.remove('is-refreshing');
-        if (wasSkeleton || container.children.length) crossfade(container, () => { container.innerHTML = renderHTML; });
+        if (wasSkeleton || container.children.length) crossfade(container, () => { container.innerHTML = renderHTML; }, opts.crossfadeOptions);
         else container.innerHTML = renderHTML;
     }
 
