@@ -11,7 +11,7 @@
 .mobile-more-pages button{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;width:100%;padding:10px 12px;text-align:left;border-radius:9px;color:var(--text-primary)}
 .mobile-more-pages button:hover,.mobile-more-pages button[aria-current=page]{background:var(--bg-hover)}.mobile-more-pages .icon{flex-shrink:0;width:18px}
 
-#contributors-list-container{max-height:none;overflow:visible;mask-image:none!important}.contributor-table-head{position:relative;top:auto;background:var(--bg-surface);z-index:1;overflow-y:auto;scrollbar-gutter:stable}.contributor-table-rows{max-height:420px;overflow-y:auto;scrollbar-gutter:stable}
+#contributors-list-container{max-height:none;overflow:visible;mask-image:none!important}/* Contributor table header/rows are now owned by css/ui/scroll.css. */
 .contributor-cell-actions{gap:2px}.contributor-cell-actions>button{flex-shrink:0}.vertex-membership-btn img{opacity:.55}.vertex-membership-btn.is-active img{opacity:1}.vertex-membership-btn.is-unknown{opacity:.65}
 .model-item{min-height:48px;padding:6px 0;gap:12px}.model-item>div{min-width:0}.model-item .item-actions{flex-shrink:0}.model-item strong,.model-item code{overflow-wrap:anywhere}.series-group>summary{min-height:44px;padding:6px 0}
 .status-dot.status-off{background:var(--status-success)}.status-dot.status-on{background:var(--status-warning)}.status-dot.status-pending{background:var(--text-muted)}
@@ -19,7 +19,7 @@
 input,select,textarea{box-sizing:border-box;max-width:100%;min-width:0}.cert-recipient small{overflow-wrap:anywhere}
 @media(max-width:1023px){
  .app-header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:0 12px}.topbar-actions{gap:4px;min-width:0}.topbar-page-title{font-size:14px;min-width:0}
- .app-sidebar{display:none}.contributor-table-rows{max-height:none;overflow:visible;mask-image:none!important}
+ .app-sidebar{display:none}/* Mobile contributor row overflow is managed by css/ui/scroll.css. */
  .contributor-row{grid-template-columns:minmax(0,1fr) 132px;grid-template-areas:"name actions" "dept status" "age date";gap:8px 4px;padding:12px 8px;border:1px solid var(--border-subtle);margin:8px 0;align-items:center}
  .contributor-cell-name{gap:8px;align-items:flex-start}.contributor-avatar{width:28px;height:28px}.contributor-name{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;font-size:14px;text-align:left}
  .contributor-cell-actions{grid-area:actions;gap:0;align-self:start}.contributor-cell-actions>button{width:44px;height:44px;min-width:44px;min-height:44px}

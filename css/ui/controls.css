@@ -305,3 +305,50 @@ input[type="checkbox"][role="switch"]:checked::after {
     .button-pending svg,.button-pending img,.button-pending [data-icon],
     .button-pending:not(:has(svg,img,[data-icon])) { animation:none; }
 }
+
+/* Form-state ownership (65–69): search, ordinary inputs, chips, switches,
+   pending triggers, and keyboard focus share the same tokens. */
+:where(.panel-card,.vx-modal,.vx-drawer,.vx-popover) :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    select,textarea
+) {
+    min-width:0; max-width:100%; box-sizing:border-box;
+    border-radius:var(--radius-sm);
+    font-family:var(--font-sans);
+}
+:where(.panel-card,.vx-modal,.vx-drawer) :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    select,textarea
+):focus-visible {
+    outline:2px solid var(--action-primary);
+    outline-offset:2px;
+}
+:where(.panel-card,.vx-modal,.vx-drawer) :is(input,select,textarea)[aria-invalid="true"] {
+    border-color:var(--status-error);
+}
+.chip-checkbox:has(input:disabled) { opacity:.5; cursor:not-allowed; }
+.chip-checkbox:has(input:focus-visible) { outline:2px solid var(--action-primary); outline-offset:2px; }
+.chip-checkbox:has(input:checked) { border-color:var(--border-strong); background:var(--bg-elevated); }
+input[type="checkbox"][role="switch"] {
+    width:32px; min-height:18px; padding:2px; border-radius:var(--radius-full);
+    display:inline-flex; align-items:center; accent-color:var(--action-primary);
+}
+input[type="checkbox"][role="switch"]::after {
+    content:''; width:12px; height:12px; border:0; border-radius:50%;
+    opacity:1; background:var(--text-primary); transform:translateX(0);
+    transition:transform var(--motion-fast) var(--ease-standard),
+               background-color var(--motion-fast) var(--ease-standard);
+}
+input[type="checkbox"][role="switch"]:checked::after {
+    border:0; opacity:1; background:var(--action-primary-text);
+    transform:translateX(14px);
+}
+:where(button[aria-expanded="true"],button[data-ui-active="true"]) {
+    transition:background-color var(--motion-fast) var(--ease-standard),
+        border-color var(--motion-fast) var(--ease-standard),
+        color var(--motion-fast) var(--ease-standard);
+}
+:is(button[aria-busy="true"],button[data-state="loading"]) { cursor:progress; }
+@media (prefers-reduced-motion:reduce) {
+    input[type="checkbox"][role="switch"]::after { transition:none; }
+}
