@@ -111,6 +111,21 @@ export function initContributorsModule() {
     document.addEventListener('vertex:workspace',event=>{
         if(event.detail?.keys?.includes('contributors.list'))retryFailedContributors();
     });
+    // A different signed-in person must never see an earlier session's cached
+    // applications while a fresh request is in flight or temporarily unavailable.
+    let lastUid=auth?.currentUser?.uid||null;
+    auth?.onAuthStateChanged(user=>{
+        const uid=user?.uid||null;
+        if(uid===lastUid)return;
+        lastUid=uid;
+        requestGuard.begin();
+        clearTimeout(reloadTimer);reloadTimer=null;
+        inFlight=null;inFlightContext=null;lastLoadFailed=false;transientFailures=0;
+        window.loadedContributors=null;
+        loading.destroy();
+        listContainer.replaceChildren();
+        if(refreshBtn)setButtonLoading(refreshBtn,false);
+    });
 
 }
 
