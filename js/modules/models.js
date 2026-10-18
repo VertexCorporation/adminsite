@@ -619,6 +619,9 @@ function renderAllModelsExplorer(){
     }
     const matches=filteredCatalogRows();
     if(matches!==null){renderCatalogFiltered(matches);return;}
+    // Structural transitions use the central crossfade; live keystroke filters
+    // stay synchronous and never clone hundreds of rows per input event.
+    crossfade(dom.allModelsListContainer, () => {
     dom.allModelsListContainer.innerHTML=catalogGroups.map((group,gi)=>
        `<details class="producer-group" data-group-index="${gi}" ${openProducerGroups.has(gi)?'open':''}><summary>${sanitizeHTML(group.pName)} <small>(${group.series.reduce((n,series)=>n+series.rows.length,0)})</small></summary><div class="details-content">
        ${group.series.map((series,si)=>`<div class="model-series-shell"><details class="series-group ${series.hidden?'hidden-series':''}" data-group-index="${gi}" data-series-index="${si}" ${openSeriesGroups.has(gi+':'+si)?'open':''}>
@@ -630,6 +633,7 @@ function renderAllModelsExplorer(){
     ).join('');
     compactModelActions(dom.allModelsListContainer);
     dom.allModelsListContainer.querySelectorAll('details.series-group[open]').forEach(el=>fillCatalogSeries(el));
+    });
 }
 function refreshCatalogOptions(){
     const toolbar=document.getElementById('model-catalog-filters');if(!toolbar)return;
