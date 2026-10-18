@@ -1,301 +1,145 @@
-// js/modules/teamCards.js
-//
-// Vertex Konsol — Ekip Kartları, Yönetici Profilleri ve Weekly Stars Yönetimi
-//
-// Kurallar:
-//  - Yalnızca 10 izin verilen pozisyon: CEO, CTO, COO, CFO, CMO, CDO, CHRO, CCO, CLO, CITO
-//  - Her pozisyona en fazla bir kişi atanabilir; dolu pozisyon seçilemez
-//  - Toplam 10 aktif kart sınırı (10 dolunca Yeni Kart butonu devre dışı)
-//  - Liste Onur Tablosu standardında: avatar, isim, pozisyon rozeti, hizalı ikon butonları
-//  - Ekleme/düzenleme ortak drawer üzerinden yapılır; fotoğraf 2MB ve JPEG/PNG/WebP doğrulanır
-//  - Mustafa Çakı yönetici profili ve Weekly Stars yönetimi aynı alanda bulunur
-
+// Public website directory (siteTeam kind=card). The public homepage and
+// this console now read/write the SAME collection and share fixed role codes.
 import {
-    listTeamCardsFn,
-    setTeamCardFn,
-    deleteTeamCardFn,
-    getTeamProfileFn,
-    setTeamProfileFn,
-    getWeeklyStarsFn,
-    setWeeklyStarsFn
+  listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn,
+  getWeeklyStarsFn, setWeeklyStarsFn
 } from '../core/firebase.js';
-import { escapeHTML, sanitizeHTML, showToast, userErrorMessage, __, getLang, onLangChange } from '../utils/ui.js';
-import { icon } from '../utils/icons.js';
-import { openDrawer, closeDrawer, confirmDialog } from './shell.js';
-import { createLoadingController, setButtonLoading, skeletonRows } from '../utils/loading.js';
-import { isPanelAdmin } from './roles.js';
+import {escapeHTML, showToast, userErrorMessage, __, getLang, onLangChange} from '../utils/ui.js';
+import {icon} from '../utils/icons.js';
+import {openDrawer, closeDrawer, confirmDialog} from './shell.js';
+import {setButtonLoading} from '../utils/loading.js';
 
-export const POSITIONS = Object.freeze([
-    'CEO', 'CTO', 'COO', 'CFO', 'CMO', 'CDO', 'CHRO', 'CCO', 'CLO', 'CITO'
-]);
+export const POSITIONS=Object.freeze(['CEO','CTO','COO','CFO','CMO','CDO','CHRO','CCO','CLO','CITO']);
+let teamCards=[];
+let cardsLoading=false;
+const byId=id=>document.getElementById(id);
+const linksFor=card=>Object.fromEntries((card?.links||[]).map(link=>[String(link.label||'').toLowerCase(),link.url]));
+const errorNotice=(msg)=>{const list=byId('team-cards-list');if(list)list.textContent=msg;};
 
-let teamCards = [];
-let cardsLoading = false;
-
-/**
- * Ekip kartları listesini Firestore'dan çeker ve ekrana çizer.
- */
-export async function loadTeamCards() {
-    const listEl = document.getElementById('team-cards-list');
-    if (!listEl) return;
-
-    cardsLoading = true;
-    const addBtn = document.getElementById('add-team-card-btn');
-    const emptyEl = document.getElementById('team-cards-empty');
-
-    try {
-        const { data } = await listTeamCardsFn({});
-        teamCards = Array.isArray(data?.cards) ? data.cards : [];
-    } catch (err) {
-        console.warn('[TEAM_CARDS] Could not fetch cards from backend, using current state:', err);
-    } finally {
-        cardsLoading = false;
-    }
-
-    renderTeamCardsList();
-
-    if (addBtn) {
-        const isFull = teamCards.length >= 10;
-        addBtn.disabled = isFull;
-        addBtn.title = isFull ? __('team_cards.all_filled') : __('team_cards.add_btn');
-    }
+export async function loadTeamCards(){
+ const list=byId('team-cards-list');if(!list||cardsLoading)return;
+ cardsLoading=true;
+ try{
+   const response=await listSiteTeamFn({manage:true});
+   teamCards=Array.isArray(response.data?.cards)?response.data.cards:[];
+   renderTeamCardsList();
+ }catch(error){
+   console.error('[TEAM_DIRECTORY] Could not load managed public cards',error);
+   errorNotice(userErrorMessage(error));
+ }finally{cardsLoading=false;}
+ const addBtn=byId('add-team-card-btn');
+ if(addBtn){addBtn.disabled=teamCards.length>=10;addBtn.title=addBtn.disabled?__('team_cards.all_filled'):__('team_cards.add_btn');}
 }
-
-function renderTeamCardsList() {
-    const listEl = document.getElementById('team-cards-list');
-    const emptyEl = document.getElementById('team-cards-empty');
-    if (!listEl) return;
-
-    if (!teamCards.length) {
-        listEl.innerHTML = '';
-        if (emptyEl) emptyEl.hidden = false;
-        return;
-    }
-
-    if (emptyEl) emptyEl.hidden = true;
-    listEl.className = 'team-list';
-
-    listEl.innerHTML = teamCards.map(card => {
-        const currentLang = getLang() || 'tr';
-        const localizedTitle = card.titles?.[currentLang] || card.position;
-        const avatarSrc = card.photoUrl
-            ? `<img src="${escapeHTML(card.photoUrl)}" alt="${escapeHTML(card.name)}" loading="lazy">`
-            : icon('user', { size: 18 });
-
-        return `
-        <div class="team-list-row" data-id="${escapeHTML(card.id)}">
-            <div class="team-list-avatar">
-                ${avatarSrc}
-            </div>
-            <div class="team-list-info">
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span class="team-list-name">${escapeHTML(card.name)}</span>
-                    <span class="position-badge">${escapeHTML(card.position)}</span>
-                </div>
-                <span class="team-list-meta">${escapeHTML(localizedTitle)}</span>
-            </div>
-            <div class="team-list-actions">
-                <button type="button" class="icon-btn" data-edit-card="${escapeHTML(card.id)}" title="${__('common.edit')}" aria-label="${__('common.edit')}">
-                    ${icon('pencil', { size: 16 })}
-                </button>
-                <button type="button" class="icon-btn danger" data-del-card="${escapeHTML(card.id)}" title="${__('common.delete')}" aria-label="${__('common.delete')}">
-                    ${icon('trash', { size: 16 })}
-                </button>
-            </div>
-        </div>`;
-    }).join('');
-
-    // Eylemleri bağla
-    listEl.querySelectorAll('[data-edit-card]').forEach(btn => {
-        btn.onclick = () => {
-            const card = teamCards.find(c => c.id === btn.dataset.editCard);
-            if (card) openTeamCardDrawer(card);
-        };
-    });
-
-    listEl.querySelectorAll('[data-del-card]').forEach(btn => {
-        btn.onclick = async () => {
-            const cardId = btn.dataset.delCard;
-            const card = teamCards.find(c => c.id === cardId);
-            const confirmed = await confirmDialog(() => ({
-                title: __('team_cards.delete_confirm'),
-                body: card ? `${card.name} (${card.position})` : '',
-                confirmLabel: __('common.delete'),
-                danger: true
-            }));
-            if (!confirmed) return;
-
-            try {
-                await deleteTeamCardFn({ id: cardId });
-                teamCards = teamCards.filter(c => c.id !== cardId);
-                renderTeamCardsList();
-                showToast(() => __('team_cards.deleted'), 'success');
-                const addBtn = document.getElementById('add-team-card-btn');
-                if (addBtn) {
-                    addBtn.disabled = teamCards.length >= 10;
-                    addBtn.title = teamCards.length >= 10 ? __('team_cards.all_filled') : __('team_cards.add_btn');
-                }
-            } catch (err) {
-                showToast(() => userErrorMessage(err), 'error');
-            }
-        };
-    });
+function renderTeamCardsList(){
+ const list=byId('team-cards-list'),empty=byId('team-cards-empty');
+ if(!list)return;
+ if(empty)empty.hidden=teamCards.length>0;
+ list.className='team-list';
+ list.innerHTML=teamCards.map(card=>{
+   const title=card.titles?.[getLang()]||card.titles?.en||card.position;
+   const preview=card.imageUrl?'<img src="'+escapeHTML(card.imageUrl)+'" alt="" loading="lazy">':icon('user',{size:18});
+   return '<div class="team-list-row" data-id="'+escapeHTML(card.id)+'">'+
+    '<div class="team-list-avatar">'+preview+'</div>'+
+    '<div class="team-list-info"><div style="display:flex;align-items:center;gap:8px;">'+
+    '<span class="team-list-name">'+escapeHTML(card.name)+'</span>'+
+    '<span class="position-badge">'+escapeHTML(card.position)+'</span></div>'+
+    '<span class="team-list-meta">'+escapeHTML(title)+'</span>'+
+    '<span class="team-list-meta">'+(card.bio?.trim()?'Biyografi mevcut':'Biyografi yok — kart tıklanamaz')+'</span></div>'+
+    '<div class="team-list-actions"><button class="icon-btn" type="button" data-edit-card="'+escapeHTML(card.id)+'" aria-label="'+__('common.edit')+'">'+icon('pencil',{size:16})+'</button>'+
+    '<button class="icon-btn danger" type="button" data-del-card="'+escapeHTML(card.id)+'" aria-label="'+__('common.delete')+'">'+icon('trash',{size:16})+'</button></div></div>';
+ }).join('');
+ list.querySelectorAll('[data-edit-card]').forEach(btn=>btn.addEventListener('click',()=>{
+   const card=teamCards.find(x=>x.id===btn.dataset.editCard);if(card)openTeamCardDrawer(card);
+ }));
+ list.querySelectorAll('[data-del-card]').forEach(btn=>btn.addEventListener('click',async()=>{
+   const card=teamCards.find(x=>x.id===btn.dataset.delCard);if(!card)return;
+   if(!await confirmDialog(()=>({
+     title:__('team_cards.delete_confirm'),body:card.name+' ('+card.position+')',
+     confirmLabel:__('common.delete'),danger:true
+   })))return;
+   setButtonLoading(btn,true);
+   try{
+     await deleteSiteTeamEntryFn({kind:'card',id:card.id});
+     showToast(()=>__('team_cards.deleted'),'success');await loadTeamCards();
+   }catch(error){showToast(()=>userErrorMessage(error),'error');}
+   finally{setButtonLoading(btn,false);}
+ }));
 }
-
-/**
- * Ekip kartı ekleme/düzenleme Drawer'ını açar.
- */
-export function openTeamCardDrawer(cardToEdit = null) {
-    const isEdit = Boolean(cardToEdit);
-    let selectedPhoto = cardToEdit?.photoUrl || '';
-    let isSaving = false;
-
-    const drawerBody = openDrawer({
-        title: isEdit ? __('team_cards.drawer_edit_title') : __('team_cards.drawer_add_title'),
-        footerHTML: `
-            <button type="button" class="chrome-btn-outline" data-drawer-cancel>${__('common.cancel')}</button>
-            <button type="submit" form="team-card-form" class="chrome-btn-primary" data-drawer-submit>${__('common.save')}</button>
-        `,
-        onAfterClose() {}
-    });
-
-    const root = drawerBody.closest('.vx-drawer');
-    root.querySelector('[data-drawer-cancel]').onclick = () => closeDrawer();
-
-    drawerBody.innerHTML = `
-        <form id="team-card-form" class="form-stack">
-            <!-- Fotoğraf Yükleme / Önizleme -->
-            <div class="form-section">
-                <label class="form-section-title">${__('team_cards.photo_label')}</label>
-                <div style="display:flex;align-items:center;gap:16px;">
-                    <div id="team-card-photo-preview" class="team-list-avatar" style="width:56px;height:56px;font-size:24px;">
-                        ${selectedPhoto ? `<img src="${escapeHTML(selectedPhoto)}" alt="Preview">` : icon('user', { size: 28 })}
-                    </div>
-                    <div style="flex:1;">
-                        <input type="file" id="team-card-photo-input" accept="image/jpeg,image/png,image/webp" style="display:none;">
-                        <button type="button" class="chrome-btn-outline" id="team-card-choose-photo-btn">
-                            ${icon('upload', { size: 16 })}
-                            <span>${__('team_cards.photo_upload_btn')}</span>
-                        </button>
-                        <p id="team-card-photo-error" class="field-error-msg" hidden></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- İsim -->
-            <div class="form-group-field">
-                <label for="team-card-name">${__('team_cards.name_label')}</label>
-                <input type="text" id="team-card-name" maxlength="60" required value="${escapeHTML(cardToEdit?.name || '')}" placeholder="örn: Mustafa Çakı">
-            </div>
-
-            <!-- Pozisyon Seçimi -->
-            <div class="form-group-field">
-                <label for="team-card-position">${__('team_cards.position_label')}</label>
-                <select id="team-card-position" required>
-                    <option value="" disabled ${!isEdit ? 'selected' : ''}>${__('team_cards.position_select')}</option>
-                    ${POSITIONS.map(pos => {
-                        const occupiedCard = teamCards.find(c => c.position === pos && c.id !== cardToEdit?.id);
-                        const isSelected = cardToEdit?.position === pos;
-                        const disabledAttr = occupiedCard ? 'disabled' : '';
-                        const labelSuffix = occupiedCard ? ` (${__('team_cards.position_occupied')} - ${occupiedCard.name})` : '';
-                        return `<option value="${pos}" ${isSelected ? 'selected' : ''} ${disabledAttr}>${pos}${labelSuffix}</option>`;
-                    }).join('')}
-                </select>
-            </div>
-
-            <!-- Sosyal Medya Bağlantıları -->
-            <div class="form-section">
-                <div class="form-section-title">Sosyal Ağ Bağlantıları</div>
-                <div class="form-group-field">
-                    <label for="team-card-linkedin">${__('team_cards.linkedin_label')}</label>
-                    <input type="url" id="team-card-linkedin" placeholder="https://www.linkedin.com/in/..." value="${escapeHTML(cardToEdit?.socialLinks?.linkedin || '')}">
-                </div>
-                <div class="form-group-field">
-                    <label for="team-card-instagram">${__('team_cards.instagram_label')}</label>
-                    <input type="url" id="team-card-instagram" placeholder="https://www.instagram.com/..." value="${escapeHTML(cardToEdit?.socialLinks?.instagram || '')}">
-                </div>
-            </div>
-        </form>
-    `;
-
-    // Fotoğraf seçimi ve validasyonu
-    const photoInput = drawerBody.querySelector('#team-card-photo-input');
-    const photoBtn = drawerBody.querySelector('#team-card-choose-photo-btn');
-    const photoPreview = drawerBody.querySelector('#team-card-photo-preview');
-    const photoError = drawerBody.querySelector('#team-card-photo-error');
-
-    photoBtn.onclick = () => photoInput.click();
-
-    photoInput.onchange = () => {
-        photoError.hidden = true;
-        const file = photoInput.files?.[0];
-        if (!file) return;
-
-        // Dosya boyutu kontrolü (maksimum 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            photoError.textContent = __('team_cards.photo_size_error');
-            photoError.hidden = false;
-            photoInput.value = '';
-            return;
-        }
-
-        // Format kontrolü
-        const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!validTypes.includes(file.type)) {
-            photoError.textContent = __('team_cards.photo_type_error');
-            photoError.hidden = false;
-            photoInput.value = '';
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = e => {
-            selectedPhoto = e.target.result;
-            photoPreview.innerHTML = `<img src="${selectedPhoto}" alt="Preview">`;
-        };
-        reader.readAsDataURL(file);
-    };
-
-    // Form Gönderimi
-    const form = drawerBody.querySelector('#team-card-form');
-    form.onsubmit = async e => {
-        e.preventDefault();
-        if (isSaving) return;
-
-        const name = drawerBody.querySelector('#team-card-name').value.trim();
-        const position = drawerBody.querySelector('#team-card-position').value;
-        const linkedin = drawerBody.querySelector('#team-card-linkedin').value.trim();
-        const instagram = drawerBody.querySelector('#team-card-instagram').value.trim();
-
-        if (!name || !position) return;
-
-        isSaving = true;
-        const submitBtn = root.querySelector('[data-drawer-submit]');
-        setButtonLoading(submitBtn, true);
-
-        try {
-            const payload = {
-                id: cardToEdit?.id,
-                name,
-                position,
-                photoUrl: selectedPhoto,
-                socialLinks: {
-                    linkedin: linkedin || undefined,
-                    instagram: instagram || undefined
-                }
-            };
-
-            await setTeamCardFn(payload);
-            closeDrawer();
-            showToast(() => __('team_cards.saved'), 'success');
-            await loadTeamCards();
-        } catch (err) {
-            showToast(() => userErrorMessage(err), 'error');
-        } finally {
-            isSaving = false;
-            setButtonLoading(submitBtn, false);
-        }
-    };
+function readFile(file){
+ return new Promise((resolve,reject)=>{
+   const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.onerror=()=>reject(reader.error);
+   reader.readAsDataURL(file);
+ });
+}
+export function openTeamCardDrawer(existing=null){
+ const editing=!!existing,links=linksFor(existing);
+ let pickedFile=null,saving=false;
+ const body=openDrawer({
+   title:editing?__('team_cards.drawer_edit_title'):__('team_cards.drawer_add_title'),
+   footerHTML:'<button type="button" class="chrome-btn-outline" data-drawer-cancel>'+__('common.cancel')+'</button>'+
+      '<button type="submit" form="team-card-form" class="chrome-btn-primary" data-drawer-submit>'+__('common.save')+'</button>'
+ });
+ const root=body.closest('.vx-drawer');
+ root.querySelector('[data-drawer-cancel]').onclick=()=>closeDrawer();
+ body.innerHTML='<form id="team-card-form" class="form-stack">'+
+ '<div class="form-section"><label class="form-section-title" for="team-card-photo-input">'+__('team_cards.photo_label')+'</label>'+
+ '<div style="display:flex;gap:16px;align-items:center"><div class="team-list-avatar" id="team-card-photo-preview" style="width:64px;height:64px;">'+
+ (existing?.imageUrl?'<img src="'+escapeHTML(existing.imageUrl)+'" alt="">':icon('user',{size:25}))+'</div>'+
+ '<input type="file" id="team-card-photo-input" accept="image/jpeg,image/png,image/webp" '+(!editing?'required':'')+' aria-describedby="team-card-photo-hint">'+
+ '</div><small id="team-card-photo-hint">JPEG, PNG, WebP · maksimum 2 MB</small></div>'+
+ '<div class="form-group-field"><label for="team-card-name">'+__('team_cards.name_label')+'</label>'+
+ '<input type="text" id="team-card-name" required maxlength="60" value="'+escapeHTML(existing?.name||'')+'"></div>'+
+ '<div class="form-group-field"><label for="team-card-position">'+__('team_cards.position_label')+'</label>'+
+ '<select id="team-card-position" required><option value="" disabled '+(!editing?'selected':'')+'>'+__('team_cards.position_select')+'</option>'+
+ POSITIONS.map(code=>{
+   const occupier=teamCards.find(c=>c.position===code&&c.id!==existing?.id);
+   return '<option value="'+code+'" '+(existing?.position===code?'selected':'')+' '+(occupier?'disabled':'')+'>'+
+   code+(occupier?' ('+escapeHTML(occupier.name)+')':'')+'</option>';
+ }).join('')+'</select></div>'+
+ '<div class="form-group-field"><label for="team-card-bio">Biyografi (boşsa profil açılmaz)</label>'+
+ '<textarea id="team-card-bio" rows="7" maxlength="6000" placeholder="Kişinin biyografisi; yeni paragraf için boş satır bırakın.">'+escapeHTML(existing?.bio||'')+'</textarea></div>'+
+ '<div class="form-section"><div class="form-section-title">Bağlantılar</div>'+
+ [['linkedin','LinkedIn'],['instagram','Instagram'],['website','Website']].map(([key,label])=>
+ '<div class="form-group-field"><label for="team-card-'+key+'">'+label+'</label>'+
+ '<input type="url" id="team-card-'+key+'" placeholder="https://" value="'+escapeHTML(links[key]||'')+'"></div>').join('')+
+ '</div></form>';
+ const fileInput=body.querySelector('#team-card-photo-input');
+ fileInput.addEventListener('change',()=>{
+   const file=fileInput.files?.[0];if(!file){pickedFile=null;return;}
+   if(file.size>2*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type)){
+     fileInput.value='';pickedFile=null;
+     showToast(()=>__('team_cards.photo_size_error'),'error');return;
+   }
+   pickedFile=file;
+   readFile(file).then(url=>{
+     if(pickedFile===file)body.querySelector('#team-card-photo-preview').innerHTML='<img src="'+url+'" alt="">';
+   }).catch(()=>showToast(()=>__('team_cards.photo_type_error'),'error'));
+ });
+ body.querySelector('#team-card-form').addEventListener('submit',async event=>{
+   event.preventDefault();if(saving)return;
+   const name=body.querySelector('#team-card-name').value.trim();
+   const position=body.querySelector('#team-card-position').value;
+   if(!name||!POSITIONS.includes(position))return;
+   if(!pickedFile&&!existing?.imageUrl){showToast(()=>__('team_cards.photo_label'),'error');return;}
+   saving=true;const submit=root.querySelector('[data-drawer-submit]');setButtonLoading(submit,true);
+   try{
+     let imageUrl=existing?.imageUrl||'';
+     if(pickedFile){
+       // Never write data: images into Firestore. The authorized backend
+       // validates magic bytes and stores the immutable photo in Storage.
+       const encoded=await readFile(pickedFile),data=encoded.split(',')[1];
+       const uploaded=await setSiteTeamEntryFn({kind:'photo',imageData:data,contentType:pickedFile.type});
+       imageUrl=uploaded.data.imageUrl;
+     }
+     const links=[['linkedin','LinkedIn'],['instagram','Instagram'],['website','Website']]
+       .map(([key,label])=>({label,url:body.querySelector('#team-card-'+key).value.trim()})).filter(link=>link.url);
+     await setSiteTeamEntryFn({kind:'card',id:existing?.id,name,position,
+       imageUrl,links,bio:body.querySelector('#team-card-bio').value.trim()});
+     closeDrawer();showToast(()=>__('team_cards.saved'),'success');
+     await loadTeamCards();
+   }catch(error){showToast(()=>userErrorMessage(error),'error');}
+   finally{saving=false;setButtonLoading(submit,false);}
+ });
 }
 
 /**
@@ -507,7 +351,10 @@ export function initTeamCardsPanel() {
         addBtn.onclick = () => openTeamCardDrawer(null);
     }
     loadTeamCards();
-    initTeamProfilePanel();
+    // Biographies are edited on each team card; the former founder-only
+    // profile editor is intentionally no longer a second source of truth.
+    const legacyProfile=document.getElementById('team-profile-container');
+    if(legacyProfile)legacyProfile.textContent='Biyografi ve bağlantıları düzenlemek için yukarıdaki ekip kartının düzenle butonunu kullanın.';
     initWeeklyStarsPanel();
     onLangChange(() => {
         renderTeamCardsList();
