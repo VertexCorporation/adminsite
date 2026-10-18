@@ -333,37 +333,15 @@
 @media(max-width:1023px){.brand-info .vertex-wordmark{font-size:17px}}
 @font-face{font-family:Ubuntu;font-style:normal;font-weight:500;font-display:swap;src:url('../assets/fonts/ubuntu-medium.ttf') format('truetype')}
 
-/* ================================================================
-   LAYOUT — Tek / Çift Panel Tam Genişlik Sistemi (A1)
-   data-visible-panels attribute'u JS tarafından güncellenir.
-   ================================================================ */
-
-/* Tek görünür panel → tam genişlik */
-.grid-layout > .panel-card:only-child,
-.grid-layout > .panel-card:where(:first-child:nth-last-child(1)) {
-    grid-column: 1 / -1 !important;
+/* Visibility-aware adaptive grid shared across workspaces. */
+.grid-layout[data-visible-panels] {
+    grid-template-columns: repeat(var(--panel-columns, 1), minmax(0, 1fr));
+    min-width: 0;
 }
-
-/* data-visible-panels="1": görünür (hidden olmayan) tek panel */
-.grid-layout[data-visible-panels="1"] > .panel-card:not([hidden]) {
-    grid-column: 1 / -1;
+.grid-layout[data-visible-panels] > .panel-card:not([hidden]) {
+    grid-column: auto !important;
+    min-width: 0;
+    max-width: 100%;
 }
-
-/* data-visible-panels="2": iki panel simetrik bölünme */
-.grid-layout[data-visible-panels="2"] > .panel-card:not([hidden]) {
-    grid-column: span 6;
-}
-
-/* Tek panel modunda form alanlarının aşırı geniş olmasını önle */
-.grid-layout[data-visible-panels="1"] > .panel-card:not([hidden]) .form-group-field input,
-.grid-layout[data-visible-panels="1"] > .panel-card:not([hidden]) .form-group-field select,
-.grid-layout[data-visible-panels="1"] > .panel-card:not([hidden]) .form-group-field textarea {
-    max-width: min(100%, 560px);
-}
-
-/* Responsive: küçük ekranda her zaman tam genişlik */
-@media (max-width: 767px) {
-    .grid-layout[data-visible-panels="2"] > .panel-card:not([hidden]) {
-        grid-column: 1 / -1;
-    }
-}
+.grid-layout > .panel-card[hidden] {display:none !important;}
+.grid-layout[data-visible-panels="1"] > .panel-card:not([hidden]) {grid-column:1 / -1 !important;}
