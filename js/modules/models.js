@@ -523,56 +523,171 @@ function renderManualModelsList() {
  * Renders the collapsible explorer view for all models in the database.
  * Uses a template string with sanitized data to prevent XSS vulnerabilities.
  */
-function renderAllModelsExplorer() {
-    crossfade(dom.allModelsListContainer, () => {
-    if (!modelsData || !modelsData.producers) {
-        dom.allModelsListContainer.innerHTML = `<p class="form-hint" data-i18n="models.empty_database">${__('models.empty_database')}</p>`;
-        return;
-    }
-    let explorerHTML = '';
-    for (const pName of Object.keys(modelsData.producers).sort()) {
-        explorerHTML += `<details class="producer-group"><summary>${sanitizeHTML(pName)}</summary><div class="details-content">`;
-        for (const sName of Object.keys(modelsData.producers[pName]).sort()) {
-            if (sName === 'series_description') continue;
-            const seriesObj = modelsData.producers[pName][sName];
-            const isHidden = seriesObj.hidden === true;
-            explorerHTML += `<details class="series-group ${isHidden ? 'hidden-series' : ''}">
-                <summary>
-                    <span class="series-name">${sanitizeHTML(sName)} ${isHidden ? __('common.hide') : ''}</span>
-                    <div class="series-actions">
-                        <button class="edit-series-desc-btn" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}">${__('models.edit_desc')}</button>
-                        <button class="${isHidden ? 'unhide-series-btn' : 'hide-series-btn'}" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}">${isHidden ? __('common.unhide') : __('common.hide')}</button>
-                    </div>
-                </summary>
-                <div class="details-content">`;
-
-            if (!isHidden) {
-                for (const vName of Object.keys(seriesObj).sort()) {
-                    if (['series_description', 'hidden'].includes(vName)) continue;
-                    const model = seriesObj[vName];
-                    const hasDesc = (model.source === 'manual' && model.details?.en?.title) || (model.description?.en);
-                    explorerHTML += `<div class="model-item variant-item">
-                        <div class="variant-details">
-                            <span class="model-title">${sanitizeHTML(vName)}</span>
-                            <span class="model-id-label">${sanitizeHTML(model.id)}</span>
-                        </div>
-                        <div class="item-actions">
-                            <button class="translations-btn" data-pname="${sanitizeHTML(pName)}" data-sname="${sanitizeHTML(sName)}" data-vname="${sanitizeHTML(vName)}" ${!hasDesc ? 'disabled' : ''}>${__('common.translations')}</button>
-                            ${model.source === 'openrouter' ? `<button class="block-btn" data-id="${sanitizeHTML(model.id)}" title="Permanently block this model.">${__('models.block')}</button>` : ''}
-                        </div>
-                    </div>`;
-                }
+// An indexed, lazily rendered catalogue. Filters share one source and never
+// trigger network requests; collapsed groups do not allocate model-row DOM.
+let catalogGroups=[],catalogRows=[],catalogQuery='',catalogLimit=120;
+let catalogSelection=new Set(),catalogFingerprint=null,filtersReady=false;
+const openProducerGroups=new Set(),openSeriesGroups=new Set();
+const catalogText=(tr,en)=>getLang()==='tr'?tr:en;
+const catalogType=row=>String(row.model.type||row.model.source||'unknown').toLowerCase();
+const catalogStatus=row=>{
+    const value=row.model.publish_status ?? row.model.publicationStatus ?? row.model.status;
+    if(typeof value==='string'&&value.trim())return value.toLowerCase();
+    if(row.model.published===true)return 'published';
+    if(row.model.published===false)return 'draft';
+    return 'unspecified';
+};
+function buildCatalogIndex(){
+    catalogGroups=[];catalogRows=[];
+    for(const pName of Object.keys(modelsData?.producers||{}).sort()){
+        const producer=modelsData.producers[pName],group={pName,series:[]};
+        for(const sName of Object.keys(producer).sort()){
+            if(sName==='series_description')continue;
+            const source=producer[sName];
+            if(!source||typeof source!=='object')continue;
+            const series={sName,hidden:source.hidden===true,rows:[]};
+            for(const vName of Object.keys(source).sort()){
+                if(['series_description','hidden'].includes(vName))continue;
+                const model=source[vName];if(!model||typeof model!=='object'||!model.id)continue;
+                const row={pName,sName,vName,model,hidden:series.hidden||model.hidden===true,index:catalogRows.length};
+                series.rows.push(row);catalogRows.push(row);
             }
-            explorerHTML += `</div></details>`;
+            group.series.push(series);
         }
-        explorerHTML += `</div></details>`;
+        catalogGroups.push(group);
     }
-    dom.allModelsListContainer.innerHTML = explorerHTML;
-    compactModelActions(dom.allModelsListContainer);
+    catalogSelection.clear();
+}
+function modelVariantHTML(row,selectable=false){
+    const model=row.model;
+    const hasDesc=(model.source==='manual'&&model.details?.en?.title)||model.description?.en;
+    const title=model.details?.[getLang()]?.title||model.details?.en?.title||row.vName;
+    return `<div class="model-item variant-item" data-catalog-index="${row.index}">
+        ${selectable?`<label class="model-select-label"><input class="model-select" type="checkbox" data-select-model="${row.index}" ${catalogSelection.has(row.index)?'checked':''} aria-label="${sanitizeHTML(title)}"></label>`:''}
+        <div class="variant-details"><span class="model-title">${sanitizeHTML(title)}</span><span class="model-id-label">${sanitizeHTML(model.id)}</span><small>${sanitizeHTML(row.pName)} / ${sanitizeHTML(row.sName)} · ${sanitizeHTML(catalogType(row))} · ${sanitizeHTML(catalogStatus(row))}${row.hidden?' · '+catalogText('Gizli','Hidden'):''}</small></div>
+        <div class="item-actions">
+          <button type="button" class="translations-btn" data-pname="${sanitizeHTML(row.pName)}" data-sname="${sanitizeHTML(row.sName)}" data-vname="${sanitizeHTML(row.vName)}" ${!hasDesc?'disabled':''}>${__('common.translations')}</button>
+          ${model.source==='openrouter'?`<button type="button" class="block-btn" data-id="${sanitizeHTML(model.id)}">${__('models.block')}</button>`:''}
+        </div></div>`;
+}
+function filteredCatalogRows(){
+    const toolbar=document.getElementById('model-catalog-filters');
+    if(!toolbar)return null;
+    const q=String(toolbar.querySelector('[data-catalog-search]')?.value||'').trim().toLocaleLowerCase();
+    const provider=toolbar.querySelector('[data-catalog-provider]')?.value||'';
+    const type=toolbar.querySelector('[data-catalog-type]')?.value||'';
+    const status=toolbar.querySelector('[data-catalog-status]')?.value||'';
+    const visibility=toolbar.querySelector('[data-catalog-visibility]')?.value||'';
+    if(!q&&!provider&&!type&&!status&&!visibility)return null;
+    return catalogRows.filter(row=>{
+        if(provider&&row.pName!==provider)return false;
+        if(type&&catalogType(row)!==type)return false;
+        if(status&&catalogStatus(row)!==status)return false;
+        if(visibility==='visible'&&row.hidden)return false;
+        if(visibility==='hidden'&&!row.hidden)return false;
+        if(!q)return true;
+        const titles=Object.values(row.model.details||{}).filter(x=>x&&typeof x==='object').map(x=>x.title||'');
+        const searchable=[...titles,row.vName,row.model.id,row.pName,row.sName,row.model.provider,catalogType(row),catalogStatus(row)].join(' ').toLocaleLowerCase();
+        return searchable.includes(q);
     });
 }
-
-
+function renderCatalogFiltered(rows){
+    const visible=rows.slice(0,catalogLimit);
+    const status=`<p class="form-hint" role="status" aria-live="polite">${rows.length} ${catalogText('model eşleşiyor','matching models')}</p>`;
+    dom.allModelsListContainer.innerHTML=status+visible.map(row=>modelVariantHTML(row,true)).join('')+(rows.length>visible.length?`<button type="button" class="chrome-btn-outline model-show-more" data-catalog-more>${catalogText('Daha fazla göster','Show more')} (${rows.length-visible.length})</button>`:'');
+    compactModelActions(dom.allModelsListContainer);
+    updateCatalogSelection();
+}
+function updateCatalogSelection(){
+    const count=document.getElementById('model-catalog-selection-count');
+    if(count)count.textContent=`${catalogSelection.size} ${catalogText('seçili','selected')}`;
+    const copy=document.getElementById('model-catalog-copy');
+    if(copy)copy.disabled=!catalogSelection.size;
+}
+function fillCatalogSeries(details,limit=80){
+    const gi=Number(details.dataset.groupIndex),si=Number(details.dataset.seriesIndex);
+    const series=catalogGroups[gi]?.series[si],content=details.querySelector('.details-content');
+    if(!series||!content)return;
+    const visible=series.rows.slice(0,limit);
+    content.innerHTML=visible.map(row=>modelVariantHTML(row)).join('')+(limit<series.rows.length?`<button type="button" class="chrome-btn-outline" data-series-more="${limit}">${catalogText('Daha fazla göster','Show more')} (${series.rows.length-limit})</button>`:'');
+    compactModelActions(content);
+}
+function renderAllModelsExplorer(){
+    if(!modelsData?.producers){
+        dom.allModelsListContainer.innerHTML=`<p class="form-hint">${__('models.empty_database')}</p>`;
+        return;
+    }
+    const matches=filteredCatalogRows();
+    if(matches!==null){renderCatalogFiltered(matches);return;}
+    dom.allModelsListContainer.innerHTML=catalogGroups.map((group,gi)=>
+       `<details class="producer-group" data-group-index="${gi}" ${openProducerGroups.has(gi)?'open':''}><summary>${sanitizeHTML(group.pName)} <small>(${group.series.reduce((n,series)=>n+series.rows.length,0)})</small></summary><div class="details-content">
+       ${group.series.map((series,si)=>`<div class="model-series-shell"><details class="series-group ${series.hidden?'hidden-series':''}" data-group-index="${gi}" data-series-index="${si}" ${openSeriesGroups.has(gi+':'+si)?'open':''}>
+         <summary><span class="series-name">${sanitizeHTML(series.sName)} ${series.hidden?__('common.hide'):''}</span><small>(${series.rows.length})</small></summary><div class="details-content"></div>
+       </details><div class="series-actions">
+         <button type="button" class="edit-series-desc-btn" data-pname="${sanitizeHTML(group.pName)}" data-sname="${sanitizeHTML(series.sName)}">${__('models.edit_desc')}</button>
+         <button type="button" class="${series.hidden?'unhide-series-btn':'hide-series-btn'}" data-pname="${sanitizeHTML(group.pName)}" data-sname="${sanitizeHTML(series.sName)}">${series.hidden?__('common.unhide'):__('common.hide')}</button>
+       </div></div>`).join('')}</div></details>`
+    ).join('');
+    compactModelActions(dom.allModelsListContainer);
+    dom.allModelsListContainer.querySelectorAll('details.series-group[open]').forEach(el=>fillCatalogSeries(el));
+}
+function refreshCatalogOptions(){
+    const toolbar=document.getElementById('model-catalog-filters');if(!toolbar)return;
+    const provider=toolbar.querySelector('[data-catalog-provider]');
+    const selected=provider.value;
+    provider.innerHTML='<option value="">'+catalogText('Tüm sağlayıcılar','All providers')+'</option>'+catalogGroups.map(g=>`<option value="${sanitizeHTML(g.pName)}">${sanitizeHTML(g.pName)}</option>`).join('');
+    provider.value=selected;
+    for(const [selector,values,title] of [
+      ['type',[...new Set(catalogRows.map(catalogType))],catalogText('Tüm türler','All types')],
+      ['status',[...new Set(catalogRows.map(catalogStatus))],catalogText('Tüm durumlar','All statuses')]]){
+        const control=toolbar.querySelector('[data-catalog-'+selector+']'),previous=control.value;
+        control.innerHTML='<option value="">'+title+'</option>'+values.sort().map(x=>`<option value="${sanitizeHTML(x)}">${sanitizeHTML(x)}</option>`).join('');
+        control.value=previous;
+    }
+}
+function initCatalogFilters(){
+    if(filtersReady)return;filtersReady=true;
+    const toolbar=document.createElement('div');toolbar.id='model-catalog-filters';toolbar.className='model-catalog-filters';
+    dom.allModelsListContainer.before(toolbar);
+    const paint=()=>{
+      const prev=Object.fromEntries(['search','provider','type','status','visibility'].map(k=>[k,toolbar.querySelector('[data-catalog-'+k+']')?.value||'']));
+      toolbar.innerHTML=`<label class="catalog-search"><span>${catalogText('Model ara','Search models')}</span><input type="search" data-catalog-search placeholder="${catalogText('İsim veya model kimliği','Name or model ID')}"></label>
+        <label><span>${catalogText('Sağlayıcı','Provider')}</span><select data-catalog-provider></select></label>
+        <label><span>${catalogText('Tür','Type')}</span><select data-catalog-type></select></label>
+        <label><span>${catalogText('Yayın durumu','Publication status')}</span><select data-catalog-status></select></label>
+        <label><span>${catalogText('Görünürlük','Visibility')}</span><select data-catalog-visibility><option value="">${catalogText('Tümü','All')}</option><option value="visible">${catalogText('Görünür','Visible')}</option><option value="hidden">${catalogText('Gizli','Hidden')}</option></select></label>
+        <div class="model-bulk-toolbar"><span id="model-catalog-selection-count" aria-live="polite"></span><button type="button" class="chrome-btn-outline" id="model-catalog-select-all">${catalogText('Görünenleri seç','Select visible')}</button><button type="button" class="chrome-btn-outline" id="model-catalog-clear">${catalogText('Temizle','Clear')}</button><button type="button" class="chrome-btn-outline" id="model-catalog-copy">${catalogText('Kimlikleri kopyala','Copy IDs')}</button></div>`;
+      refreshCatalogOptions();
+      for(const [k,v] of Object.entries(prev))toolbar.querySelector('[data-catalog-'+k+']').value=v;
+      toolbar.querySelectorAll('input[data-catalog-search],select').forEach(input=>input.addEventListener('input',()=>{catalogLimit=120;renderAllModelsExplorer();}));
+      toolbar.querySelector('#model-catalog-select-all').onclick=()=>{const rows=filteredCatalogRows()||catalogRows;rows.slice(0,catalogLimit).forEach(r=>catalogSelection.add(r.index));renderAllModelsExplorer();};
+      toolbar.querySelector('#model-catalog-clear').onclick=()=>{catalogSelection.clear();renderAllModelsExplorer();};
+      toolbar.querySelector('#model-catalog-copy').onclick=async()=>{
+        const ids=[...catalogSelection].map(i=>catalogRows[i]?.model.id).filter(Boolean);
+        try{await navigator.clipboard.writeText(ids.join('\\n'));showToast(()=>catalogText('Model kimlikleri kopyalandı','Model IDs copied'),'success');}
+        catch(error){showToast(()=>userErrorMessage(error),'error');}
+      };
+      updateCatalogSelection();
+    };
+    paint();onLangChange(()=>{paint();renderAllModelsExplorer();});
+    dom.allModelsListContainer.addEventListener('change',e=>{
+       if(e.target.matches('[data-select-model]')){const i=Number(e.target.dataset.selectModel);if(e.target.checked)catalogSelection.add(i);else catalogSelection.delete(i);updateCatalogSelection();}
+    });
+    dom.allModelsListContainer.addEventListener('click',e=>{
+       const more=e.target.closest('[data-catalog-more]');if(more){catalogLimit+=120;renderAllModelsExplorer();return;}
+       const seriesMore=e.target.closest('[data-series-more]');
+       if(seriesMore){const details=seriesMore.closest('details.series-group');fillCatalogSeries(details,Number(seriesMore.dataset.seriesMore)+80);}
+    });
+    dom.allModelsListContainer.addEventListener('toggle',e=>{
+       const el=e.target;if(!el.matches('details'))return;
+       if(el.classList.contains('producer-group')){const gi=Number(el.dataset.groupIndex);if(el.open)openProducerGroups.add(gi);else openProducerGroups.delete(gi);}
+       if(el.classList.contains('series-group')){
+           const key=el.dataset.groupIndex+':'+el.dataset.seriesIndex;
+           if(el.open){openSeriesGroups.add(key);fillCatalogSeries(el);}
+           else {openSeriesGroups.delete(key);el.querySelector('.details-content')?.replaceChildren();}
+       }
+    },true);
+}
 /**
  * Helper function to generate standardized loading animation HTML.
  * @param {string} text - The text to display below the loader.
@@ -587,14 +702,20 @@ export async function fetchFullModelsData() {
     const request=++modelRequest;
     console.log('[MODELS] Fetching full models database...');
 
-    const finishLoading = beginPanelLoading(dom.manualModelsListContainer);
-    const finishDatabase = beginPanelLoading(dom.allModelsListContainer);
+    const finishLoading = modelsData ? ()=>{} : beginPanelLoading(dom.manualModelsListContainer);
+    const finishDatabase = modelsData ? ()=>{} : beginPanelLoading(dom.allModelsListContainer);
     try {
-        const response = await fetch(FULL_DB_URL, { cache: 'no-store' });
+        const response = await fetch(FULL_DB_URL, { cache: 'no-cache' });
         if (!response.ok) throw new Error(`Server responded with ${response.status}`);
         const data=await response.json();
         if(request!==modelRequest)return;
+        if(!data||typeof data!=='object'||!data.producers||typeof data.producers!=='object'||Array.isArray(data.producers))throw new Error('Invalid model catalogue response');
+        const fingerprint=simpleHash(JSON.stringify(data));
+        if(modelsData&&fingerprint===catalogFingerprint)return; // Valid revalidation without rebuilding DOM.
+        catalogFingerprint=fingerprint;
         modelsData=data;
+        buildCatalogIndex();
+        refreshCatalogOptions();
         console.log('[MODELS] Full models database loaded.');
 
         const manualModels = [];
@@ -1285,6 +1406,7 @@ function compactModelActions(root){
 }
 function initModelWorkspace(){
     const card=document.getElementById('model-manager');card.hidden=true;
+    initCatalogFilters();
     const heading=document.querySelector('#tab-models .panel-section-title');const toolbar=document.createElement('div');toolbar.className='model-workspace-actions';heading.append(toolbar);
     function paint(){
         toolbar.innerHTML=`<button type="button" class="chrome-btn-outline" data-model-refresh>${icon('refresh')}<span data-i18n="common.refresh">${__('common.refresh')}</span></button>${canEditModels('models.manage')?`<button type="button" class="chrome-btn-primary" data-model-create>${icon('plus')}<span data-i18n="models.add">${__('models.add')}</span></button>`:''}${isPanelAdmin()?`<button type="button" class="chrome-btn-outline" data-model-publish>${icon('device-floppy')}<span data-i18n="models.publish">${__('models.publish')}</span></button>`:''}`;
