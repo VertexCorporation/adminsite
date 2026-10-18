@@ -11,9 +11,10 @@ export function crossfade(container, mutate, { duration = 190 } = {}) {
     const oldChildren = [...container.childNodes];
     // A contributor row has many descendant nodes. The former global 140-node
     // cutoff silently disabled transitions as soon as the applicant list grew.
-    // Snapshot only the visible section of long lists, not hundreds of buttons.
+    // Snapshot only visible rows, never hundreds of buttons; apply the same
+    // path to small filtered lists that contain complex SVG action icons.
     const rows = container.querySelector('.contributor-table-rows');
-    const denseList = !!rows && rows.children.length > 12;
+    const denseList = !!rows && rows.children.length > 0;
     const animate = !reducedMotion() && !activeField && container.isConnected &&
         oldChildren.length > 0 && container.getBoundingClientRect().height > 0 &&
         (denseList || container.querySelectorAll('*').length < 140);
