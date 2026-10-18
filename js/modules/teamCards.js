@@ -544,6 +544,12 @@ export function initTeamCardsPanel() {
     if(auth.currentUser)loadTeamCards();
     if(auth.currentUser)initTeamProfilePanel();
     if(auth.currentUser)initWeeklyStarsPanel();
+    document.addEventListener('vertex:system-page',event=>{
+        if(event.detail!=='verification'||!auth.currentUser)return;
+        void loadTeamCards();
+        void initTeamProfilePanel();
+        void initWeeklyStarsPanel();
+    });
     onLangChange(() => {
         renderTeamCardsList();
     });
