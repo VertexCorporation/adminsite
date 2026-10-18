@@ -2,40 +2,49 @@
 // this console now read/write the SAME collection and share fixed role codes.
 import {
   auth, listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn,
-  getWeeklyStarsFn, setWeeklyStarsFn
+  getWeeklyStarsFn, setWeeklyStarsFn, getVertexContributorsFn
 } from '../core/firebase.js';
 import {escapeHTML, showToast, userErrorMessage, __, getLang, onLangChange} from '../utils/ui.js';
 import {icon} from '../utils/icons.js';
 import {openDrawer, closeDrawer, confirmDialog} from './shell.js';
 import {setButtonLoading} from '../utils/loading.js';
-import {isoWeek} from '../utils/isoWeek.js';
+import {isoWeekInIstanbul} from '../utils/isoWeek.js';
+import {showLoadError} from '../ui/states.js';
 
 export const POSITIONS=Object.freeze(['CEO','CTO','COO','CFO','CMO','CDO','CHRO','CCO','CLO','CITO']);
 let teamCards=[];
 let cardsLoading=false;
+let cardsLoaded=false;
 const byId=id=>document.getElementById(id);
 const linksFor=card=>Object.fromEntries((card?.links||[]).map(link=>[String(link.label||'').toLowerCase(),link.url]));
-const errorNotice=(msg)=>{const list=byId('team-cards-list');if(list)list.textContent=msg;};
+const errorNotice=(error,retry)=>{
+ const list=byId('team-cards-list');
+ if(list)showLoadError(list,()=>userErrorMessage(error),retry,{staleSelector:'.team-list-row'});
+};
 
 export async function loadTeamCards(){
  const list=byId('team-cards-list');if(!list||cardsLoading)return;
  cardsLoading=true;
+ const addBtn=byId('add-team-card-btn');
+ if(addBtn&&!cardsLoaded)addBtn.disabled=true;
+ list.setAttribute('aria-busy','true');
  try{
    const response=await listSiteTeamFn({manage:true});
-   teamCards=Array.isArray(response.data?.cards)?response.data.cards:[];
+   if(!Array.isArray(response.data?.cards))throw new Error('Invalid managed team directory response.');
+   teamCards=response.data.cards;
+   cardsLoaded=true;
    renderTeamCardsList();
  }catch(error){
    console.error('[TEAM_DIRECTORY] Could not load managed public cards',error);
-   errorNotice(userErrorMessage(error));
-   throw error;
- }finally{cardsLoading=false;}
- const addBtn=byId('add-team-card-btn');
- if(addBtn){addBtn.disabled=teamCards.length>=10;addBtn.title=addBtn.disabled?__('team_cards.all_filled'):__('team_cards.add_btn');}
+   if(byId('team-cards-empty'))byId('team-cards-empty').hidden=true;
+   errorNotice(error,loadTeamCards);
+ }finally{cardsLoading=false;list.removeAttribute('aria-busy');}
+ if(addBtn){addBtn.disabled=!cardsLoaded||teamCards.length>=10;addBtn.title=addBtn.disabled?__('team_cards.all_filled'):__('team_cards.add_btn');}
 }
 function renderTeamCardsList(){
  const list=byId('team-cards-list'),empty=byId('team-cards-empty');
  if(!list)return;
- if(empty)empty.hidden=teamCards.length>0;
+ if(empty)empty.hidden=!cardsLoaded||teamCards.length>0;
  list.className='team-list';
  list.innerHTML=teamCards.map(card=>{
    const title=card.titles?.[getLang()]||card.titles?.en||card.position;
@@ -238,21 +247,36 @@ function renderTeamProfile(container, profile) {
 /**
  * Haftanın Yıldızları (Weekly Stars) Bölümü Başlatıcı
  */
+let weeklyCache=null;
+let weeklyDirectory=[];
+const starName=person=>typeof person==='string'?person:(person?.name||'');
+const starId=person=>person&&typeof person==='object'?person.id:null;
 export async function initWeeklyStarsPanel() {
     const container = document.getElementById('weekly-stars-container');
     if (!container) return;
-
+    if(!weeklyCache)container.textContent=__('common.loading');
+    container.setAttribute('aria-busy','true');
     try {
-        const { data } = await getWeeklyStarsFn({});
-        renderWeeklyStars(container, data || { current: null, history: [] });
-    } catch (err) {
-        console.warn('[WEEKLY_STARS] Error loading weekly stars:', err);
-        renderWeeklyStars(container, { current: null, history: [] });
-    }
+        const {data}=await getWeeklyStarsFn({});
+        if(!data||!Array.isArray(data.history))throw new Error('Invalid weekly stars result');
+        weeklyCache=data;
+        let directoryError=null;
+        try{
+            const response=await getVertexContributorsFn({});
+            if(!Array.isArray(response.data?.contributors))throw new Error('Invalid participant directory');
+            weeklyDirectory=response.data.contributors.filter(person=>
+                person&&typeof person.id==='string'&&person.name&&person.isVertex===true);
+        }catch(error){directoryError=error;weeklyDirectory=[];}
+        renderWeeklyStars(container,{...data,directory:weeklyDirectory,directoryError});
+    } catch(err) {
+        console.warn('[WEEKLY_STARS] Load failed:',err);
+        if(weeklyCache)showToast(()=>userErrorMessage(err),'error');
+        else showLoadError(container,()=>userErrorMessage(err),initWeeklyStarsPanel);
+    }finally{container.removeAttribute('aria-busy');}
 }
 
 function renderWeeklyStars(container, starsData) {
-    const {year: currentYear, weekNumber: currentWeekNumber} = isoWeek(new Date());
+    const {year: currentYear, weekNumber: currentWeekNumber} = isoWeekInIstanbul(new Date());
 
     const current = starsData.current;
     const history = Array.isArray(starsData.history) ? starsData.history : [];
@@ -276,8 +300,18 @@ function renderWeeklyStars(container, starsData) {
                 </div>
 
                 <div class="form-group-field">
-                    <label for="stars-contributors">${__('weekly_stars.contributors_label')}</label>
-                    <input type="text" id="stars-contributors" placeholder="Deniz Örnek, Ayşe Demir" value="${escapeHTML((current?.contributors || []).join(', '))}">
+                    <label for="stars-person-search">${__('weekly_stars.contributors_label')}</label>
+                    <div id="stars-selected" class="stars-selected" aria-live="polite"></div>
+                    <div class="search-field">
+                        ${icon('search',{size:16})}
+                        <input type="search" id="stars-person-search" autocomplete="off"
+                           placeholder="${getLang()==='tr'?'Katılımcı ara':'Search participants'}" 
+                           aria-label="${__('weekly_stars.contributors_label')}">
+                    </div>
+                    <div id="stars-search-results" class="stars-search-results" role="listbox"></div>
+                    ${starsData.directoryError?`<div class="state-block" role="alert">${getLang()==='tr'?'Katılımcı listesi yüklenemedi. Mevcut kayıtlar korunuyor.':'Could not load participants. Existing records are preserved.'}
+                        <button type="button" class="chrome-btn-outline" id="stars-directory-retry">${__('common.retry')}</button></div>`:''}
+                    <small class="form-hint">${getLang()==='tr'?'En fazla 5 aktif katılımcı. İsimler kalıcı kimlikleriyle ilişkilendirilir.':'Select up to 5 active participants using their permanent IDs.'}</small>
                 </div>
 
                 <div>
@@ -296,7 +330,7 @@ function renderWeeklyStars(container, starsData) {
                         <div class="team-list-row">
                             <div class="team-list-info">
                                 <span class="team-list-name">${escapeHTML(item.title || `Hafta ${item.weekNumber}, ${item.year}`)}</span>
-                                <span class="team-list-meta">${escapeHTML((item.contributors || []).join(', '))}</span>
+                                <span class="team-list-meta">${escapeHTML((item.contributors || []).map(starName).join(', '))}</span>
                             </div>
                         </div>`).join('')}</div>`
                 }
@@ -304,14 +338,74 @@ function renderWeeklyStars(container, starsData) {
         </div>
     `;
 
+    const selected=Array.isArray(current?.contributors)?current.contributors.slice():[];
+    const directory=starsData.directory||[];
+    const selectedHost=container.querySelector('#stars-selected');
+    const search=container.querySelector('#stars-person-search');
+    const results=container.querySelector('#stars-search-results');
+    const drawSelected=()=>{
+        selectedHost.replaceChildren();
+        if(!selected.length){
+            const hint=document.createElement('span');
+            hint.className='form-hint';
+            hint.textContent=getLang()==='tr'?'Katılımcı seçilmedi.':'No participants selected.';
+            selectedHost.append(hint);
+        }
+        selected.forEach((person,index)=>{
+            const chip=document.createElement('span');
+            chip.className='stars-person-chip';
+            chip.append(document.createTextNode(starName(person)+(starId(person)?'':' (legacy)')));
+            const button=document.createElement('button');
+            button.type='button';button.textContent='×';
+            button.setAttribute('aria-label',__('common.delete')+' '+starName(person));
+            button.onclick=()=>{selected.splice(index,1);drawSelected();drawResults();};
+            chip.append(button);selectedHost.append(chip);
+        });
+    };
+    const drawResults=()=>{
+        results.replaceChildren();
+        const query=search.value.trim().toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US');
+        if(!query)return;
+        const matches=directory.filter(person=>!selected.some(entry=>starId(entry)===person.id)&&
+            (person.name+' '+(person.email||'')).toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US').includes(query)).slice(0,20);
+        matches.forEach(person=>{
+            const button=document.createElement('button');
+            button.type='button';button.className='stars-person-result';
+            button.setAttribute('role','option');
+            const name=document.createElement('strong');name.textContent=person.name;
+            const detail=document.createElement('small');
+            detail.textContent=person.email||person.department||person.id;
+            button.append(name,detail);
+            button.onclick=()=>{
+                if(selected.length>=5){
+                    showToast(()=>getLang()==='tr'?'En fazla 5 kişi seçilebilir.':'A maximum of 5 participants may be selected.','error');
+                    return;
+                }
+                selected.push({id:person.id,name:person.name});
+                search.value='';drawSelected();drawResults();
+                search.focus({preventScroll:true});
+            };
+            results.append(button);
+        });
+        if(!matches.length){
+            const empty=document.createElement('p');empty.className='form-hint';
+            empty.textContent=getLang()==='tr'?'Eşleşen aktif katılımcı bulunamadı.':'No matching active participant.';
+            results.append(empty);
+        }
+    };
+    search.addEventListener('input',drawResults);
+    drawSelected();
+    const retryDirectory=container.querySelector('#stars-directory-retry');
+    if(retryDirectory)retryDirectory.onclick=initWeeklyStarsPanel;
+    if(starsData.directoryError)container.querySelector('#save-weekly-stars-btn').disabled=true;
+
     const form = container.querySelector('#weekly-stars-form');
     form.onsubmit = async e => {
         e.preventDefault();
         const week = parseInt(container.querySelector('#stars-week').value, 10);
         const year = parseInt(container.querySelector('#stars-year').value, 10);
         const title = container.querySelector('#stars-title').value.trim();
-        const contribRaw = container.querySelector('#stars-contributors').value;
-        const contributors = contribRaw.split(',').map(s => s.trim()).filter(Boolean);
+        const contributors = selected.slice();
 
         const saveBtn = container.querySelector('#save-weekly-stars-btn');
         setButtonLoading(saveBtn, true);
@@ -341,13 +435,11 @@ export function initTeamCardsPanel() {
     if (addBtn) {
         addBtn.onclick = () => openTeamCardDrawer(null);
     }
-    // Managed reads require an authenticated Core session. main.js loads this
-    // workspace when the authorized user navigates to it.
-    if (auth.currentUser) void loadTeamCards().catch(()=>{});
+    if(auth.currentUser)void loadTeamCards().catch(()=>{});
     // Biographies are edited on each team card; the former founder-only
     // profile editor is intentionally no longer a second source of truth.
     const legacyProfile=document.getElementById('team-profile-container');
-    if(legacyProfile)legacyProfile.textContent='Biyografi ve bağlantıları düzenlemek için yukarıdaki ekip kartının düzenle butonunu kullanın.';
+    if(legacyProfile)legacyProfile.textContent=getLang()==='tr'?'Biyografi ve bağlantıları düzenlemek için yukarıdaki ekip kartının düzenle butonunu kullanın.':'Use the edit button on an executive card above to manage biographies and links.';
     initWeeklyStarsPanel();
     onLangChange(() => {
         renderTeamCardsList();
