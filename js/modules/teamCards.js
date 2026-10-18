@@ -2,39 +2,49 @@
 // this console now read/write the SAME collection and share fixed role codes.
 import {
   listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn,
-  getWeeklyStarsFn, setWeeklyStarsFn
+  getWeeklyStarsFn, setWeeklyStarsFn, getVertexContributorsFn
 } from '../core/firebase.js';
 import {escapeHTML, showToast, userErrorMessage, __, getLang, onLangChange} from '../utils/ui.js';
 import {icon} from '../utils/icons.js';
 import {openDrawer, closeDrawer, confirmDialog} from './shell.js';
 import {setButtonLoading} from '../utils/loading.js';
 import {isoWeek} from '../utils/isoWeek.js';
+import {showLoadError} from '../ui/states.js';
 
 export const POSITIONS=Object.freeze(['CEO','CTO','COO','CFO','CMO','CDO','CHRO','CCO','CLO','CITO']);
 let teamCards=[];
 let cardsLoading=false;
+let cardsLoaded=false;
 const byId=id=>document.getElementById(id);
 const linksFor=card=>Object.fromEntries((card?.links||[]).map(link=>[String(link.label||'').toLowerCase(),link.url]));
-const errorNotice=(msg)=>{const list=byId('team-cards-list');if(list)list.textContent=msg;};
+const errorNotice=(error,retry)=>{
+ const list=byId('team-cards-list');
+ if(list)showLoadError(list,()=>userErrorMessage(error),retry,{staleSelector:'.team-list-row'});
+};
 
 export async function loadTeamCards(){
  const list=byId('team-cards-list');if(!list||cardsLoading)return;
  cardsLoading=true;
+ const addBtn=byId('add-team-card-btn');
+ if(addBtn&&!cardsLoaded)addBtn.disabled=true;
+ list.setAttribute('aria-busy','true');
  try{
    const response=await listSiteTeamFn({manage:true});
-   teamCards=Array.isArray(response.data?.cards)?response.data.cards:[];
+   if(!Array.isArray(response.data?.cards))throw new Error('Invalid managed team directory response.');
+   teamCards=response.data.cards;
+   cardsLoaded=true;
    renderTeamCardsList();
  }catch(error){
    console.error('[TEAM_DIRECTORY] Could not load managed public cards',error);
-   errorNotice(userErrorMessage(error));
- }finally{cardsLoading=false;}
- const addBtn=byId('add-team-card-btn');
- if(addBtn){addBtn.disabled=teamCards.length>=10;addBtn.title=addBtn.disabled?__('team_cards.all_filled'):__('team_cards.add_btn');}
+   if(byId('team-cards-empty'))byId('team-cards-empty').hidden=true;
+   errorNotice(error,loadTeamCards);
+ }finally{cardsLoading=false;list.removeAttribute('aria-busy');}
+ if(addBtn){addBtn.disabled=!cardsLoaded||teamCards.length>=10;addBtn.title=addBtn.disabled?__('team_cards.all_filled'):__('team_cards.add_btn');}
 }
 function renderTeamCardsList(){
  const list=byId('team-cards-list'),empty=byId('team-cards-empty');
  if(!list)return;
- if(empty)empty.hidden=teamCards.length>0;
+ if(empty)empty.hidden=!cardsLoaded||teamCards.length>0;
  list.className='team-list';
  list.innerHTML=teamCards.map(card=>{
    const title=card.titles?.[getLang()]||card.titles?.en||card.position;
