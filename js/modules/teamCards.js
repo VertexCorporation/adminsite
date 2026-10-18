@@ -12,6 +12,10 @@
 
 import {
     listTeamCardsFn,
+    listSiteTeamFn,
+    setSiteTeamEntryFn,
+    deleteSiteTeamEntryFn,
+    auth,
     setTeamCardFn,
     deleteTeamCardFn,
     getTeamProfileFn,
@@ -24,6 +28,7 @@ import { icon } from '../utils/icons.js';
 import { openDrawer, closeDrawer, confirmDialog } from './shell.js';
 import { createLoadingController, setButtonLoading, skeletonRows } from '../utils/loading.js';
 import { isPanelAdmin } from './roles.js';
+import { showLoadError } from '../ui/states.js';
 
 export const POSITIONS = Object.freeze([
     'CEO', 'CTO', 'COO', 'CFO', 'CMO', 'CDO', 'CHRO', 'CCO', 'CLO', 'CITO'
@@ -43,16 +48,23 @@ export async function loadTeamCards() {
     const addBtn = document.getElementById('add-team-card-btn');
     const emptyEl = document.getElementById('team-cards-empty');
 
+    if (!auth.currentUser) {cardsLoading=false;return;}
     try {
-        const { data } = await listTeamCardsFn({});
-        teamCards = Array.isArray(data?.cards) ? data.cards : [];
-    } catch (err) {
-        console.warn('[TEAM_CARDS] Could not fetch cards from backend, using current state:', err);
-    } finally {
-        cardsLoading = false;
-    }
-
-    renderTeamCardsList();
+        const {data}=await listSiteTeamFn({manage:true});
+        if(!Array.isArray(data?.cards))throw Object.assign(new Error('Invalid team card response'),{code:'functions/internal'});
+        teamCards=data.cards.map(card=>({
+            ...card,
+            position:card.position || POSITIONS[Number(card.order)-1] || '',
+            photoUrl:card.imageUrl || card.photoUrl || '',
+            titles:card.positions || card.titles || {},
+            socialLinks:card.socialLinks || Object.fromEntries((card.links||[]).map(link=>[String(link.label).toLowerCase(),link.url]))
+        }));
+        renderTeamCardsList();
+    } catch(err) {
+        console.warn('[TEAM_CARDS] Failed to load',{code:err.code});
+        if(!teamCards.length){if(emptyEl)emptyEl.hidden=true;showLoadError(listEl,()=>userErrorMessage(err),loadTeamCards);}
+        else showToast(()=>userErrorMessage(err),'error');
+    } finally {cardsLoading=false;}
 
     if (addBtn) {
         const isFull = teamCards.length >= 10;
@@ -126,7 +138,8 @@ function renderTeamCardsList() {
             if (!confirmed) return;
 
             try {
-                await deleteTeamCardFn({ id: cardId });
+                if(card?.legacy)await deleteTeamCardFn({id:cardId});
+                else await deleteSiteTeamEntryFn({kind:'card',id:cardId});
                 teamCards = teamCards.filter(c => c.id !== cardId);
                 renderTeamCardsList();
                 showToast(() => __('team_cards.deleted'), 'success');
@@ -285,7 +298,29 @@ export function openTeamCardDrawer(cardToEdit = null) {
                 }
             };
 
-            await setTeamCardFn(payload);
+            if(selectedPhoto.startsWith('data:')){
+                const photo=selectedPhoto.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+                if(!photo)throw Object.assign(new Error('Unsupported image'),{code:'functions/invalid-argument'});
+                const {data}=await setSiteTeamEntryFn({kind:'photo',contentType:photo[1],imageData:photo[2]});
+                selectedPhoto=data.imageUrl;
+            }
+            if(cardToEdit?.legacy){
+                payload.photoUrl=selectedPhoto;
+                await setTeamCardFn(payload);
+            }else{
+                const order=POSITIONS.indexOf(position)+1;
+                if(order<1)throw Object.assign(new Error('Invalid position'),{code:'functions/invalid-argument'});
+                await setSiteTeamEntryFn({
+                    kind:'card',id:cardToEdit?.id,name,imageUrl:selectedPhoto,
+                    order,positions:{
+                        ...cardToEdit?.titles,
+                        tr:cardToEdit?.position===position&&cardToEdit?.titles?.tr || position,
+                        en:cardToEdit?.position===position&&cardToEdit?.titles?.en || position
+                    },
+                    links:[{label:'linkedin',url:linkedin},{label:'instagram',url:instagram}]
+                        .filter(item=>item.url)
+                });
+            }
             closeDrawer();
             showToast(() => __('team_cards.saved'), 'success');
             await loadTeamCards();
@@ -506,9 +541,9 @@ export function initTeamCardsPanel() {
     if (addBtn) {
         addBtn.onclick = () => openTeamCardDrawer(null);
     }
-    loadTeamCards();
-    initTeamProfilePanel();
-    initWeeklyStarsPanel();
+    if(auth.currentUser)loadTeamCards();
+    if(auth.currentUser)initTeamProfilePanel();
+    if(auth.currentUser)initWeeklyStarsPanel();
     onLangChange(() => {
         renderTeamCardsList();
     });
