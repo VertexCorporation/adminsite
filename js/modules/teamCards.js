@@ -8,7 +8,7 @@ import {escapeHTML, showToast, userErrorMessage, __, getLang, onLangChange} from
 import {icon} from '../utils/icons.js';
 import {openDrawer, closeDrawer, confirmDialog} from './shell.js';
 import {setButtonLoading} from '../utils/loading.js';
-import {isoWeek} from '../utils/isoWeek.js';
+import {isoWeekInIstanbul} from '../utils/isoWeek.js';
 import {showLoadError} from '../ui/states.js';
 
 export const POSITIONS=Object.freeze(['CEO','CTO','COO','CFO','CMO','CDO','CHRO','CCO','CLO','CITO']);
@@ -276,7 +276,7 @@ export async function initWeeklyStarsPanel() {
 }
 
 function renderWeeklyStars(container, starsData) {
-    const {year: currentYear, weekNumber: currentWeekNumber} = isoWeek(new Date());
+    const {year: currentYear, weekNumber: currentWeekNumber} = isoWeekInIstanbul(new Date());
 
     const current = starsData.current;
     const history = Array.isArray(starsData.history) ? starsData.history : [];
@@ -300,7 +300,7 @@ function renderWeeklyStars(container, starsData) {
                 </div>
 
                 <div class="form-group-field">
-                    <label for="stars-contributors">${__('weekly_stars.contributors_label')}</label>
+                    <label for="stars-person-search">${__('weekly_stars.contributors_label')}</label>
                     <div id="stars-selected" class="stars-selected" aria-live="polite"></div>
                     <div class="search-field">
                         ${icon('search',{size:16})}
