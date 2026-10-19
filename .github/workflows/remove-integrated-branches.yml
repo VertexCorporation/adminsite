@@ -30,7 +30,7 @@ jobs:
               return subprocess.check_output(['git', *args], text=True, **kw).strip()
           plan=json.load(open('.github/integrated-branches.json'))
           assert plan['repository']==os.environ['GITHUB_REPOSITORY']
-          assert plan['mode']=='ancestor-only'
+          assert plan['mode']=='merge-adds-no-changes'
           assert 0<len(plan['branches'])<=120
           seen=set()
           for item in plan['branches']:
@@ -40,13 +40,17 @@ jobs:
               assert re.fullmatch(r'[A-Za-z0-9_./-]+',name)
               assert re.fullmatch(r'[0-9a-f]{40}',sha)
               assert git('rev-parse','refs/remotes/origin/'+name)==sha, 'Branch changed: '+name
-              subprocess.run(['git','merge-base','--is-ancestor',sha,'refs/remotes/origin/main'],check=True)
+              merged=git('merge-tree','--write-tree','refs/remotes/origin/main',sha)
+              assert merged==git('rev-parse','refs/remotes/origin/main^{tree}'), 'Branch still contributes changes: '+name
           helper='!f() { printf "%s\\n" "username=x-access-token" "password=$GH_TOKEN"; }; f'
           for item in plan['branches']:
               ref='refs/heads/'+item['name']
+              tag='refs/tags/reconciled/20261020/'+item['name']
+              subprocess.run(['git','-c','credential.helper=','-c','credential.helper='+helper,
+                  'push','--force-with-lease='+tag+':','origin',item['sha']+':'+tag],check=True)
               subprocess.run(['git','-c','credential.helper=','-c','credential.helper='+helper,
                   'push','--force-with-lease='+ref+':'+item['sha'],'origin',':'+ref],check=True)
               print('Deleted integrated branch: '+item['name'],flush=True)
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
-              f.write('Verified ancestry and exact head before deleting '+str(len(seen))+' branches. All commits remain reachable from main.\\n')
+              f.write('Verified no-change merge and exact head; archived original commits before deleting '+str(len(seen))+' branches. Original commits remain reachable through reconciled archive tags.\\n')
           PY
