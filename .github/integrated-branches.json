@@ -1,0 +1,42 @@
+{
+  "repository": "VertexCorporation/adminsite",
+  "mode": "ancestor-only",
+  "branches": [
+    {
+      "name": "backup/integration-20261017-adminsite-device-main",
+      "sha": "da5fe63cb4b932af2cdbf2862829571b08cd4747"
+    },
+    {
+      "name": "backup/integration-20261017-adminsite-remote-main",
+      "sha": "645d20349c3e98123df67da9e0c8509216e2dd94"
+    },
+    {
+      "name": "feature/vertex-roster-61",
+      "sha": "eed3e2e6fc1f902f80facf2d194579ee73d98c08"
+    },
+    {
+      "name": "fix/console-final-pr8-home-guide-20261019",
+      "sha": "af5f2a869d31000a2dd38083f01b699e4e4b5ace"
+    },
+    {
+      "name": "fix/console-final-subscription-safety-20261019",
+      "sha": "5787b89adea9639091ea6325c0a79fda444a33ce"
+    },
+    {
+      "name": "fix/contributors-and-team-20261017",
+      "sha": "e25b4669af07cbeb922a954566f19586997a07a2"
+    },
+    {
+      "name": "fix/contributors-atomic-navigation-smooth-filter",
+      "sha": "d3f9dfa417c0c7d22ff7ed726deb40ce58c73250"
+    },
+    {
+      "name": "fix/navigation-no-ghost-stable-contributors",
+      "sha": "7756296f02694331918a9b5187a2ed6d2b0245d2"
+    },
+    {
+      "name": "fix/ui-61-75-consolidation",
+      "sha": "e2b7d3e3e179588ad139b7e05afcce92694c48d2"
+    }
+  ]
+}

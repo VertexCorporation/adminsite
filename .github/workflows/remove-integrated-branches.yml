@@ -1,0 +1,52 @@
+name: Remove verified integrated branches
+
+on:
+  push:
+    branches: ['audit/branch-reconciliation-20261020']
+    paths: ['.github/workflows/remove-integrated-branches.yml', '.github/integrated-branches.json']
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.repository_owner == 'VertexCorporation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact heads and ancestry, then delete with leases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          def git(*args, **kw):
+              return subprocess.check_output(['git', *args], text=True, **kw).strip()
+          plan=json.load(open('.github/integrated-branches.json'))
+          assert plan['repository']==os.environ['GITHUB_REPOSITORY']
+          assert plan['mode']=='ancestor-only'
+          assert 0<len(plan['branches'])<=120
+          seen=set()
+          for item in plan['branches']:
+              name,sha=item['name'],item['sha']
+              assert name not in seen and name not in ('main','master','HEAD')
+              seen.add(name)
+              assert re.fullmatch(r'[A-Za-z0-9_./-]+',name)
+              assert re.fullmatch(r'[0-9a-f]{40}',sha)
+              assert git('rev-parse','refs/remotes/origin/'+name)==sha, 'Branch changed: '+name
+              subprocess.run(['git','merge-base','--is-ancestor',sha,'refs/remotes/origin/main'],check=True)
+          helper='!f() { printf "%s\\n" "username=x-access-token" "password=$GH_TOKEN"; }; f'
+          for item in plan['branches']:
+              ref='refs/heads/'+item['name']
+              subprocess.run(['git','-c','credential.helper=','-c','credential.helper='+helper,
+                  'push','--force-with-lease='+ref+':'+item['sha'],'origin',':'+ref],check=True)
+              print('Deleted integrated branch: '+item['name'],flush=True)
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('Verified ancestry and exact head before deleting '+str(len(seen))+' branches. All commits remain reachable from main.\\n')
+          PY
