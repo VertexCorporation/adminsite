@@ -51,7 +51,7 @@ test('invalid template count shows recoverable error, not a blank drawer',async(
 test('valid templates paint and expose a selected editable template',async()=>{
     const fx=fixture(async()=>({data:{templates:valid()}}));
     await fx.load();
-    assert.equal(fx.failures.length,0);
+    assert.equal(fx.failures.length,0,fx.failures.map(f=>f.message).join('; '));
     assert.equal(fx.footer.hidden,false);
     assert.equal(fx.paints,1);
     assert.equal(fx.getState().current.subject,'Subject 0');
@@ -70,7 +70,7 @@ test('late obsolete response cannot overwrite newer loaded templates',async()=>{
     await pending;
     assert.equal(fx.getState().current.subject,'Newest');
     assert.equal(fx.paints,1);
-    assert.equal(fx.failures.length,0);
+    assert.equal(fx.failures.length,0,fx.failures.map(f=>f.message).join('; '));
 });
 
 test('ten templates with duplicate certificate/language pairs are not accepted',async()=>{
