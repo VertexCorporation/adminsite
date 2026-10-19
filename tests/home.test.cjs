@@ -72,3 +72,15 @@ test('product and technology cards stay separate from permission-controlled cons
   assert.match(home, /const card = el\('article', 'home-product-card'\)/);
   assert.match(home, /const card = el\('article', 'home-tech-card'\)/);
 });
+
+test('department orientation uses only assigned departments and supports TR/EN without changing authorization', () => {
+  const src = read('js/modules/home.js');
+  assert.match(src, /const DEPARTMENT_GUIDANCE = \{/);
+  for (const department of ['core', 'senatus', 'tensor', 'curia', 'pulse', 'chroma', 'catalyst', 'envoy', 'aero', 'array']) {
+    assert.match(src, new RegExp('\\b' + department + ':'));
+  }
+  assert.match(src, /departmentGuidance\(context\.departments, getLang\(\)\)/);
+  assert.match(src, /detail \? displayDepartmentName\(name\)/);
+  assert.match(src, /language === 'tr' \? 'tr' : 'en'/);
+  assert.doesNotMatch(src, /context\.departments\.push\(/);
+});
