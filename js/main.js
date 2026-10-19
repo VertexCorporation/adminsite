@@ -16,7 +16,7 @@ import * as dom from './utils/dom.js';
 import { userErrorMessage, showToast, __, getLang, setLang, translatePage, onLangChange } from './utils/ui.js';
 
 // Import module initializers
-import { initAdminModule, initializeMaintenanceStatus, refreshDepartmentUsers, loadAdminsList } from './modules/admin.js';
+import { initAdminModule, initializeMaintenanceStatus, refreshDepartmentUsers } from './modules/admin.js';
 import { initModelsModule, fetchFullModelsData } from './modules/models.js';
 import { initNewsModule, listenForArticles, stopListeningForArticles } from './modules/news.js';
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
@@ -113,7 +113,7 @@ export function startApp(firebaseConfig) {
     document.addEventListener('vertex:workspace',event=>{
         if(!auth.currentUser || dom.adminPanel.style.display==='none')return;
         const keys=event.detail.keys;
-        const tasks=[['contributors.list',fetchContributorsData],['models.library',fetchFullModelsData],['models.manage',fetchFullModelsData],['news.published',listenForArticles],['news.editor',listenForArticles],['notifications.scheduled',listenForScheduledTasks],['subscriptions.list',refreshSubscriptions],['system.deptUsers',refreshDepartmentUsers],['system.adminList',loadAdminsList],['system.serverStatus',initializeMaintenanceStatus],['system.teamLog',loadTeamCards],['system.deptPerms',loadRolesWorkspace],['chat.channels',refreshConsoleChat]];
+        const tasks=[['contributors.list',fetchContributorsData],['models.library',fetchFullModelsData],['models.manage',fetchFullModelsData],['news.published',listenForArticles],['news.editor',listenForArticles],['notifications.scheduled',listenForScheduledTasks],['subscriptions.list',refreshSubscriptions],['system.deptUsers',refreshDepartmentUsers],['system.serverStatus',initializeMaintenanceStatus],['system.teamLog',loadTeamCards],['system.deptPerms',loadRolesWorkspace],['chat.channels',refreshConsoleChat]];
         for(const [key,load] of tasks)if(keys.includes(key)&&(key==='chat.channels'||getEffectivePanelLevel(key)!=='none')&&!loadedWorkspaces.has(load)){
             loadedWorkspaces.add(load);
             Promise.resolve().then(load).catch(error=>{
@@ -137,7 +137,7 @@ export function startApp(firebaseConfig) {
                 // departments must be checked against current server records.
                 if(!deploymentCapabilities.consolePeople)throw new Error('Console authorization endpoint is unavailable.');
                 const access=normalizeConsoleAccessResponse((await consolePeopleCall('getMyConsoleAccess',{})).data);
-                let isAdmin=access.isAdmin;
+                let isAdmin=access.isCore;
                 let departments=access.departments;
                 if(epoch!==authEpoch)return;
                 if (!isAdmin && !departments.length) {
@@ -152,14 +152,12 @@ export function startApp(firebaseConfig) {
                 renderProfile(user, isAdmin, departments);
 
                 if (isAdmin) {
-                    console.log("[AUTH] Access Level: Admin. Full panel enabled.");
+                    console.log("[AUTH] Access Level: Core. Full panel enabled.");
                     resetTabFilter();
                     applyPanelGate(true);
-                    dom.adminManagerSection.style.display = 'block';
                     applyChipVisibility();
                     } else {
                     console.log(`[AUTH] Access Level: Department (${departments.join(', ')}). Limited panel.`);
-                    dom.adminManagerSection.style.display = 'none';
                     await loadDepartmentPermissions();
                     if(epoch!==authEpoch || document.documentElement.dataset.startupFailed === 'true')return;
 
@@ -178,7 +176,7 @@ export function startApp(firebaseConfig) {
                   personnelUnsubscribe=db.collection('users').doc(user.uid).onSnapshot(async snapshot=>{
                     const profile=snapshot.data()||{};if(!profile.contributorId&&!profile.personnelManaged&&!profile.consoleAccessManaged)return;
                     const next=profile.authzVersion||0;if(next===revision)return;revision=next;
-                    try{const access=normalizeConsoleAccessResponse((await consolePeopleCall('getMyConsoleAccess',{})).data);if(epoch!==authEpoch)return;if(!access.isAdmin&&!access.departments.length){await auth.signOut();return;}setCurrentUser(access.isAdmin,access.departments);document.body.classList.toggle('admin-mode',access.isAdmin);dom.adminManagerSection.style.display=access.isAdmin?'block':'none';if(access.isAdmin)resetTabFilter();else{await loadDepartmentPermissions();applyTabFilter(getAccessibleTabs(access.departments));}applyPanelGate(access.isAdmin);applyChipVisibility();renderProfile(user,access.isAdmin,access.departments,true);updateHome(user,access.isAdmin,access.departments);document.dispatchEvent(new CustomEvent('vertex:departments',{detail:access.departments}));}
+                    try{const access=normalizeConsoleAccessResponse((await consolePeopleCall('getMyConsoleAccess',{})).data);if(epoch!==authEpoch)return;if(!access.isCore&&!access.departments.length){await auth.signOut();return;}setCurrentUser(access.isCore,access.departments);document.body.classList.toggle('admin-mode',access.isCore);if(access.isCore)resetTabFilter();else{await loadDepartmentPermissions();applyTabFilter(getAccessibleTabs(access.departments));}applyPanelGate(access.isCore);applyChipVisibility();renderProfile(user,access.isCore,access.departments,true);updateHome(user,access.isCore,access.departments);document.dispatchEvent(new CustomEvent('vertex:departments',{detail:access.departments}));}
                     catch(error){if(epoch===authEpoch&&error.code==='functions/permission-denied')auth.signOut();}
                   },error=>console.warn('[PERSONNEL] Access subscription unavailable',error.code));
                 }

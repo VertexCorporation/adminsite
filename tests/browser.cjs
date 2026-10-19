@@ -32,11 +32,7 @@ await page.addInitScript(()=>{
      // server identity scenario, not a permanently privileged Core account.
      const account=window.__testClaims || {admin:true};
      const isCore=account.admin===true;
-     // Exercise the real legacy wire contract as well as the modern Core
-     // contract: older deployed callables sent a verified isAdmin boolean
-     // without including the newer Core department alias.
-     if (isCore && !window.__testModernCoreAccess)
-       return {data:{uid:'admin',isAdmin:true,departments:[],authzVersion:0}};
+     return {data:{uid:'admin',isAdmin:true,departments:[],authzVersion:0}};
      return {data:{uid:'admin',departments:isCore?['Core']:(account.departments||[]),
        isAdmin:isCore,isCore,authzVersion:0}};
    }

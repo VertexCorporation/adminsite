@@ -88,7 +88,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   await page.waitForFunction(()=>document.querySelector('#permission-save-status')?.dataset.state==='saved');
   assert.equal(Object.values(payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments.Core.panels).filter(level=>level==='write').length,7);
   note('Panel overrides, inherited reset, hidden fields and contextual bulk permission presets');
-  for(const key of ['permissions','departments','administrators','verification','server','exports_attributions']) {
+  for(const key of ['permissions','departments','verification','server','exports_attributions']) {
     await page.locator(`[data-i18n="subnav.${key}"]`).click();
     const active=key==='exports_attributions'?'export':key;
     assert.equal(await page.locator(`[data-section="${active}"]`).getAttribute('aria-pressed'),'true');

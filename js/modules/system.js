@@ -1,11 +1,10 @@
 import { __, onLangChange } from '../utils/ui.js';
 import { isPanelAdmin, getEffectivePanelLevel } from './roles.js';
-const sections={permissions:['dept-perms-manager'],departments:['dept-assign-manager','dept-users-manager'],administrators:['admin-manager','admin-list-manager'],verification:['manual-verify-manager','team-log-manager','team-cards-manager'],server:['gcs-backup-status','server-status-manager'],attributions:['attributions-manager'],export:['data-exporter-manager','attributions-manager']};
+const sections={permissions:['dept-perms-manager'],departments:['dept-assign-manager','dept-users-manager'],verification:['manual-verify-manager','team-log-manager','team-cards-manager'],server:['gcs-backup-status','server-status-manager'],attributions:['attributions-manager'],export:['data-exporter-manager','attributions-manager']};
 export function initSystemSections(){
     const system=document.getElementById('tab-system');
     if(!system)return;
     const grid=system.querySelector('.grid-layout');
-    for(const id of ['admin-manager']){const card=document.getElementById(id);if(card)grid.append(card);}
     const nav=document.createElement('nav');nav.className='system-sections';nav.hidden=true;nav.setAttribute('aria-label',__('nav.system'));
     grid.before(nav);
     let selected='permissions';

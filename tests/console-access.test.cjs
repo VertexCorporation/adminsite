@@ -25,15 +25,10 @@ test('fail closed on missing, contradictory or malformed role data', () => {
   }
 });
 
-test('verified legacy admin responses recover Core sidebar and visible panels', () => {
-  const safe = value => JSON.parse(JSON.stringify(value));
-  // Current backend returns explicit Core; earlier callable deployments
-  // returned the same trusted admin boolean but no Core department label.
-  const legacy = normalize({isAdmin:true,departments:[]});
-  assert.equal(legacy.isAdmin,true);
-  assert.deepEqual(safe(legacy.departments),['Core']);
-  assert.deepEqual(safe(normalize({isAdmin:true,departments:['Array']})).departments,['Core','Array']);
-  assert.deepEqual(safe(normalize({isCore:true,departments:['Array']})).departments,['Core','Array']);
-  assert.throws(()=>normalize({isCore:false,departments:['Core']}),/Invalid console authorization response/);
-  assert.throws(()=>normalize({isAdmin:false,departments:['Core']}),/Invalid console authorization response/);
+test('an obsolete admin boolean cannot invent Core membership', () => {
+  for (const payload of [{isAdmin:true,departments:[]}, {isAdmin:true,departments:['Array']},
+      {isCore:true,departments:['Array']}, {isCore:false,departments:['Core']},
+      {isAdmin:false,departments:['Core']}, {isCore:false,departments:['Unknown']}])
+    assert.throws(()=>normalize(payload),/Invalid console authorization response/);
+  assert.equal(normalize({isCore:true,departments:['Core']}).isCore,true);
 });

@@ -4,12 +4,12 @@
 let auth, db, storage, functions, appCheck;
 let sendTargetedNotificationFn, scheduleNotificationFn, listScheduledNotificationsFn;
 let cancelScheduledNotificationFn, getServerStatusFn, setServerStatusFn, blockOnlineModelFn;
-let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn;
+let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn;
 let getModelImageUploadUrlFn, getCoverUploadUrlFn, triggerAttributionsUpdateFn;
 let getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn;
 let verifyUserEmailFn;
 let updateContributorApplicationFn, createManualVertexContributorFn;
-let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
+let toggleVertexStatusFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
 let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn;
 let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn;
 let getPanelPermissionsFn, listDepartmentPermissionHistoryFn, restoreDepartmentPermissionsFn;
@@ -34,7 +34,7 @@ const callableCache = new Map();
 const RETRYABLE_READS = new Set([
     'getVertexContributors','listConsoleChatChannels','listConsoleChatMessages',
     'listConsoleChatDirectory','getPanelPermissions','getMyConsoleAccess',
-    'listUserSubscriptions','listAdmins','listDepartmentUsers','listSiteTeam',
+    'listUserSubscriptions','listDepartmentUsers','listSiteTeam',
     'listTeamCards','getServerStatus','getVertexCertificateDetails',
     'getVertexCertificateEmailTemplates','getBackupHealthStatus',
     'getTeamProfile','getWeeklyStars','previewContributorRoster'
@@ -155,7 +155,6 @@ function initFirebase(firebaseConfig) {
     updateModelsListFn = callable('updateModelsList');
     createNewsArticleFn = callable('createNewsArticle');
     deleteNewsArticleFn = callable('deleteNewsArticle');
-    addAdminRoleFn = callable('addAdminRole');
     getModelImageUploadUrlFn = callable('getModelImageUploadUrl');
     getCoverUploadUrlFn = callable('getCoverUploadUrl');
     triggerAttributionsUpdateFn = callable('triggerAttributionsUpdate');
@@ -166,8 +165,6 @@ function initFirebase(firebaseConfig) {
     updateContributorApplicationFn = callable('updateContributorApplication');
     createManualVertexContributorFn = callable('createManualVertexContributor');
     toggleVertexStatusFn = callable('toggleVertexStatus');
-    removeAdminRoleFn = callable('removeAdminRole');
-    listAdminsFn = callable('listAdmins');
     setUserDepartmentFn = callable('setUserDepartment');
     setUserDepartmentsFn = callable('setUserDepartments');
     listDepartmentUsersFn = callable('listDepartmentUsers');
@@ -213,7 +210,6 @@ export {
     updateModelsListFn,
     createNewsArticleFn,
     deleteNewsArticleFn,
-    addAdminRoleFn,
     getModelImageUploadUrlFn,
     getCoverUploadUrlFn,
     triggerAttributionsUpdateFn,
@@ -224,8 +220,6 @@ export {
     updateContributorApplicationFn,
     createManualVertexContributorFn,
     toggleVertexStatusFn,
-    removeAdminRoleFn,
-    listAdminsFn,
     setUserDepartmentFn,
     setUserDepartmentsFn,
     listDepartmentUsersFn,
