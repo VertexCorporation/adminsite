@@ -146,6 +146,41 @@ function addModuleCards(target, t) {
     if (!grid.children.length) paragraph(target, t.noModules, 'home-muted');
     else target.append(grid);
 }
+// Informational orientation only: not an editable responsibility tracker or a permission source.
+// Stored department identifiers and their permissions remain unchanged.
+const DEPARTMENT_GUIDANCE = {
+    tr: {
+        core: 'Organizasyonun genel koordinasyonu, kararların takibi ve departmanlar arası uyum.',
+        senatus: 'Yönetişim, toplantı kararları ve kurumsal süreçlerin takibi.',
+        tensor: 'Yapay zekâ, mühendislik ve teknik geliştirme süreçlerine katkı.',
+        curia: 'Kurumsal süreçlerin, belgelerin ve düzenlemelerin koordinasyonu.',
+        pulse: 'İletişim ve topluluk çalışmalarının planlanması.',
+        chroma: 'Tasarım, içerik ve görsel iletişim çalışmalarının yürütülmesi.',
+        catalyst: 'İş birlikleri ve büyüme fırsatlarının değerlendirilmesi.',
+        envoy: 'Temsilcilik ve dış ilişkiler çalışmalarının koordinasyonu.',
+        aero: 'Etkinlik ve organizasyon hazırlıklarına destek.',
+        array: 'Veri, planlama ve ekipler arası operasyon süreçlerine katkı.'
+    },
+    en: {
+        core: 'Coordinate the organization, follow up on decisions, and align departments.',
+        senatus: 'Follow governance, meeting decisions, and organizational processes.',
+        tensor: 'Contribute to engineering, AI, and technical development.',
+        curia: 'Coordinate internal processes, documents, and organizational policies.',
+        pulse: 'Plan communication and community activities.',
+        chroma: 'Develop design, content, and visual communication.',
+        catalyst: 'Explore partnerships and opportunities for growth.',
+        envoy: 'Coordinate ambassador and external relations activities.',
+        aero: 'Support event and organizational preparations.',
+        array: 'Support data, planning, and cross-team operations.'
+    }
+};
+function departmentGuidance(departments, language) {
+    const descriptions = DEPARTMENT_GUIDANCE[language === 'tr' ? 'tr' : 'en'];
+    return departments.map(name => {
+        const detail = descriptions[String(name).trim().toLowerCase()];
+        return detail ? displayDepartmentName(name) + ': ' + detail : null;
+    }).filter(Boolean);
+}
 function renderHome() {
     const root = document.getElementById('home-root');
     if (!root) return;
@@ -173,6 +208,9 @@ function renderHome() {
         identity.append(department);
     }
     heroCopy.append(identity);
+    // Never list departments outside the signed-in participant's visible assignment.
+    const guidance = departmentGuidance(context.departments, getLang());
+    if (guidance.length) paragraph(heroCopy, guidance.join(' · '), 'home-start-note');
     paragraph(heroCopy, t.howStart, 'home-start-note');
     hero.append(heroCopy);
     // A lightweight, decorative motion study: no logo, canvas loop or runtime animation.
