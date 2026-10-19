@@ -24,7 +24,9 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   assert.equal(await page.locator('.perm-preset-btn').count(),0);
   assert.equal(await page.locator('.permission-panel-selector').count(),0);
   assert.equal(await page.locator('[data-permission-panel]').count(),25);
-  assert(await page.locator('.perm-cycle').first().innerText().then(text=>text.includes('Edit')));
+  const editablePermission = page.locator('.dept-perm-row .perm-cycle[data-level="write"]').first();
+  assert(await editablePermission.count()>0,'Expected at least one write-level department permission');
+  assert((await editablePermission.innerText()).includes('Edit'),'Write-level permission must show its English label');
   await capture('permissions-1440-dark');
   const core=page.locator('[data-dept=Core][data-tab=contributors]');
   await core.click();
