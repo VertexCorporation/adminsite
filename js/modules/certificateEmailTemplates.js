@@ -153,10 +153,25 @@ export function openCertificateEmailTemplates() {
         }catch(e){if(alive){const error=body.querySelector('.template-error');error.textContent=e.code==='functions/aborted'?__('email_templates.conflict'):templateErrorMessage(e);error.hidden=false;}}
         finally{busy=false;if(alive&&!saved){status();if(!dirty)paint();}}
     }
+    let loadGeneration=0;
     async function load(){
+        const token=++loadGeneration;
         loader.start();footer.hidden=true;
-        try{const {data}=await getVertexCertificateEmailTemplatesFn({});if(!alive)return;templates=data.templates;current=selected();draft={subject:current.subject,html:normalizeVerificationLinks(current.html)};dirty=draft.html!==current.html;footer.hidden=false;paint();}
-        catch(e){if(alive)loader.error(userErrorMessage(e),load,__('common.retry'));}
+        try{
+            const {data}=await getVertexCertificateEmailTemplatesFn({});
+            if(!alive||token!==loadGeneration)return;
+            if(!Array.isArray(data?.templates) || data.templates.length!==10 ||
+               data.templates.some(t=>!t || typeof t.subject!=='string' ||
+                   typeof t.html!=='string' || !Number.isSafeInteger(t.revision)))
+                throw Object.assign(new Error('Invalid email template API response'),{code:'functions/internal'});
+            templates=data.templates;
+            current=selected();
+            if(!current)throw Object.assign(new Error('Missing requested email template'),{code:'functions/internal'});
+            draft={subject:current.subject,html:normalizeVerificationLinks(current.html)};
+            dirty=draft.html!==current.html;
+            footer.hidden=false;
+            paint();
+        }catch(error){if(alive&&token===loadGeneration)loader.error(templateErrorMessage(error),load,__('common.retry'));}
     }
     const unsubscribe=onLangChange(paint);load();
 }
