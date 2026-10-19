@@ -469,7 +469,7 @@
 /* A single grid template keeps matrix headers and actual rendered rows aligned. */
 #dept-perms-manager{background:transparent;border:0;padding:0}
 #dept-perms-manager>.card-title-row .title-details>.icon{display:none}
-.dept-perms-table{--permission-columns:minmax(132px,1.25fr) repeat(6,minmax(108px,1fr)) 36px;border-top:1px solid var(--border-subtle);margin-top:12px}
+.dept-perms-table{--permission-columns:minmax(132px,1.25fr) repeat(var(--permission-module-count, 7),minmax(108px,1fr)) 36px;border-top:1px solid var(--border-subtle);margin-top:12px}
 .dept-perms-header,.dept-perm-row{display:grid;grid-template-columns:var(--permission-columns);gap:8px;align-items:center;min-width:950px;padding:10px 8px}
 .dept-perms-header{color:var(--text-muted);font-size:11px;font-weight:500;min-height:42px}
 .dept-perm-row{border-bottom:1px solid var(--border-subtle);font-size:13px;min-height:54px}
