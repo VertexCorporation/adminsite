@@ -1,0 +1,47 @@
+name: console scoped verification
+
+on:
+  push:
+    branches:
+      - 'fix/console-hardening-41-50-integrated-20261018'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  touched-console-contracts:
+    name: Console changes - focused tests and browser coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install test dependencies
+        run: npm install --no-package-lock
+      - name: Validate syntax and both locales
+        run: |
+          npm run check:syntax
+          npm run audit:i18n
+      - name: Validate immutable release without deploying
+        run: |
+          node scripts/release.cjs
+          npm run verify:release
+          git diff --exit-code -- index.html
+      - name: Verify touched console behavior
+        run: |
+          node --test tests/a11y-focus.test.cjs \
+            tests/callable-observability.test.cjs \
+            tests/certificate-candidate-search.test.cjs \
+            tests/release-idempotency.test.cjs
+      - name: Install isolated Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Responsive console browser tests
+        run: node tests/ui-browser.cjs
+      - name: Personnel and applicant browser tests
+        run: node tests/people-browser.cjs
+      - name: Keyboard overlay and reduced-motion browser tests
+        run: node tests/overlay-keyboard-browser.cjs
