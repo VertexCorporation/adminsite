@@ -160,7 +160,13 @@ export function openCertificateEmailTemplates() {
         try{
             const {data}=await getVertexCertificateEmailTemplatesFn({});
             if(!alive||token!==loadGeneration)return;
-            if(!Array.isArray(data?.templates) || data.templates.length!==10 ||
+            const expectedPairs=new Set(['merit','tenacity','constancy','nobility','majesty']
+                .flatMap(certificateType=>['tr','en'].map(lang=>certificateType+':'+lang)));
+            const providedPairs=Array.isArray(data?.templates)
+                ? new Set(data.templates.map(t=>t?.certificateType+':'+t?.language)) : new Set();
+            if(!Array.isArray(data?.templates) || data.templates.length!==expectedPairs.size ||
+               providedPairs.size!==expectedPairs.size ||
+               [...providedPairs].some(key=>!expectedPairs.has(key)) ||
                data.templates.some(t=>!t || typeof t.subject!=='string' ||
                    typeof t.html!=='string' || !Number.isSafeInteger(t.revision)))
                 throw Object.assign(new Error('Invalid email template API response'),{code:'functions/internal'});
