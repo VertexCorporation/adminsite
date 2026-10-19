@@ -34,9 +34,9 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   await core.click();
   assert.equal(await page.locator('#permission-save-status').innerText(),'Unsaved changes');
   await page.waitForFunction(()=>document.querySelector('#permission-save-status')?.dataset.state==='saved');
-  assert.equal(payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments.Core.panels['contributors.*'],undefined);
-  await core.click();await page.waitForFunction(()=>document.querySelector('#permission-save-status')?.dataset.state==='saved');
   assert.equal(payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments.Core.panels['contributors.*'],'read');
+  await core.click();await page.waitForFunction(()=>document.querySelector('#permission-save-status')?.dataset.state==='saved');
+  assert.equal(payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments.Core.panels['contributors.*'],'write');
   const before=await core.getAttribute('data-level');
   failPermissions(true);await core.click();
   await page.waitForFunction(()=>document.querySelector('#permission-save-status')?.dataset.state==='failed');
