@@ -84,3 +84,12 @@ test('department orientation uses only assigned departments and supports TR/EN w
   assert.match(src, /language === 'tr' \? 'tr' : 'en'/);
   assert.doesNotMatch(src, /context\.departments\.push\(/);
 });
+
+test('news upload validates media and storage response before creating an article', () => {
+  const src = read('js/modules/news.js');
+  assert.match(src, /\['image\/jpeg', 'image\/png', 'image\/webp'\]\.includes\(file\.type\)/);
+  assert.match(src, /const response = await fetch\(signedUrl/);
+  assert.match(src, /if \(!response\.ok\)/);
+  assert.match(src, /typeof signedUrl !== 'string'/);
+  assert.match(src, /return filePath;/);
+});
