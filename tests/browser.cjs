@@ -114,7 +114,7 @@ await page.route('**/*',async route=>{
   else if(name==='listdepartmentusers')result={users:[]};
   else if(name==='listadmins')result={admins:adminRoster};
   else if(name==='removeadminrole'){if(failAdmin)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});adminRoster=adminRoster.filter(a=>a.email!==route.request().postDataJSON().data.email);result={success:true};}
-  else if(name==='listusersubscriptions')result={subscriptions:[{uid:'sub-fixture',displayName:'Example Subscriber',email:'subscriber@example.invalid',tier:'pro',expiresAt:'2027-01-01T12:00:00Z'}]};
+  else if(name==='listusersubscriptions')result={subscriptions:[{uid:'sub-fixture',displayName:'Example Subscriber',email:'subscriber@example.invalid',tier:'pro',source:'admin',canRemove:true,expiresAt:'2027-01-01T12:00:00Z'}]};
   else if(name==='listsiteteam')result=route.request().postDataJSON()?.data?.manage
     ? {cards:[],honors:[]}
     : {staff:[],mods:[],chefs:[],honors:[],cards:[]};
