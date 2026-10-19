@@ -34,7 +34,7 @@ function fixture(getResponse){
         get starts(){return starts;},get paints(){return paints;}};
 }
 const valid=()=>Array.from({length:10},(_,i)=>({
-    certificateType:['merit','dirayet','metanet','azamet','asalet'][Math.floor(i/2)],
+    certificateType:['merit','tenacity','constancy','nobility','majesty'][Math.floor(i/2)],
     language:i%2?'en':'tr',subject:'Subject '+i,html:'<p>Body '+i+'</p>',revision:1,
 }));
 
@@ -71,4 +71,14 @@ test('late obsolete response cannot overwrite newer loaded templates',async()=>{
     assert.equal(fx.getState().current.subject,'Newest');
     assert.equal(fx.paints,1);
     assert.equal(fx.failures.length,0);
+});
+
+test('ten templates with duplicate certificate/language pairs are not accepted',async()=>{
+    const templates=valid();
+    templates[9]={...templates[0]};
+    const fx=fixture(async()=>({data:{templates}}));
+    await fx.load();
+    assert.equal(fx.footer.hidden,true);
+    assert.equal(fx.failures.length,1);
+    assert.match(fx.failures[0].message,/Invalid email template API response/);
 });
