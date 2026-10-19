@@ -1,0 +1,35 @@
+name: Branch reconciliation snapshot
+
+on:
+  pull_request:
+    paths: ['.github/workflows/branch-reconciliation-snapshot.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    if: github.repository_owner == 'VertexCorporation' && (github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Create credential-free history bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          git bundle create "$RUNNER_TEMP/reconciliation.bundle" --remotes=origin --tags
+          git bundle verify "$RUNNER_TEMP/reconciliation.bundle"
+          git for-each-ref --format='%(refname) %(objectname)' refs/remotes/origin/ > "$RUNNER_TEMP/heads.txt"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: reconciliation-history-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/reconciliation.bundle
+            ${{ runner.temp }}/heads.txt
+          retention-days: 3
+          if-no-files-found: error
