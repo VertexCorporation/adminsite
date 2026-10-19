@@ -54,9 +54,13 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   const policy=payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments;
   assert.deepEqual(policy.Senatus.hiddenFields['contributors.list'],['contact']);
   assert.equal(policy.Senatus.panels?.['contributors.*'] ?? null,senatusModuleBefore,'Hidden fields must not alter module permission');
-  await page.locator('[data-menu-dept=Senatus]').click();
+  const senatusPanelButton=page.locator('[data-menu-dept=Senatus]');
+  const senatusBeforeLevel=await senatusPanelButton.getAttribute('data-menu-level');
+  const nextPermissionLevel={none:'read',read:'write',write:'none'}[senatusBeforeLevel];
+  assert(nextPermissionLevel,'Panel permission must expose a supported level');
+  await senatusPanelButton.click();
   await page.waitForFunction(()=>document.querySelector('#permission-save-status')?.dataset.state==='saved');
-  assert.equal(payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments.Senatus.panels['contributors.list'],'write');
+  assert.equal(payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments.Senatus.panels['contributors.list'],nextPermissionLevel);
   await page.locator('[data-menu-reset=Senatus]').click();
   await page.waitForFunction(()=>document.querySelector('#permission-save-status')?.dataset.state==='saved');
   assert.equal(payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments.Senatus.panels['contributors.list'],undefined);
