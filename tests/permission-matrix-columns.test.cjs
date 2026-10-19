@@ -19,7 +19,9 @@ test('department permission matrix derives every module column from the live cat
 
 test('permission matrix header and body are both rendered from the same module catalogue', () => {
     const section = roles.slice(roles.indexOf('function renderMatrixTable()'), roles.indexOf('function renderMatrixTable()') + 4200);
-    assert.match(section, /TABS\.forEach\(tab => \{html \+=.*dept-perm-th/);
-    assert.match(section, /TABS\.forEach\(tab => \{[\s\S]*?class=\\"perm-cell/);
+    const loops = section.match(/TABS\\.forEach\\(tab =>/g) || [];
+    assert.equal(loops.length, 2, 'Header and rows each render all live permission modules');
+    assert.ok(section.includes('class="dept-perm-th"'));
+    assert.ok(section.includes('class="perm-cell"'));
     assert.match(css, /\.dept-perms-header,\.dept-perm-row\{display:grid;grid-template-columns:var\(--permission-columns\)/);
 });
