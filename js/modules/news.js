@@ -34,9 +34,21 @@ async function handleNewsFormSubmit(e) {
     const uploadImage = async (fileInputId, lang) => {
         const file = document.getElementById(fileInputId).files[0];
         if (!file) throw new Error(__('news.cover_required'));
+        // Validate before requesting a signed upload URL. Never publish an article
+        // pointing at an object if the actual storage PUT was rejected.
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            throw new Error(getLang() === 'tr' ? 'JPEG, PNG veya WebP görsel seçin.' : 'Choose a JPEG, PNG or WebP image.');
+        }
         const result = await getCoverUploadUrlFn({ slug: cleanSlug, fileName: `${lang}-${file.name}`, contentType: file.type });
-        await fetch(result.data.signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
-        return result.data.filePath;
+        const { signedUrl, filePath } = result?.data || {};
+        if (typeof signedUrl !== 'string' || !signedUrl || typeof filePath !== 'string' || !filePath) {
+            throw new Error(getLang() === 'tr' ? 'Görsel yükleme bağlantısı alınamadı.' : 'Could not obtain an image upload URL.');
+        }
+        const response = await fetch(signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+        if (!response.ok) {
+            throw new Error(getLang() === 'tr' ? 'Kapak görseli yüklenemedi.' : 'Cover image upload failed.');
+        }
+        return filePath;
     };
 
     try {
