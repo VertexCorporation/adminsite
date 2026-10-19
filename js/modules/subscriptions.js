@@ -97,7 +97,7 @@ function renderSubscriptions() {
                 </div>
                 <span class="sub-dates">${sub.source === 'vertex' ? (getLang()==='tr'?'Vertex sponsorluğu · Üyelik sürdükçe':'Vertex sponsorship · While membership is active') : `${__('subs.end_label_short')}: ${formatDate(sub.expiresAt)}`}</span>
             </div>
-            ${getEffectivePanelLevel('subscriptions.list') === 'write' && sub.source !== 'vertex' ? `<button type="button" class="dept-user-edit cancel-task-btn" data-uid="${sanitizeHTML(sub.uid)}">${__('subs.remove_btn')}</button>` : ''}
+            ${getEffectivePanelLevel('subscriptions.list') === 'write' && sub.canRemove === true ? `<button type="button" class="dept-user-edit cancel-task-btn" data-uid="${sanitizeHTML(sub.uid)}">${__('subs.remove_btn')}</button>` : ''}
         </div>`;
     }).join('');
     crossfade(container, () => { container.innerHTML = html; });
@@ -115,7 +115,8 @@ async function loadSubscriptions() {
             email: String(sub.email || ''),
             displayName: String(sub.displayName || ''),
             tier: String(sub.tier || ''),
-            source: String(sub.source || ''),
+            source: String(sub.source || 'unknown'),
+            canRemove: sub.canRemove === true,
             expiresAt: sub.expiresAt || null
         })).filter(sub => sub.uid);
         subscriptions.sort((a, b) => new Date(b.expiresAt || 0) - new Date(a.expiresAt || 0));
@@ -166,7 +167,22 @@ async function handleAssignSubmit(e) {
 }
 
 async function handleRemoveSubscription(uid, button) {
-    if (!await confirmDialog(()=>({title:__('common.confirm'),body:__('subs.remove_confirm')}))) return;
+    // Server-derived capability only. Never infer revocability from a plan's name.
+    const entry = subscriptions.find(sub => sub.uid === uid);
+    if (!entry || entry.canRemove !== true) {
+        showToast(()=>__('errors.permission'),'error');
+        return;
+    }
+    if (!await confirmDialog(()=>({
+        title:__('common.confirm'),
+        body:__('subs.remove_confirm'),
+        danger:true,
+        rows:[
+            {label:getLang()==='tr'?'Kişi':'User',value:entry.displayName||entry.email||entry.uid},
+            {label:getLang()==='tr'?'Kaynak':'Source',value:entry.source},
+            {label:getLang()==='tr'?'Plan':'Plan',value:__(getPlan(entry.tier).labelKey)}
+        ]
+    }))) return;
     setButtonLoading(button,true);
     try {
         const result = await removeUserSubscriptionFn({ uid });
