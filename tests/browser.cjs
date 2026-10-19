@@ -32,7 +32,6 @@ await page.addInitScript(()=>{
      // server identity scenario, not a permanently privileged Core account.
      const account=window.__testClaims || {admin:true};
      const isCore=account.admin===true;
-     return {data:{uid:'admin',isAdmin:true,departments:[],authzVersion:0}};
      return {data:{uid:'admin',departments:isCore?['Core']:(account.departments||[]),
        isAdmin:isCore,isCore,authzVersion:0}};
    }
