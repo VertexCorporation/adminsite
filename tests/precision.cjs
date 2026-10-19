@@ -44,12 +44,16 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   failPermissions(false);
   note('Permission grid alignment, readable levels, acknowledged save and failed draft rollback');
   await page.locator('[data-permission-panel="contributors.list"]').click();
+  const senatusModuleBefore = await page.evaluate(async () => {
+    const roles = await import('/js/modules/roles.js');
+    return roles.getDepartmentPermissions().Senatus?.panels?.['contributors.*'] ?? null;
+  });
   const hidden=page.locator('input[data-cfg=hiddenFields][data-tag=contact]');
   await hidden.check();
   await page.waitForFunction(()=>document.querySelector('#permission-save-status')?.dataset.state==='saved');
   const policy=payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments;
   assert.deepEqual(policy.Senatus.hiddenFields['contributors.list'],['contact']);
-  assert.equal(policy.Senatus.panels['contributors.*'],'read');
+  assert.equal(policy.Senatus.panels?.['contributors.*'] ?? null,senatusModuleBefore,'Hidden fields must not alter module permission');
   await page.locator('[data-menu-dept=Senatus]').click();
   await page.waitForFunction(()=>document.querySelector('#permission-save-status')?.dataset.state==='saved');
   assert.equal(payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments.Senatus.panels['contributors.list'],'write');
