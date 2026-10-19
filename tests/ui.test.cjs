@@ -249,3 +249,14 @@ test('applicant filters use incoming-only animation and fixed hydration viewport
  assert.match(css,/overflow-anchor: none/);
  assert.match(read('tests/browser.cjs'),/Stable applicant viewport through delayed first hydration/);
 });
+
+test('quick navigation palette uses only currently authorized sidebar actions', () => {
+ const shell=read('js/modules/shell.js');
+ assert.match(shell,/function initCommandPalette\(\)/);
+ assert.match(shell,/event\.key\.toLowerCase\(\) !== 'k'/);
+ assert.match(shell,/hasOpenSurface\(\)/);
+ assert.match(shell,/\.nav-module \.dock-btn, \.nav-module \[data-nav-panel\]/);
+ assert.match(shell,/getEffectivePanelLevel\(key\) !== 'none'/);
+ assert.match(shell,/closeModal\(\)/);
+ assert.match(shell,/initCommandPalette\(\)/);
+});
