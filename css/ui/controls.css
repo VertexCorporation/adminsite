@@ -192,8 +192,8 @@
 .chip-checkbox input { position: absolute; opacity: 0; pointer-events: none; }
 .chip-checkbox.disabled { opacity: 0.5; pointer-events: none; }
 
-// Destructive account deletion needs an unmistakable, visible consent box.
-// Chip checkboxes intentionally hide their native input; do not use that style here.
+/* Destructive account deletion needs an unmistakable, visible consent box.
+   Chip checkboxes intentionally hide their native input; do not use that style here. */
 .account-deletion-consent {
     display: flex;
     align-items: flex-start;

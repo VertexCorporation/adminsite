@@ -71,8 +71,9 @@
 .vx-loader-mark {position:relative;width:94px;height:94px}
 .vx-loader-logo {position:absolute;inset:4.5px;width:85px;height:85px;object-fit:contain;pointer-events:none;user-select:none;filter:brightness(0) invert(1)}
 .vx-loader-base {opacity:.48}
-.vx-loader-sweep {animation:vertex-soft-sweep 2100ms linear infinite;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 45%,#000 55%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,#000 45%,#000 55%,transparent 100%);-webkit-mask-size:260% 100%;mask-size:260% 100%}
-@keyframes vertex-soft-sweep {0%{-webkit-mask-position:120% 0;mask-position:120% 0;opacity:0}10%{opacity:1}66%{-webkit-mask-position:-20% 0;mask-position:-20% 0;opacity:1}100%{-webkit-mask-position:-20% 0;mask-position:-20% 0;opacity:0}}
+/* The same soft travelling highlight as pending controls, without an idle tail. */
+.vx-loader-sweep {animation:vertex-soft-sweep 1400ms ease-in-out infinite;-webkit-mask-image:linear-gradient(110deg,transparent 30%,#0009 43%,#000 50%,#0009 57%,transparent 70%);mask-image:linear-gradient(110deg,transparent 30%,#0009 43%,#000 50%,#0009 57%,transparent 70%);-webkit-mask-size:250% 100%;mask-size:250% 100%}
+@keyframes vertex-soft-sweep {from{-webkit-mask-position:150% 0;mask-position:150% 0}to{-webkit-mask-position:-50% 0;mask-position:-50% 0}}
 .vx-app-loader.is-leaving,.vx-app-loader.hidden {opacity:0;pointer-events:none}
 .vertex-brand-logo {object-fit:contain;filter:brightness(0) invert(1);flex-shrink:0}
 [data-theme="light"] .vx-loader-logo,[data-theme="light"] .vertex-brand-logo {filter:brightness(0)}

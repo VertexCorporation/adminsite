@@ -254,7 +254,7 @@ for(const width of [360,390,768,1024,1440,1920]){
  await page.setViewportSize({width,height:900});
  for(const theme of ['light','dark']){console.log('VIEW',width,theme);
   await page.evaluate(async mode=>(await import('/js/modules/shell.js')).applyTheme(mode),theme);
-  await page.waitForTimeout(350);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),theme==='light'?'rgb(248, 249, 250)':'rgb(15, 15, 16)');
+  await page.waitForFunction(expected=>getComputedStyle(document.body).backgroundColor===expected,theme==='light'?'rgb(248, 249, 250)':'rgb(15, 15, 16)');
   for(const id of ['contributors','models','news','notifications','subscriptions','chat','system','profile']){
    await selectTab(id);
    assert(await page.locator('#tab-'+id).isVisible(),id);
@@ -293,16 +293,15 @@ await page.evaluate(fixtures=>{
 },people);
 await waitCrossfade();
 const listTopBefore=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().top);
-await page.evaluate(()=>window.filterContributors('verified'));
-const listTopAfter=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().top);
-assert(Math.abs(listTopAfter-listTopBefore)<1,'Filter moved its list header vertically');
 const filterTransition=await page.evaluate(()=>{
+ window.filterContributors('verified');
  const host=document.getElementById('contributors-list-container');
- return {ghost:!!host.querySelector('.ui-crossfade-ghost'),
+ return {top:host.getBoundingClientRect().top,ghost:!!host.querySelector('.ui-crossfade-ghost'),
   newRows:host.querySelector(':scope > .contributor-table-rows')?.children.length,
   animating:!!host.querySelector(':scope > .contributor-table-rows')?.getAnimations().length,
   height:host.getBoundingClientRect().height};
 });
+assert(Math.abs(filterTransition.top-listTopBefore)<1,'Filter moved its list header vertically');
 assert.equal(filterTransition.ghost,false,JSON.stringify(filterTransition));
 assert.equal(filterTransition.newRows,43);
 assert.equal(filterTransition.animating,true);
