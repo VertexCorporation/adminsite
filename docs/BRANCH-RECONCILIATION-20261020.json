@@ -2,7 +2,7 @@
   "version": 1,
   "date": "2026-10-20",
   "notes": [
-    "Every removed original head is retained at refs/tags/reconciled/20261020/<original-branch>. Main is never deleted.",
+    "Every removed original head remains reachable through reconciled/20261020 archive tags. Where GitHub disallows tagging an old workflow tree, a single current-tree archive commit preserves every original head as an ancestor. Main is never deleted.",
     "Superseded implementations are not byte-for-byte merges; current replacements, selected features and exclusions are explicit.",
     "Production deployment, active-member Plus/department apply, certificates, legacy data and IAM cleanup are separate operations."
   ],
