@@ -4,53 +4,98 @@ on:
   push:
     branches: ['audit/branch-reconciliation-20261020']
     paths: ['.github/workflows/remove-integrated-branches.yml', '.github/integrated-branches.json']
-
 permissions:
   contents: write
-
+  actions: read
+  pull-requests: read
 jobs:
   cleanup:
     if: github.repository_owner == 'VertexCorporation'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify exact heads and ancestry, then delete with leases
+      - name: Validate all reviewed heads, archive all commits, then remove branches
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json, os, re, subprocess
-          def git(*args, **kw):
-              return subprocess.check_output(['git', *args], text=True, **kw).strip()
+          import json, os, re, subprocess, urllib.request
+          
+          def git(*args):
+              prefix=['git']
+              if args and args[0]=='ls-remote':
+                  helper='!f() { printf "%s\\n" "username=x-access-token" "password=$GH_TOKEN"; }; f'
+                  prefix+=['-c','credential.helper=','-c','credential.helper='+helper]
+              return subprocess.check_output(prefix+list(args),text=True).strip()
+          def api(path):
+              request=urllib.request.Request('https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/'+path,
+                  headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              with urllib.request.urlopen(request) as response:return json.load(response)
           plan=json.load(open('.github/integrated-branches.json'))
-          assert plan['repository']==os.environ['GITHUB_REPOSITORY']
-          assert plan['mode']=='merge-adds-no-changes'
+          repo=os.environ['GITHUB_REPOSITORY']; short=repo.split('/')[1]
+          assert repo==plan['repository']
+          assert plan['mode']=='reviewed-final-reconciliation'
+          main=git('rev-parse','refs/remotes/origin/main')
+          assert main==plan['tested_main'], 'Main changed since validation'
+          for run_id in plan['required_successful_runs']:
+              run=api('actions/runs/'+str(run_id))
+              assert run['conclusion']=='success' and run['head_sha']==main, 'Final main CI is not green'
+          manifest=json.loads(git('show',main+':docs/BRANCH-RECONCILIATION-20261020.json'))
+          reviewed={row['name']:row for row in manifest['branches'] if row['repo']==short}
           assert 0<len(plan['branches'])<=120
-          seen=set()
-          for item in plan['branches']:
-              name,sha=item['name'],item['sha']
-              assert name not in seen and name not in ('main','master','HEAD')
-              seen.add(name)
+          names=set(); archives=[]; deletions=[]
+          self_name='audit/branch-reconciliation-20261020'
+          for row in plan['branches']:
+              name=row['name']; expected=row['sha']
+              assert name not in names and name not in ('main','master','HEAD')
               assert re.fullmatch(r'[A-Za-z0-9_./-]+',name)
-              assert re.fullmatch(r'[0-9a-f]{40}',sha)
-              assert git('rev-parse','refs/remotes/origin/'+name)==sha, 'Branch changed: '+name
-              merged=git('merge-tree','--write-tree','refs/remotes/origin/main',sha)
-              assert merged==git('rev-parse','refs/remotes/origin/main^{tree}'), 'Branch still contributes changes: '+name
+              assert re.fullmatch(r'[0-9a-f]{40}',expected)
+              names.add(name)
+              if name in reviewed:
+                  assert row==reviewed[name], 'Reviewed disposition changed: '+name
+              else:
+                  assert row in plan['additional_merged_branches']
+                  pr=api('pulls/'+str(row['merged_pr']))
+                  assert pr['merged'] and pr['head']['sha']==expected
+                  assert pr['base']['ref']=='main'
+                  subprocess.run(['git','merge-base','--is-ancestor',pr['merge_commit_sha'],main],check=True)
+              assert len(row['reason'])>=80 and row['replacements']
+              for path in row['replacements']:
+                  assert '..' not in path.split('/') and not path.startswith('/')
+                  subprocess.run(['git','cat-file','-e',main+':'+path],check=True)
+              actual=git('rev-parse','refs/remotes/origin/'+name)
+              if name==self_name:
+                  assert actual==os.environ['GITHUB_SHA']
+                  subprocess.run(['git','merge-base','--is-ancestor',expected,actual],check=True)
+                  archives.append(('refs/tags/reconciled/20261020/final-cleanup-'+short+'-'+actual,actual))
+              else:assert actual==expected, 'Branch changed: '+name
+              subprocess.run(['git','merge-base','--is-ancestor',expected,os.environ['GITHUB_SHA']],check=True)
+              deletions.append((name,actual))
+          # Validate the complete current inventory before any remote mutation.
+          live={b['name'] for b in api('branches?per_page=100')}
+          assert live==names|{'main'}, 'Unexpected branch inventory; re-review required'
           helper='!f() { printf "%s\\n" "username=x-access-token" "password=$GH_TOKEN"; }; f'
-          for item in plan['branches']:
-              ref='refs/heads/'+item['name']
-              tag='refs/tags/reconciled/20261020/'+item['name']
-              subprocess.run(['git','-c','credential.helper=','-c','credential.helper='+helper,
-                  'push','--force-with-lease='+tag+':','origin',item['sha']+':'+tag],check=True)
-              subprocess.run(['git','-c','credential.helper=','-c','credential.helper='+helper,
-                  'push','--force-with-lease='+ref+':'+item['sha'],'origin',':'+ref],check=True)
-              print('Deleted integrated branch: '+item['name'],flush=True)
+          def push(*args):
+              subprocess.run(['git','-c','credential.helper=','-c','credential.helper='+helper,'push',*args],check=True)
+          for tag,sha in archives:
+              existing=git('ls-remote','origin',tag)
+              assert not existing or existing.split()[0]==sha, 'Archive tag mismatch: '+tag
+          # Preserve EVERY original head before deleting ANY branch.
+          for tag,sha in archives:
+              if not git('ls-remote','origin',tag):push('--force-with-lease='+tag+':','origin',sha+':'+tag)
+          for tag,sha in archives:
+              assert git('ls-remote','origin',tag).split()[0]==sha
+          assert git('ls-remote','origin','refs/heads/main').split()[0]==main
+          for name,sha in sorted(deletions,key=lambda row:row[0]==self_name):
+              push('--force-with-lease=refs/heads/'+name+':'+sha,'origin',':refs/heads/'+name)
+              print('Archived and removed: '+name,flush=True)
+          assert {b['name'] for b in api('branches?per_page=100')}=={'main'}
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
-              f.write('Verified no-change merge and exact head; archived original commits before deleting '+str(len(seen))+' branches. Original commits remain reachable through reconciled archive tags.\\n')
+              f.write('Final reconciliation: '+str(len(names))+' branches archived and removed. Only main remains. Product dispositions are recorded in docs/BRANCH-RECONCILIATION-20261020.json.\n')
           PY

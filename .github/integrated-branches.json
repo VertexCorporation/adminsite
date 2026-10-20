@@ -1,18 +1,365 @@
 {
   "repository": "VertexCorporation/adminsite",
-  "mode": "merge-adds-no-changes",
+  "mode": "reviewed-final-reconciliation",
+  "tested_main": "69d39430d4eb0b680b3022abb3270bad0552f55a",
+  "required_successful_runs": [
+    39398296788,
+    39398296640
+  ],
   "branches": [
     {
-      "name": "fix/console-navigation-recovery-clean",
-      "sha": "fb4d7ba8ac82b052de057acfe84c94956ee1b330"
+      "repo": "adminsite",
+      "name": "audit/branch-reconciliation-20261020",
+      "sha": "03936f0f6486faab83e4a9bdbb47b183d7db7fac",
+      "disposition": "temporary-audit-archive",
+      "reason": "Temporary history/cleanup workflows are operational scaffolding, not product features. Preserve their final commit and reports, close the audit PR and remove the branch after all cleanup completes.",
+      "replacements": [
+        "docs/BRANCH-RECONCILIATION-20261020.json"
+      ]
     },
     {
-      "name": "fix/live-event-preview-20261018",
-      "sha": "e43227fdd001f350e0ffa7b86b43ccd838609705"
+      "repo": "adminsite",
+      "name": "events-management-deploy",
+      "sha": "a25134ec290015b682f435218e22f5f8c18fecf0",
+      "disposition": "superseded-implementation",
+      "reason": "Current event editor preserves timezone conversion, typed fields, safe image upload and origin-checked real eventsite draft preview. Final reconciliation preserves bounded registration paging with no silent 500-record truncation.",
+      "replacements": [
+        "js/modules/events.js",
+        "js/modules/eventTime.js",
+        "js/modules/eventFields.js",
+        "tests/event-time.test.cjs"
+      ]
     },
     {
-      "name": "fix/realtime-console-chat-20261018",
-      "sha": "82c660d166d1467d7790aa1b5a47d07dc86a507f"
+      "repo": "adminsite",
+      "name": "feat/console-reconciliation-20261020",
+      "sha": "8484e31d37b3ab2ef6013ec19e36e7b7f3b134ec",
+      "disposition": "merged",
+      "reason": "PR 34 is merged and immutable release 9daa06182021 was observed on the live Console. Optional server-dependent capabilities remain coordinated with verified deployment.",
+      "replacements": [
+        "js/main.js",
+        "js/core/deployment-capabilities.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-contracts-20261018",
+      "sha": "6b9201cc5ddf84a0153b55851966ff87b22ff490",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-core-team-stars-11-20",
+      "sha": "668e20db971a0ddcd91cb24ce48892bd33af36c6",
+      "disposition": "superseded-implementation",
+      "reason": "Current team card/profile editors and weekly-star picker retain discovery, current authenticated Core access, Istanbul ISO weeks, keyboard selection and exact public DTO envelopes.",
+      "replacements": [
+        "js/modules/teamCards.js",
+        "js/utils/isoWeek.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-department-only-finalization",
+      "sha": "54d42f8fed703bd8dfa9b12244af49a922f4f1d5",
+      "disposition": "superseded-implementation",
+      "reason": "Current department-only Console includes the reviewed cleanup and newer canonical server response handling; older generated releases and admin panels are superseded.",
+      "replacements": [
+        "js/modules/admin.js",
+        "js/utils/console-access.js",
+        "js/core/firebase.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-finalize-weekly-stars-core-20261018",
+      "sha": "948ea1a60b6f5b4972a55957fbd699b453a6e1cf",
+      "disposition": "superseded-implementation",
+      "reason": "Current team card/profile editors and weekly-star picker retain discovery, current authenticated Core access, Istanbul ISO weeks, keyboard selection and exact public DTO envelopes.",
+      "replacements": [
+        "js/modules/teamCards.js",
+        "js/utils/isoWeek.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-first-ten-20261017",
+      "sha": "b9c3ec0da2fc9827a68a10f727ea8c1644ae4164",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-grid-iso-contributors-ci-20261017",
+      "sha": "76a2f17f3e519d5f6cb764a944058b94bd88086e",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-hardening-41-50-20261018",
+      "sha": "9af66a01274626b8fb211771981a206a86886773",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-hardening-41-50-integrated-20261018",
+      "sha": "671c2ac7bdbe1fc796215deabb85f6289b74007e",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-navigation-recovery-oct18",
+      "sha": "1c34f8384fe4ad4dc2a87fd4226d29bee3a5b2ad",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-operations-20261017",
+      "sha": "89bf426b3e927d037d0fd38b361e52a1dda3ea0c",
+      "disposition": "selectively-reconciled",
+      "reason": "Current news edit/history, private chat read positions, queue status and subscription preview retain the selected features. Final reconciliation adds bounded registration search/pagination/CSV. Receipt tracking and obsolete admin panels are intentionally excluded.",
+      "replacements": [
+        "js/modules/news.js",
+        "js/modules/notification.js",
+        "js/modules/consoleChat.js",
+        "js/modules/subscriptions.js",
+        "js/modules/events.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-stars-picker-cleanmerge-20261018",
+      "sha": "48cf013e3da606c0061ac584af2f4c765262b75f",
+      "disposition": "superseded-implementation",
+      "reason": "Current team card/profile editors and weekly-star picker retain discovery, current authenticated Core access, Istanbul ISO weeks, keyboard selection and exact public DTO envelopes.",
+      "replacements": [
+        "js/modules/teamCards.js",
+        "js/utils/isoWeek.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-team-stars-core-integration",
+      "sha": "083f8feeb06519918a53bcd19c6a32277d4390a4",
+      "disposition": "superseded-implementation",
+      "reason": "Current team card/profile editors and weekly-star picker retain discovery, current authenticated Core access, Istanbul ISO weeks, keyboard selection and exact public DTO envelopes.",
+      "replacements": [
+        "js/modules/teamCards.js",
+        "js/utils/isoWeek.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-ui-unification-51-75",
+      "sha": "aa7eb42eb26be5853eba8257f5938fe7c022773c",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-unified-motion-56-60",
+      "sha": "64f9d89c6228ad145cafaf532c1cca8fe1a82168",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-weekly-stars-core-converged-20261018",
+      "sha": "ed5bc345edc80ba3b70c0a0a4d19295b3f4f6801",
+      "disposition": "superseded-implementation",
+      "reason": "Current team card/profile editors and weekly-star picker retain discovery, current authenticated Core access, Istanbul ISO weeks, keyboard selection and exact public DTO envelopes.",
+      "replacements": [
+        "js/modules/teamCards.js",
+        "js/utils/isoWeek.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/contributor-filter-fade-51-75-audit",
+      "sha": "356e60489c186cfe18d84568b445e3b23b621ece",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/first-ten-hardening-20261017-v2",
+      "sha": "fa03f5369a39322ab4cb7b698a7e83d96e2e123a",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/first-ten-navigation-and-contributors-20261017",
+      "sha": "30adcd45eea9eebb7ae9de0cd09c8c3f378d9ded",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/notification-reliability-20261018",
+      "sha": "068b6a24502bd9f698330377c94a70eb2005dfec",
+      "disposition": "selectively-reconciled",
+      "reason": "Current news edit/history, private chat read positions, queue status and subscription preview retain the selected features. Final reconciliation adds bounded registration search/pagination/CSV. Receipt tracking and obsolete admin panels are intentionally excluded.",
+      "replacements": [
+        "js/modules/news.js",
+        "js/modules/notification.js",
+        "js/modules/consoleChat.js",
+        "js/modules/subscriptions.js",
+        "js/modules/events.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/reliable-console-loading-20261018",
+      "sha": "dc186ff3c33ba07885683edc40ccf4aa1564ef74",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/sidebar-titlecase-tr-en-20261018",
+      "sha": "ca96741014bc2bbb555a79bfcb21f1c54411843b",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/final-registration-reconciliation-20261020",
+      "sha": "5fad38916ab7a6d34984886d255f00e657939ab1",
+      "disposition": "merged",
+      "merged_pr": 35,
+      "reason": "Registration continuation, search, safe CSV export, session guards and immutable release 72c338bd4890 merged through PR 35 after both complete UI CI runs passed.",
+      "replacements": [
+        "js/modules/events.js",
+        "js/utils/event-registration-values.js",
+        "tests/browser.cjs",
+        "docs/BRANCH-RECONCILIATION-20261020.json"
+      ]
+    }
+  ],
+  "additional_merged_branches": [
+    {
+      "repo": "adminsite",
+      "name": "fix/final-registration-reconciliation-20261020",
+      "sha": "5fad38916ab7a6d34984886d255f00e657939ab1",
+      "disposition": "merged",
+      "merged_pr": 35,
+      "reason": "Registration continuation, search, safe CSV export, session guards and immutable release 72c338bd4890 merged through PR 35 after both complete UI CI runs passed.",
+      "replacements": [
+        "js/modules/events.js",
+        "js/utils/event-registration-values.js",
+        "tests/browser.cjs",
+        "docs/BRANCH-RECONCILIATION-20261020.json"
+      ]
     }
   ]
 }
