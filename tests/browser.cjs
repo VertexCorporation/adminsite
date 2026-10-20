@@ -22,7 +22,11 @@ await page.addInitScript(()=>{
  const configSnapshot=()=>({exists:true,data:()=>policy});
  const configDoc={get:async()=>configSnapshot(),onSnapshot:fn=>{setTimeout(()=>fn(configSnapshot()),0);return ()=>{};}};
  const chain={orderBy:()=>chain,where:()=>chain,limit:()=>chain,doc:()=>chain,get:async()=>snapshot,onSnapshot:fn=>{setTimeout(()=>fn(snapshot),0);return ()=>{};}};
- const collection=name=>name==='config'?{...chain,doc:id=>id==='departmentPermissions'?configDoc:chain}:chain;
+ const article={translations:{en:{title:'Saved Fixture',summary:'Summary',content:'Content'},tr:{title:'Kayıtlı Haber',summary:'Özet',content:'İçerik'}},cover:{en:'news/covers/fixture/en.png',tr:'news/covers/fixture/tr.png'},tags:[],references:[],revision:0};
+ const doc={id:'fixture-article',data:()=>article};
+ const newsSnapshot={empty:false,docs:[doc],forEach:fn=>fn(doc)};
+ const newsChain={...chain};newsChain.orderBy=()=>newsChain;newsChain.onSnapshot=fn=>{setTimeout(()=>fn(newsSnapshot),0);return()=>{};};
+ const collection=name=>name==='news'?newsChain:name==='config'?{...chain,doc:id=>id==='departmentPermissions'?configDoc:chain}:chain;
  const user={uid:'admin',email:'admin@example.invalid',displayName:'Local Admin',getIdTokenResult:async()=>({claims:window.__testClaims || {admin:true}}),getIdToken:async()=>'test-only',updateProfile:async()=>{}};
  const listeners=[];const auth={currentUser:user,onAuthStateChanged:fn=>{listeners.push(fn);setTimeout(()=>fn(user),10);return ()=>{};},signOut:async()=>{auth.currentUser=null;listeners.forEach(fn=>fn(null));},signInWithEmailAndPassword:async()=>{if(window.__testAuthError)throw Object.assign(new Error('Private authentication detail'),{code:window.__testAuthError});auth.currentUser=user;listeners.forEach(fn=>fn(user));}};
  window.firebase={apps:[],initializeApp:()=>{},auth:()=>auth,firestore:()=>({collection}),storage:()=>({}),functions:()=>({}),appCheck:()=>({activate:()=>{},getToken:async()=>({token:'fixture-app-check'})}),app:()=>({functions:()=>({httpsCallable:(name)=>async data=>{
@@ -32,11 +36,6 @@ await page.addInitScript(()=>{
      // server identity scenario, not a permanently privileged Core account.
      const account=window.__testClaims || {admin:true};
      const isCore=account.admin===true;
-     // Exercise the real legacy wire contract as well as the modern Core
-     // contract: older deployed callables sent a verified isAdmin boolean
-     // without including the newer Core department alias.
-     if (isCore && !window.__testModernCoreAccess)
-       return {data:{uid:'admin',isAdmin:true,departments:[],authzVersion:0}};
      return {data:{uid:'admin',departments:isCore?['Core']:(account.departments||[]),
        isAdmin:isCore,isCore,authzVersion:0}};
    }
@@ -57,6 +56,7 @@ await page.route('**/*',async route=>{
  const url=new URL(route.request().url());
  if(url.hostname.endsWith('cloudfunctions.net')) return route.fulfill({contentType:'application/json',body:JSON.stringify(verificationValid ? {valid:true,name:'Example Participant',language:'en',certificateType:'tenacity',formattedDate:'01/01/2026'} : {valid:false})});
  if(url.hostname==='127.0.0.1'){
+  if(url.pathname.endsWith('/js/core/deployment-capabilities.js'))return route.fulfill({contentType:'text/javascript',body:fs.readFileSync(path.join(root,'js/core/deployment-capabilities.js'),'utf8').replace(/(newsRevisions|notificationStatus|chatReadPositions|bulkSubscriptionPreview): false/g,'$1: true')});
   if(url.pathname.startsWith('/verify/'))return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.resolve(root,'../vertexite/verify.html'),'utf8')});
   if(url.pathname.endsWith('/js/core/initializer.js'))return route.fulfill({contentType:'text/javascript',body:"import {startApp} from '../main.js'; startApp({apiKey:'test'});"});
   return route.continue();
@@ -108,8 +108,9 @@ await page.route('**/*',async route=>{
   else if(name==='setvertexcontributorjoiningdate'){joiningDate=route.request().postDataJSON().data.joinedAt;result={success:true};}
   else if(name==='issuevertexcertificate'){history=[{id:'person--tenacity',certificateType:'tenacity',status:'processing',attempts:[]}];result={id:'person',status:'processing'};}
   else if(name==='revokevertexcertificate'){history=history.map(j=>({...j,status:'revoked'}));result={success:true};}
-  else if(name==='listconsolechatchannels')result={isAdmin:true,channels:[{id:'general',name:'General',canPost:true,canManage:true}]};
-  else if(name==='listconsolechatmessages')result={messages:[{id:'m1',authorUid:'admin',authorName:'Local Admin',authorEmail:'admin@example.invalid',text:'Fixture message',createdAt:'2026-10-11T00:00:00Z'}]};
+  else if(name==='listconsolechatchannels')result={isAdmin:true,channels:[{id:'general',name:'General',canPost:true,canManage:true,lastMessageSeq:2,lastReadSequence:0,unreadCount:2}]};
+  else if(name==='listconsolechatmessages')result={messages:[{id:'m1',authorUid:'admin',authorName:'Local Admin',authorEmail:'admin@example.invalid',text:'Fixture message',sequence:2,createdAt:'2026-10-11T00:00:00Z'}]};
+  else if(name==='previewbulkusersubscriptions')result={replaceable:1,protected:2,missing:1,unavailable:0,invalidTokens:[]};
   else if(name==='bulksetusersubscriptions')result={grantedCount:1,failedCount:1,failed:[{email:'missing@example.invalid',error:'User not found'}],invalidTokens:[]};
   else if(name==='listdepartmentusers')result={users:[]};
   else if(name==='listadmins')result={admins:adminRoster};
@@ -118,6 +119,10 @@ await page.route('**/*',async route=>{
   else if(name==='listsiteteam')result=route.request().postDataJSON()?.data?.manage
     ? {cards:[],honors:[]}
     : {staff:[],mods:[],chefs:[],honors:[],cards:[]};
+  else if(name==='markconsolechatread')result={sequence:2};
+  else if(name==='schedulenotification')result={success:true,queued:true,kind:'SCHEDULED'};
+  else if(name==='getnotificationdeliverystatus')result={status:'SCHEDULED',kind:'SCHEDULED',successCount:0,failureCount:0};
+  else if(name==='listnewsrevisions')result={revisions:[{id:'fixtureHistory',revision:0,at:Date.now(),title:'Previous Fixture'}]};
   else if(name==='getweeklystars')result={current:null,history:[]};
   else if(name==='getcoveruploadurl')result={signedUrl:'https://upload.example.invalid/cover',filePath:'test-cover.png'};
   return route.fulfill({contentType:'application/json',body:JSON.stringify({result})});
@@ -210,6 +215,7 @@ const selectTab=async id=>{if(await page.evaluate(()=>innerWidth<1024)){const do
  await page.waitForSelector('#chat-channel-list .chat-channel-item');
  assert(calls.filter(name=>name==='listconsolechatchannels').length-chatBefore>=2);
  note('Chat channels recover automatically from a transient read failure');
+ await page.waitForTimeout(150);const readPosition=payloads.find(p=>p.name==='markconsolechatread');assert(readPosition);assert.deepEqual(readPosition.data,{channelId:'general',sequence:2});note('Personal read positions contain no client-selected user identity');
  await selectTab('contributors');
 }
 if(!process.env.VERTEX_POLISH_ONLY&&!process.env.VERTEX_COMPLETE_ONLY&&!process.env.VERTEX_STABILIZATION_ONLY){
@@ -344,10 +350,40 @@ note('Eventsite draft iframe uses origin-checked postMessage without publication
 await selectTab('models');await page.locator('[data-model-create]').click();await page.locator('#model-id').fill('fixture-model');assert.equal(await page.locator('#model-id').inputValue(),'fixture-model');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Model editor drawer remains editable');
 await page.locator('#manual-models-list-container .model-actions-trigger').click();await page.locator('.model-menu .menu-item').filter({hasText:'Translations'}).click();await page.waitForSelector('#translation-modal-overlay');assert(await page.locator('#translation-modal-overlay input').count()>0);await page.keyboard.press('Escape');await page.waitForSelector('.vx-modal',{state:'detached'});await page.locator('[data-model-publish]').click();await page.waitForSelector('.confirm-ok');await page.locator('.confirm-cancel').click();assert(!calls.includes('updatemodelslist'));await page.locator('[data-model-publish]').click();await page.waitForSelector('.confirm-ok');await page.locator('.confirm-ok').click();await page.waitForTimeout(150);assert(calls.includes('updatemodelslist'));note('Catalog actions, translation focus surface and explicit publish confirmation (mock)');
 for(const width of [360,1440]){await page.setViewportSize({width,height:900});for(const id of ['models','news','notifications','subscriptions','chat','system']){await selectTab(id);await page.waitForTimeout(300);if(process.env.VERTEX_SCREENSHOTS){fs.mkdirSync(path.resolve(root,process.env.VERTEX_SCREENSHOTS),{recursive:true});await page.screenshot({path:path.resolve(root,process.env.VERTEX_SCREENSHOTS,`vertex-${id}-${width}.png`),fullPage:true});}}}await selectTab('news');for(const id of ['title-en','title-tr','summary-en','summary-tr','content-en','content-tr'])await page.locator('#'+id).fill('Fixture Article');for(const lang of ['en','tr'])await page.locator('#cover-image-'+lang).setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from('fixture')});await page.locator('#news-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert(calls.includes('createnewsarticle'));note('News image upload and publish payload remain functional (mock)');
+await page.locator('[data-nav-panel="news.published"][data-nav-action=""]').click();
+await page.waitForSelector('.news-edit-btn');await page.locator('.news-edit-btn').first().click();
+await page.waitForSelector('#news-editing-hint');
+assert.equal(await page.locator('#cover-image-en').getAttribute('required'),null);
+await page.locator('#title-en').fill('Edited Fixture');
+await page.locator('#news-form').evaluate(form=>form.requestSubmit());
+await page.waitForFunction(()=>!document.getElementById('submit-btn').disabled);
+const editPayload=payloads.find(p=>p.name==='updatenewsarticle').data;
+assert.equal(editPayload.revision,0);assert.equal(editPayload.article.cover.en,'news/covers/fixture/en.png');
+note('News edits preserve the original slug, revision and unchanged cover paths');
+
 await selectTab('notifications');await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('ALL_USERS');await page.locator('#notification-schedule-switch').check();await page.locator('#notification-schedule-time').fill('2027-01-01T12:00');await page.locator('#notification-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert(calls.includes('schedulenotification'));note('Notification template and scheduling payload (mock)');await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('SUBSCRIPTION_LEVEL');await page.locator('#notification-target-level').selectOption('3');await page.locator('#notification-schedule-switch').check();await page.locator('#notification-schedule-time').fill('2027-01-01T12:00');await page.locator('#notification-form').evaluate(f=>f.requestSubmit());await page.waitForTimeout(150);assert.deepEqual(payloads.filter(p=>p.name==='schedulenotification').at(-1).data.target,{type:'SUBSCRIPTION_TIER',tier:'ultra'});note('Notification subscription tier contract includes Ultra');failNotification=true;await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('ALL_USERS');await page.locator('#notification-form').evaluate(f=>{f.requestSubmit();f.requestSubmit();});await page.waitForTimeout(150);assert.equal(payloads.filter(p=>p.name==='sendtargetednotification').length,1);assert(await page.locator('#submit-notification-btn').isDisabled());note('Uncertain immediate delivery blocks duplicate submission and blind retry');
 await selectTab('subscriptions');await page.locator('#sub-user-email').fill('fixture@example.invalid');await page.locator('#sub-plan').selectOption('pro');await page.locator('#subscription-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert.equal(payloads.find(p=>p.name==='setusersubscription').data.tier,'pro');note('Subscription Pro assignment contract (mock)');
+await page.locator('#sub-bulk-toggle').click();
+await page.locator('#sub-bulk-input').fill('fixture@example.invalid');
+await page.locator('#sub-bulk-submit').click();
+await page.locator('.confirm-dialog-modal .confirm-cancel').click();
+assert(!calls.includes('bulksetusersubscriptions'));
+await page.locator('#sub-bulk-submit').click();
+await page.locator('.confirm-dialog-modal .confirm-ok').click();
+await page.waitForTimeout(150);
+assert.equal(calls.filter(n=>n==='previewbulkusersubscriptions').length,2);
+assert.equal(calls.filter(n=>n==='bulksetusersubscriptions').length,1);
+note('Bulk subscriptions preview current server data and cancellation performs no write');
+
 await selectTab('chat');await page.locator('#chat-input').fill('Mock message');await page.locator('#chat-send').click();await page.waitForTimeout(150);assert(calls.includes('postconsolechatmessage'));note('Chat channels, messages and posting (mock)');
-await selectTab('system');assert.equal(await page.locator('[data-section]').count(),7);await page.locator('[data-section=export]').dispatchEvent('click');assert(await page.locator('#data-exporter-manager').isVisible());note('7 functional System sections');
+await selectTab('system');await page.locator('[data-section=departments]').dispatchEvent('click');
+const choices=await page.locator('#dept-options .dept-choice').evaluateAll(labels=>labels.map(label=>{
+ const a=label.querySelector('input').getBoundingClientRect(),b=label.querySelector('span').getBoundingClientRect();
+ return {center:Math.abs((a.top+a.bottom-b.top-b.bottom)/2),gap:b.left-a.right,width:a.width};
+}));
+assert(choices.length>=10);assert(choices.every(c=>c.center<1.5&&c.gap>=8&&c.width===16),JSON.stringify(choices));
+note('Department checkboxes are vertically centered with horizontal label spacing');
+assert.equal(await page.locator('[data-section]').count(),6);assert.equal(await page.locator('#admin-manager,#admin-list-manager,[data-nav-action=administrators]').count(),0);assert(!calls.some(name=>['addadminrole','removeadminrole','listadmins'].includes(name)));await page.locator('[data-section=export]').dispatchEvent('click');assert(await page.locator('#data-exporter-manager').isVisible());note('6 functional System sections; legacy administrator UI and calls retired');
 await selectTab('contributors');
 }
 // Functional regressions are run without transient visual clones. Dedicated UI

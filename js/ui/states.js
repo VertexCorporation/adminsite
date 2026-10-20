@@ -46,6 +46,8 @@ export function renderUiState(container, {kind = 'empty', title = '', descriptio
 // A failed refresh must never erase known-good records.
 export function showLoadError(container, message, retry, {staleSelector = null, retryLabel = null} = {}) {
     if (!container) return;
+    const panel=container.closest('[data-panel]')?.dataset.panel;
+    if(panel)document.dispatchEvent(new CustomEvent('vertex:workspace-load-error',{detail:{panel}}));
     container.classList.remove('is-refreshing');
     container.removeAttribute('aria-busy');
     const stale = staleSelector && container.querySelector(staleSelector);

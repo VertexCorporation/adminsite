@@ -54,7 +54,8 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   assert(alignments.every(offset=>offset<1),JSON.stringify(alignments));
   assert.equal(await page.locator('.perm-preset-btn').count(),0);
   assert.equal(await page.locator('.permission-panel-selector').count(),0);
-  assert.equal(await page.locator('[data-permission-panel]').count(),25);
+  assert.equal(await page.locator('[data-permission-panel]').count(),22);
+  for(const retired of ['system.adminRole','system.adminList','system.removeAdmin'])assert.equal(await page.locator(`[data-permission-panel="${retired}"]`).count(),0);
   assert(await page.locator('.perm-cycle').first().innerText().then(text=>text.includes('Edit')));
   await capture('permissions-1440-dark');
   const core=page.locator('[data-dept=Core][data-tab=contributors]');
@@ -88,7 +89,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   await page.waitForFunction(()=>document.querySelector('#permission-save-status')?.dataset.state==='saved');
   assert.equal(Object.values(payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments.Core.panels).filter(level=>level==='write').length,7);
   note('Panel overrides, inherited reset, hidden fields and contextual bulk permission presets');
-  for(const key of ['permissions','departments','administrators','verification','server','exports_attributions']) {
+  for(const key of ['permissions','departments','verification','server','exports_attributions']) {
     await page.locator(`[data-i18n="subnav.${key}"]`).click();
     const active=key==='exports_attributions'?'export':key;
     assert.equal(await page.locator(`[data-section="${active}"]`).getAttribute('aria-pressed'),'true');

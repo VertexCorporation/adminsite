@@ -11,12 +11,10 @@ export const logoutBtn = document.getElementById('logout-btn');
 
 // Forms
 export const newsForm = document.getElementById('news-form');
-export const adminForm = document.getElementById('admin-form');
 export const modelForm = document.getElementById('model-form');
 export const notificationForm = document.getElementById('notification-form');
 
 // Admin Management & Server Status
-export const adminManagerSection = document.getElementById('admin-manager');
 export const maintenanceActionBtn = document.getElementById('maintenance-action-btn');
 export const maintenanceStatusIndicator = document.getElementById('maintenance-status-indicator');
 

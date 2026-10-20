@@ -1,33 +1,19 @@
-// Accept the two server-verified Console access response versions while
-// refusing missing, contradictory or malformed authorization information.
-// No client-side claims or cached roles are used for this decision.
+// Only a fresh server response authorizes the UI. Never manufacture Core
+// membership from an obsolete administrator flag or from an ID token.
 export function normalizeConsoleAccessResponse(payload) {
-    if (!payload || typeof payload !== 'object' || Array.isArray(payload))
+    const allowed = ['Tensor','Curia','Core','Senatus','Pulse','Chroma','Catalyst','Envoy','Aero','Array'];
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload) ||
+        !Array.isArray(payload.departments) || payload.departments.some(d => !allowed.includes(d)))
         throw new Error('Invalid console authorization response');
-    const { isAdmin, isCore, departments } = payload;
-    const hasAdmin = typeof isAdmin === 'boolean';
-    const hasCore = typeof isCore === 'boolean';
-    if ((!hasAdmin && !hasCore) ||
-        (hasAdmin && hasCore && isAdmin !== isCore) ||
-        !Array.isArray(departments) ||
-        departments.some(department => typeof department !== 'string' || !department.trim())) {
-        throw new Error('Invalid console authorization response');
+    const departments = [...new Set(payload.departments)];
+    const isCore = departments.includes('Core');
+    // isAdmin is accepted only as a transitional response spelling when it
+    // agrees with explicit Core membership. It can never add a department.
+    for (const key of ['isCore','isAdmin']) {
+        if (key in payload && (typeof payload[key] !== 'boolean' || payload[key] !== isCore))
+            throw new Error('Invalid console authorization response');
     }
-    // The callable is the server-verified source of authority. Some deployed
-    // console revisions still return the former isAdmin flag without spelling
-    // out its equivalent Core department. Normalizing only the UI identity
-    // here keeps navigation and panel gating in agreement; callable mutations
-    // continue to enforce their own current server-side Core checks.
-    const verifiedCore = hasCore ? isCore : isAdmin;
-    const grants = [...new Set(departments)];
-    if (verifiedCore && !grants.includes('Core')) grants.unshift('Core');
-    // Never grant Core from an unverified department array when the server
-    // explicitly denied Core status.
-    if (!verifiedCore && grants.includes('Core'))
+    if (typeof payload.isCore !== 'boolean' && typeof payload.isAdmin !== 'boolean')
         throw new Error('Invalid console authorization response');
-    return {
-        isAdmin: verifiedCore,
-        departments: grants,
-        authzVersion: payload.authzVersion
-    };
+    return {isCore, isAdmin:isCore, departments, authzVersion:payload.authzVersion};
 }

@@ -1,16 +1,17 @@
+let updateNewsArticleFn, listNewsRevisionsFn, restoreNewsRevisionFn, getNotificationDeliveryStatusFn, reconcileNotificationQueueFn, previewNotificationAudienceFn, markConsoleChatReadFn;
 // js/core/firebase.js
 
 // These will be populated by the initFirebase function
 let auth, db, storage, functions, appCheck;
 let sendTargetedNotificationFn, scheduleNotificationFn, listScheduledNotificationsFn;
 let cancelScheduledNotificationFn, getServerStatusFn, setServerStatusFn, blockOnlineModelFn;
-let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn, addAdminRoleFn;
+let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn;
 let getModelImageUploadUrlFn, getCoverUploadUrlFn, triggerAttributionsUpdateFn;
 let getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn;
 let verifyUserEmailFn;
 let updateContributorApplicationFn, createManualVertexContributorFn;
-let toggleVertexStatusFn, removeAdminRoleFn, listAdminsFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
-let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn;
+let toggleVertexStatusFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, saveDepartmentPermissionsFn;
+let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn, previewBulkUserSubscriptionsFn;
 let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn;
 let getPanelPermissionsFn, listDepartmentPermissionHistoryFn, restoreDepartmentPermissionsFn;
 let listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn;
@@ -34,10 +35,11 @@ const callableCache = new Map();
 const RETRYABLE_READS = new Set([
     'getVertexContributors','listConsoleChatChannels','listConsoleChatMessages',
     'listConsoleChatDirectory','getPanelPermissions','getMyConsoleAccess',
-    'listUserSubscriptions','listAdmins','listDepartmentUsers','listSiteTeam',
+    'listUserSubscriptions','listDepartmentUsers','listSiteTeam',
     'listTeamCards','getServerStatus','getVertexCertificateDetails',
     'getVertexCertificateEmailTemplates','getBackupHealthStatus',
-    'getTeamProfile','getWeeklyStars','previewContributorRoster'
+    'getTeamProfile','getWeeklyStars','previewContributorRoster',
+    'getNotificationDeliveryStatus','listNewsRevisions','previewBulkUserSubscriptions'
 ]);
 const TRANSIENT_CODES = new Set([
     'functions/unavailable','functions/deadline-exceeded',
@@ -116,18 +118,29 @@ async function callCallable(name,data) {
 }
 // httpsCallable yerine gecen sarmalayici: cagrilinca callCallable'i isletir
 // (initFirebase'de binding'e Promise degil FONKSIYON atanir).
-const callable = (name) => (data) => callCallable(name, data);
+const pendingReads=new Map();
+const callable = name => data => {
+    if(!RETRYABLE_READS.has(name))return callCallable(name,data);
+    const key=JSON.stringify([auth?.currentUser?.uid||null,name,data??{}]);
+    if(pendingReads.has(key))return pendingReads.get(key);
+    const request=callCallable(name,data).finally(()=>{
+        if(pendingReads.get(key)===request)pendingReads.delete(key);
+    });
+    pendingReads.set(key,request);return request;
+};
 
 function initFirebase(firebaseConfig) {
-    if (firebase.apps.length) return; // Prevent re-initialization
+    // Reuse an existing app while always binding this module's service handles.
 
 
 
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
     // Initialize services
     appCheck = firebase.appCheck();
     auth = firebase.auth();
+    pendingReads.clear();
+    auth.onAuthStateChanged(()=>pendingReads.clear());
     db = firebase.firestore();
     storage = firebase.storage();
     functions = firebase.app().functions(firebaseConfig.functionsRegion || 'europe-west1');
@@ -154,8 +167,15 @@ function initFirebase(firebaseConfig) {
     blockOnlineModelFn = callable('blockOnlineModel');
     updateModelsListFn = callable('updateModelsList');
     createNewsArticleFn = callable('createNewsArticle');
+    updateNewsArticleFn = callable('updateNewsArticle');
+    listNewsRevisionsFn = callable('listNewsRevisions');
+    restoreNewsRevisionFn = callable('restoreNewsRevision');
+    getNotificationDeliveryStatusFn = callable('getNotificationDeliveryStatus');
+    reconcileNotificationQueueFn = callable('reconcileNotificationQueue');
+    previewNotificationAudienceFn = callable('previewNotificationAudience');
+    markConsoleChatReadFn = callable('markConsoleChatRead');
+
     deleteNewsArticleFn = callable('deleteNewsArticle');
-    addAdminRoleFn = callable('addAdminRole');
     getModelImageUploadUrlFn = callable('getModelImageUploadUrl');
     getCoverUploadUrlFn = callable('getCoverUploadUrl');
     triggerAttributionsUpdateFn = callable('triggerAttributionsUpdate');
@@ -166,8 +186,6 @@ function initFirebase(firebaseConfig) {
     updateContributorApplicationFn = callable('updateContributorApplication');
     createManualVertexContributorFn = callable('createManualVertexContributor');
     toggleVertexStatusFn = callable('toggleVertexStatus');
-    removeAdminRoleFn = callable('removeAdminRole');
-    listAdminsFn = callable('listAdmins');
     setUserDepartmentFn = callable('setUserDepartment');
     setUserDepartmentsFn = callable('setUserDepartments');
     listDepartmentUsersFn = callable('listDepartmentUsers');
@@ -178,6 +196,7 @@ function initFirebase(firebaseConfig) {
     removeUserSubscriptionFn = callable('removeUserSubscription');
     listUserSubscriptionsFn = callable('listUserSubscriptions');
     bulkSetUserSubscriptionsFn = callable('bulkSetUserSubscriptions');
+    previewBulkUserSubscriptionsFn = callable('previewBulkUserSubscriptions');
     listConsoleChatChannelsFn = callable('listConsoleChatChannels');
     createConsoleChatChannelFn = callable('createConsoleChatChannel');
     updateConsoleChatChannelFn = callable('updateConsoleChatChannel');
@@ -212,8 +231,15 @@ export {
     blockOnlineModelFn,
     updateModelsListFn,
     createNewsArticleFn,
+    updateNewsArticleFn,
+    listNewsRevisionsFn,
+    restoreNewsRevisionFn,
+    getNotificationDeliveryStatusFn,
+    reconcileNotificationQueueFn,
+    previewNotificationAudienceFn,
+    markConsoleChatReadFn,
+
     deleteNewsArticleFn,
-    addAdminRoleFn,
     getModelImageUploadUrlFn,
     getCoverUploadUrlFn,
     triggerAttributionsUpdateFn,
@@ -224,8 +250,6 @@ export {
     updateContributorApplicationFn,
     createManualVertexContributorFn,
     toggleVertexStatusFn,
-    removeAdminRoleFn,
-    listAdminsFn,
     setUserDepartmentFn,
     setUserDepartmentsFn,
     listDepartmentUsersFn,
@@ -233,7 +257,7 @@ export {
     setUserSubscriptionFn,
     removeUserSubscriptionFn,
     listUserSubscriptionsFn,
-    bulkSetUserSubscriptionsFn,
+    bulkSetUserSubscriptionsFn, previewBulkUserSubscriptionsFn,
     listConsoleChatChannelsFn,
     createConsoleChatChannelFn,
     updateConsoleChatChannelFn,
