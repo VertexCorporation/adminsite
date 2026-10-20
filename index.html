@@ -182,6 +182,14 @@
 <section class="sidebar-group" data-nav-group="workspace">
 <h2 class="sidebar-group-label" data-i18n="navgroup.workspace">
 </h2>
+
+<div class="nav-module" data-nav-module="users">
+<button type="button" class="dock-btn" data-target="tab-users" aria-controls="nav-sub-users" aria-expanded="false">
+<i data-icon="group"></i><span class="dock-label" data-i18n="nav.users">Kullanıcılar</span><i class="nav-chevron" data-icon="keyboard_arrow_down"></i>
+</button>
+<div class="sidebar-submenu" id="nav-sub-users" inert><div class="sidebar-submenu-inner">
+<button type="button" class="sidebar-sub-btn" data-nav-panel="users.deleteAccount" data-nav-action="" data-i18n="deleteAccount.title">Vertex Hesabını Sil</button>
+</div></div></div>
 <div class="nav-module" data-nav-module="contributors">
 <button type="button" class="dock-btn" data-target="tab-contributors" aria-controls="nav-sub-contributors" aria-expanded="false">
 <i data-icon="group">
@@ -336,6 +344,47 @@
 
             <!-- VERTEX KONSOL EV / DİJİTAL ORYANTASYON -->
             <div class="tab-panel active" id="tab-home" aria-label="Vertex Konsol"><div id="home-root"></div></div>
+
+
+            <!-- Core-only unified account deletion request -->
+            <div class="tab-panel" id="tab-users">
+                <div class="panel-section-title">
+                    <h2 data-i18n="nav.users">Kullanıcılar</h2>
+                    <p data-i18n="deleteAccount.description">Core üyeleri için hesap silme taleplerini yönetin.</p>
+                </div>
+                <div class="grid-layout">
+                    <section class="panel-card col-span-8" data-panel="users.deleteAccount">
+                        <div class="card-title-row"><div class="title-details"><i data-icon="person_remove"></i><h3 data-i18n="deleteAccount.title">Vertex Hesabını Sil</h3></div></div>
+                        <p class="intro-description" data-i18n="deleteAccount.intro">Önce hesabı e-posta adresiyle bulun. Bu işlem hesabı hemen devre dışı bırakır ve kalıcı silme sürecini başlatır.</p>
+                        <form id="account-deletion-search-form" class="form-stack">
+                            <div class="form-group-field">
+                                <label for="account-deletion-email" data-i18n="deleteAccount.email_label">Hesap e-postası</label>
+                                <input type="email" id="account-deletion-email" required maxlength="254" autocomplete="off" placeholder="user@example.com">
+                            </div>
+                            <button type="submit" id="account-deletion-search-button" class="chrome-btn-outline" data-i18n="deleteAccount.search">Hesabı Bul</button>
+                        </form>
+                        <div id="account-deletion-summary" class="people-drawer-section" hidden>
+                            <h4 data-i18n="deleteAccount.review_title">Hesap önizlemesi</h4>
+                            <dl class="profile-details">
+                                <div><dt data-i18n="deleteAccount.name_label">Ad</dt><dd id="account-deletion-name-output"></dd></div>
+                                <div><dt data-i18n="deleteAccount.email_label">Hesap e-postası</dt><dd id="account-deletion-email-output"></dd></div>
+                                <div><dt>UID</dt><dd id="account-deletion-uid-output"></dd></div>
+                            </dl>
+                            <label class="chip-checkbox">
+                                <input id="account-deletion-verified" type="checkbox">
+                                <span data-i18n="deleteAccount.verified">Hesap sahibinin kimliğini ve açık silme talebini doğruladım.</span>
+                            </label>
+                            <div class="form-group-field">
+                                <label for="account-deletion-confirm-email" data-i18n="deleteAccount.confirm_label">Onaylamak için hesap e-postasını tekrar yazın</label>
+                                <input type="email" id="account-deletion-confirm-email" maxlength="254" autocomplete="off" spellcheck="false">
+                            </div>
+                            <button type="button" id="account-deletion-submit" class="chrome-btn-primary" disabled data-i18n="deleteAccount.action">Hesap Silme Talebi Oluştur</button>
+                        </div>
+                        <p class="form-hint" data-i18n="deleteAccount.scope_notice">Bu işlem Firebase Auth hesabını devre dışı bırakır; zamanlanmış iş Auth hesabını, kullanıcı profilini ve kullanıcı adı eşlemesini siler. Diğer hizmetlerdeki verilerin ayrıca kontrol edilmesi gerekir.</p>
+                        <p id="account-deletion-status" role="status" aria-live="polite"></p>
+                    </section>
+                </div>
+            </div>
 
             <!-- SEKME 1: KATILIMCILAR & YETKİLER -->
             <div class="tab-panel" id="tab-contributors">

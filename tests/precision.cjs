@@ -54,7 +54,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   assert(alignments.every(offset=>offset<1),JSON.stringify(alignments));
   assert.equal(await page.locator('.perm-preset-btn').count(),0);
   assert.equal(await page.locator('.permission-panel-selector').count(),0);
-  assert.equal(await page.locator('[data-permission-panel]').count(),22);
+  assert.equal(await page.locator('[data-permission-panel]').count(),23); // Includes Core-only Users, which cannot be granted to departments
   for(const retired of ['system.adminRole','system.adminList','system.removeAdmin'])assert.equal(await page.locator(`[data-permission-panel="${retired}"]`).count(),0);
   assert(await page.locator('.perm-cycle').first().innerText().then(text=>text.includes('Edit')));
   await capture('permissions-1440-dark');
