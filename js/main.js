@@ -1,6 +1,7 @@
 import { createWorkspaceLoader } from './utils/workspace-loader.js';
 import { initEventsModule } from './modules/events.js';
 import { initPeopleModule } from './modules/people.js';
+import { initAccountDeletionModule } from './modules/accountDeletion.js';
 import { initHomeModule, updateHome } from './modules/home.js';
 import { initScrollEdges } from './utils/scrollEdges.js';
 import { normalizeConsoleAccessResponse } from './utils/console-access.js';
@@ -53,6 +54,7 @@ export function startApp(firebaseConfig) {
     const featureInitializers = [
         ['admin', initAdminModule],
         ['people', initPeopleModule],
+        ['account-deletion', initAccountDeletionModule],
         ['models', initModelsModule],
         ['news', initNewsModule],
         ['events', initEventsModule],
