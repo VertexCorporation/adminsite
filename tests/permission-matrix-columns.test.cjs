@@ -12,7 +12,7 @@ test('department permission matrix derives every module column from the live cat
     const modules = [...source[1].matchAll(/\{\s*id:\s*'([^']+)'/g)].map(match => match[1]);
     assert.equal(modules.length, 8, 'Console catalogue includes the Core-only Users module');
     assert.equal(new Set(modules).size, modules.length);
-    assert.match(roles, /--permission-module-count:'\+TABS\.length/);
+    assert.match(roles, /--permission-module-count:'\+manageableTabs\.length/);
     assert.match(css, /repeat\(var\(--permission-module-count, 7\),minmax\(108px,1fr\)\)/);
     assert.doesNotMatch(css, /--permission-columns:[^;]*repeat\(6,/);
 });
@@ -21,7 +21,7 @@ test('permission matrix header and body are both rendered from the same module c
     const section = roles.slice(roles.indexOf('function renderMatrixTable()'), roles.indexOf('function renderMatrixTable()') + 4200);
     const loops = section.split('manageableTabs.forEach(tab =>').length - 1;
     assert.equal(loops, 2, 'Header and rows each render the same assignable module catalogue');
-    assert.match(section, /TABS\\.filter\\(tab => tab\\.id !== 'users'\\)/);
+    assert.match(section, /TABS\.filter\(tab => tab\.id !== 'users'\)/);
     assert.ok(section.includes('class="dept-perm-th"'));
     assert.ok(section.includes('class="perm-cell"'));
     assert.match(css, /\.dept-perms-header,\.dept-perm-row\{display:grid;grid-template-columns:var\(--permission-columns\)/);
