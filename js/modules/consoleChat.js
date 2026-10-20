@@ -1,3 +1,4 @@
+import { deploymentCapabilities } from '../core/deployment-capabilities.js';
 import { setButtonLoading } from '../utils/loading.js';
 import { showLoadError } from '../ui/states.js';
 import { crossfade } from '../ui/transition.js';
@@ -25,6 +26,7 @@ import {
     deleteConsoleChatMessageFn,
     deleteConsoleChatChannelFn,
     listConsoleChatDirectoryFn,
+    markConsoleChatReadFn,
     db, auth
 } from '../core/firebase.js';
 
@@ -40,6 +42,7 @@ let lastChannelsKey = '';
 let lastMessagesKey = '';
 let cachedMessages=[],cachedChannelId=null;
 let myUid = null;
+let readInFlight=null;
 let mentionIndex = null;
 let mentionPop = null;
 let mentionMatches = [];
@@ -181,13 +184,14 @@ function renderChannelList() {
         return;
     }
     // Poll yenilemelerinde icerik degismemisse DOM'a dokunma (titreme fix).
-    const key = JSON.stringify([isAdmin, currentChannelId, channels.map(c => [c.id, c.name, !!c.pinned, c.postLevel, !!c.departments?.length])]);
+    const key = JSON.stringify([isAdmin, currentChannelId, channels.map(c => [c.id, c.name, !!c.pinned, c.postLevel, !!c.departments?.length, Number(c.unreadCount||0)])]);
     if (key === lastChannelsKey) return;
     lastChannelsKey = key;
     const html = channels.map(ch => `
         <button type="button" class="chat-channel-item ${ch.id === currentChannelId ? 'active' : ''}" data-channel="${ch.id}">
             <i class="" data-icon="${ch.departments?.length ? 'lock' : 'tag'}"></i>
             <span class="chat-channel-name">${escapeHTML(ch.name)}</span>
+            ${deploymentCapabilities.chatReadPositions && Number(ch.unreadCount)>0 ? `<span class="chat-unread-count" aria-label="${getLang()==='tr'?'Okunmamış':'Unread'}">${Math.min(999,Number(ch.unreadCount))}</span>` : ''}
             ${ch.pinned ? `<i class=" chat-pin-flag" title="${__('chat.pin')}" data-icon="push_pin"></i>` : ''}
             ${ch.postLevel === 'admins' ? `<i class=" chat-channel-lock" title="${__('chat.admin_channel')}" data-icon="shield"></i>` : ''}
         </button>
@@ -231,7 +235,7 @@ async function loadMessagesOnce(animate,uid) {
         cachedMessageVersion=Number(result.data.channel?.messageVersion||0);
         if(realtimeLatestVersion>cachedMessageVersion)realtimeRetry=true;
         const key = messages.map(m => `${m.id}:${m.taskStatus || ''}`).join('|');
-        if (!animate && key === lastMessagesKey) { finishLoading(); return; } // degisiklik yoksa DOM'a dokunma
+        if (!animate && key === lastMessagesKey) { finishLoading();void markVisibleMessagesRead();return; } // degisiklik yoksa DOM'a dokunma
         lastMessagesKey = key;
         renderMessages(messages, channel, animate);
         // composer görünürlüğü
@@ -248,6 +252,25 @@ async function loadMessagesOnce(animate,uid) {
         showLoadError(container,()=>userErrorMessage(error),()=>loadMessages(),{staleSelector:'.chat-msg'});
     }
     finishLoading();
+}
+
+async function markVisibleMessagesRead(){
+    const container=el('chat-messages'),uid=auth?.currentUser?.uid,channelId=currentChannelId;
+    if(!deploymentCapabilities.chatReadPositions||!uid||!channelId||cachedChannelId!==channelId||document.hidden||
+       !el('tab-chat')?.classList.contains('active')||!container||
+       container.scrollHeight-container.scrollTop-container.clientHeight>48)return;
+    const channel=channels.find(c=>c.id===channelId);
+    const sequence=Math.max(0,...cachedMessages.map(m=>Number.isSafeInteger(m.sequence)?m.sequence:0));
+    if(!channel||sequence<=(channel.lastReadSequence||0)||readInFlight)return;
+    const pending={uid,channelId,sequence};readInFlight=pending;
+    try{
+      const {data}=await markConsoleChatReadFn({channelId,sequence});
+      if(auth?.currentUser?.uid!==uid||currentChannelId!==channelId)return;
+      channel.lastReadSequence=Math.max(channel.lastReadSequence||0,Number(data.sequence)||0);
+      channel.unreadCount=Math.max(0,(channel.lastMessageSeq||sequence)-channel.lastReadSequence);
+      renderChannelList();
+    }catch(error){if(error.code!=='functions/permission-denied')console.warn('[CHAT] Personal read position unavailable',error.code||'unknown');}
+    finally{if(readInFlight===pending)readInFlight=null;}
 }
 
 function renderChatHeader(channel) {
@@ -269,6 +292,8 @@ function renderMessages(messages, channel, animate = true) {
         crossfade(container, () => { container.innerHTML = `<p class="form-hint chat-hint" data-i18n="chat.empty">${__('chat.empty')}</p>`; });
         return;
     }
+    const previousTop=container.scrollTop;
+    const keepBottom=animate || container.scrollHeight-container.scrollTop-container.clientHeight<48;
     // güne göre grupla
     const groups = new Map();
     messages.forEach(m => {
@@ -307,7 +332,8 @@ function renderMessages(messages, channel, animate = true) {
         }
     }
     crossfade(container, () => { container.innerHTML = html; });
-    container.scrollTop = container.scrollHeight;
+    // Finish the shared crossfade before measuring and acknowledging the view.
+    requestAnimationFrame(()=>{if(currentChannelId===channel?.id){container.scrollTop=keepBottom?container.scrollHeight:previousTop;void markVisibleMessagesRead();}});
 
     const pending = container.querySelector('.chat-task-toggle-btn');
     if (pending) pending.disabled = false;
@@ -522,7 +548,7 @@ export function initConsoleChat() {
         if(uid===sessionUid)return;
         sessionUid=uid;
         stopRealtime();
-        channels=[];currentChannelId=null;lastChannelsKey='';lastMessagesKey='';
+        channels=[];readInFlight=null;currentChannelId=null;lastChannelsKey='';lastMessagesKey='';
         cachedMessages=[];cachedChannelId=null;myUid=null;mentionIndex=null;isAdmin=false;
         el('chat-channel-list')?.replaceChildren();
         el('chat-messages')?.replaceChildren();
@@ -530,6 +556,7 @@ export function initConsoleChat() {
         if(el('chat-create-btn'))el('chat-create-btn').style.display='none';
     });
 
+    el('chat-messages').addEventListener('scroll',()=>void markVisibleMessagesRead(),{passive:true});
     el('chat-create-btn').style.display = isAdmin ? 'inline-flex' : 'none';
     el('chat-create-btn').addEventListener('click', () => openChannelForm('create'));
     el('chat-channel-edit').addEventListener('click', () => {

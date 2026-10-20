@@ -1,3 +1,4 @@
+import { deploymentCapabilities } from '../core/deployment-capabilities.js';
 import { showLoadError } from '../ui/states.js';
 import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from './shell.js';
@@ -6,7 +7,7 @@ import { beginPanelLoading, skeletonListItem, skeletonChatMessage, setButtonLoad
 
 import { userErrorMessage, showToast, __, getLang, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
-import { removeUserSubscriptionFn, listUserSubscriptionsFn } from '../core/firebase.js';
+import { auth, previewBulkUserSubscriptionsFn, removeUserSubscriptionFn, listUserSubscriptionsFn } from '../core/firebase.js';
 import { grantPremium, grantPremiumBulk } from './admin.js';
 import { getEffectivePanelLevel } from './roles.js';
 
@@ -246,12 +247,29 @@ async function handleBulkSubmit() {
         return;
     }
 
+    const payload = { raw, tier, expiresAt: expiresAt.toISOString() };
+    const session = auth.currentUser;
     const btn = document.getElementById('sub-bulk-submit');
     setButtonLoading(btn,true);
     showToast(() => __('subs.bulk_started'), 'info');
 
     try {
-        const data = await grantPremiumBulk({ raw, tier, expiresAt: expiresAt.toISOString() });
+        if (deploymentCapabilities.bulkSubscriptionPreview) {
+            const {data:preview} = await previewBulkUserSubscriptionsFn(payload);
+            if (auth.currentUser !== session) return;
+            const tr=getLang()==='tr';
+            const confirmed=await confirmDialog({title:tr?'Toplu abonelik özeti':'Bulk subscription preview',
+                body:tr?'Bu özet mevcut hesaplardan sunucuda oluşturuldu. İşlem sırasında korunan abonelikler tekrar denetlenir.':'This summary uses current server account data. Protected subscriptions are checked again when applying.',
+                rows:[{label:tr?'Değiştirilebilir':'Replaceable',value:String(preview.replaceable)},
+                    {label:tr?'Korunan':'Protected',value:String(preview.protected)},
+                    {label:tr?'Hesabı bulunamayan':'Missing accounts',value:String(preview.missing)},
+                    {label:tr?'Kullanılamayan':'Unavailable',value:String(preview.unavailable)},
+                    {label:tr?'Geçersiz adres':'Invalid addresses',value:String(preview.invalidTokens?.length||0)}]});
+            if (!confirmed || auth.currentUser !== session) return;
+        }
+        if (auth.currentUser !== session) return;
+        const data = await grantPremiumBulk(payload);
+        if (auth.currentUser !== session) return;
         renderBulkResult(data);
         showToast(() => `${data.grantedCount} ${__('subs.bulk_granted')} · ${data.failedCount} ${__('subs.bulk_failed')}`,
             data.failedCount ? 'info' : 'success');

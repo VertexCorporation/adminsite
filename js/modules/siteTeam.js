@@ -5,27 +5,28 @@ import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
 import { icon } from '../utils/icons.js';
 // js/modules/siteTeam.js
 
-/**
- * Sistem > Ekip Kaydı paneli: public site (vertexishere.com) Moderatörler
- * listesini yönetir (ekle / sil / yeniden adlandır). Staff listesi panelde
- * yönetilmez — onaylı adaylar (contributors.hasVerified) otomatik olarak
- * sitedeki Staff kaydırma listesine düşer.
- */
+/** Public Honor Roll editor. Personnel and moderator lists are read-only
+ * projections of current membership; this module only writes kind=honor. */
 
 import { userErrorMessage, showToast, __, escapeHTML } from '../utils/ui.js';
 import { listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn, auth } from '../core/firebase.js';
 
 let mods = [];
+let teamLoadEpoch=0;
 let editingId = null;
 
 const el = (id) => document.getElementById(id);
 
-async function loadTeam() {
+export async function loadTeam() {
     if (!el('team-mod-list')) return;
+    const uid=auth?.currentUser?.uid,epoch=++teamLoadEpoch;
+    if(!uid)return;
     const finishLoading = beginPanelLoading(el('team-mod-list'));
     try {
         const result = await listSiteTeamFn({manage:true});
-        mods = (result.data && result.data.honors) || [];
+        if(epoch!==teamLoadEpoch||auth?.currentUser?.uid!==uid)return;
+        if(!Array.isArray(result.data?.honors))throw new Error('Invalid managed honor roll.');
+        mods = result.data.honors;
         render();
     } catch (error) {
         const list = el('team-mod-list');
@@ -173,8 +174,5 @@ export function initSiteTeamPanel() {
             render();
         }
     });
-    // Initialize before login, but read team data only from an authenticated workspace.
-    document.addEventListener('vertex:system-page',event=>{
-        if(event.detail==='verification' && auth.currentUser)void loadTeam();
-    });
+    auth.onAuthStateChanged(user=>{if(!user){teamLoadEpoch++;mods=[];editingId=null;el('team-mod-list')?.replaceChildren();}});
 }

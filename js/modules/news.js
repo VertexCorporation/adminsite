@@ -1,14 +1,18 @@
+import { deploymentCapabilities } from '../core/deployment-capabilities.js';
+import { isPanelAdmin } from './roles.js';
 import { showLoadError } from '../ui/states.js';
 import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from './shell.js';
 import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
 // js/modules/news.js
 
-import { db, createNewsArticleFn, deleteNewsArticleFn, getCoverUploadUrlFn } from '../core/firebase.js';
+import { db, auth, createNewsArticleFn, updateNewsArticleFn, listNewsRevisionsFn, restoreNewsRevisionFn, deleteNewsArticleFn, getCoverUploadUrlFn } from '../core/firebase.js';
 import * as dom from '../utils/dom.js';
 import { userErrorMessage, __, showToast, getLang, onLangChange, escapeHTML } from '../utils/ui.js';
 
 let unsubscribeFromArticles = null;
+let editingArticle=null;
+let newsEpoch=0;
 
 /**
  * Handles the submission of the news article creation form.
@@ -18,11 +22,12 @@ async function handleNewsFormSubmit(e) {
     e.preventDefault();
     const submitBtn = document.getElementById('submit-btn');
     if(submitBtn.disabled)return;
+    const epoch=newsEpoch,uid=auth?.currentUser?.uid,editing=editingArticle;
     setButtonLoading(submitBtn,true);
     submitBtn.textContent = __('news.publishing');
 
     const titleEN = document.getElementById('title-en').value;
-    const cleanSlug = titleEN.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const cleanSlug = editing?.id || titleEN.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
     if (!cleanSlug) {
         showToast(() => __('news.slug_invalid'), 'error');
@@ -33,7 +38,10 @@ async function handleNewsFormSubmit(e) {
 
     const uploadImage = async (fileInputId, lang) => {
         const file = document.getElementById(fileInputId).files[0];
-        if (!file) throw new Error(__('news.cover_required'));
+        if (!file) {
+            if(editing?.cover?.[lang])return editing.cover[lang];
+            throw new Error(__('news.cover_required'));
+        }
         // Validate before requesting a signed upload URL. Never publish an article
         // pointing at an object if the actual storage PUT was rejected.
         if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
@@ -68,13 +76,18 @@ async function handleNewsFormSubmit(e) {
             }
         };
         showToast(() => __('news.saving'), 'info');
-        const result = await createNewsArticleFn(articleData);
+        if(epoch!==newsEpoch||auth?.currentUser?.uid!==uid)return;
+        if(editing) await updateNewsArticleFn({slug:editing.id,revision:editing.revision||0,article:articleData});
+        else await createNewsArticleFn(articleData);
+        if(epoch!==newsEpoch||auth?.currentUser?.uid!==uid)return;
+        clearNewsEditor();
         showToast(() => __('news.saved'), 'success');
         dom.newsForm.reset();
     } catch (error) {
         console.error("[CLIENT] An error occurred during news submission:", error);
         showToast(()=>userErrorMessage(error), 'error');
     } finally {
+        if(epoch!==newsEpoch||auth?.currentUser?.uid!==uid)return;
         setButtonLoading(submitBtn,false);
         submitBtn.textContent = __('news.publish_btn');
     }
@@ -123,6 +136,7 @@ export function listenForArticles() {
                     <span class="item-title">${escapeHTML(doc.data().translations?.[getLang()]?.title || __('news.untitled'))}</span>
                 </div>
                 <div class="item-actions">
+${deploymentCapabilities.newsRevisions && isPanelAdmin() ? `<button type="button" class="chrome-btn-outline news-edit-btn" data-slug="${escapeHTML(doc.id)}">${getLang()==='tr'?'Düzenle':'Edit'}</button>` : ''}
                     <button class="delete-btn" data-slug="${escapeHTML(doc.id)}">${__('common.delete')}</button>
                 </div>`;
             fragment.appendChild(item);
@@ -136,10 +150,90 @@ export function listenForArticles() {
     });
 }
 
+function clearNewsEditor(){
+    editingArticle=null;
+    const submit=document.getElementById('submit-btn');if(submit)setButtonLoading(submit,false);
+    for(const id of ['news-editing-hint','news-history-trigger','news-history','news-edit-cancel'])document.getElementById(id)?.remove();
+    for(const lang of ['tr','en']){const input=document.getElementById('cover-image-'+lang);if(input)input.required=true;}
+}
+
+async function showNewsHistory(slug){
+ const epoch=newsEpoch;
+ const root=document.getElementById('news-history')||document.createElement('div');
+ root.id='news-history';root.className='ui-news-history';
+ if(!root.parentElement)dom.newsForm.append(root);
+ root.replaceChildren();
+ const status=document.createElement('p');status.textContent=getLang()==='tr'?'Sürümler yükleniyor…':'Loading revisions…';
+ root.append(status);
+ try{
+  const {data}=await listNewsRevisionsFn({slug});
+  if(epoch!==newsEpoch||editingArticle?.id!==slug)return;
+  root.replaceChildren();
+  if(!data.revisions?.length){status.textContent=getLang()==='tr'?'Henüz önceki sürüm yok.':'No prior revisions.';root.append(status);return;}
+  for(const revision of data.revisions){
+   const row=document.createElement('div');row.className='ui-news-history-row';
+   const label=document.createElement('span');const when=revision.at?new Date(revision.at).toLocaleString(getLang()==='tr'?'tr-TR':'en-US'):'—';
+   label.textContent='#'+revision.revision+' · '+when+' · '+revision.title;
+   const restore=document.createElement('button');restore.type='button';restore.className='chrome-btn-outline';
+   restore.textContent=getLang()==='tr'?'Geri yükle':'Restore';
+   restore.onclick=async()=>{
+     if(!await confirmDialog({title:getLang()==='tr'?'Sürümü geri yükle':'Restore revision',
+       body:label.textContent}))return;
+     if(epoch!==newsEpoch||editingArticle?.id!==slug)return;
+     restore.disabled=true;
+     try{
+       await restoreNewsRevisionFn({slug,historyId:revision.id,revision:editingArticle?.revision||0});
+       showToast(getLang()==='tr'?'Sürüm geri yüklendi.':'Revision restored.','success');
+       if(epoch!==newsEpoch)return;
+       clearNewsEditor();dom.newsForm.reset();
+     }catch(error){restore.disabled=false;showToast(()=>userErrorMessage(error),'error');}
+   };
+   row.append(label,restore);root.append(row);
+  }
+ }catch(error){root.replaceChildren();showToast(()=>userErrorMessage(error),'error');}
+}
+function editArticle(slug){
+    const article=(window.loadedArticles||[]).find(a=>a.id===slug);
+    if(!article||!deploymentCapabilities.newsRevisions||!isPanelAdmin())return;
+    document.querySelector('[data-nav-panel="news.editor"]')?.click();
+    if(document.getElementById('submit-btn')?.disabled)return;
+    newsEpoch++;
+    editingArticle=article;
+    document.getElementById('news-history')?.remove();
+    for(const lang of ['en','tr']){
+        for(const field of ['title','summary','content']){
+            const input=document.getElementById(field+'-'+lang);
+            if(input)input.value=article.translations?.[lang]?.[field]||'';
+        }
+        const file=document.getElementById('cover-image-'+lang);if(file){file.value='';file.required=false;}
+    }
+    document.getElementById('tags').value=(article.tags||[]).join(', ');
+    document.getElementById('references').value=(article.references||[]).join('\n');
+    let hint=document.getElementById('news-editing-hint');
+    if(!hint){
+      hint=document.createElement('p');hint.id='news-editing-hint';hint.className='form-hint';
+      dom.newsForm.prepend(hint);
+    }
+    let cancel=document.getElementById('news-edit-cancel');
+    if(!cancel){cancel=document.createElement('button');cancel.type='button';cancel.id='news-edit-cancel';cancel.className='chrome-btn-outline';dom.newsForm.prepend(cancel);}
+    cancel.textContent=__('common.cancel');cancel.onclick=()=>{newsEpoch++;clearNewsEditor();dom.newsForm.reset();};
+    hint.textContent=(getLang()==='tr'?'Düzenleniyor: ':'Editing: ')+slug;
+    let history=document.getElementById('news-history-trigger');
+    if(!history){
+       history=document.createElement('button');history.type='button';history.id='news-history-trigger';
+       history.className='chrome-btn-outline';dom.newsForm.insertBefore(history,dom.newsForm.firstChild);
+    }
+    history.textContent=getLang()==='tr'?'Sürüm geçmişi':'Revision history';
+    history.onclick=()=>void showNewsHistory(slug);
+    dom.newsForm.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+
 /**
  * Detaches the real-time listener for articles.
  */
 export function stopListeningForArticles() {
+    newsEpoch++;clearNewsEditor();window.loadedArticles=[];
     if (unsubscribeFromArticles) {
         unsubscribeFromArticles();
         unsubscribeFromArticles = null;
@@ -154,6 +248,8 @@ export function initNewsModule() {
     onLangChange(()=>{const btn=document.getElementById('submit-btn');btn.textContent=__(btn.disabled?'news.publishing':'news.publish_btn');if(unsubscribeFromArticles)listenForArticles();});
     dom.newsForm.addEventListener('submit', handleNewsFormSubmit);
     dom.articlesListContainer.addEventListener('click', (e) => {
+        const edit=e.target.closest('.news-edit-btn');
+        if(edit){editArticle(edit.dataset.slug);return;}
         if (e.target.classList.contains('delete-btn')) {
             const slug = e.target.getAttribute('data-slug');
             handleDeleteArticle(slug);

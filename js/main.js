@@ -1,3 +1,4 @@
+import { createWorkspaceLoader } from './utils/workspace-loader.js';
 import { initEventsModule } from './modules/events.js';
 import { initPeopleModule } from './modules/people.js';
 import { initHomeModule, updateHome } from './modules/home.js';
@@ -16,14 +17,14 @@ import * as dom from './utils/dom.js';
 import { userErrorMessage, showToast, __, getLang, setLang, translatePage, onLangChange } from './utils/ui.js';
 
 // Import module initializers
-import { initAdminModule, initializeMaintenanceStatus, refreshDepartmentUsers, loadAdminsList } from './modules/admin.js';
+import { initAdminModule, initializeMaintenanceStatus, refreshDepartmentUsers } from './modules/admin.js';
 import { initModelsModule, fetchFullModelsData } from './modules/models.js';
 import { initNewsModule, listenForArticles, stopListeningForArticles } from './modules/news.js';
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
 import { initContributorsModule, fetchContributorsData, applyChipVisibility } from './modules/contributors.js';
 import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscriptions.js';
 import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getCurrentUserAccess, getEffectivePanelLevel, initPanelMenus, PANELS } from './modules/roles.js';
-import { initSiteTeamPanel } from './modules/siteTeam.js';
+import { initSiteTeamPanel, loadTeam } from './modules/siteTeam.js';
 import { initTeamCardsPanel, loadTeamCards } from './modules/teamCards.js';
 import { updateGridVisibleCounts, initAdaptiveGrids } from './modules/views.js';
 import { initUserMenu } from './modules/userMenu.js';
@@ -108,20 +109,15 @@ export function startApp(firebaseConfig) {
         }
     });
 
-    const loadedWorkspaces=new Set();
     const loadRolesWorkspace=()=>{initRolesModule();initPanelMenus();};
-    document.addEventListener('vertex:workspace',event=>{
-        if(!auth.currentUser || dom.adminPanel.style.display==='none')return;
-        const keys=event.detail.keys;
-        const tasks=[['contributors.list',fetchContributorsData],['models.library',fetchFullModelsData],['models.manage',fetchFullModelsData],['news.published',listenForArticles],['news.editor',listenForArticles],['notifications.scheduled',listenForScheduledTasks],['subscriptions.list',refreshSubscriptions],['system.deptUsers',refreshDepartmentUsers],['system.adminList',loadAdminsList],['system.serverStatus',initializeMaintenanceStatus],['system.teamLog',loadTeamCards],['system.deptPerms',loadRolesWorkspace],['chat.channels',refreshConsoleChat]];
-        for(const [key,load] of tasks)if(keys.includes(key)&&(key==='chat.channels'||getEffectivePanelLevel(key)!=='none')&&!loadedWorkspaces.has(load)){
-            loadedWorkspaces.add(load);
-            Promise.resolve().then(load).catch(error=>{
-                loadedWorkspaces.delete(load);
-                console.error('[WORKSPACE] Load failed',key,error.code||'unknown');
-            });
-        }
+    const loadedWorkspaces=createWorkspaceLoader({
+        tasks:[['contributors.list',fetchContributorsData],['models.library',fetchFullModelsData],['models.manage',fetchFullModelsData],['news.published',listenForArticles],['news.editor',listenForArticles],['notifications.scheduled',listenForScheduledTasks],['subscriptions.list',refreshSubscriptions],['system.deptUsers',refreshDepartmentUsers],['system.serverStatus',initializeMaintenanceStatus],['system.teamLog',loadTeamCards],['system.teamLog',loadTeam],['system.deptPerms',loadRolesWorkspace],['chat.channels',refreshConsoleChat]],
+        canLoad:key=>!!auth.currentUser&&dom.adminPanel.style.display!=='none'&&
+            (key==='chat.channels'||getEffectivePanelLevel(key)!=='none'),
+        onError:(key,error)=>console.error('[WORKSPACE] Load failed',key,error.code||'unknown')
     });
+    document.addEventListener('vertex:workspace',event=>{void loadedWorkspaces.load(event.detail?.keys||[]);});
+    document.addEventListener('vertex:workspace-load-error',event=>loadedWorkspaces.invalidate(event.detail?.panel));
     // --- Step 3: Set up the Core Authentication State Listener ---
     // This is the central control point that reacts to user login/logout.
     let authEpoch=0,personnelUnsubscribe=null,hadAuthorizedSession=false;
@@ -137,7 +133,7 @@ export function startApp(firebaseConfig) {
                 // departments must be checked against current server records.
                 if(!deploymentCapabilities.consolePeople)throw new Error('Console authorization endpoint is unavailable.');
                 const access=normalizeConsoleAccessResponse((await consolePeopleCall('getMyConsoleAccess',{})).data);
-                let isAdmin=access.isAdmin;
+                let isAdmin=access.isCore;
                 let departments=access.departments;
                 if(epoch!==authEpoch)return;
                 if (!isAdmin && !departments.length) {
@@ -152,14 +148,12 @@ export function startApp(firebaseConfig) {
                 renderProfile(user, isAdmin, departments);
 
                 if (isAdmin) {
-                    console.log("[AUTH] Access Level: Admin. Full panel enabled.");
+                    console.log("[AUTH] Access Level: Core. Full panel enabled.");
                     resetTabFilter();
                     applyPanelGate(true);
-                    dom.adminManagerSection.style.display = 'block';
                     applyChipVisibility();
                     } else {
                     console.log(`[AUTH] Access Level: Department (${departments.join(', ')}). Limited panel.`);
-                    dom.adminManagerSection.style.display = 'none';
                     await loadDepartmentPermissions();
                     if(epoch!==authEpoch || document.documentElement.dataset.startupFailed === 'true')return;
 
@@ -178,7 +172,7 @@ export function startApp(firebaseConfig) {
                   personnelUnsubscribe=db.collection('users').doc(user.uid).onSnapshot(async snapshot=>{
                     const profile=snapshot.data()||{};if(!profile.contributorId&&!profile.personnelManaged&&!profile.consoleAccessManaged)return;
                     const next=profile.authzVersion||0;if(next===revision)return;revision=next;
-                    try{const access=normalizeConsoleAccessResponse((await consolePeopleCall('getMyConsoleAccess',{})).data);if(epoch!==authEpoch)return;if(!access.isAdmin&&!access.departments.length){await auth.signOut();return;}setCurrentUser(access.isAdmin,access.departments);document.body.classList.toggle('admin-mode',access.isAdmin);dom.adminManagerSection.style.display=access.isAdmin?'block':'none';if(access.isAdmin)resetTabFilter();else{await loadDepartmentPermissions();applyTabFilter(getAccessibleTabs(access.departments));}applyPanelGate(access.isAdmin);applyChipVisibility();renderProfile(user,access.isAdmin,access.departments,true);updateHome(user,access.isAdmin,access.departments);document.dispatchEvent(new CustomEvent('vertex:departments',{detail:access.departments}));}
+                    try{const access=normalizeConsoleAccessResponse((await consolePeopleCall('getMyConsoleAccess',{})).data);if(epoch!==authEpoch)return;if(!access.isCore&&!access.departments.length){await auth.signOut();return;}setCurrentUser(access.isCore,access.departments);document.body.classList.toggle('admin-mode',access.isCore);if(access.isCore)resetTabFilter();else{await loadDepartmentPermissions();applyTabFilter(getAccessibleTabs(access.departments));}applyPanelGate(access.isCore);applyChipVisibility();renderProfile(user,access.isCore,access.departments,true);updateHome(user,access.isCore,access.departments);document.dispatchEvent(new CustomEvent('vertex:departments',{detail:access.departments}));}
                     catch(error){if(epoch===authEpoch&&error.code==='functions/permission-denied')auth.signOut();}
                   },error=>console.warn('[PERSONNEL] Access subscription unavailable',error.code));
                 }

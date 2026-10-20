@@ -7,12 +7,13 @@ import { beginPanelLoading, skeletonListItem, skeletonChatMessage, setButtonLoad
 
 import { showToast, userErrorMessage, __, onLangChange, sanitizeHTML } from '../utils/ui.js';
 import * as dom from '../utils/dom.js';
-import { auth, addAdminRoleFn, getServerStatusFn, setServerStatusFn, getBackupHealthStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, removeAdminRoleFn, listAdminsFn, verifyUserEmailFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartmentUsersFn, setUserSubscriptionFn, bulkSetUserSubscriptionsFn } from '../core/firebase.js';
-import { DEPARTMENTS, getEffectivePanelLevel, isPanelAdmin } from './roles.js';
+import { auth, getServerStatusFn, setServerStatusFn, getBackupHealthStatusFn, triggerAttributionsUpdateFn, toggleVertexStatusFn, toggleContributorVerificationFn, verifyUserEmailFn, setUserDepartmentsFn, listDepartmentUsersFn, setUserSubscriptionFn, bulkSetUserSubscriptionsFn } from '../core/firebase.js';
+import { DEPARTMENTS, getEffectivePanelLevel } from './roles.js';
 
 // --- Module state for attributions ---
 let attributionsOutOfSync = false;
 let departmentUsers = [];
+let editingDepartmentUser = null;
 
 // --- Premium Abonelik Atama (grantPremium) ---
 // Admin panelinin abonelik atama akışı: Fulcrum'daki setUserSubscription
@@ -99,7 +100,8 @@ function renderDepartmentOptions() {
         input.type = 'checkbox';
         input.value = dept.id;
         input.checked = selected.has(dept.id);
-        label.append(input, document.createTextNode(__(dept.nameKey)));
+        const text=document.createElement('span');text.className='dept-choice-label';text.textContent=__(dept.nameKey);
+        label.append(input,text);
         container.append(label);
     });
 }
@@ -142,8 +144,9 @@ async function loadDepartmentUsers() {
             pageToken = result.data.nextPageToken || null;
             if(pageToken){if(tokens.has(pageToken)||tokens.size>=100)throw Object.assign(new Error('Invalid pagination'),{code:'functions/internal'});tokens.add(pageToken);}
         } while (pageToken);
-        departmentUsers = users.map(user => ({
+        departmentUsers = [...new Map(users.map(user => [user.uid,user])).values()].map(user => ({
             uid: String(user.uid || ''),
+            authzVersion: Number.isSafeInteger(user.authzVersion) ? user.authzVersion : undefined,
             email: String(user.email || ''),
             displayName: String(user.displayName || ''),
             departments: Array.isArray(user.departments) ? user.departments : (user.department ? [user.department] : [])
@@ -319,28 +322,6 @@ export async function loadBackupHealthStatus() {
 }
 
 /**
- * Handles the submission of the form to grant a user admin privileges.
- * @param {Event} e - The form submission event.
- */
-async function handleAdminFormSubmit(e) {
-    e.preventDefault();
-    const newAdminEmail = document.getElementById('new-admin-email').value;
-    const grantBtn = document.getElementById('grant-admin-btn');
-    setButtonLoading(grantBtn,true);
-
-    try {
-        const result = await addAdminRoleFn({ email: newAdminEmail });
-        showToast(() => __('admin.grant_success'), 'success');
-        dom.adminForm.reset();
-    } catch (error) {
-        console.error("[CLIENT] Error granting admin role:", error);
-        showToast(() => userErrorMessage(error), 'error');
-    } finally {
-        setButtonLoading(grantBtn,false);
-    }
-}
-
-/**
  * Updates the UI of the attributions manager based on the sync state.
  */
 function updateAttributionsUI() {
@@ -445,47 +426,6 @@ async function handleManualVerifySubmit(e) {
 }
 
 /**
- * Handles the submission to remove admin privileges from a user.
- */
-/**
- * Fetches and displays the list of active administrators.
- */
-export async function loadAdminsList() {
-    const container = document.getElementById('admin-list-container');
-    if (!container) return;
-    
-    const finishLoading = beginPanelLoading(container);
-
-    try {
-        const result = await listAdminsFn();
-        console.log("[CLIENT] listAdmins response:", result);
-        const admins = result.data.admins;
-        const debug = result.data.debug;
-        
-        if (!admins || admins.length === 0) {
-            container.innerHTML = `<p class="form-hint dept-list-message" data-i18n="system.admins_empty">${__('system.admins_empty')}</p>`;
-            return;
-        }
-
-        container.innerHTML=admins.map(admin=>`<div class="admin-user-row"><div><strong>${sanitizeHTML(admin.email)}</strong><small>${sanitizeHTML(admin.uid||'')}</small></div>${isPanelAdmin()?`<button type="button" class="icon-action-btn" data-revoke-admin="${sanitizeHTML(admin.uid||'')}" title="${__('system.remove_admin')}" aria-label="${__('system.remove_admin')}" ${admins.length<2||admin.uid===auth.currentUser?.uid||!admin.uid||!admin.email?'disabled':''}>${icon('user-minus')}</button>`:''}</div>`).join('');
-        container.querySelectorAll('[data-revoke-admin]').forEach(button=>button.onclick=async()=>{
-            const target=admins.find(admin=>admin.uid===button.dataset.revokeAdmin);
-            if(!isPanelAdmin()||!target||target.uid===auth.currentUser?.uid||admins.length<2||button.disabled)return;
-            button.disabled=true;
-            try {
-                if(!await confirmDialog(()=>({title:__('system.remove_admin'),warning:__('admin.revoke_confirm'),rows:[{label:__('contributors.field_email'),value:sanitizeHTML(target.email)}]})))return;
-                await removeAdminRoleFn({email:target.email});showToast(()=>__('system.remove_success'),'success');await loadAdminsList();
-            } catch(error){showToast(()=>userErrorMessage(error),'error');}
-            finally{if(button.isConnected)button.disabled=false;}
-        });
-    } catch (error) {
-        finishLoading();
-        console.error("[CLIENT] Error loading admins list:", error);
-        container.innerHTML=`<div class="state-block"><p data-i18n="errors.service">${__('errors.service')}</p><button class="chrome-btn-outline" data-i18n="common.retry">${__('common.retry')}</button></div>`;container.querySelector('button').onclick=loadAdminsList;
-    } finally { finishLoading(); }
-}
-
-/**
  * Handles the submission of the form to assign a department to a user.
  * @param {Event} e - The form submission event.
  */
@@ -494,26 +434,18 @@ async function handleDeptAssignSubmit(e) {
     const email = document.getElementById('dept-user-email').value.trim();
     const departments = selectedDepartments();
     if (!departments.length) {
-        showToast(() => __('dept.select_hint'), 'error');
-        return;
+        if (!await confirmDialog(()=>({title:__('dept.revoke_title'),warning:__('dept.revoke_confirm'),rows:[{label:__('contributors.field_email'),value:email}]}))) return;
     }
     const btn = document.querySelector('#dept-assign-form button[type="submit"]');
     btn.disabled = true;
     btn.innerHTML = `<span data-i18n="system.saving">${__('system.saving')}</span>`;
 
     try {
-        let result;
-        try {
-            result = await setUserDepartmentsFn({ email, departments });
-        } catch (error) {
-            if (error.code !== 'functions/not-found') throw error;
-            if (departments.length !== 1) {
-                throw new Error(__('dept.backend_required'));
-            }
-            result = await setUserDepartmentFn({ email, department: departments[0] });
-        }
+        await setUserDepartmentsFn({email, departments,
+            ...(editingDepartmentUser?.email === email ? {expectedVersion:editingDepartmentUser.authzVersion} : {})});
         showToast(() => __('dept.assign_success'), 'success');
         document.getElementById('dept-assign-form').reset();
+        editingDepartmentUser = null;
         await loadDepartmentUsers();
     } catch (error) {
         console.error("[CLIENT] Error assigning department:", error);
@@ -534,10 +466,8 @@ export function refreshDepartmentUsers() {
 export function initAdminModule() {
     renderDepartmentOptions();
     onLangChange(() => {
-        document.querySelectorAll('[data-revoke-admin]').forEach(button=>{button.title=__('system.remove_admin');button.setAttribute('aria-label',__('system.remove_admin'));});
         renderDepartmentOptions();
         updateMaintenanceUI();updateAttributionsUI();
-        const grant=document.getElementById('grant-admin-btn');grant.textContent=__(grant.disabled?'admin.granting':'admin.grant_btn');
         const vertex=document.getElementById('toggle-vertex-btn');if(vertex)vertex.textContent=__(vertexPending?'system.saving':'panel.contributors.vertexStatus');
         updateVertexResult();
         if (departmentUsers.length) renderDepartmentUsers();
@@ -549,6 +479,7 @@ export function initAdminModule() {
         if (!button) return;
         const user = departmentUsers.find(item => item.uid === button.dataset.uid);
         if (!user) return;
+        editingDepartmentUser = user;
         document.getElementById('dept-user-email').value = user.email;
         document.querySelectorAll('#dept-options input').forEach(input => {
             input.checked = user.departments.includes(input.value);
@@ -556,7 +487,6 @@ export function initAdminModule() {
         document.getElementById('dept-assign-manager').scrollIntoView({ behavior: 'smooth', block: 'center' });
         document.getElementById('dept-user-email').focus({ preventScroll: true });
     });
-    dom.adminForm.addEventListener('submit', handleAdminFormSubmit);
     dom.maintenanceActionBtn.addEventListener('click', handleMaintenanceToggle);
 
 
@@ -577,11 +507,6 @@ export function initAdminModule() {
     if (verifyForm) verifyForm.addEventListener('submit', handleManualVerifySubmit);
 
 
-    const refreshAdminsBtn = document.getElementById('refresh-admins-btn');
-    if (refreshAdminsBtn) {
-        refreshAdminsBtn.addEventListener('click', loadAdminsList);
-    }
-    
     const refreshBackupBtn = document.getElementById('refresh-backup-btn');
     if (refreshBackupBtn) {
         refreshBackupBtn.addEventListener('click', loadBackupHealthStatus);
@@ -590,9 +515,8 @@ export function initAdminModule() {
     const deptAssignForm = document.getElementById('dept-assign-form');
     if (deptAssignForm) deptAssignForm.addEventListener('submit', handleDeptAssignSubmit);
     
-    // Load admins list initially (giris oncesi cagrilmaz; login akisi yeniden cagirir)
+    // Feature reads require an authenticated session.
     if (auth && auth.currentUser) {
-        loadAdminsList();
         loadBackupHealthStatus();
     }
 }

@@ -8,7 +8,7 @@ test('department selectors are whole clickable labels with centered inputs', () 
     const js = fs.readFileSync(path.join(root, 'js/modules/admin.js'), 'utf8');
     const css = fs.readFileSync(path.join(root, 'css/modules.css'), 'utf8');
     assert.match(js, /document\.createElement\('label'\)/);
-    assert.match(js, /label\.append\(input, document\.createTextNode/);
+    assert.match(js, /label\.append\(input,text\)/);
     assert.match(css, /\.dept-options \.dept-choice \{[\s\S]*?display: inline-flex;[\s\S]*?align-items: center;/);
     assert.match(css, /\.dept-options \.dept-choice input\[type="checkbox"\] \{[\s\S]*?margin: 0;/);
 });
