@@ -210,7 +210,8 @@ const selectTab=async id=>{if(await page.evaluate(()=>innerWidth<1024)){const do
 // This uses a mocked account and never invokes the destructive callable.
 {
  const email='delete-fixture@example.invalid';
- await selectTab('users');
+ await selectTab('contributors');
+ await page.locator('[data-nav-panel="users.deleteAccount"]').click();
  await page.locator('#account-deletion-email').fill(email);
  await page.locator('#account-deletion-search-button').click();
  await page.waitForSelector('#account-deletion-summary:not([hidden])');
@@ -229,6 +230,7 @@ const selectTab=async id=>{if(await page.evaluate(()=>innerWidth<1024)){const do
  assert.equal(await submit.isDisabled(),true);
  assert.equal(calls.filter(name=>name==='adminrequestaccountdeletion').length,0);
  await selectTab('contributors');
+ await page.locator('[data-nav-panel="contributors.list"][data-nav-action=""]').click();
  note('Account deletion consent shows a visible checkbox and activates only after explicit verification');
 }
 // Recover a transient 503 for both data-heavy screens without reloading the page.

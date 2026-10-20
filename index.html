@@ -184,29 +184,21 @@
 </h2>
 
 <div class="nav-module" data-nav-module="users">
-<button type="button" class="dock-btn" data-target="tab-users" aria-controls="nav-sub-users" aria-expanded="false">
-<i data-icon="group"></i><span class="dock-label" data-i18n="nav.users">Kullanıcılar</span><i class="nav-chevron" data-icon="keyboard_arrow_down"></i>
-</button>
-<div class="sidebar-submenu" id="nav-sub-users" inert><div class="sidebar-submenu-inner">
-<button type="button" class="sidebar-sub-btn" data-nav-panel="users.deleteAccount" data-nav-action="" data-i18n="deleteAccount.title">Vertex Hesabını Sil</button>
-</div></div></div>
-<div class="nav-module" data-nav-module="contributors">
-<button type="button" class="dock-btn" data-target="tab-contributors" aria-controls="nav-sub-contributors" aria-expanded="false">
+<button type="button" class="dock-btn" data-target="tab-contributors" aria-controls="nav-sub-users" aria-expanded="false">
 <i data-icon="group">
 </i>
-<span class="dock-label" data-i18n="nav.contributors">
+<span class="dock-label" data-i18n="nav.users">
 </span>
 <i class="nav-chevron" data-icon="keyboard_arrow_down">
 </i>
 </button>
-<div class="sidebar-submenu" id="nav-sub-contributors" inert>
+<div class="sidebar-submenu" id="nav-sub-users" inert>
 <div class="sidebar-submenu-inner">
 <button type="button" class="sidebar-sub-btn" data-nav-panel="contributors.list" data-nav-action="" data-i18n="subnav.applicants">
 </button>
 <button type="button" class="sidebar-sub-btn" data-nav-panel="contributors.vertexStatus" data-nav-action="" data-i18n="subnav.vertex_status">
 </button>
-<button type="button" class="sidebar-sub-btn" data-nav-panel="contributors.list" data-nav-action="certificates" data-i18n="subnav.certificates">
-</button>
+<button type="button" class="sidebar-sub-btn" data-nav-panel="users.deleteAccount" data-nav-action="" data-i18n="deleteAccount.title">Vertex Hesabını Sil</button>
 </div>
 </div>
 </div>
@@ -346,12 +338,13 @@
             <div class="tab-panel active" id="tab-home" aria-label="Vertex Konsol"><div id="home-root"></div></div>
 
 
-            <!-- Core-only unified account deletion request -->
-            <div class="tab-panel" id="tab-users">
+            <!-- SEKME 1: KATILIMCILAR & YETKİLER -->
+            <div class="tab-panel" id="tab-contributors">
                 <div class="panel-section-title">
                     <h2 data-i18n="nav.users">Kullanıcılar</h2>
-                    <p data-i18n="deleteAccount.description">Core üyeleri için hesap silme taleplerini yönetin.</p>
+                    <p data-i18n="contributors.desc">Vertex topluluk üyelerini inceleyin, onaylayın ve yönetici yetkilerini yönetin.</p>
                 </div>
+
                 <div class="grid-layout">
                     <section class="panel-card col-span-8" data-panel="users.deleteAccount">
                         <div class="card-title-row"><div class="title-details"><i data-icon="person_remove"></i><h3 data-i18n="deleteAccount.title">Vertex Hesabını Sil</h3></div></div>
@@ -383,17 +376,6 @@
                         <p class="form-hint" data-i18n="deleteAccount.scope_notice">Bu işlem Firebase Auth hesabını devre dışı bırakır; zamanlanmış iş Auth hesabını, kullanıcı profilini ve kullanıcı adı eşlemesini siler. Diğer hizmetlerdeki verilerin ayrıca kontrol edilmesi gerekir.</p>
                         <p id="account-deletion-status" role="status" aria-live="polite"></p>
                     </section>
-                </div>
-            </div>
-
-            <!-- SEKME 1: KATILIMCILAR & YETKİLER -->
-            <div class="tab-panel" id="tab-contributors">
-                <div class="panel-section-title">
-                    <h2 data-i18n="contributors.title">Katılımcı Yönetimi & Yetkiler</h2>
-                    <p data-i18n="contributors.desc">Vertex topluluk üyelerini inceleyin, onaylayın ve yönetici yetkilerini yönetin.</p>
-                </div>
-
-                <div class="grid-layout">
                     <!-- Başvurular Listesi -->
                     <div class="panel-card col-span-12" data-panel="contributors.list">
                         <div class="card-title-row">

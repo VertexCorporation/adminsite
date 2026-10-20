@@ -19,25 +19,27 @@ import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS, isPanelAdmin, g
 
 function legacyYearRange(person){
     if(Array.isArray(person.estimatedBirthYearRange)&&person.estimatedBirthYearRange.length===2)return person.estimatedBirthYearRange;
-    const age=Number(person.age),created=person.createdAt;
-    if(person.age===undefined||!Number.isInteger(age)||age<0||age>123)return null;
+    const age=Number(person.age),created=person.createdAt || person.applicationDate;
+    if(!created||person.age===null||person.age===''||person.age===undefined||!Number.isInteger(age)||age<0||age>123)return null;
     const time=created?new Date(typeof created._seconds==='number'?created._seconds*1000:typeof created.seconds==='number'?created.seconds*1000:created):new Date();
-    const year=Number.isNaN(time.getTime())?new Date().getFullYear():time.getFullYear();
+    if(Number.isNaN(time.getTime()))return null;
+    const year=time.getUTCFullYear();
     return [year-age-1,year-age];
 }
 function birthYearLabel(person){
     if(person.birthDate)return person.birthDate.slice(0,4);
     if(person.birthYear)return String(person.birthYear);
     const estimate=legacyYearRange(person);
-    return estimate?estimate[0]+'–'+estimate[1]+' ≈':'—';
+    return estimate?String(Math.max(...estimate)):'—';
 }
 function birthDateLabel(person){
     if(person.birthDate){
         const [year,month,day]=person.birthDate.split('-');
         return day+'.'+month+'.'+year;
     }
+    if(person.birthYear)return String(person.birthYear)+(person.birthYearEstimated?' ('+__('contributors.birth_year_estimated')+')':'');
     const estimate=legacyYearRange(person);
-    return estimate?estimate[0]+'–'+estimate[1]+' ('+__('contributors.birth_year_estimated')+')':'—';
+    return estimate?String(Math.max(...estimate))+' ('+__('contributors.birth_year_estimated')+')':'—';
 }
 
 function filterBirthYear(person){
@@ -432,7 +434,7 @@ function openContributorDetails(person) {
     let body, pending = false;
     function paint() {
         if (!body?.isConnected) return;
-        const rows = [['contributors.field_department',displayDepartmentName(person.department)],...(!hidden.has('contact')?[['contributors.field_email',person.email],['contributors.field_phone',person.phone]]:[]),...(!hidden.has('age')?[['contributors.field_birth_date',birthDateLabel(person)]]:[]),['contributors.field_language',person.language==='tr'?'Türkçe':person.language==='en'?'English':person.language],['contributors.col_status',person.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')],['contributors.applied_at',formatCertificateDate(person.createdAt)],...(!hidden.has('interview')?[['contributors.field_interview',formatCertificateDate(person.interviewDate)]]:[]),['cert.joined',person.joinedAt?formatCertificateDate(person.joinedAt):__('cert.not_joined')]];
+        const rows = [['contributors.field_department',displayDepartmentName(person.department)],...(!hidden.has('contact')?[['contributors.field_email',person.email],['contributors.field_phone',person.phone]]:[]),...(!hidden.has('age')?[['contributors.field_birth_date',birthDateLabel(person)]]:[]),['contributors.field_language',person.language==='tr'?'Türkçe':person.language==='en'?'English':person.language],['contributors.col_status',person.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')],['contributors.delivery_label',__(person.emailSent===true?'contributors.delivery_succeeded':['pending','processing'].includes(person.certificateDeliveryStatus)?'contributors.delivery_pending':['uncertain','failed'].includes(person.certificateDeliveryStatus)?'contributors.delivery_failed':'contributors.delivery_unconfirmed')],['contributors.applied_at',formatCertificateDate(person.createdAt)],...(!hidden.has('interview')?[['contributors.field_interview',formatCertificateDate(person.interviewDate)]]:[]),['cert.joined',person.joinedAt?formatCertificateDate(person.joinedAt):__('cert.not_joined')]];
         body.innerHTML=`<dl class="detail-list">${rows.map(([label,value])=>`<div class="detail-row"><dt>${__(label)}</dt><dd>${escapeHTML(String(value??'—'))}</dd></div>`).join('')}</dl>${!hidden.has('contact')&&person.about?`<p class="drawer-bio">${escapeHTML(person.about)}</p>`:''}<div class="contributor-links">${!hidden.has('links')?['linkedin','github'].filter(k=>/^https?:\/\//.test(person[k]||'')).map(k=>`<a class="chrome-btn-outline" href="${escapeHTML(person[k])}" target="_blank" rel="noopener noreferrer">${icon('brand-'+k)}${k==='linkedin'?'LinkedIn':'GitHub'}</a>`).join(''):''}</div>`;
         const footer=body.closest('.vx-drawer').querySelector('.vx-drawer-footer');
         footer.innerHTML=`${getEffectivePanelLevel('contributors.list')==='write'?`<button class="chrome-btn-primary" data-edit>${icon('pencil')}${__('contributors.edit_title')}</button>`:''}${isPanelAdmin()?`<button class="chrome-btn-outline" data-certificate>${icon('award')}${__('cert.management')}</button><button class="chrome-btn-outline" data-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`:''}`;
@@ -447,6 +449,8 @@ function openContributorDetails(person) {
                 try{
                     const {data}=await toggleContributorVerificationFn({contributorId:person.id,hasVerified:next});
                     const status=data?.status;
+                    if(next && !['pending','processing','succeeded','legacy','uncertain','failed','revoked'].includes(status))
+                        throw Object.assign(new Error('Unconfirmed certificate response'),{code:'functions/internal'});
                     if(next && ['uncertain','failed','revoked'].includes(status)){
                         person.hasVerified=false;
                         person.certificateDeliveryStatus=status;
@@ -455,8 +459,8 @@ function openContributorDetails(person) {
                         // The server saved hasVerified=true with the issuance ledger.
                         person.hasVerified=true;
                         person.emailSent=status==='succeeded';
-                        person.certificateDeliveryStatus=status==='succeeded'?'succeeded':status==='legacy'?'succeeded':'pending';
-                        showToast(()=>__('contributors.verify_updated'),'success');
+                        person.certificateDeliveryStatus=status==='succeeded'?'succeeded':status==='legacy'?'legacy':'pending';
+                        showToast(()=>__(status==='succeeded'?'contributors.delivery_succeeded':status==='legacy'?'contributors.delivery_unconfirmed':'contributors.delivery_pending'),status==='succeeded'?'success':'info');
                         if(['pending','processing'].includes(status))
                             watchContributorVerification(person.id,auth.currentUser?.uid);
                     }else{
