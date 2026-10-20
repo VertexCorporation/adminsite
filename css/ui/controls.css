@@ -192,6 +192,39 @@
 .chip-checkbox input { position: absolute; opacity: 0; pointer-events: none; }
 .chip-checkbox.disabled { opacity: 0.5; pointer-events: none; }
 
+// Destructive account deletion needs an unmistakable, visible consent box.
+// Chip checkboxes intentionally hide their native input; do not use that style here.
+.account-deletion-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    line-height: var(--lh-normal);
+    cursor: pointer;
+}
+.account-deletion-consent input[type="checkbox"] {
+    position: static;
+    opacity: 1;
+    pointer-events: auto;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    min-height: 20px;
+    margin: 2px 0 0;
+}
+.account-deletion-consent:has(input:checked) {
+    border-color: var(--border-strong);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+}
+.account-deletion-consent:has(input:focus-visible) {
+    outline: 2px solid var(--action-primary);
+    outline-offset: 2px;
+}
+
 
 input[type="checkbox"]{appearance:none;width:16px;height:16px;min-height:16px;padding:0;border:1px solid var(--border-strong);border-radius:4px;background:var(--bg-app);flex-shrink:0;display:inline-grid;place-content:center;cursor:pointer}
 input[type="checkbox"]:checked{background:var(--action-primary);border-color:var(--action-primary)}

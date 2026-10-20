@@ -35,3 +35,12 @@ test('deletion messaging distinguishes queueing from complete erasure in both la
         assert.equal(i18n.split('"' + key + '"').length - 1, 2, key);
     }
 });
+
+test('consent uses a visible native checkbox, not an opaque chip', () => {
+    const html = read('index.html');
+    const css = read('css/ui/controls.css');
+    assert.match(html, /<label class="account-deletion-consent">\s*<input id="account-deletion-verified" type="checkbox">/);
+    assert.match(css, /\.account-deletion-consent input\[type="checkbox"\]/);
+    assert.match(css, /\.account-deletion-consent:has\(input:checked\)/);
+    assert.doesNotMatch(html, /<label class="chip-checkbox">\s*<input id="account-deletion-verified"/);
+});
