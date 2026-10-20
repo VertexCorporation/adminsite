@@ -325,7 +325,7 @@ function renderMatrixTable() {
     const focus = document.activeElement?.dataset;
     let html = '<div class="permission-status-row"><span id="permission-save-status" role="status" aria-live="polite"></span>'+
         (currentUser.isAdmin ? '<button type="button" class="chrome-btn-outline permission-history-trigger" aria-expanded="false">'+(document.documentElement.lang==='en'?'Change history':'Değişiklik geçmişi')+'</button>' : '')+
-        '</div><div class="dept-perms-table panel-matrix" role="table" style="--permission-module-count:'+TABS.length+'" aria-label="'+__('perms.dept_col')+'"><div class="dept-perms-header" role="row"><span role="columnheader">'+__('perms.dept_col')+'</span>';
+        '</div><div class="dept-perms-table panel-matrix" role="table" style="--permission-module-count:'+manageableTabs.length+'" aria-label="'+__('perms.dept_col')+'"><div class="dept-perms-header" role="row"><span role="columnheader">'+__('perms.dept_col')+'</span>';
     manageableTabs.forEach(tab => {html += `<span class="dept-perm-th" role="columnheader">${__(tab.key)}</span>`;});
     html += '<span role="columnheader" class="sr-only">'+__('common.actions')+'</span></div>';
     let group = null;
