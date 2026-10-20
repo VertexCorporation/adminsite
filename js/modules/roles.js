@@ -8,6 +8,7 @@ import { userErrorMessage, showToast, __, onLangChange, getLang } from '../utils
 
 const TABS = [
     { id: 'contributors', icon: 'group', key: 'nav.contributors' },
+    { id: 'users', icon: 'people', key: 'nav.users' },
     { id: 'models', icon: 'smart_toy', key: 'nav.models' },
     { id: 'news', icon: 'newspaper', key: 'nav.news' },
     { id: 'notifications', icon: 'notifications_active', key: 'nav.notifications' },
@@ -31,6 +32,9 @@ const DEPARTMENTS = [
 
 // Panel kataloğu: her sekmenin "kanalları". Anahtar formatı `${tabId}.${panelId}`.
 export const PANELS = {
+    users: [
+        { id: 'deleteAccount', key: 'deleteAccount.title', icon: 'person_remove' }
+    ],
     contributors: [
         { id: 'list', key: 'panel.contributors.list', icon: 'group_work' },
         { id: 'vertexStatus', key: 'panel.contributors.vertexStatus', icon: 'verified_user' },
@@ -149,7 +153,7 @@ export function isPanelAdmin() {
 }
 export function getEffectivePanelLevel(panelKey) {
     if(currentUser.isAdmin)return 'write';
-    if(['contributors.users','contributors.vertexStatus'].includes(panelKey))return 'none';
+    if(panelKey.startsWith('users.') || ['contributors.users','contributors.vertexStatus'].includes(panelKey))return 'none';
     if(!departmentPermissions)return 'none';
     return bestLevel(panelKey,currentUser.departments);
 }
@@ -172,11 +176,12 @@ export function getAccessibleTabs(departments) {
     if (currentUser.isAdmin && departments.includes('Core')) return TABS.map(tab => tab.id);
     if (!departmentPermissions) return [];
     return TABS
-        .filter(tab => (PANELS[tab.id] || []).some(panel => bestLevel(`${tab.id}.${panel.id}`, departments) !== 'none'))
+        .filter(tab => tab.id !== 'users' && (PANELS[tab.id] || []).some(panel => bestLevel(`${tab.id}.${panel.id}`, departments) !== 'none'))
         .map(tab => tab.id);
 }
 
 export function departmentHasAccess(department, tabId) {
+    if (tabId === 'users') return false;
     if (!departmentPermissions) return false;
     const deptList = Array.isArray(department) ? department : [department];
     return (PANELS[tabId] || []).some(panel => bestLevel(`${tabId}.${panel.id}`, deptList) !== 'none');
@@ -313,6 +318,7 @@ function paintSaveState() {
     if (status) {status.textContent = __('perms.' + saveState);status.dataset.state = saveState;}
 }
 function renderMatrixTable() {
+    const manageableTabs = TABS.filter(tab => tab.id !== 'users');
     const container = document.getElementById('dept-permissions-container');
     if (!container || !departmentPermissions) return;
     container.setAttribute('aria-busy','false');
@@ -320,13 +326,13 @@ function renderMatrixTable() {
     let html = '<div class="permission-status-row"><span id="permission-save-status" role="status" aria-live="polite"></span>'+
         (currentUser.isAdmin ? '<button type="button" class="chrome-btn-outline permission-history-trigger" aria-expanded="false">'+(document.documentElement.lang==='en'?'Change history':'Değişiklik geçmişi')+'</button>' : '')+
         '</div><div class="dept-perms-table panel-matrix" role="table" style="--permission-module-count:'+TABS.length+'" aria-label="'+__('perms.dept_col')+'"><div class="dept-perms-header" role="row"><span role="columnheader">'+__('perms.dept_col')+'</span>';
-    TABS.forEach(tab => {html += `<span class="dept-perm-th" role="columnheader">${__(tab.key)}</span>`;});
+    manageableTabs.forEach(tab => {html += `<span class="dept-perm-th" role="columnheader">${__(tab.key)}</span>`;});
     html += '<span role="columnheader" class="sr-only">'+__('common.actions')+'</span></div>';
     let group = null;
     DEPARTMENTS.forEach(dept => {
         if (dept.group !== group) {group=dept.group;html+=`<div class="dept-perm-group-header">${__('dept.group_' + group)}</div>`;}
         html += `<div class="dept-perm-row" role="row"><span class="dept-perm-label" role="rowheader">${__(dept.nameKey)}</span>`;
-        TABS.forEach(tab => {
+        manageableTabs.forEach(tab => {
             const level = levelFor(dept.id, wildcardKey(tab.id));
             const overridden = Object.keys(departmentPermissions[dept.id]?.panels || {}).some(key=>key.startsWith(tab.id+'.') && key!==wildcardKey(tab.id));
             html += `<span class="perm-cell" role="cell" data-module-label="${__(tab.key)}"><button type="button" class="perm-cycle ${LEVEL_CLASS[level]}" data-dept="${dept.id}" data-tab="${tab.id}" data-level="${level}" aria-label="${__(dept.nameKey)} · ${__(tab.key)}: ${levelLabel(level)}" title="${__('perms.cycle_hint')}">${cycleIcon(level)}</button>${overridden?`<span class="perm-override-dot" title="${__('perms.override_hint')}"></span>`:''}</span>`;
@@ -444,6 +450,7 @@ async function flushPermissions() {
 function handleMatrixCycle(button) {
     if (!currentUser.isAdmin) return;
     const {dept,tab}=button.dataset;
+    if (tab === 'users') return;
     const panels=ensureDeptEntry(dept);
     const next=nextLevel(panels[wildcardKey(tab)] || 'none');
     clearTabOverrides(dept,tab);
@@ -455,7 +462,7 @@ function handlePreset(button) {
     const {dept,preset}=button.dataset;
     const panels=ensureDeptEntry(dept);
     Object.keys(panels).forEach(key=>delete panels[key]);
-    if(preset!=='none')TABS.forEach(tab=>panels[wildcardKey(tab.id)]=preset);
+    if(preset!=='none')TABS.filter(tab=>tab.id!=='users').forEach(tab=>panels[wildcardKey(tab.id)]=preset);
     delete departmentPermissions[dept].hiddenFields;
     delete departmentPermissions[dept].hiddenChips;
     scheduleSave();renderMatrixTable();renderPanelMenuContent();
@@ -486,7 +493,7 @@ function renderPanelMenuContent() {
     const panelKey=openMenuPanel;
     const {panel}=findPanelMeta(panelKey);
     const options=CONTENT_OPTIONS[panelKey];
-    if(['contributors.users','contributors.vertexStatus'].includes(panelKey)){pop.innerHTML='<h4 class="panel-menu-title">'+__(panel.key)+'</h4><p class="form-hint">'+__('people.admin_only')+'</p>';return;}
+    if(panelKey==='users.deleteAccount'||['contributors.users','contributors.vertexStatus'].includes(panelKey)){pop.innerHTML='<h4 class="panel-menu-title">'+__(panel.key)+'</h4><p class="form-hint">'+__('people.admin_only')+'</p>';return;}
     pop.dataset.panel=panelKey;
     let html=`<h4 class="panel-menu-title">${__(panel.key)}</h4><p class="form-hint">${__('perms.panel_desc')}</p><div class="panel-menu-section-title">${__('perms.menu_access')}</div>`;
     DEPARTMENTS.forEach(dept=>{
