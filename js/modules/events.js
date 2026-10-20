@@ -1,9 +1,12 @@
+import { registrationValue, registrationCSVCell } from '../utils/event-registration-values.js';
+import { renderPager } from '../ui/pager.js';
+import { deploymentCapabilities } from '../core/deployment-capabilities.js';
 import { beginPanelLoading, setButtonLoading } from '../utils/loading.js';
 import { crossfade } from '../ui/transition.js';
 import { showLoadError } from '../ui/states.js';
 import { eventLocalTime, eventInstant } from './eventTime.js';
 import { mountEventFields } from './eventFields.js';
-import { eventCallable } from '../core/firebase.js';
+import { auth, eventCallable } from '../core/firebase.js';
 import { getEffectivePanelLevel } from './roles.js';
 import { confirmDialog } from './shell.js';
 import { escapeHTML, showToast, getLang } from '../utils/ui.js';
@@ -21,7 +24,9 @@ const fields = [
  ['translations','Diğer diller (JSON dil kodları)','Other languages (JSON language codes)','textarea']
 ];
 let current = null;
+let registrationEpoch=0;
 export function initEventsModule() {
+ auth.onAuthStateChanged(user=>{if(!user){registrationEpoch++;document.getElementById('events-registrations')?.replaceChildren();setButtonLoading(document.getElementById('events-load-registrations'),false);}});
  const form=document.getElementById('events-editor');
  const container=document.getElementById('events-fields');
  container.innerHTML=fields.map(([key,a,b,type])=>`<div class="form-group-field"><label for="event-${key}">${escapeHTML(tr(a,b))}</label>${type==='textarea'?`<textarea id="event-${key}" name="${key}" rows="3"></textarea>`:`<input id="event-${key}" name="${key}" type="${type}" ${['id','title','desc','date','timeZone','location'].includes(key)?'required':''}>`}</div>`).join('')+`<div class="form-group-field"><label for="event-status">${tr('Durum','Status')}</label><select id="event-status" name="status"><option value="draft">${tr('Taslak','Draft')}</option><option value="published">${tr('Yayımlanmış','Published')}</option><option value="cancelled">${tr('İptal','Cancelled')}</option></select></div><div class="form-group-field"><label for="event-sales">${tr('Satış durumu','Sales status')}</label><select id="event-sales" name="salesStatus"><option value="closed">${tr('Kapalı','Closed')}</option><option value="open">${tr('Açık','Open')}</option><option value="sold_out">${tr('Tükendi','Sold out')}</option></select></div><div class="form-group-field"><label>${tr('Görsel yükle','Upload image')}<input type="file" id="event-upload" accept="image/jpeg,image/png,image/webp"></label></div><div class="form-group-field"><label>${tr('Galeriye görsel yükle','Upload gallery images')}<input type="file" id="event-gallery-upload" accept="image/jpeg,image/png,image/webp" multiple></label></div>`;
@@ -192,7 +197,131 @@ export function initEventsModule() {
  };
  document.getElementById('event-upload').onchange=async e=>{try{if(e.target.files[0])form.elements.cover.value=await upload(e.target.files[0]);}catch(error){fail(error);}};
  document.getElementById('event-gallery-upload').onchange=async e=>{try{for(const file of e.target.files){const url=await upload(file);form.elements.images.value=[form.elements.images.value.trim(),url].filter(Boolean).join('\n');}}catch(error){fail(error);}};
- document.getElementById('events-load-registrations').onclick=async event=>{const button=event.currentTarget;if(button.disabled)return;setButtonLoading(button,true);try{const {data}=await eventCallable('listEventRegistrations',{eventId:document.getElementById('events-registration-search').value});const box=document.getElementById('events-registrations');crossfade(box,()=>{box.replaceChildren();for(const row of data.registrations){const p=document.createElement('p');p.textContent=`${row.name} · ${row.email} · ${row.status} · ${row.id}`;box.append(p);}});}catch(e){fail(e);}finally{setButtonLoading(button,false);}};
+ document.getElementById('events-load-registrations').onclick=async event=>{
+  const button=event.currentTarget;if(button.disabled)return;
+  const uid=auth.currentUser?.uid,epoch=++registrationEpoch;
+  if(!uid)return;
+  const valid=()=>registrationEpoch===epoch&&auth.currentUser?.uid===uid;
+  setButtonLoading(button,true);
+  const box=document.getElementById('events-registrations');box.replaceChildren();
+  const heading=document.createElement('p');heading.className='form-hint';heading.textContent=tr('Kayıtlar yükleniyor…','Loading registrations…');box.append(heading);
+  try{
+   const eventId=document.getElementById('events-registration-search').value.trim();
+   const {data}=await eventCallable('listEventRegistrations',{eventId,...(deploymentCapabilities.eventRegistrationPages?{pageSize:100}:{})});
+   if(!valid())return;
+   const rows=[...(data.registrations||[])];
+   let nextCursor=data.nextCursor||null;
+   let fetching=false;
+   const fetchNext=async()=>{
+    if(!nextCursor || fetching)return;
+    fetching=true;
+    const cursor=nextCursor;
+    try{
+     const response=(await eventCallable('listEventRegistrations',{eventId,pageSize:100,cursor})).data;
+     if(!valid())return;
+     if(response.nextCursor===cursor)
+      throw new Error(tr('Sayfalama devam etmiyor.','Pagination did not advance.'));
+     const known=new Set(rows.map(row=>row.id));
+     rows.push(...(response.registrations||[]).filter(row=>!known.has(row.id)));
+     nextCursor=response.nextCursor||null;
+    }finally{fetching=false;}
+   };
+   crossfade(box,()=>{
+   if(!valid())return;
+   box.replaceChildren();
+   if(!rows.length){box.textContent=tr('Kayıt bulunamadı.','No registrations found.');return;}
+   const search=document.createElement('input');search.type='search';
+   search.placeholder=tr('Kayıtlarda ara','Search registrations');search.setAttribute('aria-label',search.placeholder);
+   search.className='form-group-field';box.append(search);
+   const viewport=document.createElement('div');viewport.style.overflowX='auto';box.append(viewport);
+   const table=document.createElement('table');table.className='contributor-table';viewport.append(table);
+   const head=document.createElement('thead'),headrow=document.createElement('tr');head.append(headrow);
+   for(const label of [tr('Ad','Name'),tr('E-posta','Email'),tr('Durum','Status'),tr('Bilet','Ticket'),tr('Kayıt zamanı','Registered at')]){
+    const th=document.createElement('th');th.textContent=label;th.style.textAlign='left';th.style.padding='10px';headrow.append(th);
+   }
+   table.append(head);
+   const body=document.createElement('tbody');table.append(body);
+   const actions=document.createElement('div');actions.className='ui-list-actions';
+   const exportButton=document.createElement('button');exportButton.type='button';
+   exportButton.className='chrome-btn-outline';exportButton.textContent=tr('CSV dışa aktar','Export CSV');
+   const loadMore=document.createElement('button');loadMore.type='button';
+   loadMore.className='chrome-btn-outline';
+   loadMore.textContent=tr('Diğer kayıtları yükle','Load more registrations');
+   loadMore.hidden=!nextCursor;
+   const loadAll=document.createElement('button');loadAll.type='button';
+   loadAll.className='chrome-btn-outline';
+   loadAll.textContent=tr('Tüm kayıtlarda ara','Search all registrations');
+   loadAll.hidden=!nextCursor;
+   const countLabel=document.createElement('span');countLabel.className='form-hint';
+   actions.append(exportButton,loadMore,loadAll,countLabel);box.insertBefore(actions,viewport);
+   let page=1;const pageSize=25;
+   const columns=[['name','Ad','Name'],['email','E-posta','Email'],['status','Durum','Status'],['ticketCategory','Bilet','Ticket'],['createdAt','Kayıt zamanı','Registered at']];
+   const visible=()=>rows.filter(row=>[row.name,row.email,row.status,row.ticketCategory,row.id]
+      .some(v=>String(v||'').toLocaleLowerCase().includes(search.value.toLocaleLowerCase())));
+   const value=(row,key)=>registrationValue(row,key,getLang());
+   const paint=()=>{
+    if(!valid())return;
+    body.replaceChildren();
+    box.querySelector('.ui-pager')?.remove();
+    const matches=visible();page=Math.min(page,Math.max(1,Math.ceil(matches.length/pageSize)));
+    for(const row of matches.slice((page-1)*pageSize,page*pageSize)){
+     const trEl=document.createElement('tr');
+     for(const [key]of columns){const td=document.createElement('td');td.textContent=value(row,key);td.style.padding='10px';td.style.borderBottom='1px solid var(--border-subtle)';trEl.append(td);}
+     body.append(trEl);
+    }
+    renderPager(box,{page,total:matches.length,pageSize,language:getLang(),onChange:next=>{page=next;paint();}});
+    loadMore.hidden=!nextCursor;
+    loadAll.hidden=!nextCursor;
+    countLabel.textContent=nextCursor
+        ?tr(`${rows.length} kayıt yüklendi; devamı mevcut.`,`${rows.length} registrations loaded; more available.`)
+        :tr(`${rows.length} kayıt yüklendi.`,`${rows.length} registrations loaded.`);
+   };
+   const loadRemaining=async()=>{
+    if(fetching)return;
+    loadMore.disabled=loadAll.disabled=exportButton.disabled=true;
+    try {
+     // Bounded in-browser collection. Large reports require a dedicated background export.
+     while(valid() && nextCursor && rows.length<2000)await fetchNext();
+     if(nextCursor)showToast(tr('2.000 kayıt gösterildi. Daha büyük rapor için yöneticiye başvurun.','2,000 records loaded. Contact an administrator for larger exports.'),'info');
+    }catch(error){fail(error);}
+    finally{loadMore.disabled=loadAll.disabled=exportButton.disabled=false;paint();}
+   };
+   loadMore.onclick=async()=>{
+    if(!valid()||fetching||loadMore.disabled)return;
+    loadMore.disabled=loadAll.disabled=exportButton.disabled=true;
+    try{await fetchNext();page=Math.ceil(rows.length/pageSize);paint();}
+    catch(error){fail(error);}
+    finally{loadMore.disabled=loadAll.disabled=exportButton.disabled=false;}
+   };
+   loadAll.onclick=loadRemaining;
+   search.addEventListener('input',()=>{page=1;paint();});
+   exportButton.onclick=async()=>{
+    if(!valid()||exportButton.disabled)return;
+    exportButton.disabled=true;
+    try{
+     if(!await confirmDialog({title:tr('Kişisel verileri dışa aktar','Export personal data'),
+       body:tr('Yetkili olduğun etkinlik kayıtları CSV olarak indirilecek.','The visible event registrations will be exported as CSV.')}))return;
+     if(!valid())return;
+     if(nextCursor)await loadRemaining();
+     if(!valid())return;
+     if(nextCursor){
+      showToast(tr('CSV için tüm kayıtlar yüklenmeli.','All registrations must be loaded before exporting CSV.'),'warning');
+      return;
+     }
+     const escape=registrationCSVCell;
+     const output=[columns.map(([,trLabel,en])=>getLang()==='tr'?trLabel:en),
+       ...visible().map(row=>columns.map(([key])=>value(row,key)))].map(row=>row.map(escape).join(',')).join('\r\n');
+     const blob=new Blob(['\ufeff',output],{type:'text/csv;charset=utf-8'});
+     const url=URL.createObjectURL(blob);
+     const anchor=document.createElement('a');anchor.href=url;
+     anchor.download='event-registrations.csv';anchor.click();
+     setTimeout(()=>URL.revokeObjectURL(url),1000);
+    }finally{exportButton.disabled=false;}
+   };
+   paint();
+   });
+  }catch(e){if(valid()){box.replaceChildren();fail(e);}}finally{if(valid())setButtonLoading(button,false);}
+ };
  document.addEventListener('vertex:workspace',e=>{if(e.detail.keys.includes('events.list'))refresh().catch(fail);});
  fill(null);
 }

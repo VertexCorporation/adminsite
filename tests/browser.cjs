@@ -56,7 +56,7 @@ await page.route('**/*',async route=>{
  const url=new URL(route.request().url());
  if(url.hostname.endsWith('cloudfunctions.net')) return route.fulfill({contentType:'application/json',body:JSON.stringify(verificationValid ? {valid:true,name:'Example Participant',language:'en',certificateType:'tenacity',formattedDate:'01/01/2026'} : {valid:false})});
  if(url.hostname==='127.0.0.1'){
-  if(url.pathname.endsWith('/js/core/deployment-capabilities.js'))return route.fulfill({contentType:'text/javascript',body:fs.readFileSync(path.join(root,'js/core/deployment-capabilities.js'),'utf8').replace(/(newsRevisions|notificationStatus|chatReadPositions|bulkSubscriptionPreview): false/g,'$1: true')});
+  if(url.pathname.endsWith('/js/core/deployment-capabilities.js'))return route.fulfill({contentType:'text/javascript',body:fs.readFileSync(path.join(root,'js/core/deployment-capabilities.js'),'utf8').replace(/(newsRevisions|notificationStatus|chatReadPositions|bulkSubscriptionPreview|eventRegistrationPages): false/g,'$1: true')});
   if(url.pathname.startsWith('/verify/'))return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.resolve(root,'../vertexite/verify.html'),'utf8')});
   if(url.pathname.endsWith('/js/core/initializer.js'))return route.fulfill({contentType:'text/javascript',body:"import {startApp} from '../main.js'; startApp({apiKey:'test'});"});
   return route.continue();
@@ -115,6 +115,7 @@ await page.route('**/*',async route=>{
   else if(name==='listdepartmentusers')result={users:[]};
   else if(name==='listadmins')result={admins:adminRoster};
   else if(name==='removeadminrole'){if(failAdmin)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});adminRoster=adminRoster.filter(a=>a.email!==route.request().postDataJSON().data.email);result={success:true};}
+  else if(name==='listeventregistrations'){const data=route.request().postDataJSON()?.data||{};result={registrations:[{id:data.cursor?'registration-2':'registration-1',name:data.cursor?'Second Guest':'First Guest',email:'guest@example.invalid',status:'confirmed',createdAt:{_seconds:1792450000}}],nextCursor:data.cursor?null:'registration-1',hasMore:!data.cursor};}
   else if(name==='listusersubscriptions')result={subscriptions:[{uid:'sub-fixture',displayName:'Example Subscriber',email:'subscriber@example.invalid',tier:'pro',source:'admin',canRemove:true,expiresAt:'2027-01-01T12:00:00Z'}]};
   else if(name==='listsiteteam')result=route.request().postDataJSON()?.data?.manage
     ? {cards:[],honors:[]}
@@ -347,6 +348,16 @@ assert.equal(await page.frameLocator('#events-preview-content iframe').locator('
   'Unpublished draft preview');
 assert.equal(calls.length,callsBeforePreview,'Preview must never persist or publish drafts');
 note('Eventsite draft iframe uses origin-checked postMessage without publication');
+await page.locator('[data-nav-panel="events.registrations"]').click();
+await page.locator('#events-registration-search').fill('fixture-event');
+await page.locator('#events-load-registrations').click();
+await page.getByRole('button',{name:'Load more registrations',exact:true}).click();
+await page.waitForFunction(()=>document.querySelectorAll('#events-registrations tbody tr').length===2);
+assert(await page.locator('#events-registrations').innerText().then(t=>!t.includes('[object Object]')));
+await page.getByRole('searchbox',{name:'Search registrations',exact:true}).fill('Second Guest');
+assert.equal(await page.locator('#events-registrations tbody tr').count(),1);
+note('Event registration pages append without duplicates, search loaded rows and render Firestore dates');
+
 await selectTab('models');await page.locator('[data-model-create]').click();await page.locator('#model-id').fill('fixture-model');assert.equal(await page.locator('#model-id').inputValue(),'fixture-model');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});note('Model editor drawer remains editable');
 await page.locator('#manual-models-list-container .model-actions-trigger').click();await page.locator('.model-menu .menu-item').filter({hasText:'Translations'}).click();await page.waitForSelector('#translation-modal-overlay');assert(await page.locator('#translation-modal-overlay input').count()>0);await page.keyboard.press('Escape');await page.waitForSelector('.vx-modal',{state:'detached'});await page.locator('[data-model-publish]').click();await page.waitForSelector('.confirm-ok');await page.locator('.confirm-cancel').click();assert(!calls.includes('updatemodelslist'));await page.locator('[data-model-publish]').click();await page.waitForSelector('.confirm-ok');await page.locator('.confirm-ok').click();await page.waitForTimeout(150);assert(calls.includes('updatemodelslist'));note('Catalog actions, translation focus surface and explicit publish confirmation (mock)');
 for(const width of [360,1440]){await page.setViewportSize({width,height:900});for(const id of ['models','news','notifications','subscriptions','chat','system']){await selectTab(id);await page.waitForTimeout(300);if(process.env.VERTEX_SCREENSHOTS){fs.mkdirSync(path.resolve(root,process.env.VERTEX_SCREENSHOTS),{recursive:true});await page.screenshot({path:path.resolve(root,process.env.VERTEX_SCREENSHOTS,`vertex-${id}-${width}.png`),fullPage:true});}}}await selectTab('news');for(const id of ['title-en','title-tr','summary-en','summary-tr','content-en','content-tr'])await page.locator('#'+id).fill('Fixture Article');for(const lang of ['en','tr'])await page.locator('#cover-image-'+lang).setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from('fixture')});await page.locator('#news-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert(calls.includes('createnewsarticle'));note('News image upload and publish payload remain functional (mock)');

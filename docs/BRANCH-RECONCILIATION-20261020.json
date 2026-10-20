@@ -1,0 +1,981 @@
+{
+  "version": 1,
+  "date": "2026-10-20",
+  "notes": [
+    "Every removed original head remains reachable through reconciled/20261020 archive tags. Where GitHub disallows tagging an old workflow tree, a single current-tree archive commit preserves every original head as an ancestor. Main is never deleted.",
+    "Superseded implementations are not byte-for-byte merges; current replacements, selected features and exclusions are explicit.",
+    "Production deployment, active-member Plus/department apply, certificates, legacy data and IAM cleanup are separate operations."
+  ],
+  "branches": [
+    {
+      "repo": "Fulcrum",
+      "name": "audit/branch-reconciliation-20261020",
+      "sha": "f66876da6c12d83064d735f012e91e5775c46b7b",
+      "disposition": "temporary-audit-archive",
+      "reason": "Temporary history/cleanup workflows are operational scaffolding, not product features. Preserve their final commit and reports, close the audit PR and remove the branch after all cleanup completes.",
+      "replacements": [
+        "docs/BRANCH-RECONCILIATION-20261020.json"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "audit/cortex-provider-logs-20261020",
+      "sha": "9b799358149f4ebd6122f10ca086c75f33007b43",
+      "disposition": "merged",
+      "reason": "Read-only allowlisted diagnostic extraction merged through PR 64; raw prompts, images, credentials and user identities are excluded.",
+      "replacements": [
+        "scripts/cortex-log-diagnostics.py",
+        ".github/workflows/firebase-functions-live-audit.yml"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "chore/sync-billing-with-main",
+      "sha": "761890cf0c24ee6e185f906b64bf460cbc78cfc3",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "events-integration-deploy",
+      "sha": "0fd14d96b6321c2a1f10f95b671de754f387ef1e",
+      "disposition": "superseded-implementation",
+      "reason": "Current event service preserves stable IDs, IANA timezone dates, audited revision writes, atomic capacity and public registration verification. Do not restore old public team seeding or idle instance reservations.",
+      "replacements": [
+        "functions/src/events.js",
+        "functions/src/eventModel.js",
+        "functions/test/events-emulator.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "feat/credit-engine",
+      "sha": "c869f3a73028d7b3ce8561b7b5299cb2babb0905",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "feat/credit-engine-live",
+      "sha": "0b9696b08b9826b5f3a8209172aa05533a3877d3",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "feat/department-roles",
+      "sha": "d0c0b98e2af9dd1606fe35d978ff05c8a2a88ec3",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical Core/personnel authority, verified reciprocal identity, audited department assignment, indexed roster fallback and drift-checked rule/claim retirement supersede earlier claim-based and whole-file variants. Linked department edits are guarded by PR 65. Operational cleanup remains separate from source merging.",
+      "replacements": [
+        "functions/src/consoleAuthorization.js",
+        "functions/src/consoleDepartmentAssignment.js",
+        "functions/src/consolePeople.js",
+        "scripts/deploy-console-core-rules.cjs",
+        "scripts/retire-console-admins.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "feat/elevenlabs-media-fallback",
+      "sha": "7d292527956c637864f8d763c078a1c51bd429a8",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "feat/restore-legacy-production-endpoints-20261017",
+      "sha": "29aefb0b9509df2ec52d041d3dd6eae301dfa3b8",
+      "disposition": "selectively-reconciled",
+      "reason": "The eleven compatible legacy exports and exact localized position titles are retained alongside current siteTeam APIs. Current Core authorization and modern public DTOs are preserved.",
+      "replacements": [
+        "functions/index.js",
+        "functions/src/legacyTeam.js",
+        "functions/src/legacyTeamTitles.js",
+        "functions/test/legacy-export-contract.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "feat/voice-endpoints",
+      "sha": "fbeeb995b49ae01d3146acc4827e4d99ab3c1432",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "feature/console-personnel-foundation",
+      "sha": "b59b7bee666a344d65a5d003e8bfae09a6bcd71e",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical Core/personnel authority, verified reciprocal identity, audited department assignment, indexed roster fallback and drift-checked rule/claim retirement supersede earlier claim-based and whole-file variants. Linked department edits are guarded by PR 65. Operational cleanup remains separate from source merging.",
+      "replacements": [
+        "functions/src/consoleAuthorization.js",
+        "functions/src/consoleDepartmentAssignment.js",
+        "functions/src/consolePeople.js",
+        "scripts/deploy-console-core-rules.cjs",
+        "scripts/retire-console-admins.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "feature/vertex-roster-61",
+      "sha": "d2409ad008602e61b8b5c3843c9a9765ddd1f471",
+      "disposition": "superseded-product-scope",
+      "reason": "The user selected every current active application instead of a fixed 61-person roster. Contributor membership remains canonical; PR 65 supplies verified identity linking, missing departments and guarded one-year Plus without downgrading purchases. Historical roster data is preserved, not replayed.",
+      "replacements": [
+        "scripts/migrate-active-vertex-access.cjs",
+        "functions/src/activeVertexAccessPolicy.js",
+        "functions/src/personnelSponsor.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/backup-health-details-20261017",
+      "sha": "6b530b8ac2aa2fd382f1d6862049a233851f7383",
+      "disposition": "superseded-implementation",
+      "reason": "Current bounded backup content/schema/checksum verification and explicit unknown restore status supersede metadata-only health. Current team card management preserves biography/links and avoids deleted-record resurrection.",
+      "replacements": [
+        "functions/src/backupHealth.js",
+        "functions/src/teamCardsService.js",
+        "functions/test/legacy-recovery.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/console-callable-preflight-20261017",
+      "sha": "c5338d9401a61a076e6c7b6e1de9f4a471d0c15e",
+      "disposition": "superseded-implementation",
+      "reason": "Current manual selected deployment checks real OPTIONS responses after named, sequential deployments; successful production run 39389964207 verified the first six Core endpoints.",
+      "replacements": [
+        ".github/workflows/firebase-functions-deploy.yml",
+        "scripts/verify-console-preflight.py"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/console-contracts-20261018",
+      "sha": "4cb65550d8a43f632215fc8ec8288c686229bb4b",
+      "disposition": "superseded-implementation",
+      "reason": "Current implementations retain public-team cache invalidation, biography/link preservation, modern/legacy DTO compatibility, masked application edits, bounded directory reads and confirmed model-image cleanup. Current Core guards and purchase protection supersede old replacements.",
+      "replacements": [
+        "functions/src/siteTeam.js",
+        "functions/src/teamCardsService.js",
+        "functions/src/modelImageCleanup.js",
+        "functions/src/contributors.js",
+        "functions/test/model-image-cleanup.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/console-core-team-stars-11-20",
+      "sha": "3a938bf75c59c8f2c88b5e05d186889c53494468",
+      "disposition": "selectively-reconciled",
+      "reason": "Current team directory and profile discovery, Istanbul ISO-week boundaries and privacy-safe active weekly-star identities retain the intended features with current Core permissions.",
+      "replacements": [
+        "functions/src/legacyTeam.js",
+        "functions/src/weeklyStarsPublic.js",
+        "functions/src/teamCardsService.js",
+        "functions/test/weekly-stars-public.test.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/console-finalize-weekly-stars-core-20261018",
+      "sha": "811e45f39ab0a57a2a87f484254f288a5f30aca3",
+      "disposition": "selectively-reconciled",
+      "reason": "Current team directory and profile discovery, Istanbul ISO-week boundaries and privacy-safe active weekly-star identities retain the intended features with current Core permissions.",
+      "replacements": [
+        "functions/src/legacyTeam.js",
+        "functions/src/weeklyStarsPublic.js",
+        "functions/src/teamCardsService.js",
+        "functions/test/weekly-stars-public.test.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/console-hardening-41-50-20261018",
+      "sha": "22fa234a6fb2606f8ddf072ecec5c830078d29c6",
+      "disposition": "superseded-implementation",
+      "reason": "Current implementations retain public-team cache invalidation, biography/link preservation, modern/legacy DTO compatibility, masked application edits, bounded directory reads and confirmed model-image cleanup. Current Core guards and purchase protection supersede old replacements.",
+      "replacements": [
+        "functions/src/siteTeam.js",
+        "functions/src/teamCardsService.js",
+        "functions/src/modelImageCleanup.js",
+        "functions/src/contributors.js",
+        "functions/test/model-image-cleanup.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/console-hardening-41-50-integrated-20261018",
+      "sha": "50d1e944d3663a2574ec3b06c9db322e53f8a84c",
+      "disposition": "superseded-implementation",
+      "reason": "Current implementations retain public-team cache invalidation, biography/link preservation, modern/legacy DTO compatibility, masked application edits, bounded directory reads and confirmed model-image cleanup. Current Core guards and purchase protection supersede old replacements.",
+      "replacements": [
+        "functions/src/siteTeam.js",
+        "functions/src/teamCardsService.js",
+        "functions/src/modelImageCleanup.js",
+        "functions/src/contributors.js",
+        "functions/test/model-image-cleanup.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/console-operations-20261017",
+      "sha": "ba51a252c2fcc667da32d8bf423b814295d17484",
+      "disposition": "selectively-reconciled",
+      "reason": "PRs 63/65 and the final reconciliation retain revisions, private unread positions, safe queue/FCM status, bounded subscription preview and registration pagination under current Core authority. Device/app receipt tracking and other users' read activity were explicitly excluded by the user.",
+      "replacements": [
+        "functions/src/news.js",
+        "functions/src/consoleChat.js",
+        "functions/src/notifications.js",
+        "functions/src/adminSubscriptions.js",
+        "functions/src/events.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/console-operations-verified-20261018",
+      "sha": "fb42a42584589b8979856bb88dc5ef4de195cdf5",
+      "disposition": "selectively-reconciled",
+      "reason": "PRs 63/65 and the final reconciliation retain revisions, private unread positions, safe queue/FCM status, bounded subscription preview and registration pagination under current Core authority. Device/app receipt tracking and other users' read activity were explicitly excluded by the user.",
+      "replacements": [
+        "functions/src/news.js",
+        "functions/src/consoleChat.js",
+        "functions/src/notifications.js",
+        "functions/src/adminSubscriptions.js",
+        "functions/src/events.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/console-team-stars-core-integration",
+      "sha": "823b4be369c4373f526757064dbf7f78c3ac9898",
+      "disposition": "selectively-reconciled",
+      "reason": "Current team directory and profile discovery, Istanbul ISO-week boundaries and privacy-safe active weekly-star identities retain the intended features with current Core permissions.",
+      "replacements": [
+        "functions/src/legacyTeam.js",
+        "functions/src/weeklyStarsPublic.js",
+        "functions/src/teamCardsService.js",
+        "functions/test/weekly-stars-public.test.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/console-weekly-stars-core-converged-20261018",
+      "sha": "4c05e170281d094454fd23347e3237e2135fa5b1",
+      "disposition": "selectively-reconciled",
+      "reason": "Current team directory and profile discovery, Istanbul ISO-week boundaries and privacy-safe active weekly-star identities retain the intended features with current Core permissions.",
+      "replacements": [
+        "functions/src/legacyTeam.js",
+        "functions/src/weeklyStarsPublic.js",
+        "functions/src/teamCardsService.js",
+        "functions/test/weekly-stars-public.test.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/core-admin-roster-cutover",
+      "sha": "f56d0bb99d1b23f46d910fba06e4c63d42bf28fb",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical Core/personnel authority, verified reciprocal identity, audited department assignment, indexed roster fallback and drift-checked rule/claim retirement supersede earlier claim-based and whole-file variants. Linked department edits are guarded by PR 65. Operational cleanup remains separate from source merging.",
+      "replacements": [
+        "functions/src/consoleAuthorization.js",
+        "functions/src/consoleDepartmentAssignment.js",
+        "functions/src/consolePeople.js",
+        "scripts/deploy-console-core-rules.cjs",
+        "scripts/retire-console-admins.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/core-admins-retirement-safety",
+      "sha": "23763b5cb811ff946b31f06c2065be1d12eebf06",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical Core/personnel authority, verified reciprocal identity, audited department assignment, indexed roster fallback and drift-checked rule/claim retirement supersede earlier claim-based and whole-file variants. Linked department edits are guarded by PR 65. Operational cleanup remains separate from source merging.",
+      "replacements": [
+        "functions/src/consoleAuthorization.js",
+        "functions/src/consoleDepartmentAssignment.js",
+        "functions/src/consolePeople.js",
+        "scripts/deploy-console-core-rules.cjs",
+        "scripts/retire-console-admins.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/core-canonical-cutover-after-production-migration",
+      "sha": "54ef0e68bb25bbe1bafea4115deafab5703b6241",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical Core/personnel authority, verified reciprocal identity, audited department assignment, indexed roster fallback and drift-checked rule/claim retirement supersede earlier claim-based and whole-file variants. Linked department edits are guarded by PR 65. Operational cleanup remains separate from source merging.",
+      "replacements": [
+        "functions/src/consoleAuthorization.js",
+        "functions/src/consoleDepartmentAssignment.js",
+        "functions/src/consolePeople.js",
+        "scripts/deploy-console-core-rules.cjs",
+        "scripts/retire-console-admins.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/core-legacy-admin-complete-audit",
+      "sha": "23d6f0f7fa314b8352b6a0df027bda39581f5fdc",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical Core/personnel authority, verified reciprocal identity, audited department assignment, indexed roster fallback and drift-checked rule/claim retirement supersede earlier claim-based and whole-file variants. Linked department edits are guarded by PR 65. Operational cleanup remains separate from source merging.",
+      "replacements": [
+        "functions/src/consoleAuthorization.js",
+        "functions/src/consoleDepartmentAssignment.js",
+        "functions/src/consolePeople.js",
+        "scripts/deploy-console-core-rules.cjs",
+        "scripts/retire-console-admins.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/cortex-media-search-20261020",
+      "sha": "36fb38f16e7df6e402c3d14c4431e9e4c18b9ceb",
+      "disposition": "merged",
+      "reason": "Reviewed media preservation and multi-provider web retrieval merged through PR 62, tested together with current main (603 offline tests).",
+      "replacements": [
+        "functions/src/stream.js",
+        "functions/src/webSearch.js",
+        "functions/test/web-search-providers.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/deepgram-secret-name",
+      "sha": "9d52183132cfcb1f9e8cacd655cb96f3f497b11f",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/department-directory-roster-20261019",
+      "sha": "013fea5fce95a8831ebc96c9f0f9f44e6ef437af",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical Core/personnel authority, verified reciprocal identity, audited department assignment, indexed roster fallback and drift-checked rule/claim retirement supersede earlier claim-based and whole-file variants. Linked department edits are guarded by PR 65. Operational cleanup remains separate from source merging.",
+      "replacements": [
+        "functions/src/consoleAuthorization.js",
+        "functions/src/consoleDepartmentAssignment.js",
+        "functions/src/consolePeople.js",
+        "scripts/deploy-console-core-rules.cjs",
+        "scripts/retire-console-admins.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/department-directory-roster-converged-20261019",
+      "sha": "7597b0b3d99e7c9297daa242f6fd099cbde710d7",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical Core/personnel authority, verified reciprocal identity, audited department assignment, indexed roster fallback and drift-checked rule/claim retirement supersede earlier claim-based and whole-file variants. Linked department edits are guarded by PR 65. Operational cleanup remains separate from source merging.",
+      "replacements": [
+        "functions/src/consoleAuthorization.js",
+        "functions/src/consoleDepartmentAssignment.js",
+        "functions/src/consolePeople.js",
+        "scripts/deploy-console-core-rules.cjs",
+        "scripts/retire-console-admins.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/drop-invoker-option",
+      "sha": "0a9d3f60a9fe37b64f6df2dd24570de5a1de99f1",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/fal-output-type-from-catalog",
+      "sha": "29a026132ebd330d74ace94af45779cba7da5387",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/fal-output-type-on-billing",
+      "sha": "0e5b7f487cbb81bbedc666ce2bda6aeb2a434052",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/first-ten-backup-and-team-20261017",
+      "sha": "0f9c919fa99c2da67c70f2a669fb8e1855db0c3e",
+      "disposition": "superseded-implementation",
+      "reason": "Current bounded backup content/schema/checksum verification and explicit unknown restore status supersede metadata-only health. Current team card management preserves biography/links and avoids deleted-record resurrection.",
+      "replacements": [
+        "functions/src/backupHealth.js",
+        "functions/src/teamCardsService.js",
+        "functions/test/legacy-recovery.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/legacy-credit-mirrors",
+      "sha": "7dcb5b77b7ae23ef21bb82a093cb705b6e783660",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/notification-reliability-20261018",
+      "sha": "72d4099b58e054f820c76b30512ebfef63225841",
+      "disposition": "selectively-reconciled",
+      "reason": "PRs 63/65 and the final reconciliation retain revisions, private unread positions, safe queue/FCM status, bounded subscription preview and registration pagination under current Core authority. Device/app receipt tracking and other users' read activity were explicitly excluded by the user.",
+      "replacements": [
+        "functions/src/news.js",
+        "functions/src/consoleChat.js",
+        "functions/src/notifications.js",
+        "functions/src/adminSubscriptions.js",
+        "functions/src/events.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/production-tool-choice-and-veo",
+      "sha": "c216ca2bd4e46a0f6e937d627015d4a8ecc71da2",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/realtime-console-chat-20261018",
+      "sha": "7d5a3434f7645385d292276842cef0ed16560aa5",
+      "disposition": "selectively-reconciled",
+      "reason": "PRs 63/65 and the final reconciliation retain revisions, private unread positions, safe queue/FCM status, bounded subscription preview and registration pagination under current Core authority. Device/app receipt tracking and other users' read activity were explicitly excluded by the user.",
+      "replacements": [
+        "functions/src/news.js",
+        "functions/src/consoleChat.js",
+        "functions/src/notifications.js",
+        "functions/src/adminSubscriptions.js",
+        "functions/src/events.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/restore-eleven-legacy-exports-20261018",
+      "sha": "e34ca22781ff4244385eda99368705006a895d5b",
+      "disposition": "selectively-reconciled",
+      "reason": "Current root entrypoint retains all eleven recovered team/profile/portal/backup exports with current canonical Core authorization and localized title contracts; older export-only snapshots would regress newer source.",
+      "replacements": [
+        "functions/index.js",
+        "functions/src/legacyTeam.js",
+        "functions/src/adminPortalAccess.js",
+        "functions/test/legacy-export-contract.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/site-team-cache-invalidation-20261017",
+      "sha": "ba6870a4a811e0e96190530df8660d6c3964713f",
+      "disposition": "superseded-implementation",
+      "reason": "Current implementations retain public-team cache invalidation, biography/link preservation, modern/legacy DTO compatibility, masked application edits, bounded directory reads and confirmed model-image cleanup. Current Core guards and purchase protection supersede old replacements.",
+      "replacements": [
+        "functions/src/siteTeam.js",
+        "functions/src/teamCardsService.js",
+        "functions/src/modelImageCleanup.js",
+        "functions/src/contributors.js",
+        "functions/test/model-image-cleanup.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/tool-choice-null-on-billing",
+      "sha": "6a73a891ff5cb11f738cb777a0586ccac0c902f4",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/voice-invoker-public",
+      "sha": "0ecb56105de51d7f1b4e9a1123ef757a37ffb512",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix/voice-use-live-billing",
+      "sha": "2ea452d81cd334efcdc8ab063ca37143b0353c4d",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "fix-user-credits-upgrade",
+      "sha": "00a545158ffc42fd5954edd25411f215c41338d1",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "snapshot/production-2026-08-21",
+      "sha": "41aaed7853475f2f9b5375d8b82e53ca5f0277e8",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "test/core-authorization-emulator-20261018",
+      "sha": "9e14336f68ade71e375bc815e79d040a530a72cc",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical Core/personnel authority, verified reciprocal identity, audited department assignment, indexed roster fallback and drift-checked rule/claim retirement supersede earlier claim-based and whole-file variants. Linked department edits are guarded by PR 65. Operational cleanup remains separate from source merging.",
+      "replacements": [
+        "functions/src/consoleAuthorization.js",
+        "functions/src/consoleDepartmentAssignment.js",
+        "functions/src/consolePeople.js",
+        "scripts/deploy-console-core-rules.cjs",
+        "scripts/retire-console-admins.cjs"
+      ]
+    },
+    {
+      "repo": "Fulcrum",
+      "name": "yeni-api-bill",
+      "sha": "f2f05218de3a0cf7a707b15ad971a35187b3a877",
+      "disposition": "superseded-implementation",
+      "reason": "Current canonical daily credits, subscription lifecycle, catalog-aware media routing, voice providers and recovery tests replace older billing-v2/live-source variants. Preserve the original history; do not restore obsolete credit fields, hard-coded model/output defaults or the unconfigured historical LLM API lane.",
+      "replacements": [
+        "functions/src/credits.js",
+        "functions/src/subscription.js",
+        "functions/src/voice.js",
+        "functions/src/stream.js",
+        "functions/test/voice-allowance.test.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "audit/branch-reconciliation-20261020",
+      "sha": "03936f0f6486faab83e4a9bdbb47b183d7db7fac",
+      "disposition": "temporary-audit-archive",
+      "reason": "Temporary history/cleanup workflows are operational scaffolding, not product features. Preserve their final commit and reports, close the audit PR and remove the branch after all cleanup completes.",
+      "replacements": [
+        "docs/BRANCH-RECONCILIATION-20261020.json"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "events-management-deploy",
+      "sha": "a25134ec290015b682f435218e22f5f8c18fecf0",
+      "disposition": "superseded-implementation",
+      "reason": "Current event editor preserves timezone conversion, typed fields, safe image upload and origin-checked real eventsite draft preview. Final reconciliation preserves bounded registration paging with no silent 500-record truncation.",
+      "replacements": [
+        "js/modules/events.js",
+        "js/modules/eventTime.js",
+        "js/modules/eventFields.js",
+        "tests/event-time.test.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "feat/console-reconciliation-20261020",
+      "sha": "8484e31d37b3ab2ef6013ec19e36e7b7f3b134ec",
+      "disposition": "merged",
+      "reason": "PR 34 is merged and immutable release 9daa06182021 was observed on the live Console. Optional server-dependent capabilities remain coordinated with verified deployment.",
+      "replacements": [
+        "js/main.js",
+        "js/core/deployment-capabilities.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-contracts-20261018",
+      "sha": "6b9201cc5ddf84a0153b55851966ff87b22ff490",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-core-team-stars-11-20",
+      "sha": "668e20db971a0ddcd91cb24ce48892bd33af36c6",
+      "disposition": "superseded-implementation",
+      "reason": "Current team card/profile editors and weekly-star picker retain discovery, current authenticated Core access, Istanbul ISO weeks, keyboard selection and exact public DTO envelopes.",
+      "replacements": [
+        "js/modules/teamCards.js",
+        "js/utils/isoWeek.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-department-only-finalization",
+      "sha": "54d42f8fed703bd8dfa9b12244af49a922f4f1d5",
+      "disposition": "superseded-implementation",
+      "reason": "Current department-only Console includes the reviewed cleanup and newer canonical server response handling; older generated releases and admin panels are superseded.",
+      "replacements": [
+        "js/modules/admin.js",
+        "js/utils/console-access.js",
+        "js/core/firebase.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-finalize-weekly-stars-core-20261018",
+      "sha": "948ea1a60b6f5b4972a55957fbd699b453a6e1cf",
+      "disposition": "superseded-implementation",
+      "reason": "Current team card/profile editors and weekly-star picker retain discovery, current authenticated Core access, Istanbul ISO weeks, keyboard selection and exact public DTO envelopes.",
+      "replacements": [
+        "js/modules/teamCards.js",
+        "js/utils/isoWeek.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-first-ten-20261017",
+      "sha": "b9c3ec0da2fc9827a68a10f727ea8c1644ae4164",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-grid-iso-contributors-ci-20261017",
+      "sha": "76a2f17f3e519d5f6cb764a944058b94bd88086e",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-hardening-41-50-20261018",
+      "sha": "9af66a01274626b8fb211771981a206a86886773",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-hardening-41-50-integrated-20261018",
+      "sha": "671c2ac7bdbe1fc796215deabb85f6289b74007e",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-navigation-recovery-oct18",
+      "sha": "1c34f8384fe4ad4dc2a87fd4226d29bee3a5b2ad",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-operations-20261017",
+      "sha": "89bf426b3e927d037d0fd38b361e52a1dda3ea0c",
+      "disposition": "selectively-reconciled",
+      "reason": "Current news edit/history, private chat read positions, queue status and subscription preview retain the selected features. Final reconciliation adds bounded registration search/pagination/CSV. Receipt tracking and obsolete admin panels are intentionally excluded.",
+      "replacements": [
+        "js/modules/news.js",
+        "js/modules/notification.js",
+        "js/modules/consoleChat.js",
+        "js/modules/subscriptions.js",
+        "js/modules/events.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-stars-picker-cleanmerge-20261018",
+      "sha": "48cf013e3da606c0061ac584af2f4c765262b75f",
+      "disposition": "superseded-implementation",
+      "reason": "Current team card/profile editors and weekly-star picker retain discovery, current authenticated Core access, Istanbul ISO weeks, keyboard selection and exact public DTO envelopes.",
+      "replacements": [
+        "js/modules/teamCards.js",
+        "js/utils/isoWeek.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-team-stars-core-integration",
+      "sha": "083f8feeb06519918a53bcd19c6a32277d4390a4",
+      "disposition": "superseded-implementation",
+      "reason": "Current team card/profile editors and weekly-star picker retain discovery, current authenticated Core access, Istanbul ISO weeks, keyboard selection and exact public DTO envelopes.",
+      "replacements": [
+        "js/modules/teamCards.js",
+        "js/utils/isoWeek.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-ui-unification-51-75",
+      "sha": "aa7eb42eb26be5853eba8257f5938fe7c022773c",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-unified-motion-56-60",
+      "sha": "64f9d89c6228ad145cafaf532c1cca8fe1a82168",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/console-weekly-stars-core-converged-20261018",
+      "sha": "ed5bc345edc80ba3b70c0a0a4d19295b3f4f6801",
+      "disposition": "superseded-implementation",
+      "reason": "Current team card/profile editors and weekly-star picker retain discovery, current authenticated Core access, Istanbul ISO weeks, keyboard selection and exact public DTO envelopes.",
+      "replacements": [
+        "js/modules/teamCards.js",
+        "js/utils/isoWeek.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/contributor-filter-fade-51-75-audit",
+      "sha": "356e60489c186cfe18d84568b445e3b23b621ece",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/first-ten-hardening-20261017-v2",
+      "sha": "fa03f5369a39322ab4cb7b698a7e83d96e2e123a",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/first-ten-navigation-and-contributors-20261017",
+      "sha": "30adcd45eea9eebb7ae9de0cd09c8c3f378d9ded",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/notification-reliability-20261018",
+      "sha": "068b6a24502bd9f698330377c94a70eb2005dfec",
+      "disposition": "selectively-reconciled",
+      "reason": "Current news edit/history, private chat read positions, queue status and subscription preview retain the selected features. Final reconciliation adds bounded registration search/pagination/CSV. Receipt tracking and obsolete admin panels are intentionally excluded.",
+      "replacements": [
+        "js/modules/news.js",
+        "js/modules/notification.js",
+        "js/modules/consoleChat.js",
+        "js/modules/subscriptions.js",
+        "js/modules/events.js"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/reliable-console-loading-20261018",
+      "sha": "dc186ff3c33ba07885683edc40ccf4aa1564ef74",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    },
+    {
+      "repo": "adminsite",
+      "name": "fix/sidebar-titlecase-tr-en-20261018",
+      "sha": "ca96741014bc2bbb555a79bfcb21f1c54411843b",
+      "disposition": "superseded-implementation",
+      "reason": "Current immutable release retains shared controls/motion, no outgoing navigation ghosts, bounded loading/retry, coalesced reads, logout isolation, aligned contributor fields, TR/EN copy, staged destructive actions and template/model safeguards. Do not restore older release snapshots, raw Cloud Run URLs or legacy admin UI.",
+      "replacements": [
+        "js/main.js",
+        "js/core/firebase.js",
+        "js/utils/workspace-loader.js",
+        "js/modules/contributors.js",
+        "css/modules.css",
+        "tests/browser.cjs"
+      ]
+    }
+  ]
+}

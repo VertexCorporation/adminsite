@@ -614,3 +614,5 @@
 @media(prefers-reduced-motion:reduce){
  .producer-group::details-content,.series-group::details-content{transition:none}
 }
+
+.ui-pager { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:16px; flex-wrap:wrap; }

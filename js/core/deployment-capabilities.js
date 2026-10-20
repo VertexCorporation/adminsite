@@ -2,6 +2,7 @@
 // have been deployed and verified. This is rollout coordination, not authorization.
 export const deploymentCapabilities = Object.freeze({
     contributorMembershipWrites: true,
+    eventRegistrationPages: false,
     newsRevisions: false,
     notificationStatus: false,
     chatReadPositions: false,
