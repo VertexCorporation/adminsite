@@ -346,3 +346,28 @@
 }
 .grid-layout > .panel-card[hidden] {display:none !important;}
 .grid-layout[data-visible-panels="1"] > .panel-card:not([hidden]) {grid-column:1 / -1 !important;}
+
+/* The verification workspace always uses stacked, full-width panels.
+   Its three content-heavy cards must not inherit the adaptive multi-column
+   layout calculated for unrelated workspaces. */
+#tab-system[data-active-section="verification"] > .grid-layout {
+    grid-template-columns: minmax(0, 1fr);
+}
+#tab-system[data-active-section="verification"] > .grid-layout > .panel-card:not([hidden]) {
+    grid-column: 1 / -1 !important;
+    width: 100%;
+    min-width: 0;
+}
+/* Show full team names and positions instead of truncating in management. */
+#tab-system[data-active-section="verification"] .team-list-info > div:first-child {
+    flex-wrap: wrap;
+}
+#tab-system[data-active-section="verification"] :is(.team-list-name, .team-list-meta) {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+/* Keep the single-field verification form readable on wide desktops. */
+#tab-system[data-active-section="verification"] #verify-user-form {
+    max-width: 720px;
+}
