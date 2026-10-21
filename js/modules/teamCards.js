@@ -16,7 +16,13 @@ let teamCards=[];
 let cardsLoading=false;
 let cardsLoaded=false;
 const byId=id=>document.getElementById(id);
-const linksFor=card=>Object.fromEntries((card?.links||[]).map(link=>[String(link.label||'').toLowerCase(),link.url]));
+const SOCIAL_FIELDS=Object.freeze([['linkedin','LinkedIn'],['instagram','Instagram'],['x','X'],['email','Email'],['tiktok','TikTok']]);
+const linksFor=card=>Object.fromEntries((card?.links||[]).map(link=>{
+ let key=String(link.label||'').toLowerCase();
+ if(key==='twitter')key='x';
+ if(['mail','e-mail'].includes(key))key='email';
+ return [key,key==='email'?String(link.url||'').replace(/^mailto:/i,''):link.url];
+}));
 const errorNotice=(error,retry)=>{
  const list=byId('team-cards-list');
  if(list)showLoadError(list,()=>userErrorMessage(error),retry,{staleSelector:'.team-list-row'});
@@ -111,9 +117,9 @@ export function openTeamCardDrawer(existing=null){
  '<div class="form-group-field"><label for="team-card-bio">Biyografi (boşsa profil açılmaz)</label>'+
  '<textarea id="team-card-bio" rows="7" maxlength="6000" placeholder="Kişinin biyografisi; yeni paragraf için boş satır bırakın.">'+escapeHTML(existing?.bio||'')+'</textarea></div>'+
  '<div class="form-section"><div class="form-section-title">Bağlantılar</div>'+
- [['linkedin','LinkedIn'],['instagram','Instagram'],['website','Website']].map(([key,label])=>
- '<div class="form-group-field"><label for="team-card-'+key+'">'+label+'</label>'+
- '<input type="url" id="team-card-'+key+'" placeholder="https://" value="'+escapeHTML(links[key]||'')+'"></div>').join('')+
+ SOCIAL_FIELDS.map(([key,label])=>
+ '<div class="form-group-field"><label for="team-card-'+key+'">'+(key==='email'?__('team_cards.email_label'):label)+'</label>'+
+ '<input type="'+(key==='email'?'email':'url')+'" id="team-card-'+key+'" maxlength="2048" placeholder="'+(key==='email'?'name@vertexishere.com':'https://')+'" value="'+escapeHTML(links[key]||'')+'"></div>').join('')+
  '</div></form>';
  const fileInput=body.querySelector('#team-card-photo-input');
  body.querySelector('#team-card-choose-photo').addEventListener('click',()=>fileInput.click());
@@ -144,8 +150,10 @@ export function openTeamCardDrawer(existing=null){
        const uploaded=await setSiteTeamEntryFn({kind:'photo',imageData:data,contentType:pickedFile.type});
        imageUrl=uploaded.data.imageUrl;
      }
-     const links=[['linkedin','LinkedIn'],['instagram','Instagram'],['website','Website']]
-       .map(([key,label])=>({label,url:body.querySelector('#team-card-'+key).value.trim()})).filter(link=>link.url);
+     const links=SOCIAL_FIELDS.flatMap(([key,label])=>{
+       const value=body.querySelector('#team-card-'+key).value.trim();
+       return value?[{label,url:key==='email'?'mailto:'+value:value}]:[];
+     });
      await setSiteTeamEntryFn({kind:'card',id:existing?.id,name,position,
        imageUrl,links,bio:body.querySelector('#team-card-bio').value.trim()});
      closeDrawer();showToast(()=>__('team_cards.saved'),'success');
