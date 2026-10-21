@@ -400,4 +400,32 @@ input[type="checkbox"][role="switch"]:checked::after {
     background:var(--bg-elevated);border:1px solid var(--border-subtle);
     border-radius:var(--radius-md);color:var(--text-primary);text-align:start}
 .stars-person-result:is(:hover,:focus-visible){background:var(--bg-hover)}
+
+/* Text-entry focus uses the existing border, with no outer ring or layout shift.
+   Keep button, checkbox and switch keyboard indicators independent. */
+html body :is(input,select,textarea,[contenteditable="true"]):not(
+    [type="checkbox"],[type="radio"],[type="file"],[type="button"],
+    [type="submit"],[type="reset"],[type="range"],[type="color"]
+) {
+    transition: border-color var(--motion-normal) var(--ease-standard),
+                background-color var(--motion-normal) var(--ease-standard);
+}
+html body :is(input,select,textarea,[contenteditable="true"]):not(
+    [type="checkbox"],[type="radio"],[type="file"],[type="button"],
+    [type="submit"],[type="reset"],[type="range"],[type="color"]
+):is(:focus,:focus-visible) {
+    outline:none;
+    box-shadow:none;
+    border-color:var(--border-strong);
+    border-color:color-mix(in srgb,var(--text-primary) 28%,transparent);
+}
+html body :is(input,select,textarea,[contenteditable="true"]):not(
+    [type="checkbox"],[type="radio"],[type="file"],[type="button"],
+    [type="submit"],[type="reset"],[type="range"],[type="color"]
+):is([aria-invalid="true"],.has-error *):is(:focus,:focus-visible) {
+    border-color:var(--status-error);
+}
+@media(prefers-reduced-motion:reduce) {
+    html body :is(input,select,textarea,[contenteditable="true"]) {transition:none;}
+}
 .stars-person-result small{color:var(--text-secondary);overflow-wrap:anywhere}
