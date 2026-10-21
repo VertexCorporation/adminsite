@@ -96,11 +96,15 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   }
   await selectTab('contributors');
   // Clicking an already active parent intentionally toggles its submenu.
-  if(await page.locator('[data-nav-module=contributors] .dock-btn').getAttribute('aria-expanded')!=='true')await page.locator('[data-target=tab-contributors]').click();
+  if(await page.locator('[data-nav-module=users] .dock-btn').getAttribute('aria-expanded')!=='true')await page.locator('[data-target=tab-contributors]').click();
   await page.locator('[data-i18n="subnav.vertex_status"]').click();
   assert(await page.locator('#vertex-status-manager').isVisible());
-  await page.locator('[data-nav-action=certificates]').click();
-  await page.waitForSelector('#certificate-person-search');assert.equal(await page.locator('[data-award]').count(),0);await page.locator('[data-person=person]').click();await page.waitForSelector('.certificate-drawer.is-open');await page.keyboard.press('Escape');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});await page.locator('[data-i18n="subnav.applicants"]').click();
+  await page.locator('[data-i18n="subnav.applicants"]').click();
+  assert.equal(await page.locator('[data-nav-action=certificates]').count(),0);
+  await page.locator('.certificate-manage-btn[data-id=person]').click();
+  await page.waitForSelector('.certificate-drawer.is-open [data-award]');
+  assert.equal(payloads.filter(p=>p.name==='getvertexcertificatedetails').at(-1).data.contributorId,'person');
+  await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
   await selectTab('models');await page.locator('[data-nav-action=model-editor]').click();await page.locator('[data-model-create]').click();
   await page.waitForSelector('.vx-drawer.is-open #model-form');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
   await selectTab('news');await page.locator('[data-i18n="subnav.editor"]').click();assert(await page.locator('#news-creator').isVisible());
