@@ -672,11 +672,14 @@ function initNavigation() {
         // second content transition over the incoming page animation.
         const card = [...document.getElementById(parent.dataset.target).querySelectorAll('.panel-card[data-panel]')].find(el => keys.includes(el.dataset.panel) && !el.hidden && el.style.display !== 'none');
         closeSidebarDrawer(false);
-        if (action === 'model-editor') {card?.focus({preventScroll:true});}
+        // Restore URLs without stealing focus; pointer/touch navigation also
+        // leaves focus on the chosen control. Only keyboard activation moves it.
+        const focusDestination = event.isTrusted && event.detail === 0;
+        if (action === 'model-editor') {if(focusDestination)card?.focus({preventScroll:true});}
         else {
             window.scrollTo({top:0,behavior:'instant'});
             if (action === 'certificates') document.dispatchEvent(new CustomEvent('vertex:certificate-selector'));
-            else if (card) { card.tabIndex = -1; card.focus({preventScroll:true}); }
+            else if (card && focusDestination) { card.tabIndex = -1; card.focus({preventScroll:true}); }
         }
     });
     document.querySelector('.sidebar-footer .dock-btn')?.addEventListener('click', event => { activateTab(event.currentTarget); closeSidebarDrawer(true); });

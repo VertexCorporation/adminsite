@@ -28,6 +28,7 @@ const fixture = [
  '<div id="auto-discovered" style="height:70px;width:160px;overflow:auto"><div style="height:230px">Dynamic scrollport</div></div>',
  '<div id="state-host"><p>Previous error content</p></div>',
  '<input id="required-field" required value="x">',
+ '<section class="panel-card" id="focus-panel" tabindex="-1"><div class="form-group-field"><input id="focus-text" value="text"><textarea id="focus-area">text</textarea><select id="focus-select"><option>One</option></select><input id="focus-error" aria-invalid="true"></div></section>',
  '<div id="content"><p>Outgoing content</p></div>',
  '<div id="delay-host"></div>',
  '<div id="view-host"><section id="old-tab" class="active"><h2>Old page</h2><input id="retained-value" value="keep me"></section><section id="new-tab" style="display:none"><h2>New page</h2></section></div>',
@@ -297,9 +298,22 @@ const server = http.createServer((req,res)=>{
     },theme);
     const actual=await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--bg-app').trim().toLowerCase());
     assert.equal(actual,theme==='light'?'#f8f9fa':'#0f0f10');
+    await page.locator('#focus-panel').focus();
+    assert.equal(await page.locator('#focus-panel').evaluate(el=>getComputedStyle(el).boxShadow),'none');
+    for(const id of ['focus-text','focus-area','focus-select','focus-error']){
+     const field=page.locator('#'+id),before=await field.boundingBox();
+     await field.focus();
+     await page.waitForTimeout(260);
+     const style=await field.evaluate(el=>{const s=getComputedStyle(el);return {shadow:s.boxShadow,outline:s.outlineStyle,border:s.borderColor,duration:s.transitionDuration,error:getComputedStyle(document.documentElement).getPropertyValue('--status-error').trim()};});
+     assert.equal(style.shadow,'none');assert.equal(style.outline,'none');
+     assert.notEqual(style.duration,'0s');
+     const after=await field.boundingBox();assert.equal(after.width,before.width);assert.equal(after.height,before.height);
+     if(id==='focus-error')assert.equal(style.border,await field.evaluate(el=>{const color=document.createElement('span');color.style.color='var(--status-error)';el.parentElement.append(color);const value=getComputedStyle(color).color;color.remove();return value;}));
+    }
    }
 
    await page.emulateMedia({reducedMotion:'reduce'});
+   assert.equal(await page.locator('#focus-text').evaluate(el=>getComputedStyle(el).transitionDuration),'0s');
    await page.evaluate(()=>window.uiTest.transition.crossfade(document.getElementById('dense'),()=>{document.querySelector('#dense > .contributor-table-rows').textContent='Reduced motion result';}));
    assert.equal(await page.locator('#dense > .ui-crossfade-ghost').count(),0);
    assert.equal(await page.locator('#dense > .contributor-table-rows').innerText(),'Reduced motion result');
