@@ -85,7 +85,7 @@ img { max-width: 100%; display: block; }
 
 /* ---------- Odak görünürlüğü ---------- */
 :focus { outline: none; }
-:focus-visible:not(.panel-card) {
+:focus-visible:not(.panel-card,input,select,textarea,[contenteditable="true"]) {
     outline: none;
     box-shadow: var(--focus-ring);
     border-radius: var(--radius-xs);

@@ -313,6 +313,7 @@ const server = http.createServer((req,res)=>{
    }
 
    await page.emulateMedia({reducedMotion:'reduce'});
+   assert.equal(await page.locator('#focus-text').evaluate(el=>getComputedStyle(el).transitionDuration),'0s');
    await page.evaluate(()=>window.uiTest.transition.crossfade(document.getElementById('dense'),()=>{document.querySelector('#dense > .contributor-table-rows').textContent='Reduced motion result';}));
    assert.equal(await page.locator('#dense > .ui-crossfade-ghost').count(),0);
    assert.equal(await page.locator('#dense > .contributor-table-rows').innerText(),'Reduced motion result');

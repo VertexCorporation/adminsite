@@ -419,6 +419,9 @@ html body :is(input,select,textarea,[contenteditable="true"]):not(
     border-color:var(--status-error);
 }
 @media(prefers-reduced-motion:reduce) {
-    html body :is(input,select,textarea,[contenteditable="true"]) {transition:none;}
+    html body :is(input,select,textarea,[contenteditable="true"]):not(
+        [type="checkbox"],[type="radio"],[type="file"],[type="button"],
+        [type="submit"],[type="reset"],[type="range"],[type="color"]
+    ) {transition:none;}
 }
 .stars-person-result small{color:var(--text-secondary);overflow-wrap:anywhere}
