@@ -349,13 +349,6 @@ input[type="checkbox"][role="switch"]:checked::after {
     border-radius:var(--radius-sm);
     font-family:var(--font-sans);
 }
-:where(.panel-card,.vx-modal,.vx-drawer) :is(
-    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
-    select,textarea
-):focus-visible {
-    outline:2px solid var(--action-primary);
-    outline-offset:2px;
-}
 :where(.panel-card,.vx-modal,.vx-drawer) :is(input,select,textarea)[aria-invalid="true"] {
     border-color:var(--status-error);
 }
