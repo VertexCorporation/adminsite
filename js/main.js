@@ -134,6 +134,15 @@ export function startApp(firebaseConfig) {
                 // Authentication token establishes identity only; Core and
                 // departments must be checked against current server records.
                 if(!deploymentCapabilities.consolePeople)throw new Error('Console authorization endpoint is unavailable.');
+                const ownProfile=(await db.collection('users').doc(user.uid).get()).data();
+                if(ownProfile?.personnelOwnership==='pending'){
+                    if(!user.emailVerified){
+                        await user.sendEmailVerification({url:'https://admin.vertexishere.com/'});
+                        showToast(()=>document.documentElement.lang==='en'?'Please verify your email using the link just sent, then sign in again.':'E-postanıza gönderilen bağlantıyla adresinizi doğrulayın, ardından tekrar giriş yapın.','info');
+                        await auth.signOut();hideBootstrapLoader();return;
+                    }
+                    await consolePeopleCall('completePersonnelActivation',{});
+                }
                 const access=normalizeConsoleAccessResponse((await consolePeopleCall('getMyConsoleAccess',{})).data);
                 let isAdmin=access.isCore;
                 let departments=access.departments;
@@ -210,7 +219,15 @@ export function startApp(firebaseConfig) {
         const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value;
         if(!email||!password){showToast(()=>__('auth.required'),'info');return;}
         loginPending=true;dom.loginBtn.disabled=true;dom.loginBtn.setAttribute('aria-busy','true');
-        try{await auth.signInWithEmailAndPassword(email,password);}catch(error){console.error('[AUTH] Login failed',error.code);showToast(()=>userErrorMessage(error),'error');}
+        try{
+            try{await auth.signInWithEmailAndPassword(email,password);}
+            catch(error){
+                if(!/^[a-z]+@vertexishere\.com$/i.test(email)||!['auth/invalid-credential','auth/user-not-found','auth/wrong-password','auth/invalid-login-credentials'].includes(error.code))throw error;
+                const {data}=await consolePeopleCall('signInWithPersonnelEmail',{email,password});
+                if(typeof data?.token!=='string')throw error;
+                await auth.signInWithCustomToken(data.token);
+            }
+        }catch(error){console.error('[AUTH] Login failed',error.code);showToast(()=>userErrorMessage(error),'error');}
         finally{loginPending=false;dom.loginBtn.disabled=false;dom.loginBtn.removeAttribute('aria-busy');}
     }
     document.getElementById('login-form').addEventListener('submit',submitLogin);

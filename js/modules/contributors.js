@@ -13,7 +13,7 @@ import { openCertificates } from './certificates.js';
 // js/modules/contributors.js
 
 import { showToast, userErrorMessage, __, onLangChange, sanitizeHTML, escapeHTML } from '../utils/ui.js';
-import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn, setContributorVertexStatusFn, auth, db } from '../core/firebase.js';
+import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn, setContributorVertexStatusFn, consolePeopleCall, auth, db } from '../core/firebase.js';
 import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS, isPanelAdmin, getHiddenFieldsFor } from './roles.js';
 
 
@@ -252,6 +252,19 @@ function renderContributors(contributors,{preview=false}={}) {
     });
     listContainer.querySelectorAll('[data-membership]').forEach(b=>b.onclick=()=>toggleMembership(contributors.find(p=>p.id===b.dataset.membership),b));
     listContainer.querySelectorAll('[data-details]').forEach(b=>b.onclick=()=>openContributorDetails(contributors.find(p=>p.id===b.dataset.details)));
+    listContainer.querySelectorAll('.contributor-row').forEach(row=>{
+        row.tabIndex=0;
+        const open=()=>openContributorDetails(contributors.find(p=>p.id===row.dataset.contributorId));
+        row.addEventListener('click',event=>{
+            if(event.target.closest('button,a,input,select,textarea,label,[role="button"]'))return;
+            if(window.getSelection()?.toString())return;
+            open();
+        });
+        row.addEventListener('keydown',event=>{
+            if(event.target!==row||!['Enter',' '].includes(event.key))return;
+            event.preventDefault();open();
+        });
+    });
     listContainer.querySelectorAll('.certificate-manage-btn').forEach(b=>b.onclick=()=>openCertificates(contributors.find(p=>p.id===b.dataset.id),fetchContributorsData,b));
     // Add event listeners to edit (pencil) buttons
     const editBtns = listContainer.querySelectorAll('.edit-contributor-btn:not(.certificate-manage-btn)');
@@ -437,6 +450,22 @@ function openContributorDetails(person) {
         const rows = [['contributors.field_department',displayDepartmentName(person.department)],...(!hidden.has('contact')?[['contributors.field_email',person.email],['contributors.field_phone',person.phone]]:[]),...(!hidden.has('age')?[['contributors.field_birth_date',birthDateLabel(person)]]:[]),['contributors.field_language',person.language==='tr'?'Türkçe':person.language==='en'?'English':person.language],['contributors.col_status',person.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')],['contributors.delivery_label',__(person.emailSent===true?'contributors.delivery_succeeded':['pending','processing'].includes(person.certificateDeliveryStatus)?'contributors.delivery_pending':['uncertain','failed'].includes(person.certificateDeliveryStatus)?'contributors.delivery_failed':'contributors.delivery_unconfirmed')],['contributors.applied_at',formatCertificateDate(person.createdAt)],...(!hidden.has('interview')?[['contributors.field_interview',formatCertificateDate(person.interviewDate)]]:[]),['cert.joined',person.joinedAt?formatCertificateDate(person.joinedAt):__('cert.not_joined')]];
         body.innerHTML=`<dl class="detail-list">${rows.map(([label,value])=>`<div class="detail-row"><dt>${__(label)}</dt><dd>${escapeHTML(String(value??'—'))}</dd></div>`).join('')}</dl>${!hidden.has('contact')&&person.about?`<p class="drawer-bio">${escapeHTML(person.about)}</p>`:''}<div class="contributor-links">${!hidden.has('links')?['linkedin','github'].filter(k=>/^https?:\/\//.test(person[k]||'')).map(k=>`<a class="chrome-btn-outline" href="${escapeHTML(person[k])}" target="_blank" rel="noopener noreferrer">${icon('brand-'+k)}${k==='linkedin'?'LinkedIn':'GitHub'}</a>`).join(''):''}</div>`;
         const footer=body.closest('.vx-drawer').querySelector('.vx-drawer-footer');
+        if(isPanelAdmin()&&person.isVertex===true){
+            const retry=document.createElement('button');retry.type='button';retry.className='chrome-btn-outline';
+            retry.textContent=document.documentElement.lang==='en'?'Retry account setup':'Hesap kurulumunu yeniden dene';
+            retry.onclick=async()=>{
+                retry.disabled=true;
+                try{
+                    const {data}=await consolePeopleCall('provisionContributorAccount',{contributorId:person.id});
+                    const ok=['sent','existing-account','ownership-required'].includes(data?.status);
+                    showToast(()=>document.documentElement.lang==='en'
+                        ?(ok?'Account setup checked. Existing accounts are preserved.':'Email delivery requires review; no duplicate email was sent.')
+                        :(ok?'Hesap kurulumu kontrol edildi. Mevcut hesaplar korundu.':'E-posta teslimi incelenmeli; tekrar posta gönderilmedi.'),ok?'success':'error');
+                }catch(error){showToast(()=>userErrorMessage(error),'error');}
+                finally{retry.disabled=false;}
+            };
+            body.append(retry);
+        }
         footer.innerHTML=`${getEffectivePanelLevel('contributors.list')==='write'?`<button class="chrome-btn-primary" data-edit>${icon('pencil')}${__('contributors.edit_title')}</button>`:''}${isPanelAdmin()?`<button class="chrome-btn-outline" data-certificate>${icon('award')}${__('cert.management')}</button><button class="chrome-btn-outline" data-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`:''}`;
         footer.querySelectorAll('button').forEach(b=>b.disabled=pending);
         footer.querySelector('[data-edit]')?.addEventListener('click',()=>openContributorEditor(person));
@@ -512,7 +541,12 @@ async function toggleMembership(person,button) {
         person.isVertex=data.isVertex;
         if(person.membership){person.membership.fieldExists=true;person.membership.isVertex=data.isVertex;}
         if(data.joinedAtSet)person.joinedAt=new Date();
-        showToast(()=>__(data.isVertex?'system.vertex_enabled':'system.vertex_disabled'),'success');
+        if(data.isVertex&&data.accountSetupStatus){
+            const ready=['sent','existing-account','ownership-required'].includes(data.accountSetupStatus);
+            showToast(()=>document.documentElement.lang==='en'
+                ?(ready?'Membership active. Account: '+data.accountSetupStatus+'.':'Membership active, but account email needs attention. Use Retry account setup in the application details.')
+                :(ready?'Üyelik aktif. '+(data.accountSetupStatus==='sent'?'Şifre belirleme e-postası gönderildi.':'Mevcut hesap korundu.'):'Üyelik aktif; hesap e-postası tamamlanamadı. Başvuru ayrıntılarından hesap kurulumunu yeniden deneyin.'),ready?'success':'error');
+        }else showToast(()=>__(data.isVertex?'system.vertex_enabled':'system.vertex_disabled'),'success');
         renderContributors(window.loadedContributors||[]);
     } catch(error){showToast(()=>userErrorMessage(error),'error');}
     finally{membershipPending.delete(person.id);setButtonLoading(button,false);renderContributors(window.loadedContributors||[]);}
