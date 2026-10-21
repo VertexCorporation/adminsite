@@ -7,7 +7,7 @@ import { db, saveDepartmentPermissionsFn, getPanelPermissionsFn, listDepartmentP
 import { userErrorMessage, showToast, __, onLangChange, getLang } from '../utils/ui.js';
 
 const TABS = [
-    { id: 'contributors', icon: 'group', key: 'nav.contributors' },
+    { id: 'contributors', icon: 'group', key: 'nav.users' },
     { id: 'users', icon: 'group', key: 'nav.users' },
     { id: 'models', icon: 'smart_toy', key: 'nav.models' },
     { id: 'news', icon: 'newspaper', key: 'nav.news' },

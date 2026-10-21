@@ -205,12 +205,13 @@ await page.locator('[data-nav-panel="contributors.list"][data-nav-action=""]').c
 note('Contributor sub-navigation enters its final workspace without an intermediate layout');
 const issueCount=()=>calls.filter(n=>n==='issuevertexcertificate').length;
 const openCert=async()=>{if(await page.locator('.certificate-drawer').count()){await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});}await page.waitForSelector('.vx-popover.is-closing',{state:'detached'});await page.waitForSelector('.vx-modal[aria-hidden=true]',{state:'detached'});await page.locator('.certificate-manage-btn').first().click();await page.waitForSelector('[data-award]');};
-const selectTab=async id=>{if(await page.evaluate(()=>innerWidth<1024)){const dock=page.locator(`[data-mobile-tab="tab-${id}"]`);if(await dock.count()&&await dock.isVisible())await dock.click();else{await page.locator('[data-mobile-more]').click();if(id==='profile')await page.locator('[data-more-profile]').click();else await page.locator(`.mobile-more-pages section[data-more-module="tab-${id}"] button`).first().click();await page.waitForSelector('.vx-modal',{state:'detached'});}}else await page.locator(`[data-target="tab-${id}"]`).click();};
+const selectTab=async id=>{if(await page.evaluate(()=>innerWidth<1024)){const dock=page.locator(`[data-mobile-tab="tab-${id}"]`);if(await dock.count()&&await dock.isVisible())await dock.click();else{await page.locator('[data-mobile-more]').click();if(id==='profile')await page.locator('[data-more-profile]').click();else await page.locator(`.mobile-more-pages section[data-more-module="tab-${id}"] button`).first().click();await page.waitForSelector('.vx-modal',{state:'detached'});}}else {const button=page.locator(`[data-target="tab-${id}"]`);if(await button.getAttribute("aria-expanded")!=="true")await button.click();}};
 // Account deletion must require an explicit visible checkbox and exact e-mail.
 // This uses a mocked account and never invokes the destructive callable.
 {
  const email='delete-fixture@example.invalid';
- await selectTab('users');
+ await selectTab('contributors');
+ await page.locator('[data-nav-panel="users.deleteAccount"]').click();
  await page.locator('#account-deletion-email').fill(email);
  await page.locator('#account-deletion-search-button').click();
  await page.waitForSelector('#account-deletion-summary:not([hidden])');
@@ -229,6 +230,7 @@ const selectTab=async id=>{if(await page.evaluate(()=>innerWidth<1024)){const do
  assert.equal(await submit.isDisabled(),true);
  assert.equal(calls.filter(name=>name==='adminrequestaccountdeletion').length,0);
  await selectTab('contributors');
+ await page.locator('[data-nav-panel="contributors.list"][data-nav-action=""]').click();
  note('Account deletion consent shows a visible checkbox and activates only after explicit verification');
 }
 // Recover a transient 503 for both data-heavy screens without reloading the page.
