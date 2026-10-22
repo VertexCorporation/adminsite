@@ -9,7 +9,7 @@ import { mountEventFields } from './eventFields.js';
 import { auth, eventCallable } from '../core/firebase.js';
 import { getEffectivePanelLevel } from './roles.js';
 import { confirmDialog } from './shell.js';
-import { escapeHTML, showToast, getLang } from '../utils/ui.js';
+import { escapeHTML, showToast, getLang, onLangChange } from '../utils/ui.js';
 const tr = (a,b) => getLang()==='tr'?a:b;
 const fields = [
  ['id','Kimlik','ID','text'],['title','Başlık','Title','text'],['title_en','İngilizce başlık','English title','text'],
@@ -29,6 +29,18 @@ export function initEventsModule() {
  auth.onAuthStateChanged(user=>{if(!user){registrationEpoch++;document.getElementById('events-registrations')?.replaceChildren();setButtonLoading(document.getElementById('events-load-registrations'),false);}});
  const form=document.getElementById('events-editor');
  const container=document.getElementById('events-fields');
+ const updateActionLabels=()=>{
+  for(const [id,trLabel,enLabel] of [
+   ['events-preview','Önizleme','Preview'],
+   ['events-editor-submit','Kaydet','Save'],
+   ['events-new','Yeni','New'],
+   ['events-load-registrations','Kayıtları yükle','Load registrations']
+  ]){const control=document.getElementById(id);if(control)control.textContent=tr(trLabel,enLabel);}
+  const refresh=document.getElementById('events-refresh');
+  if(refresh)refresh.setAttribute('aria-label',tr('Yenile','Refresh'));
+ };
+ updateActionLabels();
+ onLangChange(updateActionLabels);
  container.innerHTML=fields.map(([key,a,b,type])=>`<div class="form-group-field"><label for="event-${key}">${escapeHTML(tr(a,b))}</label>${type==='textarea'?`<textarea id="event-${key}" name="${key}" rows="3"></textarea>`:`<input id="event-${key}" name="${key}" type="${type}" ${['id','title','desc','date','timeZone','location'].includes(key)?'required':''}>`}</div>`).join('')+`<div class="form-group-field"><label for="event-status">${tr('Durum','Status')}</label><select id="event-status" name="status"><option value="draft">${tr('Taslak','Draft')}</option><option value="published">${tr('Yayımlanmış','Published')}</option><option value="cancelled">${tr('İptal','Cancelled')}</option></select></div><div class="form-group-field"><label for="event-sales">${tr('Satış durumu','Sales status')}</label><select id="event-sales" name="salesStatus"><option value="closed">${tr('Kapalı','Closed')}</option><option value="open">${tr('Açık','Open')}</option><option value="sold_out">${tr('Tükendi','Sold out')}</option></select></div><div class="form-group-field"><label>${tr('Görsel yükle','Upload image')}<input type="file" id="event-upload" accept="image/jpeg,image/png,image/webp"></label></div><div class="form-group-field"><label>${tr('Galeriye görsel yükle','Upload gallery images')}<input type="file" id="event-gallery-upload" accept="image/jpeg,image/png,image/webp" multiple></label></div>`;
  form.elements.startsAt.onchange=()=>{if(form.elements.startsAt.value)form.elements.date.value=form.elements.startsAt.value.slice(0,10);};
  const refreshFields=mountEventFields(form,tr);
@@ -69,7 +81,9 @@ export function initEventsModule() {
    const title=document.createElement('h4');title.textContent=tr({published:'Yayımlanmış',draft:'Taslak',cancelled:'İptal'}[status],status);list.append(title);
    for(const event of data.events.filter(e=>e.status===status)) {
     const row=document.createElement('div');row.className='article-item';const label=document.createElement('span');label.textContent=`${event.title} · ${event.date} · ${event.timeZone}${event.dateReviewRequired?' ⚠':''}`;row.append(label);
-    if(getEffectivePanelLevel('events.editor')!=='none')for(const [text,handler] of [[tr('Aç','Open'),()=>{fill(event);document.querySelector('[data-nav-panel="events.editor"]').click();}],[tr('Sil','Delete'),async()=>{if(await confirmDialog({title:tr('Etkinlik silinsin mi?','Delete event?'),body:event.title})){await eventCallable('saveConsoleEvent',{event:{...event,status:'deleted'},revision:event.revision});await refresh();}}]]){if(text===tr('Sil','Delete') && getEffectivePanelLevel('events.editor')!=='write')continue;const button=document.createElement('button');button.type='button';button.className='chrome-btn-outline';button.textContent=text;button.onclick=()=>Promise.resolve(handler()).catch(fail);row.append(button);}
+    const actionGroup=document.createElement('div');actionGroup.className='event-row-actions';
+    if(getEffectivePanelLevel('events.editor')!=='none')for(const [text,handler] of [[tr('Aç','Open'),()=>{fill(event);document.querySelector('[data-nav-panel="events.editor"]').click();}],[tr('Sil','Delete'),async()=>{if(await confirmDialog({title:tr('Etkinlik silinsin mi?','Delete event?'),body:event.title})){await eventCallable('saveConsoleEvent',{event:{...event,status:'deleted'},revision:event.revision});await refresh();}}]]){if(text===tr('Sil','Delete') && getEffectivePanelLevel('events.editor')!=='write')continue;const button=document.createElement('button');button.type='button';button.className='chrome-btn-outline';button.textContent=text;button.onclick=()=>Promise.resolve(handler()).catch(fail);actionGroup.append(button);}
+    if(actionGroup.childElementCount)row.append(actionGroup);
     list.append(row);
    }
   }
@@ -203,8 +217,8 @@ export function initEventsModule() {
   if(!uid)return;
   const valid=()=>registrationEpoch===epoch&&auth.currentUser?.uid===uid;
   setButtonLoading(button,true);
-  const box=document.getElementById('events-registrations');box.replaceChildren();
-  const heading=document.createElement('p');heading.className='form-hint';heading.textContent=tr('Kayıtlar yükleniyor…','Loading registrations…');box.append(heading);
+  const box=document.getElementById('events-registrations');
+  const finishLoading=beginPanelLoading(box);
   try{
    const eventId=document.getElementById('events-registration-search').value.trim();
    const {data}=await eventCallable('listEventRegistrations',{eventId,...(deploymentCapabilities.eventRegistrationPages?{pageSize:100}:{})});
@@ -229,15 +243,15 @@ export function initEventsModule() {
    crossfade(box,()=>{
    if(!valid())return;
    box.replaceChildren();
-   if(!rows.length){box.textContent=tr('Kayıt bulunamadı.','No registrations found.');return;}
+   if(!rows.length){const empty=document.createElement('p');empty.className='form-hint event-registration-empty';empty.textContent=tr('Kayıt bulunamadı.','No registrations found.');box.append(empty);return;}
    const search=document.createElement('input');search.type='search';
    search.placeholder=tr('Kayıtlarda ara','Search registrations');search.setAttribute('aria-label',search.placeholder);
-   search.className='form-group-field';box.append(search);
-   const viewport=document.createElement('div');viewport.style.overflowX='auto';box.append(viewport);
-   const table=document.createElement('table');table.className='contributor-table';viewport.append(table);
+   search.className='event-registration-filter';box.append(search);
+   const viewport=document.createElement('div');viewport.className='event-registration-viewport';box.append(viewport);
+   const table=document.createElement('table');table.className='event-registration-table';viewport.append(table);
    const head=document.createElement('thead'),headrow=document.createElement('tr');head.append(headrow);
    for(const label of [tr('Ad','Name'),tr('E-posta','Email'),tr('Durum','Status'),tr('Bilet','Ticket'),tr('Kayıt zamanı','Registered at')]){
-    const th=document.createElement('th');th.textContent=label;th.style.textAlign='left';th.style.padding='10px';headrow.append(th);
+    const th=document.createElement('th');th.textContent=label;headrow.append(th);
    }
    table.append(head);
    const body=document.createElement('tbody');table.append(body);
@@ -266,7 +280,7 @@ export function initEventsModule() {
     const matches=visible();page=Math.min(page,Math.max(1,Math.ceil(matches.length/pageSize)));
     for(const row of matches.slice((page-1)*pageSize,page*pageSize)){
      const trEl=document.createElement('tr');
-     for(const [key]of columns){const td=document.createElement('td');td.textContent=value(row,key);td.style.padding='10px';td.style.borderBottom='1px solid var(--border-subtle)';trEl.append(td);}
+     for(const [key]of columns){const td=document.createElement('td');td.textContent=value(row,key);trEl.append(td);}
      body.append(trEl);
     }
     renderPager(box,{page,total:matches.length,pageSize,language:getLang(),onChange:next=>{page=next;paint();}});
@@ -320,7 +334,7 @@ export function initEventsModule() {
    };
    paint();
    });
-  }catch(e){if(valid()){box.replaceChildren();fail(e);}}finally{if(valid())setButtonLoading(button,false);}
+  }catch(e){if(valid())showLoadError(box,()=>tr('Etkinlik kayıtları yüklenemedi','Could not load event registrations'),()=>button.click(),{staleSelector:'.event-registration-table'});}finally{finishLoading();if(valid())setButtonLoading(button,false);}
  };
  document.addEventListener('vertex:workspace',e=>{if(e.detail.keys.includes('events.list'))refresh().catch(fail);});
  fill(null);

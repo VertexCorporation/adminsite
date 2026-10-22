@@ -147,3 +147,16 @@
         scrollbar-gutter: stable;
     }
 }
+
+/* Shared action-row spacing, intentionally leaving the existing pending sweeps unchanged. */
+:where(.panel-card,.vx-drawer,.vx-modal) :is(.ui-list-actions,.event-row-actions) {
+ display:flex;align-items:center;flex-wrap:wrap;column-gap:var(--space-2);row-gap:var(--space-2);min-width:0;
+}
+:where(.panel-card,.vx-drawer,.vx-modal) .ui-list-actions{margin-block:var(--space-3)}
+:where(.panel-card,.vx-drawer,.vx-modal) :is(.ui-list-actions,.event-row-actions)>button {
+ flex:0 0 auto;max-width:100%;white-space:normal;min-height:var(--control-height);
+}
+:where(.panel-card,.vx-drawer,.vx-modal) .ui-list-actions>.form-hint{flex:1 1 100%;margin:0}
+@media(max-width:600px){
+ :where(.panel-card,.vx-drawer,.vx-modal) .ui-list-actions>button{flex:1 1 132px}
+}

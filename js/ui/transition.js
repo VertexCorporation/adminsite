@@ -18,7 +18,7 @@ function boundedClone(node, budget) {
     }
     return copy;
 }
-export function crossfade(container, mutate, { duration = 190, preserveHeight = true, mode = 'crossfade' } = {}) {
+export function crossfade(container, mutate, { duration = 220, preserveHeight = true, mode = 'crossfade' } = {}) {
     running.get(container)?.();
     // Applicant filtering is an update, not a navigation: never leave the
     // outgoing list rendered over the new list.  An incoming-only opacity
@@ -218,6 +218,6 @@ export function animateContent(container) {
     if (!container?.isConnected || reducedMotion()) return;
     // Animate a host rather than cloning controls or rewriting their values.
     container.animate([{opacity:0.55},{opacity:1}], {
-        duration:180, easing:'cubic-bezier(.2,.8,.2,1)'
+        duration:220, easing:'cubic-bezier(.2,.8,.2,1)'
     });
 }
