@@ -15,7 +15,7 @@
     content: ''; position: absolute; z-index: 2; left: 0; top: 0;
     width: 36%; height: 2px; border-radius: var(--radius-full);
     background: var(--text-muted); opacity: .55; pointer-events: none;
-    animation: ui-refresh 1.2s var(--ease-standard) infinite alternate;
+    animation: ui-refresh 1.2s ease-in-out infinite alternate;
 }
 @keyframes ui-refresh { from { transform: translateX(0); } to { transform: translateX(178%); } }
 @media (prefers-reduced-motion: reduce) { .is-refreshing::before { animation: none; width: 100%; } }

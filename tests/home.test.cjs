@@ -29,7 +29,7 @@ test('home preserves router history and mobile access', () => {
   const shell = read('js/modules/shell.js');
   assert.match(shell, /route.panel === 'home'/);
   assert.match(shell, /panel:'home'/);
-  assert.match(shell, /\['home','users','contributors','publications'/);
+  assert.match(shell, /\[\['home','home'\]/);
   assert.match(read('css/home.css'), /@media\s*\(max-width:760px\)/);
 });
 

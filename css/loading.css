@@ -1,7 +1,7 @@
 /* ================================================================
    VERTEX KONSOL — LOADING (skeleton + shimmer)
-   Tek, yumuşak ve senkron ışık dalgası. 1600ms / infinite /
-   düşük kontrast / soldan sağa. Aynı animasyon tanımı, gecikme
+   Tek, yumuşak ve senkron ışık dalgası. 1600ms tam gidiş-dönüş /
+   düşük kontrast / iki yönde eşit hız. Aynı animasyon tanımı, gecikme
    farkı yok — böylece bir paneldeki tüm iskeletler birlikte
    nabız atar; bağımsız yanıp sönme olmaz.
    ================================================================ */
@@ -31,12 +31,11 @@
         transparent 100%
     );
     opacity: 0.7;
-    animation: skeletonWave 1600ms var(--ease-standard) infinite;
+    animation: skeletonWave 800ms ease-in-out infinite alternate;
 }
 
 @keyframes skeletonWave {
     0% { transform: translateX(-100%); }
-    60% { transform: translateX(100%); }
     100% { transform: translateX(100%); }
 }
 

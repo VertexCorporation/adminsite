@@ -554,9 +554,15 @@ export function refreshNavigation() {
 }
 
 function syncMobileDock() {
+    // Reserve More, then fit 44px touch targets, 4px gaps and the dock's
+    // padding/border inside the viewport's 12px side margins.
+    const capacity = Math.max(1, Math.floor((document.documentElement.clientWidth - 34) / 48) - 1);
+    let visible = 0;
     document.querySelectorAll('[data-mobile-tab]').forEach(button=>{
         const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);
-        button.hidden=!source||source.style.display==='none'||source.closest('.nav-module')?.hidden;
+        const allowed=source&&source.style.display!=='none'&&!source.closest('.nav-module')?.hidden;
+        button.hidden=!allowed||visible>=capacity;
+        if(allowed&&!button.hidden)visible++;
         button.setAttribute('aria-current',source?.classList.contains('active')?'page':'false');
         button.setAttribute('aria-label',source?.textContent.trim()||'');
     });
@@ -604,7 +610,7 @@ function initNavigation() {
         if (changed) window.scrollTo({top:0,behavior:'instant'});
     };
     const dock=document.createElement('nav');dock.className='mobile-bottom-dock';dock.setAttribute('aria-label',__('navigation.main'));
-    dock.innerHTML=['home','users','contributors','publications'].map((id,i)=>`<button type="button" data-mobile-tab="tab-${id}">${icon(['home','users-group','user-plus','news'][i])}</button>`).join('')+`<button type="button" data-mobile-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`;
+    dock.innerHTML=[['home','home'],['users','users-group'],['contributors','user-plus'],['models','robot'],['publications','news'],['subscriptions','crown'],['scene','award'],['system','settings']].map(([id,glyph])=>`<button type="button" data-mobile-tab="tab-${id}">${icon(glyph)}</button>`).join('')+`<button type="button" data-mobile-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`;
     document.querySelector('.app-layout').append(dock);
     dock.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.hasAttribute('data-mobile-more')){openMore(button);return;}const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);if(source){
         const module=source.closest('.nav-module');
@@ -722,7 +728,7 @@ function initNavigation() {
         }
     });
     let previousWidth = window.innerWidth;
-    window.addEventListener('resize', () => {if(window.innerWidth!==previousWidth){previousWidth=window.innerWidth;closeSidebarDrawer();}});
+    window.addEventListener('resize', () => {if(window.innerWidth!==previousWidth){previousWidth=window.innerWidth;closeSidebarDrawer();syncMobileDock();}});
     document.addEventListener('vertex:close-navigation', () => closeSidebarDrawer());
     document.addEventListener('vertex:departments', () => queueMicrotask(refreshNavigation));
     closeSidebarDrawer(); syncTopbarTitle();
