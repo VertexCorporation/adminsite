@@ -8,9 +8,14 @@ export function initSystemSections(){
     const nav=document.createElement('nav');nav.className='system-sections';nav.hidden=true;nav.setAttribute('aria-label',__('nav.system'));
     grid.before(nav);
     let selected='permissions';
+    const titleKeys={permissions:'subnav.permissions',departments:'catalog.members',verification:'subnav.verification',server:'subnav.server',attributions:'system.attributions',export:'catalog.transfer'};
     function render(){
         const visible=Object.keys(sections).filter(key=>sections[key].some(id=>{const card=document.getElementById(id);return card&&(isPanelAdmin() || (card.dataset.panel&&getEffectivePanelLevel(card.dataset.panel)!=='none'));}));
         if(!visible.includes(selected))selected=visible[0];
+        const heading=system.querySelector('.panel-section-title h2');
+        if(heading){heading.dataset.i18n=titleKeys[selected]||'catalog.system';heading.textContent=__(heading.dataset.i18n);}
+        const intro=system.querySelector('.panel-section-title p');
+        if(intro)intro.hidden=selected!=='server';
         nav.innerHTML=visible.map(key=>`<button type="button" class="filter-chip ${selected===key?'active':''}" data-section="${key}" aria-pressed="${selected===key}">${__('system.'+key)}</button>`).join('');
         const selectedIds=new Set(sections[selected] || []);
         for(const id of new Set(Object.values(sections).flat())){const card=document.getElementById(id);if(card){const show=selectedIds.has(id);const changed=card.hidden;card.hidden=!show;if(show&&changed){card.classList.remove('workspace-enter');void card.offsetWidth;card.classList.add('workspace-enter');}}}

@@ -46,6 +46,8 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   await page.locator('[data-section=permissions]').dispatchEvent('click');
   await page.waitForSelector('.dept-perm-row');
   assert.equal(await page.locator('.dept-perm-row').count(),10);
+  assert.equal(await page.locator('#tab-system .panel-section-title h2').innerText(),'Permissions');
+  assert.equal(await page.locator('#tab-system .panel-section-title p').isVisible(),false);
   const alignments = await page.evaluate(()=>{
     const head=[...document.querySelector('.dept-perms-header').children].slice(0,7);
     const row=[...document.querySelector('.dept-perm-row').children].slice(0,7);
