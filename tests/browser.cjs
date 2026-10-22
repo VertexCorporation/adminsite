@@ -19,6 +19,7 @@ await page.addInitScript(()=>{
  const tabs=['contributors','models','news','notifications','events','subscriptions','system'];
  const grants=level=>Object.fromEntries(tabs.map(tab=>[tab+'.*',level]));
  const policy={revision:0,departments:{Core:{panels:grants('write')},Senatus:{panels:grants('read')}}};
+ window.__permissionPolicy=policy;
  const configSnapshot=()=>({exists:true,data:()=>policy});
  const configDoc={get:async()=>configSnapshot(),onSnapshot:fn=>{setTimeout(()=>fn(configSnapshot()),0);return ()=>{};}};
  const chain={orderBy:()=>chain,where:()=>chain,limit:()=>chain,doc:()=>chain,get:async()=>snapshot,onSnapshot:fn=>{setTimeout(()=>fn(snapshot),0);return ()=>{};}};
@@ -84,6 +85,7 @@ await page.route('**/*',async route=>{
   if(name==='savedepartmentpermissions'){
     if(failPermissionSave)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture permission rejection'}})});
     result={saved:true,revision:(route.request().postDataJSON()?.data?.expectedRevision||0)+1};
+    await page.evaluate(({departments,revision})=>Object.assign(window.__permissionPolicy,{departments,revision}),{departments:route.request().postDataJSON().data.departments,revision:result.revision});
   }
   if(name==='getvertexcontributors' && failContributorReadOnce-->0)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Temporary contributors service outage'}})});
   if(name==='listconsolechatchannels' && failChatReadOnce-->0)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Temporary chat service outage'}})});
@@ -501,9 +503,6 @@ await selectTab('contributors');
    const roles=await import('/js/modules/roles.js');
    roles.setCurrentUser(false,['Senatus']);
    await roles.loadDepartmentPermissions();
-   const permissions=roles.getDepartmentPermissions();
-   permissions.Senatus.hiddenFields={'contributors.list':['contact','age','links','interview']};
-   permissions.Senatus.hiddenChips={'contributors.list':['github']};
    await (await import('/js/modules/contributors.js')).fetchContributorsData();
  });
  assert.equal(await page.locator('.certificate-manage-btn').count(),0);

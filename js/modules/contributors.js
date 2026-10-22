@@ -15,7 +15,7 @@ import { openCertificates } from './certificates.js';
 
 import { showToast, userErrorMessage, __, onLangChange, sanitizeHTML, escapeHTML } from '../utils/ui.js';
 import { getVertexContributorsFn, toggleContributorVerificationFn, deleteVertexContributorFn, updateContributorApplicationFn, setContributorVertexStatusFn, consolePeopleCall, auth, db } from '../core/firebase.js';
-import { getEffectivePanelLevel, getHiddenChipsFor, DEPARTMENTS, isPanelAdmin, getHiddenFieldsFor } from './roles.js';
+import { getEffectivePanelLevel, DEPARTMENTS, isPanelAdmin } from './roles.js';
 
 
 function legacyYearRange(person){
@@ -148,20 +148,16 @@ export function initContributorsModule() {
 
 }
 
-/** Rank bazli gizlenen filtre ciplerini uygula (adminler hepsini gorur). */
+/** Template management remains a server-enforced Core action. */
 export function applyChipVisibility() {
-    const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry)templateEntry.style.display=isPanelAdmin()?'':'none';
-    const hidden = new Set(getHiddenChipsFor('contributors.list'));
-    document.querySelectorAll('#tab-contributors .filter-chip').forEach(chip => {
-        const filter = chip.getAttribute('data-filter');
-        if (filter && filter !== 'all') chip.style.display = hidden.has(filter) ? 'none' : '';
-    });
+    const templateEntry=document.getElementById('certificate-email-templates-btn');
+    if(templateEntry)templateEntry.style.display=isPanelAdmin()?'':'none';
 }
 
 export function fetchContributorsData() {
     const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry)templateEntry.style.display=isPanelAdmin()?'':'none';
     if(getEffectivePanelLevel('contributors.list')==='none')return Promise.resolve();
-    const context=JSON.stringify([auth.currentUser?.uid,isPanelAdmin(),getHiddenFieldsFor('contributors.list'),activeFilter,(document.getElementById('contributor-search')?.value||'').trim()]);
+    const context=JSON.stringify([auth.currentUser?.uid,isPanelAdmin(),activeFilter,(document.getElementById('contributor-search')?.value||'').trim()]);
     if(inFlight&&inFlightContext===context)return inFlight;
     inFlightContext=context;
     const promise=loadContributors(false).finally(()=>{if(inFlight===promise)inFlight=null;});
@@ -218,36 +214,16 @@ async function loadContributors(append = false) {
     }
 }
 
-function renderContributors(contributors,{preview=false}={}) {
+function renderContributors(contributors) {
     refreshRosterAccess();
     syncBirthYearFilters();
-    const hidden = new Set(getHiddenFieldsFor('contributors.list'));
-    // Only optimistic previews use the current, server-masked page.
-    // Final paginated responses are never re-filtered by the browser.
-    if(preview){
-        const query=(document.getElementById('contributor-search')?.value||'').trim().toLocaleLowerCase('tr');
-        const currentYear=new Date().getFullYear();
-        contributors=contributors.filter(p=>{
-            const year=filterBirthYear(p);
-            const match=({
-                all:true,vertex:isActiveContributor(p),verified:p.hasVerified===true,
-                unverified:p.hasVerified!==true,
-                'age-14-15':year!==null&&year>=currentYear-15&&year<=currentYear-14,
-                'age-16-17':year!==null&&year>=currentYear-17&&year<=currentYear-16,
-                'age-18':year!==null&&year<=currentYear-18,
-                linkedin:!!p.linkedin,github:!!p.github,interview:!!p.interviewDate
-            })[activeFilter];
-            return !!match&&(!query||[p.name,p.department,...(!hidden.has('contact')?[p.email,p.about]:[])]
-                .some(v=>String(v||'').toLocaleLowerCase('tr').includes(query)));
-        });
-    }
     document.querySelectorAll('#tab-contributors .filter-chip').forEach(b=>{ const active=b.dataset.filter===activeFilter; b.classList.toggle('active',active); b.setAttribute('aria-pressed',String(active)); });
     const canWrite = getEffectivePanelLevel('contributors.list')==='write';
     const admin = isPanelAdmin();
     const addButton=document.getElementById('add-manual-application');if(addButton)addButton.hidden=!canWrite;
     const templateEntry=document.getElementById('certificate-email-templates-btn');if(templateEntry){templateEntry.style.display=admin?'':'none';templateEntry.textContent=__('email_templates.title');}
     const headers = ['name','department','birthYear','status','applied','actions'];
-    loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row ${p.hasVerified?'is-verified':''}" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${hidden.has('age')?'—':escapeHTML(birthYearLabel(p))}</span><span class="contributor-cell-status status-badge ${p.hasVerified?'success':''}">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.applicationDate?escapeHTML(formatCertificateDate(p.applicationDate)):p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${contributorState(p)==='active'?'is-active':contributorState(p)==='unknown'?'is-unknown':''}" data-membership="${escapeHTML(p.id)}" title="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-label="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-pressed="${isActiveContributor(p)}" data-vertex-state="${contributorState(p)}" ${!deploymentCapabilities.contributorMembershipWrites||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`)
+    loading.success(`<div class="contributor-table-head">${headers.map(h=>`<span>${__('contributors.col_'+h)}</span>`).join('')}</div><div class="contributor-table-rows">`+contributors.map(p=>`<div class="contributor-row ${p.hasVerified?'is-verified':''}" data-contributor-id="${escapeHTML(p.id)}"><button type="button" class="contributor-cell-name" data-details="${escapeHTML(p.id)}"><span class="contributor-avatar">${escapeHTML((p.name||'?').slice(0,1))}</span><strong class="contributor-name">${escapeHTML(p.name)}</strong></button><span class="contributor-cell-dept">${escapeHTML(displayDepartmentName(p.department))}</span><span class="contributor-cell-age">${escapeHTML(birthYearLabel(p))}</span><span class="contributor-cell-status status-badge ${p.hasVerified?'success':''}">${p.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')}</span><span class="contributor-cell-interview">${p.applicationDate?escapeHTML(formatCertificateDate(p.applicationDate)):p.createdAt?escapeHTML(formatCertificateDate(p.createdAt)):'—'}</span><span class="contributor-cell-actions">${canWrite?`<button type="button" class="edit-contributor-btn icon-action-btn" data-id="${escapeHTML(p.id)}" aria-label="${__('contributors.edit_title')}">${icon('pencil')}</button>`:''}${admin?`<button type="button" class="certificate-manage-btn cert-trigger" data-id="${escapeHTML(p.id)}" aria-label="${__('cert.title')}">${icon('award')}</button><button type="button" class="vertex-membership-btn icon-action-btn ${contributorState(p)==='active'?'is-active':contributorState(p)==='unknown'?'is-unknown':''}" data-membership="${escapeHTML(p.id)}" title="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-label="${__(contributorState(p)==='active'?'contributors.vertex_active':contributorState(p)==='inactive'?'contributors.vertex_inactive':'contributors.vertex_unknown')}${deploymentCapabilities.contributorMembershipWrites?'':' · '+__('contributors.vertex_server_pending')}" aria-pressed="${isActiveContributor(p)}" data-vertex-state="${contributorState(p)}" ${!deploymentCapabilities.contributorMembershipWrites||membershipPending.has(p.id)?'disabled':''}><img src="assets/vertex-logo.svg" alt=""></button>`:''}</span></div>`).join('')+'</div>'+(contributors.length?'':`<p class="state-block">${__('contributors.empty')}</p>`)
         +(nextContributorCursor?`<div class="form-submit-row"><button type="button" class="chrome-btn-outline contributor-next-page">${document.documentElement.lang==='en'?'Load more':'Daha fazla yükle'}</button></div>`:''));
     listContainer.querySelector('.contributor-next-page')?.addEventListener('click',async e=>{
         const button=e.currentTarget;
@@ -448,12 +424,11 @@ function watchContributorVerification(id,viewerUid){
 }
 
 function openContributorDetails(person) {
-    const hidden = new Set(getHiddenFieldsFor('contributors.list'));
     let body, pending = false;
     function paint() {
         if (!body?.isConnected) return;
-        const rows = [['contributors.field_department',displayDepartmentName(person.department)],...(!hidden.has('contact')?[['contributors.field_email',person.email],['contributors.field_phone',person.phone]]:[]),...(!hidden.has('age')?[['contributors.field_birth_date',birthDateLabel(person)]]:[]),['contributors.field_language',person.language==='tr'?'Türkçe':person.language==='en'?'English':person.language],['contributors.col_status',person.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')],['contributors.delivery_label',__(person.emailSent===true?'contributors.delivery_succeeded':['pending','processing'].includes(person.certificateDeliveryStatus)?'contributors.delivery_pending':['uncertain','failed'].includes(person.certificateDeliveryStatus)?'contributors.delivery_failed':'contributors.delivery_unconfirmed')],['contributors.applied_at',formatCertificateDate(person.createdAt)],...(!hidden.has('interview')?[['contributors.field_interview',formatCertificateDate(person.interviewDate)]]:[]),['cert.joined',person.joinedAt?formatCertificateDate(person.joinedAt):__('cert.not_joined')]];
-        body.innerHTML=`<dl class="detail-list">${rows.map(([label,value])=>`<div class="detail-row"><dt>${__(label)}</dt><dd>${escapeHTML(String(value??'—'))}</dd></div>`).join('')}</dl>${!hidden.has('contact')&&person.about?`<p class="drawer-bio">${escapeHTML(person.about)}</p>`:''}<div class="contributor-links">${!hidden.has('links')?['linkedin','github'].filter(k=>/^https?:\/\//.test(person[k]||'')).map(k=>`<a class="chrome-btn-outline" href="${escapeHTML(person[k])}" target="_blank" rel="noopener noreferrer">${icon('brand-'+k)}${k==='linkedin'?'LinkedIn':'GitHub'}</a>`).join(''):''}</div>`;
+        const rows = [['contributors.field_department',displayDepartmentName(person.department)],['contributors.field_email',person.email],['contributors.field_phone',person.phone],['contributors.field_birth_date',birthDateLabel(person)],['contributors.field_language',person.language==='tr'?'Türkçe':person.language==='en'?'English':person.language],['contributors.col_status',person.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')],['contributors.delivery_label',__(person.emailSent===true?'contributors.delivery_succeeded':['pending','processing'].includes(person.certificateDeliveryStatus)?'contributors.delivery_pending':['uncertain','failed'].includes(person.certificateDeliveryStatus)?'contributors.delivery_failed':'contributors.delivery_unconfirmed')],['contributors.applied_at',formatCertificateDate(person.createdAt)],['contributors.field_interview',formatCertificateDate(person.interviewDate)],['cert.joined',person.joinedAt?formatCertificateDate(person.joinedAt):__('cert.not_joined')]];
+        body.innerHTML=`<dl class="detail-list">${rows.map(([label,value])=>`<div class="detail-row"><dt>${__(label)}</dt><dd>${escapeHTML(String(value??'—'))}</dd></div>`).join('')}</dl>${person.about?`<p class="drawer-bio">${escapeHTML(person.about)}</p>`:''}<div class="contributor-links">${['linkedin','github'].filter(k=>/^https?:\/\//.test(person[k]||'')).map(k=>`<a class="chrome-btn-outline" href="${escapeHTML(person[k])}" target="_blank" rel="noopener noreferrer">${icon('brand-'+k)}${k==='linkedin'?'LinkedIn':'GitHub'}</a>`).join('')}</div>`;
         const footer=body.closest('.vx-drawer').querySelector('.vx-drawer-footer');
         if(isPanelAdmin()&&person.isVertex===true){
             const retry=document.createElement('button');retry.type='button';retry.className='chrome-btn-outline';

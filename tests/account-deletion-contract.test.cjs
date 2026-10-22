@@ -13,9 +13,9 @@ test('Core-only Users navigation mounts the deletion page', () => {
     assert.match(html, /id="account-deletion-confirm-email"/);
     assert.match(html, /id="account-deletion-verified"/);
     assert.match(roles, /panelKey\.startsWith\('users\.'\)/);
-    assert.match(roles, /tab\.id !== 'users'/);
-    assert.match(roles, /tabId === 'users'/);
-    assert.match(roles, /tab\.id !== 'users'/);
+    assert.match(roles, /!screen\.coreOnly/);
+    assert.match(read('js/core/permissionCatalog.js'), /scopes:\['users\.directory'\],coreOnly:true/);
+    assert.match(roles, /!screen\.coreOnly/);
 });
 
 test('deletion UI requests the guarded admin endpoint with typed target confirmation', () => {

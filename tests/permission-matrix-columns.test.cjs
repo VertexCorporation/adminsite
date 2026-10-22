@@ -1,28 +1,53 @@
 'use strict';
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-
-const roles = fs.readFileSync('js/modules/roles.js', 'utf8');
-const css = fs.readFileSync('css/modules.css', 'utf8');
-
-test('department permission matrix derives every module column from the live catalogue', () => {
-    const source = roles.match(/const TABS = (\[[\s\S]*?\]);/);
-    assert.ok(source, 'Permission tab catalogue must exist');
-    const modules = [...source[1].matchAll(/\{\s*id:\s*'([^']+)'/g)].map(match => match[1]);
-    assert.equal(modules.length, 8, 'Console catalogue includes the Core-only Users module');
-    assert.equal(new Set(modules).size, modules.length);
-    assert.match(roles, /--permission-module-count:'\+manageableTabs\.length/);
-    assert.match(css, /repeat\(var\(--permission-module-count, 7\),minmax\(108px,1fr\)\)/);
-    assert.doesNotMatch(css, /--permission-columns:[^;]*repeat\(6,/);
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const roles=fs.readFileSync('js/modules/roles.js','utf8');
+const css=fs.readFileSync('css/modules.css','utf8');
+const html=fs.readFileSync('index.html','utf8');
+const source=fs.readFileSync('js/core/permissionCatalog.js','utf8');
+const catalog=()=>import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+test('permission editor matches all seven sidebar categories and every current screen',async()=>{
+ const {PERMISSION_CATEGORIES:categories}=await catalog();
+ assert.deepEqual(categories.map(c=>c.id),['users','contributors','models','publications','subscriptions','scene','system']);
+ const scopes=new Set(categories.flatMap(c=>c.screens.flatMap(s=>s.scopes)));
+ const nav=[...html.matchAll(/data-nav-panel="([^"]+)"/g)].flatMap(m=>m[1].split(','));
+ assert.deepEqual([...scopes].sort(),[...new Set(nav)].sort());
+ assert.match(roles,/PERMISSION_CATEGORIES\.forEach\(category=>/);
+ assert.match(css,/repeat\(var\(--permission-module-count, 7\),minmax\(108px,1fr\)\)/);
+ assert.doesNotMatch(roles,/permission-workspace|permission-history-trigger|permission-save-status|CONTENT_OPTIONS|showPermissionHistory/);
 });
-
-test('permission matrix header and body are both rendered from the same module catalogue', () => {
-    const section = roles.slice(roles.indexOf('function renderMatrixTable()'), roles.indexOf('function renderMatrixTable()') + 4200);
-    const loops = section.split('manageableTabs.forEach(tab =>').length - 1;
-    assert.equal(loops, 2, 'Header and rows each render the same assignable module catalogue');
-    assert.match(section, /TABS\.filter\(tab => tab\.id !== 'users'\)/);
-    assert.ok(section.includes('class="dept-perm-th"'));
-    assert.ok(section.includes('class="perm-cell"'));
-    assert.match(css, /\.dept-perms-header,\.dept-perm-row\{display:grid;grid-template-columns:var\(--permission-columns\)/);
+test('cleanup is idempotent, removes obsolete settings and preserves denials',async()=>{
+ const {normalizeScreenPermissions:clean}=await catalog();
+ const result=clean({departments:{Aero:['contributors'],Senatus:{panels:{'news.*':'read','news.editor':'none','system.*':'write'},hiddenChips:{'contributors.list':['github']}},Scout:['news']}});
+ assert.equal(result.Aero.panels['contributors.list'],'read');
+ assert.equal(result.Senatus.panels['news.editor'],'none');
+ assert.equal(result.Senatus.panels['news.published'],'read');
+ assert.equal(result.Senatus.panels['users.directory'],'none');
+ assert.equal(result.Senatus.panels['system.deptPerms'],'none');
+ assert.equal(result.Scout,undefined);
+ assert.deepEqual(Object.keys(result.Senatus),['panels']);
+ assert(!Object.keys(result.Senatus.panels).some(key=>key.endsWith('.*')));
+ assert.deepEqual(clean(result),result);
+});
+test('merging panels into a screen never exposes denied cards or previously masked fields',async()=>{
+ const {normalizeScreenPermissions:clean}=await catalog();
+ const result=clean({Senatus:{panels:{'system.exporter':'write','system.attributions':'none','contributors.list':'write'},hiddenFields:{'contributors.list':['contact']}}});
+ assert.equal(result.Senatus.panels['system.exporter'],'none');
+ assert.equal(result.Senatus.panels['system.attributions'],'none');
+ assert.equal(result.Senatus.panels['contributors.list'],'none');
+ assert.equal(result.Senatus.hiddenFields,undefined);
+});
+test('custom category levels and screen edits cannot modify Core-only scopes',async()=>{
+ const m=await catalog(),category=m.PERMISSION_CATEGORIES.find(c=>c.id==='publications');
+ const result=m.normalizeScreenPermissions({Senatus:['news','events','notifications']});
+ assert.equal(m.categoryPermissionLevel(result,'Senatus',category),'read');
+ m.setScreenPermission(result,'Senatus',category.screens.find(s=>s.id==='news-editor'),'write');
+ assert.equal(m.categoryPermissionLevel(result,'Senatus',category),'mixed');
+ assert.equal(result.Senatus.panels['news.published'],'read');
+ m.setScreenPermission(result,'Senatus',m.PERMISSION_CATEGORIES[0].screens[0],'write');
+ assert.equal(result.Senatus.panels['users.directory'],'none');
+ m.setScreenPermission(result,'Core',category.screens[0],'none');
+ assert.equal(result.Core,undefined);
+ assert.equal(m.categoryPermissionLevel(result,'Core',category),'write');
 });
