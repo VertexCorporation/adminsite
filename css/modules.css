@@ -622,3 +622,51 @@
 }
 
 .ui-pager { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:16px; flex-wrap:wrap; }
+
+/* Event management: shared heading, action, table and mobile geometry. */
+#tab-events .events-section-header{align-items:center}
+#tab-events .events-section-header .title-details{flex:1 1 auto;min-width:0}
+#tab-events .events-section-header .btn-refresh{flex:0 0 auto}
+#tab-events .events-section-header .title-details h3{white-space:normal}
+#tab-events .events-editor-actions{flex-basis:100%;width:100%;margin-top:0}
+#tab-events .event-review-control{flex-basis:100%}
+#tab-events .event-review-control label{display:flex;align-items:flex-start;gap:var(--space-2)}
+#tab-events .event-review-control input{flex:0 0 auto;margin-top:2px}
+#tab-events .event-registration-controls{
+ display:flex;align-items:flex-end;flex-wrap:wrap;column-gap:var(--space-3);row-gap:var(--space-3);margin-bottom:var(--space-4)
+}
+#tab-events .event-registration-controls .form-group-field{flex:1 1 240px}
+#tab-events .event-registration-controls button{flex:0 0 auto;min-height:var(--input-height)}
+#tab-events #events-list .article-item{min-width:0;column-gap:var(--space-4);row-gap:var(--space-2)}
+#tab-events #events-list .article-item>span{flex:1 1 240px;min-width:0;overflow-wrap:anywhere}
+#tab-events .event-row-actions{margin-left:auto;justify-content:flex-end}
+#tab-events #events-list h4{margin-top:var(--space-4);font-size:var(--fs-component-title)}
+#tab-events .event-registration-filter{
+ display:block;width:100%;min-height:var(--input-height);margin-bottom:var(--space-3);
+ padding:0 var(--space-3);border:1px solid var(--border-subtle);border-radius:var(--radius-md);
+ background:var(--bg-app);color:var(--text-primary)
+}
+#tab-events .event-registration-viewport{
+ max-width:100%;max-height:min(68dvh,620px);overflow:auto;
+ border:1px solid var(--border-subtle);border-radius:var(--radius-md);overscroll-behavior:contain
+}
+#tab-events .event-registration-table{width:100%;min-width:580px;border-collapse:separate;border-spacing:0;font-size:var(--fs-secondary)}
+#tab-events .event-registration-table th,#tab-events .event-registration-table td{
+ padding:var(--space-3);text-align:left;border-bottom:1px solid var(--border-subtle);
+ overflow-wrap:anywhere;vertical-align:middle
+}
+#tab-events .event-registration-table th{
+ position:sticky;top:0;z-index:1;background:var(--bg-elevated);
+ color:var(--text-secondary);font-weight:600;white-space:nowrap
+}
+#tab-events .event-registration-table tbody tr:last-child td{border-bottom:0}
+#tab-events .event-registration-empty{padding:var(--space-5) 0;text-align:center}
+@media(max-width:600px){
+ #tab-events .events-section-header{flex-wrap:nowrap}
+ #tab-events .events-section-header .btn-refresh{min-height:var(--touch-target)}
+ #tab-events #events-list .article-item{align-items:flex-start}
+ #tab-events #events-list .event-row-actions{width:100%;justify-content:flex-start;margin-left:0}
+ #tab-events #events-list .event-row-actions>button{flex:1 1 100px}
+ #tab-events .event-registration-controls button{flex:1 1 100%}
+ #tab-events .events-editor-actions>button{flex:1 1 135px}
+}

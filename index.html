@@ -780,9 +780,28 @@
             <!-- SEKME 4: BİLDİRİM YÖNETİMİ -->
             <div class="tab-panel" id="tab-events">
 <div class="grid-layout">
-<section class="panel-card col-span-12" data-panel="events.list"><div class="panel-header"><h3 data-i18n="panel.events.list">Etkinlik Listesi</h3></div><button type="button" id="events-refresh" class="btn-refresh">↻</button><div id="events-list" aria-live="polite"></div></section>
-<section class="panel-card col-span-12" data-panel="events.editor"><div class="panel-header"><h3 data-i18n="panel.events.editor">Etkinlik Oluştur</h3></div><form id="events-editor"><div id="events-fields" class="form-grid"></div><div class="form-group-field"><label id="events-review-label"><input type="checkbox" name="dateReviewed"> Tarih tutarsızlığını kaynakla doğruladım / Date discrepancy resolved</label></div><button type="button" id="events-preview" data-read-action class="chrome-btn-outline">Önizleme / Preview</button><button type="submit" class="chrome-btn-primary">Kaydet / Save</button><button type="button" id="events-new" class="chrome-btn-outline">Yeni / New</button></form><div id="events-preview-content" hidden></div></section>
-<section class="panel-card col-span-12" data-panel="events.registrations"><div class="panel-header"><h3 data-i18n="panel.events.registrations">Kayıtlar</h3></div><div class="form-group-field"><label for="events-registration-search">Etkinlik kimliği / Event ID</label><input id="events-registration-search"></div><button type="button" id="events-load-registrations" class="btn-refresh">Yükle / Load</button><div id="events-registrations" aria-live="polite"></div></section>
+<section class="panel-card col-span-12" data-panel="events.list">
+  <div class="card-title-row events-section-header">
+    <div class="title-details"><h3 data-i18n="panel.events.list">Etkinlik Listesi</h3></div>
+    <button type="button" id="events-refresh" class="btn-refresh" title="Yenile" data-i18n-title="contributors.refresh" aria-label="Yenile">
+      <i data-icon="refresh" aria-hidden="true"></i><span data-i18n="contributors.refresh">Yenile</span>
+    </button>
+  </div>
+  <div id="events-list" aria-live="polite"></div>
+</section>
+<section class="panel-card col-span-12" data-panel="events.editor"><div class="card-title-row"><div class="title-details"><h3 data-i18n="panel.events.editor">Etkinlik Oluştur</h3></div></div><form id="events-editor"><div id="events-fields" class="form-grid"></div><div class="form-group-field event-review-control"><label id="events-review-label"><input type="checkbox" name="dateReviewed"> Tarih tutarsızlığını kaynakla doğruladım / Date discrepancy resolved</label></div><div class="form-submit-row events-editor-actions">
+   <button type="button" id="events-preview" data-read-action class="chrome-btn-outline">Önizleme</button>
+   <button type="submit" id="events-editor-submit" class="chrome-btn-primary">Kaydet</button>
+   <button type="button" id="events-new" class="chrome-btn-outline">Yeni</button>
+  </div></form><div id="events-preview-content" hidden></div></section>
+<section class="panel-card col-span-12" data-panel="events.registrations">
+ <div class="card-title-row"><div class="title-details"><h3 data-i18n="panel.events.registrations">Kayıtlar</h3></div></div>
+ <div class="event-registration-controls">
+  <div class="form-group-field"><label for="events-registration-search">Etkinlik kimliği / Event ID</label><input id="events-registration-search"></div>
+  <button type="button" id="events-load-registrations" class="btn-refresh">Kayıtları yükle</button>
+ </div>
+ <div id="events-registrations" aria-live="polite"></div>
+</section>
 </div></div>
 <div class="tab-panel" id="tab-notifications">
                 <div class="panel-section-title">

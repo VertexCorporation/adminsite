@@ -19,8 +19,8 @@ export function showWorkspace(tab, keys) {
     if (changed && !enteringTab && !reducedMotion() && tab.classList.contains('active')) {
         for (const card of cards) {
             if (!card.hidden && card.getClientRects().length)
-                card.animate([{opacity:.88},{opacity:1}],
-                    {duration:120,easing:'cubic-bezier(.2,.8,.2,1)'});
+                card.animate([{opacity:.84,transform:'translateY(3px)'},{opacity:1,transform:'translateY(0)'}],
+                    {duration:170,easing:'cubic-bezier(.2,.8,.2,1)'});
         }
     }
     document.dispatchEvent(new CustomEvent('vertex:workspace',{detail:{keys:selected}}));
