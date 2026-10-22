@@ -327,7 +327,7 @@ await page.locator('[data-details]').first().click();await page.waitForSelector(
 await page.locator('.contributor-cell-dept').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
 await page.locator('.contributor-row').first().focus();await page.keyboard.press('Enter');await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
 await page.locator('.edit-contributor-btn').first().hover();assert.equal(await page.locator('.edit-contributor-btn').first().evaluate(button=>getComputedStyle(button).backgroundColor),'rgba(0, 0, 0, 0)');note('Whole application row and transparent action hover');
-const waitCrossfade = () => page.waitForFunction(() => !document.querySelector('.ui-crossfade-ghost'));
+const waitCrossfade = async () => {await page.waitForTimeout(400);await page.waitForFunction(() => !document.querySelector('.ui-crossfade-ghost') && document.getElementById('contributors-list-container').getAttribute('aria-busy')!=='true');};
 await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);
 await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),1);
 await page.evaluate(()=>window.filterContributors('verified'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
@@ -346,7 +346,9 @@ await page.evaluate(fixtures=>{
 },people);
 await waitCrossfade();
 const listTopBefore=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().top);
+contributorDelay=200;
 const filterTransition=await page.evaluate(()=>{
+ window.__filterPaints=0;document.getElementById('contributors-list-container').addEventListener('vertex:list-painted',()=>window.__filterPaints++,{once:true});
  window.filterContributors('verified');
  const host=document.getElementById('contributors-list-container');
  return {top:host.getBoundingClientRect().top,ghost:!!host.querySelector('.ui-crossfade-ghost'),
@@ -356,12 +358,15 @@ const filterTransition=await page.evaluate(()=>{
 });
 assert(Math.abs(filterTransition.top-listTopBefore)<1,'Filter moved its list header vertically');
 assert.equal(filterTransition.ghost,false,JSON.stringify(filterTransition));
-assert.equal(filterTransition.newRows,43);
-assert.equal(filterTransition.animating,true);
+assert.equal(filterTransition.newRows,85);
+assert.equal(filterTransition.animating,false);
 assert(filterTransition.height>=460,JSON.stringify(filterTransition));
 assert.equal(await page.locator('#contributors-list-container').evaluate(el=>el.style.minHeight),'');
 assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="verified"]').getAttribute('aria-pressed'),'true');
 await waitCrossfade();
+assert.equal(await page.locator('.contributor-table-rows > .contributor-row').count(),43);
+assert.equal(await page.evaluate(()=>window.__filterPaints),1);
+contributorDelay=0;
 people=null;
 await page.evaluate(()=>{
  window.loadedContributors=window.__savedContributors;

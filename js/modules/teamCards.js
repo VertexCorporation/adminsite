@@ -1,3 +1,4 @@
+import { crossfade } from '../ui/transition.js';
 import { registerListRefresh } from '../ui/listRefresh.js';
 // Public website directory (siteTeam kind=card). The public homepage and
 // this console now read/write the SAME collection and share fixed role codes.
@@ -53,7 +54,7 @@ function renderTeamCardsList(){
  if(!list)return;
  if(empty)empty.hidden=!cardsLoaded||teamCards.length>0;
  list.className='team-list';
- list.innerHTML=teamCards.map(card=>{
+ crossfade(list,()=>{list.innerHTML=teamCards.map(card=>{
    const title=card.position==='CDO' ? (getLang()==='tr'?'Tasarım Direktörü (CDO)':'Chief Design Officer (CDO)') : card.titles?.[getLang()]||card.titles?.en||card.position;
    const preview=card.imageUrl?'<img src="'+escapeHTML(card.imageUrl)+'" alt="" loading="lazy">':icon('user',{size:18});
    return '<div class="team-list-row" data-id="'+escapeHTML(card.id)+'">'+
@@ -65,7 +66,7 @@ function renderTeamCardsList(){
     '<span class="team-list-meta">'+(card.bio?.trim()?'Biyografi mevcut':'Biyografi yok — kart tıklanamaz')+'</span></div>'+
     '<div class="team-list-actions"><button class="icon-btn" type="button" data-edit-card="'+escapeHTML(card.id)+'" aria-label="'+__('common.edit')+'">'+icon('pencil',{size:16})+'</button>'+
     '<button class="icon-btn danger" type="button" data-del-card="'+escapeHTML(card.id)+'" aria-label="'+__('common.delete')+'">'+icon('trash',{size:16})+'</button></div></div>';
- }).join('');
+ }).join('');});
  list.querySelectorAll('[data-edit-card]').forEach(btn=>btn.addEventListener('click',()=>{
    const card=teamCards.find(x=>x.id===btn.dataset.editCard);if(card)openTeamCardDrawer(card);
  }));
@@ -201,7 +202,7 @@ function renderWeeklyStars(container, starsData) {
     const current = starsData.current;
     const history = Array.isArray(starsData.history) ? starsData.history : [];
 
-    container.innerHTML = `
+    crossfade(container,()=>{container.innerHTML = `
         <div class="form-stack">
             <form id="weekly-stars-form" class="form-stack">
                 <div class="form-grid three-col">
@@ -256,7 +257,7 @@ function renderWeeklyStars(container, starsData) {
                 }
             </div>
         </div>
-    `;
+    `;});
 
     const selected=Array.isArray(current?.contributors)?current.contributors.slice():[];
     const directory=starsData.directory||[];

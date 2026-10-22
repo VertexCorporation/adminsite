@@ -102,6 +102,7 @@ export function initContributorsModule() {
     listContainer.replaceChildren();
     loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows(),crossfadeOptions:{mode:'enter'}});
     window.filterContributors = filter => {
+        clearTimeout(contributorSearchTimer);
         activeFilter=filter;
         document.querySelectorAll('#tab-contributors .filter-chip').forEach(chip=>{const active=chip.dataset.filter===filter;chip.classList.toggle('active',active);chip.setAttribute('aria-pressed',String(active));});
         void fetchContributorsData();
@@ -202,6 +203,7 @@ async function loadContributors(append = false) {
     } catch (error) {
         console.error('[CONTRIBUTORS] Failed to fetch data:', error);
         if (!requestGuard.isCurrent(request)) return;
+        loading.destroy();
         lastLoadFailed=true;lastFailureAt=Date.now();
         if(['functions/unavailable','functions/deadline-exceeded',
             'functions/resource-exhausted','functions/internal'].includes(error.code)) {

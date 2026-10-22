@@ -353,14 +353,17 @@ async function handleCancelTask(taskId) {
 /**
  * Attaches a real-time listener for scheduled notifications.
  */
+let scheduledReadEpoch=0, settleScheduledRead=()=>{}, finishScheduledRead=()=>{};
 export function listenForScheduledTasks() {
-    let settle;const ready=new Promise(resolve=>{settle=resolve;});
-    const finishLoading = beginPanelLoading(dom.scheduledTasksListContainer);
+    settleScheduledRead();finishScheduledRead();const epoch=++scheduledReadEpoch;
+    let settle;const ready=new Promise(resolve=>{settle=resolve;});settleScheduledRead=settle;
+    const finishLoading = beginPanelLoading(dom.scheduledTasksListContainer);finishScheduledRead=finishLoading;
     if (unsubscribeFromScheduledTasks) unsubscribeFromScheduledTasks();
 
     unsubscribeFromScheduledTasks = db.collection('scheduledNotifications')
         .orderBy('scheduleTime', 'asc')
         .onSnapshot(snapshot => {
+        if(epoch!==scheduledReadEpoch)return;
         settle();
         finishLoading();
             const container = dom.scheduledTasksListContainer;
@@ -391,6 +394,7 @@ export function listenForScheduledTasks() {
             });
             crossfade(container, () => container.replaceChildren(fragment));
         }, error => {
+        if(epoch!==scheduledReadEpoch)return;
         settle();
         finishLoading();
             console.error("[CLIENT] Error listening for scheduled tasks:", error);
@@ -404,6 +408,7 @@ export function listenForScheduledTasks() {
  * Detaches the real-time listener for scheduled tasks.
  */
 export function stopListeningForScheduledTasks() {
+    scheduledReadEpoch++;settleScheduledRead();finishScheduledRead();
     if (unsubscribeFromScheduledTasks) {
         unsubscribeFromScheduledTasks();
         unsubscribeFromScheduledTasks = null;

@@ -14,6 +14,7 @@ import { userErrorMessage, __, showToast, getLang, onLangChange, escapeHTML } fr
 let unsubscribeFromArticles = null;
 let editingArticle=null;
 let newsEpoch=0;
+let newsReadEpoch=0, settleNewsRead=()=>{}, finishNewsRead=()=>{};
 
 /**
  * Handles the submission of the news article creation form.
@@ -131,15 +132,21 @@ function renderArticles() {
     crossfade(container,()=>{container.innerHTML=html;});
 }
 export function listenForArticles() {
+    settleNewsRead();finishNewsRead();
+    const epoch=++newsReadEpoch;
     const finishLoading=beginPanelLoading(dom.articlesListContainer);
+    finishNewsRead=finishLoading;
     if(unsubscribeFromArticles)unsubscribeFromArticles();
     let settle;
     const ready=new Promise(resolve=>{settle=resolve;});
+    settleNewsRead=settle;
     unsubscribeFromArticles=db.collection('news').orderBy('publishedAt','desc').onSnapshot(snapshot=>{
+        if(epoch!==newsReadEpoch)return;
         window.loadedArticles=[];
         snapshot.forEach(doc=>window.loadedArticles.push({...doc.data(),id:doc.id}));
         renderArticles();finishLoading();settle();
     },error=>{
+        if(epoch!==newsReadEpoch)return;
         finishLoading();settle();
         showLoadError(dom.articlesListContainer,()=>__('news.load_error'),listenForArticles,{staleSelector:'.article-item'});
     });
@@ -231,6 +238,7 @@ function editArticle(slug){
  * Detaches the real-time listener for articles.
  */
 export function stopListeningForArticles() {
+    newsReadEpoch++;settleNewsRead();finishNewsRead();
     newsEpoch++;clearNewsEditor();window.loadedArticles=[];
     if (unsubscribeFromArticles) {
         unsubscribeFromArticles();
