@@ -53,7 +53,7 @@ function renderTeamCardsList(){
  if(empty)empty.hidden=!cardsLoaded||teamCards.length>0;
  list.className='team-list';
  list.innerHTML=teamCards.map(card=>{
-   const title=card.titles?.[getLang()]||card.titles?.en||card.position;
+   const title=card.position==='CDO' ? (getLang()==='tr'?'Tasarım Direktörü (CDO)':'Chief Design Officer (CDO)') : card.titles?.[getLang()]||card.titles?.en||card.position;
    const preview=card.imageUrl?'<img src="'+escapeHTML(card.imageUrl)+'" alt="" loading="lazy">':icon('user',{size:18});
    return '<div class="team-list-row" data-id="'+escapeHTML(card.id)+'">'+
     '<div class="team-list-avatar">'+preview+'</div>'+
@@ -112,7 +112,7 @@ export function openTeamCardDrawer(existing=null){
  POSITIONS.map(code=>{
    const occupier=teamCards.find(c=>c.position===code&&c.id!==existing?.id);
    return '<option value="'+code+'" '+(existing?.position===code?'selected':'')+' '+(occupier?'disabled':'')+'>'+
-   code+(occupier?' ('+escapeHTML(occupier.name)+')':'')+'</option>';
+   (code==='CDO'?'CDO — Chief Design Officer':code)+(occupier?' ('+escapeHTML(occupier.name)+')':'')+'</option>';
  }).join('')+'</select></div>'+
  '<div class="form-group-field"><label for="team-card-bio">Biyografi (boşsa profil açılmaz)</label>'+
  '<textarea id="team-card-bio" rows="7" maxlength="6000" placeholder="Kişinin biyografisi; yeni paragraf için boş satır bırakın.">'+escapeHTML(existing?.bio||'')+'</textarea></div>'+
