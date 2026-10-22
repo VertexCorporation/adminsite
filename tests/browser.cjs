@@ -20,7 +20,8 @@ await page.addInitScript(()=>{
  const grants=level=>Object.fromEntries(tabs.map(tab=>[tab+'.*',level]));
  const policy={revision:0,departments:{Core:{panels:grants('write')},Senatus:{panels:grants('read')}}};
  window.__permissionPolicy=policy;
- const configSnapshot=()=>({exists:true,data:()=>policy});
+ const sortedPolicy=()=>JSON.parse(JSON.stringify(policy,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item));
+ const configSnapshot=()=>({exists:true,data:sortedPolicy});
  const configDoc={get:async()=>configSnapshot(),onSnapshot:fn=>{setTimeout(()=>fn(configSnapshot()),0);return ()=>{};}};
  const chain={orderBy:()=>chain,where:()=>chain,limit:()=>chain,doc:()=>chain,get:async()=>snapshot,onSnapshot:fn=>{setTimeout(()=>fn(snapshot),0);return ()=>{};}};
  const article={translations:{en:{title:'Saved Fixture',summary:'Summary',content:'Content'},tr:{title:'Kayıtlı Haber',summary:'Özet',content:'İçerik'}},cover:{en:'news/covers/fixture/en.png',tr:'news/covers/fixture/tr.png'},tags:[],references:[],revision:0};

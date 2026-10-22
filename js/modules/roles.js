@@ -95,10 +95,13 @@ export function departmentHasAccess(department, categoryId) {
 
 // --- Doküman normalize (eski tab-dizisi şekli de desteklenir) ---
 
+const stableSettings = value => JSON.stringify(value, (_key,item) =>
+    item && typeof item==='object' && !Array.isArray(item)
+        ? Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))) : item);
 function normalizeDoc(raw) {
     const clean=normalizeScreenPermissions(raw);
     const source=raw?.departments ?? raw ?? {};
-    needsScreenMigration=JSON.stringify(source)!==JSON.stringify(clean);
+    needsScreenMigration=stableSettings(source)!==stableSettings(clean);
     return clean;
 }
 
