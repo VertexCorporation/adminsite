@@ -93,6 +93,7 @@ let listContainer;
 let refreshBtn;
 
 export function initContributorsModule() {
+    document.addEventListener('vertex:application-templates',()=>{if(isPanelAdmin())openCertificateEmailTemplates();});
     document.addEventListener('vertex:certificate-selector',openCertificateSelector);
     initVertexRoster(fetchContributorsData);
     initManualApplication({onCreated:fetchContributorsData});

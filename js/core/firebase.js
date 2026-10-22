@@ -33,6 +33,7 @@ let prepareModelImageCleanupFn, confirmModelImageCleanupFn;
 const CALLABLE_TIMEOUT_MS = 20000;
 const callableCache = new Map();
 const RETRYABLE_READS = new Set([
+    'listConsoleUsers','getConsoleUser','getConsoleUserStatistics',
     'getVertexContributors','listConsoleChatChannels','listConsoleChatMessages',
     'listConsoleChatDirectory','getPanelPermissions','getMyConsoleAccess',
     'listUserSubscriptions','listDepartmentUsers','listSiteTeam',

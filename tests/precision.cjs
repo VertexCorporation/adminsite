@@ -54,7 +54,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   assert(alignments.every(offset=>offset<1),JSON.stringify(alignments));
   assert.equal(await page.locator('.perm-preset-btn').count(),0);
   assert.equal(await page.locator('.permission-panel-selector').count(),0);
-  assert.equal(await page.locator('[data-permission-panel]').count(),23); // Includes Core-only Users, which cannot be granted to departments
+  assert.equal(await page.locator('[data-permission-panel]').count(),26); // Includes Core-only Users, which cannot be granted to departments
   for(const retired of ['system.adminRole','system.adminList','system.removeAdmin'])assert.equal(await page.locator(`[data-permission-panel="${retired}"]`).count(),0);
   assert(await page.locator('.perm-cycle').first().innerText().then(text=>text.includes('Edit')));
   await capture('permissions-1440-dark');
@@ -89,16 +89,14 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   await page.waitForFunction(()=>document.querySelector('#permission-save-status')?.dataset.state==='saved');
   assert.equal(Object.values(payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments.Core.panels).filter(level=>level==='write').length,7);
   note('Panel overrides, inherited reset, hidden fields and contextual bulk permission presets');
-  for(const key of ['permissions','departments','verification','server','exports_attributions']) {
-    await page.locator(`[data-i18n="subnav.${key}"]`).click();
-    const active=key==='exports_attributions'?'export':key;
-    assert.equal(await page.locator(`[data-section="${active}"]`).getAttribute('aria-pressed'),'true');
+  for(const key of ['permissions','departments','verification','server','export']) {
+    await page.locator(`[data-nav-action="${key}"]`).click();
+    assert.equal(await page.locator(`[data-section="${key}"]`).getAttribute('aria-pressed'),'true');
   }
+  await selectTab('users');
+  await page.locator('[data-nav-panel="users.status,users.deleteAccount"]').click();
+  assert(await page.locator('[data-panel="users.status"]').isVisible());
   await selectTab('contributors');
-  // Clicking an already active parent intentionally toggles its submenu.
-  if(await page.locator('[data-nav-module=users] .dock-btn').getAttribute('aria-expanded')!=='true')await page.locator('[data-target=tab-contributors]').click();
-  await page.locator('[data-i18n="subnav.vertex_status"]').click();
-  assert(await page.locator('#vertex-status-manager').isVisible());
   await page.locator('[data-i18n="subnav.applicants"]').click();
   assert.equal(await page.locator('[data-nav-action=certificates]').count(),0);
   await page.locator('.certificate-manage-btn[data-id=person]').click();

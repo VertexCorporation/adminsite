@@ -146,21 +146,22 @@ const checks=[];
 const note=x=>{checks.push(x);console.log('PASS',x);};
 // Never show a cloned outgoing page while navigating. Our former regression
 // incorrectly demanded this exact source of the user's stray-screen flash.
-await page.locator('.dock-btn[data-target="tab-news"]').click();
+await page.locator('.dock-btn[data-target="tab-publications"]').click();
+await page.locator('[data-nav-panel="news.editor"]').click();
 // The legacy server's admin boolean must not leave a visible main nav with
 // disabled, empty submenus. Every authorized destination has live content.
-assert.equal(await page.locator('[data-nav-module="news"]').getAttribute('aria-hidden'),null);
-assert.equal(await page.locator('[data-nav-module="news"] .dock-btn').getAttribute('aria-expanded'),'true');
-assert.equal(await page.locator('[data-nav-module="news"] .sidebar-submenu').getAttribute('inert'),null);
-assert.equal(await page.locator('#tab-news .panel-card[data-panel="news.editor"]').isVisible(),true);
-await page.locator('[data-nav-module="news"] [data-nav-panel="news.published"]').click();
-assert.equal(await page.locator('#tab-news .panel-card[data-panel="news.published"]').isVisible(),true);
-assert.equal(await page.locator('#tab-news .panel-card[data-panel="news.editor"]').isVisible(),false);
-await page.locator('[data-nav-module="news"] [data-nav-panel="news.editor"]').click();
+assert.equal(await page.locator('[data-nav-module="publications"]').getAttribute('aria-hidden'),null);
+assert.equal(await page.locator('[data-nav-module="publications"] .dock-btn').getAttribute('aria-expanded'),'true');
+assert.equal(await page.locator('[data-nav-module="publications"] .sidebar-submenu').getAttribute('inert'),null);
+assert.equal(await page.locator('#tab-publications .panel-card[data-panel="news.editor"]').isVisible(),true);
+await page.locator('[data-nav-module="publications"] [data-nav-panel="news.published"]').click();
+assert.equal(await page.locator('#tab-publications .panel-card[data-panel="news.published"]').isVisible(),true);
+assert.equal(await page.locator('#tab-publications .panel-card[data-panel="news.editor"]').isVisible(),false);
+await page.locator('[data-nav-module="publications"] [data-nav-panel="news.editor"]').click();
 await page.locator('.dock-btn[data-target="tab-contributors"]').click();
-await page.locator('.dock-btn[data-target="tab-news"]').click();
+await page.locator('.dock-btn[data-target="tab-publications"]').click();
 const navMotion=await page.evaluate(()=>{
- const host=document.getElementById('tab-scroll-container'), incoming=document.getElementById('tab-news');
+ const host=document.getElementById('tab-scroll-container'), incoming=document.getElementById('tab-publications');
  return {ghost:!!host.querySelector(':scope > .ui-view-ghost'),
    incoming:incoming.getAnimations().length,
    visible:[...host.querySelectorAll(':scope > .tab-panel')]
@@ -168,13 +169,13 @@ const navMotion=await page.evaluate(()=>{
    liveOld:!!document.getElementById('tab-contributors')};
 });
 assert(!navMotion.ghost&&navMotion.incoming>0&&navMotion.liveOld,JSON.stringify(navMotion));
-assert.deepEqual(navMotion.visible,['tab-news']);
+assert.deepEqual(navMotion.visible,['tab-publications']);
 await page.locator('.dock-btn[data-target="tab-contributors"]').click();
 assert.equal(await page.locator('#tab-scroll-container > .ui-view-ghost').count(),0);
 note('Navigation never displays the outgoing screen above its destination');
 // Fast consecutive clicks must still leave only the final tab visible.
 const rapidNav=await page.evaluate(()=>{
- for(const id of ['tab-models','tab-notifications','tab-news','tab-contributors'])
+ for(const id of ['tab-models','tab-publications','tab-subscriptions','tab-contributors'])
    document.querySelector('.dock-btn[data-target="'+id+'"]').click();
  return {visible:[...document.querySelectorAll('.tab-panel')]
     .filter(t=>getComputedStyle(t).display!=='none').map(t=>t.id),
@@ -185,33 +186,34 @@ assert.equal(rapidNav.ghosts,0);
 note('Rapid navigation never cycles through intermediate screens');
 // Deep sub-navigation must select the final workspace before the new page
 // enters. No intermediary contributor panel may be rendered.
-await page.locator('.dock-btn[data-target="tab-news"]').click();
+await page.locator('.dock-btn[data-target="tab-publications"]').click();
 await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
 const atomicDestination=await page.evaluate(()=>{
  const seen=[];
- const listener=event=>{const keys=event.detail?.keys||[];if(keys.some(k=>k.startsWith('contributors.')))seen.push(keys.join(','));};
+ const listener=event=>{const keys=event.detail?.keys||[];if(keys.some(k=>k.startsWith('users.')))seen.push(keys.join(','));};
  document.addEventListener('vertex:workspace',listener);
- document.querySelector('[data-nav-panel="contributors.vertexStatus"]').click();
+ document.querySelector('[data-nav-panel="users.status,users.deleteAccount"]').click();
  document.removeEventListener('vertex:workspace',listener);
- const tab=document.getElementById('tab-contributors');
+ const tab=document.getElementById('tab-users');
  return {seen,workspace:tab.dataset.workspace,active:tab.classList.contains('active'),
   nestedGhost:!!tab.querySelector('.grid-layout > .ui-crossfade-ghost')};
 });
-assert.deepEqual(atomicDestination.seen,['contributors.vertexStatus'],JSON.stringify(atomicDestination));
-assert.equal(atomicDestination.workspace,'contributors.vertexStatus');
+assert.deepEqual(atomicDestination.seen,['users.status,users.deleteAccount'],JSON.stringify(atomicDestination));
+assert.equal(atomicDestination.workspace,'users.status,users.deleteAccount:');
 assert(atomicDestination.active&&!atomicDestination.nestedGhost,JSON.stringify(atomicDestination));
 await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
+await page.locator('[data-target="tab-contributors"]').click();
 await page.locator('[data-nav-panel="contributors.list"][data-nav-action=""]').click();
 note('Contributor sub-navigation enters its final workspace without an intermediate layout');
 const issueCount=()=>calls.filter(n=>n==='issuevertexcertificate').length;
 const openCert=async()=>{if(await page.locator('.certificate-drawer').count()){await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});}await page.waitForSelector('.vx-popover.is-closing',{state:'detached'});await page.waitForSelector('.vx-modal[aria-hidden=true]',{state:'detached'});await page.locator('.certificate-manage-btn').first().click();await page.waitForSelector('[data-award]');};
-const selectTab=async id=>{if(await page.evaluate(()=>innerWidth<1024)){const dock=page.locator(`[data-mobile-tab="tab-${id}"]`);if(await dock.count()&&await dock.isVisible())await dock.click();else{await page.locator('[data-mobile-more]').click();if(id==='profile')await page.locator('[data-more-profile]').click();else await page.locator(`.mobile-more-pages section[data-more-module="tab-${id}"] button`).first().click();await page.waitForSelector('.vx-modal',{state:'detached'});}}else {const button=page.locator(`[data-target="tab-${id}"]`);if(await button.getAttribute("aria-expanded")!=="true")await button.click();}};
+const selectTab=async id=>{const original=id;if(['news','events','notifications'].includes(id))id='publications';if(await page.evaluate(()=>innerWidth<1024)){const dock=page.locator(`[data-mobile-tab="tab-${id}"]`);if(await dock.count()&&await dock.isVisible())await dock.click();else{await page.locator('[data-mobile-more]').click();if(id==='profile')await page.locator('[data-more-profile]').click();else await page.locator(`.mobile-more-pages section[data-more-module="tab-${id}"] button`).first().click();await page.waitForSelector('.vx-modal',{state:'detached'});}}else {const button=page.locator(`[data-target="tab-${id}"]`);if(await button.getAttribute("aria-expanded")!=="true")await button.click();}const destination={news:'news.editor',events:'events.list',notifications:'notifications.sender'}[original];if(destination)await page.locator('[data-nav-panel="'+destination+'"]').evaluate(button=>button.click());};
 // Account deletion must require an explicit visible checkbox and exact e-mail.
 // This uses a mocked account and never invokes the destructive callable.
 {
  const email='delete-fixture@example.invalid';
- await selectTab('contributors');
- await page.locator('[data-nav-panel="users.deleteAccount"]').click();
+ await selectTab('users');
+ await page.locator('[data-nav-panel="users.status,users.deleteAccount"]').click();
  await page.locator('#account-deletion-email').fill(email);
  await page.locator('#account-deletion-search-button').click();
  await page.waitForSelector('#account-deletion-summary:not([hidden])');
@@ -305,7 +307,7 @@ for(const width of [360,390,768,1024,1440,1920]){
   await page.waitForFunction(expected=>getComputedStyle(document.body).backgroundColor===expected,theme==='light'?'rgb(248, 249, 250)':'rgb(15, 15, 16)');
   for(const id of ['contributors','models','news','notifications','subscriptions','chat','system','profile']){
    await selectTab(id);
-   assert(await page.locator('#tab-'+id).isVisible(),id);
+   assert(await page.locator('#tab-'+(['news','events','notifications'].includes(id)?'publications':id)).isVisible(),id);
    const dims=await page.evaluate(()=>({w:innerWidth,scroll:document.documentElement.scrollWidth}));
    if(dims.scroll>dims.w+1)console.error(await page.evaluate(()=>[...document.querySelectorAll("body *")].filter(el=>el.getBoundingClientRect().right>innerWidth+1).map(el=>({tag:el.tagName,id:el.id,cls:el.className,right:el.getBoundingClientRect().right})).slice(0,20)));assert(dims.scroll<=dims.w+1,`${width}/${theme}/${id}: overflow ${dims.scroll}`);
   }
@@ -453,7 +455,7 @@ assert.equal(editPayload.revision,0);assert.equal(editPayload.article.cover.en,'
 note('News edits preserve the original slug, revision and unchanged cover paths');
 
 await selectTab('notifications');await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('ALL_USERS');await page.locator('#notification-schedule-switch').check();await page.locator('#notification-schedule-time').fill('2027-01-01T12:00');await page.locator('#notification-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert(calls.includes('schedulenotification'));note('Notification template and scheduling payload (mock)');await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('SUBSCRIPTION_LEVEL');await page.locator('#notification-target-level').selectOption('3');await page.locator('#notification-schedule-switch').check();await page.locator('#notification-schedule-time').fill('2027-01-01T12:00');await page.locator('#notification-form').evaluate(f=>f.requestSubmit());await page.waitForTimeout(150);assert.deepEqual(payloads.filter(p=>p.name==='schedulenotification').at(-1).data.target,{type:'SUBSCRIPTION_TIER',tier:'ultra'});note('Notification subscription tier contract includes Ultra');failNotification=true;await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('ALL_USERS');await page.locator('#notification-form').evaluate(f=>{f.requestSubmit();f.requestSubmit();});await page.waitForTimeout(150);assert.equal(payloads.filter(p=>p.name==='sendtargetednotification').length,1);assert(await page.locator('#submit-notification-btn').isDisabled());note('Uncertain immediate delivery blocks duplicate submission and blind retry');
-await selectTab('subscriptions');await page.locator('#sub-user-email').fill('fixture@example.invalid');await page.locator('#sub-plan').selectOption('pro');await page.locator('#subscription-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert.equal(payloads.find(p=>p.name==='setusersubscription').data.tier,'pro');note('Subscription Pro assignment contract (mock)');
+await selectTab('subscriptions');await page.locator('[data-nav-panel="subscriptions.assign"]').evaluate(button=>button.click());await page.locator('#sub-user-email').fill('fixture@example.invalid');await page.locator('#sub-plan').selectOption('pro');await page.locator('#subscription-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert.equal(payloads.find(p=>p.name==='setusersubscription').data.tier,'pro');note('Subscription Pro assignment contract (mock)');
 await page.locator('#sub-bulk-toggle').click();
 await page.locator('#sub-bulk-input').fill('fixture@example.invalid');
 await page.locator('#sub-bulk-submit').click();

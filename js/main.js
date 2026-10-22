@@ -1,5 +1,6 @@
 import { createWorkspaceLoader } from './utils/workspace-loader.js';
 import { initEventsModule } from './modules/events.js';
+import { initDirectoryModule } from './modules/directory.js';
 import { initPeopleModule } from './modules/people.js';
 import { initAccountDeletionModule } from './modules/accountDeletion.js';
 import { initHomeModule, updateHome } from './modules/home.js';
@@ -54,6 +55,7 @@ export function startApp(firebaseConfig) {
     const featureInitializers = [
         ['admin', initAdminModule],
         ['people', initPeopleModule],
+        ['directory', initDirectoryModule],
         ['account-deletion', initAccountDeletionModule],
         ['models', initModelsModule],
         ['news', initNewsModule],
@@ -113,12 +115,12 @@ export function startApp(firebaseConfig) {
 
     const loadRolesWorkspace=()=>{initRolesModule();initPanelMenus();};
     const loadedWorkspaces=createWorkspaceLoader({
-        tasks:[['contributors.list',fetchContributorsData],['models.library',fetchFullModelsData],['models.manage',fetchFullModelsData],['news.published',listenForArticles],['news.editor',listenForArticles],['notifications.scheduled',listenForScheduledTasks],['subscriptions.list',refreshSubscriptions],['system.deptUsers',refreshDepartmentUsers],['system.serverStatus',initializeMaintenanceStatus],['system.teamLog',loadTeamCards],['system.teamLog',loadTeam],['system.deptPerms',loadRolesWorkspace],['chat.channels',refreshConsoleChat]],
+        tasks:[['contributors.list',fetchContributorsData],['models.library',fetchFullModelsData],['models.manage',fetchFullModelsData],['news.published',listenForArticles],['news.editor',listenForArticles],['notifications.scheduled',listenForScheduledTasks],['subscriptions.list',refreshSubscriptions],['system.deptUsers',refreshDepartmentUsers],['system.serverStatus',initializeMaintenanceStatus],['system.deptPerms',loadRolesWorkspace],['chat.channels',refreshConsoleChat]],
         canLoad:key=>!!auth.currentUser&&dom.adminPanel.style.display!=='none'&&
             (key==='chat.channels'||getEffectivePanelLevel(key)!=='none'),
         onError:(key,error)=>console.error('[WORKSPACE] Load failed',key,error.code||'unknown')
     });
-    document.addEventListener('vertex:workspace',event=>{void loadedWorkspaces.load(event.detail?.keys||[]);});
+    document.addEventListener('vertex:workspace',event=>{void loadedWorkspaces.load(event.detail?.keys||[]);if(event.detail?.keys?.includes('system.teamLog')){if(event.detail.action==='honor')void loadTeam();if(event.detail.action==='chefs')void loadTeamCards();}});
     document.addEventListener('vertex:workspace-load-error',event=>loadedWorkspaces.invalidate(event.detail?.panel));
     // --- Step 3: Set up the Core Authentication State Listener ---
     // This is the central control point that reacts to user login/logout.
@@ -303,6 +305,8 @@ function resetTabFilter() {
 
 function applyTabFilter(allowedTabs) {
     const visibleTabs = new Set([...allowedTabs, 'home', 'profile', 'chat']);
+    if (allowedTabs.some(id => ['news','events','notifications'].includes(id))) visibleTabs.add('publications');
+    if (getEffectivePanelLevel('system.teamLog') !== 'none') visibleTabs.add('scene');
     const dockButtons = document.querySelectorAll('.dock-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
 

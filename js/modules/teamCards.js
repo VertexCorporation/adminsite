@@ -355,7 +355,7 @@ export function initTeamCardsPanel() {
     // Live data is requested only after Core authorization and workspace navigation.
     if (auth.currentUser) void loadTeamCards().catch(()=>{});
     document.addEventListener('vertex:workspace',event=>{
-        if(auth.currentUser&&event.detail?.keys?.includes('system.teamLog'))
+        if(auth.currentUser&&event.detail?.keys?.includes('system.teamLog') && event.detail.action==='stars')
             void initWeeklyStarsPanel();
     });
     auth.onAuthStateChanged(user=>{
