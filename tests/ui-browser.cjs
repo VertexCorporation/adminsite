@@ -132,7 +132,7 @@ const server = http.createServer((req,res)=>{
    assert.equal(await page.locator('#generic > .ui-crossfade-ghost').count(),1);
    assert.equal(await page.locator('#generic > ul li').count(),1);
    assert(await page.locator('#generic > ul').evaluate(el=>el.getAnimations().length>0));
-   await page.waitForTimeout(250);
+   await page.locator('#generic > .ui-crossfade-ghost').waitFor({state:'detached',timeout:2000});
    assert.equal(await page.locator('#generic > .ui-crossfade-ghost').count(),0);
    // 90 rows used to exceed the 140-descendant cutoff and silently skip fade.
    await page.evaluate(()=>{
@@ -255,7 +255,7 @@ const server = http.createServer((req,res)=>{
    await page.waitForTimeout(180);
    assert(await page.locator('#delay-host .skeleton').count()>0);
    await page.evaluate(()=>window.uiTest.delayed.success('<p>Loaded data</p>'));
-   await page.waitForTimeout(240);
+   await page.locator('#delay-host .ui-crossfade-ghost').waitFor({state:'detached',timeout:2000});
    assert.equal(await page.locator('#delay-host .skeleton').count(),0);
    assert.equal(await page.locator('#delay-host p').innerText(),'Loaded data');
    // Shared list loader cancels superseded requests; stale refresh never
@@ -289,7 +289,7 @@ const server = http.createServer((req,res)=>{
     if(!host.textContent.includes('Fresh content'))throw Error('fresh content not rendered');
     ctl.destroy();
    });
-   await page.waitForTimeout(240);
+   await page.locator('.ui-crossfade-ghost').first().waitFor({state:'detached',timeout:2000});
    assert.equal(await page.locator('.ui-crossfade-ghost').count(),0);
 
    for(const theme of ['light','dark']){
