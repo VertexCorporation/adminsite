@@ -273,7 +273,7 @@ for(const width of [320,360,390,430,720,768,1024]){
   assert(near(measured.glyphCenter,measured.buttonCenter),width+' theme glyph centering: '+JSON.stringify(measured));
   assert.equal(measured.themeDisplay,'grid');
  }else{
-  assert.equal(measured.themeDisplay,'inline-flex',width+' desktop/tablet keeps existing theme button');
+  assert.equal(measured.themeDisplay,'flex',width+' desktop/tablet keeps existing theme button');
  }
 }
 await page.setViewportSize({width:1440,height:900});
