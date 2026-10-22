@@ -1,5 +1,6 @@
+import { certificateAccepted, certificateInFlight, watchCertificateDelivery } from './certificateDelivery.js';
 import { openCertificateEmailTemplates } from './certificateEmailTemplates.js';
-import { setVertexContributorJoiningDateFn, issueVertexCertificateFn, getVertexCertificateDetailsFn, revokeVertexCertificateFn } from '../core/firebase.js';
+import { auth, setVertexContributorJoiningDateFn, issueVertexCertificateFn, getVertexCertificateDetailsFn, revokeVertexCertificateFn } from '../core/firebase.js';
 import { escapeHTML as esc, showToast, userErrorMessage, __, getLang, onLangChange } from '../utils/ui.js';
 import { icon } from '../utils/icons.js';
 import { openDrawer, confirmDialog } from './shell.js';
@@ -8,6 +9,23 @@ import { isPanelAdmin } from './roles.js';
 const awards = [{type:'tenacity',months:1,icon:'award',tr:'Dirayet',en:'Tenacity'},{type:'constancy',months:3,icon:'shield',tr:'Metanet',en:'Constancy'},{type:'nobility',months:6,icon:'diamond',tr:'Azamet',en:'Nobility'},{type:'majesty',months:12,icon:'crown',tr:'Asalet',en:'Majesty'}];
 const pending = new Set();
 const unresolved = new Set();
+const deliveryWatchers = new Map();
+function monitorDelivery(person, data) {
+    const key=person.id, viewerUid=auth.currentUser?.uid;
+    deliveryWatchers.get(key)?.stop();
+    deliveryWatchers.delete(key);
+    if(!viewerUid || !data.history.some(job=>certificateInFlight(job.status)))return;
+    const watcher=watchCertificateDelivery({
+        read:async()=>(await getVertexCertificateDetailsFn({contributorId:key})).data,
+        currentUser:()=>auth.currentUser?.uid,viewerUid,
+        update:next=>{
+            document.dispatchEvent(new CustomEvent('vertex:certificate-status',{detail:{contributorId:key,data:next}}));
+            if(!next.history.some(job=>certificateInFlight(job.status)))deliveryWatchers.delete(key);
+        },
+        failure:job=>showToast(()=>`${typeName(job.certificateType)}: ${statusName(job.status)}`,'error')
+    });
+    deliveryWatchers.set(key,watcher);watcher.start(data);
+}
 export function formatCertificateDate(value) {
     if (!value) return __('cert.unknown');
     const stamp = value._seconds ?? value.seconds;
@@ -24,8 +42,10 @@ function statusName(status) { if(status==='succeeded')return __('cert.success');
 
 export function openCertificates(person, refresh, anchor = document.activeElement, options = {}) {
     if (!isPanelAdmin() || !person) return;
-    let details, selected, generation = 0, alive = true, unsubscribe;
-    const dispose=()=>{alive=false;generation++;unsubscribe?.();};
+    let details, selected, generation = 0, alive = true, unsubscribe, paintHistory;
+    const onDelivery=event=>{if(event.detail.contributorId!==person.id)return;details=event.detail.data;if(!historyOpen)render();else paintHistory?.();};
+    document.addEventListener('vertex:certificate-status',onDelivery);
+    const dispose=()=>{alive=false;generation++;unsubscribe?.();document.removeEventListener('vertex:certificate-status',onDelivery);};
     const pop=options.body || openDrawer({title:__('cert.title'),onAfterClose:dispose});
     options.onDispose?.(dispose);
     const root=pop.closest('.vx-drawer');root.classList.add('certificate-drawer');
@@ -44,7 +64,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
         const focusedAward=document.activeElement?.dataset.award;
         const e=details.eligibility || {};
         setTitle('cert.title');back(options.onBack ? ()=>{dispose();options.onBack();}:null);
-        loader.success(`<div class="cert-recipient"><strong>${esc(person.name)}</strong><small>${esc(person.email)}</small></div><dl class="cert-facts"><div><dt>${__('cert.joined')}</dt><dd>${esc(formatCertificateDate(e.joinedAt))}</dd></div><div><dt>${__('cert.participation')}</dt><dd>${e.participationDays===undefined?'—':esc(e.participationDays)}</dd></div></dl><p class="cert-notice">${esc(eligibilityText())}</p><div class="cert-options">${awards.map(a=>`<button type="button" class="cert-option ${selected===a.type?'is-selected':''}" data-award="${a.type}" aria-pressed="${selected===a.type}" ${blocked(a.type)?'disabled':''}>${icon(a.icon)}<span class="cert-option-main"><strong>${esc(typeName(a.type,details.types))}</strong></span><span class="cert-option-tenure">${a.months} ${__(a.months===1?'cert.month':'cert.months')}</span><span class="cert-option-check">${icon('check')}</span></button>`).join('')}</div>`);
+        loader.success(`<div class="cert-recipient"><strong>${esc(person.name)}</strong><small>${esc(person.email)}</small></div><dl class="cert-facts"><div><dt>${__('cert.joined')}</dt><dd>${esc(formatCertificateDate(e.joinedAt))}</dd></div><div><dt>${__('cert.participation')}</dt><dd>${e.participationDays===undefined?'—':esc(e.participationDays)}</dd></div></dl><p class="cert-notice">${esc(eligibilityText())}</p><div class="cert-options">${awards.map(a=>`<button type="button" class="cert-option ${selected===a.type?'is-selected':''} ${(details.history || []).some(job=>job.certificateType===a.type&&certificateAccepted(job.status))?'is-issued':''}" data-award="${a.type}" aria-pressed="${selected===a.type}" ${blocked(a.type)?'disabled':''}>${icon(a.icon)}<span class="cert-option-main"><strong>${esc(typeName(a.type,details.types))}</strong></span><span class="cert-option-tenure">${a.months} ${__(a.months===1?'cert.month':'cert.months')}</span><span class="cert-option-check">${icon('check')}</span></button>`).join('')}</div>`);
         footer.innerHTML=`<button class="chrome-btn-primary" data-review ${!selected||blocked(selected)?'disabled':''}>${__('cert.review')}</button><div class="cert-secondary-actions"><button class="chrome-btn-outline" data-date>${__('cert.date_edit')}</button><button class="chrome-btn-outline" data-history>${__('cert.history')}</button></div><button class="chrome-btn-outline" data-email-templates>${__('email_templates.title')}</button>`;
         pop.querySelectorAll('[data-award]').forEach(b=>b.onclick=()=>{
             selected=b.dataset.award;
@@ -61,7 +81,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
     }
     async function load() {
         const token=++generation; setTitle('cert.title'); loader.start();
-        try { const {data}=await getVertexCertificateDetailsFn({contributorId:person.id}); if(!alive||token!==generation)return; if(!data||typeof data!=='object'||!Array.isArray(data.history))throw Object.assign(new Error('Invalid certificate response'),{code:'functions/internal'}); details=data; render(); }
+        try { const {data}=await getVertexCertificateDetailsFn({contributorId:person.id}); if(!alive||token!==generation)return; if(!data||typeof data!=='object'||!Array.isArray(data.history))throw Object.assign(new Error('Invalid certificate response'),{code:'functions/internal'}); details=data; render();monitorDelivery(person,data); }
         catch(error) { console.error('[CERTIFICATES] Details failed',{code:error.code,status:error.httpStatus});if(alive&&token===generation){footer.innerHTML='';loader.error(userErrorMessage(error),load,__('common.retry'));} }
     }
     async function execute(type, retry, button) {
@@ -70,10 +90,18 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
         pending.add(key); setButtonLoading(button,true,__('cert.processing'));
         try {
             const {data}=await issueVertexCertificateFn({contributorId:person.id,certificateType:type,...(retry?{retry:true}:{})});
-            showToast(()=>statusName(data.status || 'processing'),'info');
-            await refresh?.();
-        } catch(error) { if(!error.httpStatus || ['functions/internal','functions/deadline-exceeded','functions/unavailable'].includes(error.code))unresolved.add(key);showToast(()=>userErrorMessage(error),'error'); }
-        finally { pending.delete(key); setButtonLoading(button,false); await reloadHistory(); if(alive)render(); }
+            if(!data?.id || typeof data.status!=='string')throw Object.assign(new Error('Invalid issuance response'),{code:'functions/internal'});
+            const accepted=certificateAccepted(data.status);
+            showToast(()=>accepted?__('cert.success'):statusName(data.status),accepted?'success':'error');
+            selected=undefined;
+            details.history=[...(details.history || []).filter(job=>job.id!==data.id),{id:data.id,certificateType:type,status:data.status}];
+            pending.delete(key);
+            if(alive)render();
+            monitorDelivery(person,details);
+            // Directory refresh is independent of the accepted issuance UI.
+            Promise.resolve(refresh?.()).catch(error=>console.warn('[CERTIFICATES] Directory refresh failed',error.code));
+        } catch(error) { selected=undefined;if(alive&&!historyOpen)render();if(!error.httpStatus || ['functions/internal','functions/deadline-exceeded','functions/unavailable'].includes(error.code))unresolved.add(key);showToast(()=>userErrorMessage(error),'error'); }
+        finally { pending.delete(key); setButtonLoading(button,false); }
     }
     async function review(type, retry=false, button=anchor) {
         if(!type || (!retry&&blocked(type)))return;
@@ -85,7 +113,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
         try { const {data}=await getVertexCertificateDetailsFn({contributorId:person.id}); details=data; } catch(error){ showToast(()=>userErrorMessage(error),'error'); }
     }
     function editDate() {
-        historyOpen=true;
+        historyOpen=true;paintHistory=undefined;
         let busy=false, saved=dateValue(details.eligibility?.joinedAt);
         const unsubscribeDate=onLangChange(paint);
         const leave=()=>{if(busy)return;historyOpen=false;unsubscribeDate();render();};
@@ -122,7 +150,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
                 catch(error){showToast(()=>userErrorMessage(error),'error');setButtonLoading(b,false);}
             });
         }
-        paint();
+        paintHistory=paint;paint();
         const previous=unsubscribe;unsubscribe=()=>{previous?.();unsubscribeHistory();};
     }
     let historyOpen=false;

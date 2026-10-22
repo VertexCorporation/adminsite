@@ -80,7 +80,8 @@
 }
 .cert-option .cert-option-check { color: var(--text-primary); opacity:0;transform:scale(.9); flex-shrink: 0; }
 .cert-option.is-selected { background: var(--bg-elevated); border-color: var(--border-strong); }
-.cert-option.is-selected .cert-option-check { opacity:1;transform:scale(1); }
+.cert-option.is-selected .cert-option-check,
+.cert-option.is-issued .cert-option-check { opacity:1;transform:scale(1); }
 .cert-option.is-selected .icon { color: var(--text-primary); }
 
 /* Popover bilgi blokları */
