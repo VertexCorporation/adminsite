@@ -3,7 +3,7 @@
 export const deploymentCapabilities = Object.freeze({
     contributorMembershipWrites: true,
     eventRegistrationPages: false,
-    newsRevisions: false,
+    newsRevisions: true,
     notificationStatus: false,
     chatReadPositions: false,
     bulkSubscriptionPreview: false,

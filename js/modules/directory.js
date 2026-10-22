@@ -1,3 +1,4 @@
+import { registerListRefresh } from '../ui/listRefresh.js';
 import { auth, consolePeopleCall, verifyUserEmailFn } from '../core/firebase.js';
 import { isPanelAdmin, getEffectivePanelLevel } from './roles.js';
 import { openDrawer, closeDrawer, confirmDialog } from './shell.js';
@@ -10,7 +11,7 @@ function loader(id){if(!loaders.has(id))loaders.set(id,createLoadingController(e
 const date=value=>value?new Intl.DateTimeFormat(getLang()==='tr'?'tr-TR':'en-GB',{dateStyle:'medium'}).format(new Date(value)):'—';
 const yes=value=>__(value?'catalog.yes':'catalog.no');
 function field(label,value){return `<div><dt>${esc(__(label))}</dt><dd>${esc(value||'—')}</dd></div>`;}
-function identity(user){return `<strong>${esc(user.name||user.email||user.uid)}</strong><small>${esc(user.email||user.uid)}</small>`;}
+function identity(user){return `<strong>${esc(user.name||__('catalog.unnamed_user'))}</strong><small>${esc(user.email||__('catalog.no_email'))}</small>`;}
 function paintPager(){el('directory-previous').disabled=state.busy||!state.history.length;el('directory-next').disabled=state.busy||!state.next;el('directory-page').textContent=__('catalog.page').replace('{page}',state.page).replace('{count}',state.users.length);}
 function paintRows(){
  const html=state.users.length?`<div class="people-table-wrap"><table class="people-table"><thead><tr>${['people.person','people.email_status','catalog.account','people.membership','people.created'].map(k=>`<th>${esc(__(k))}</th>`).join('')}</tr></thead><tbody>${state.users.map((u,i)=>`<tr data-directory-row="${i}" tabindex="0"><td class="catalog-identity">${identity(u)}</td><td>${yes(u.emailVerified)}</td><td>${esc(__(u.disabled?'catalog.banned':'catalog.enabled'))}</td><td>${esc(__('people.'+(u.membership||'unlinked')))}</td><td>${esc(date(u.authCreatedAt))}</td></tr>`).join('')}</tbody></table></div>`:`<p class="state-block">${esc(__('people.no_users'))}</p>`;
@@ -42,7 +43,7 @@ function navigate(panel,action=''){
  const target=[...document.querySelectorAll('.sidebar-sub-btn')].find(b=>b.dataset.navPanel.split(',').includes(panel)&&b.dataset.navAction===action&&!b.hidden);
  if(!target)return false;target.click();return true;
 }
-function showStatus(user){closeDrawer(false);state.selected=user;if(navigate('users.status')){el('account-status-search').value=user.email||user.uid;paintStatus(user);}}
+function showStatus(user){closeDrawer(false);state.selected=user;if(navigate('users.status')){el('account-status-search').value=user.email||__('catalog.no_email');paintStatus(user);}}
 function subscription(user){
  closeDrawer(false);
  if(!navigate('subscriptions.assign'))return;
@@ -88,6 +89,8 @@ async function statistics(){
  catch(error){if(epoch===state.statsEpoch)loader('directory-statistics').error(userErrorMessage(error),statistics,__('common.retry'));}
 }
 export function initDirectoryModule(){
+ registerListRefresh(el('directory-list'),()=>load(true),{button:el('directory-refresh')});
+ registerListRefresh(el('directory-statistics'),statistics,{button:el('directory-statistics-refresh')});
  if(!el('directory-list'))return;
  el('directory-refresh').onclick=()=>load(true);el('directory-search-form').onsubmit=e=>{e.preventDefault();void load(true);};
  el('directory-next').onclick=async()=>{if(state.busy||!state.next)return;const before={cursor:state.cursor,history:[...state.history],page:state.page};state.history.push(state.cursor);state.cursor=state.next;state.page++;if(await load()===false){Object.assign(state,before);paintPager();}};

@@ -1,3 +1,4 @@
+import { registerListRefresh } from '../ui/listRefresh.js';
 import { openCertificateEmailTemplates } from './certificateEmailTemplates.js';
 import {initManualApplication} from './manualApplication.js';
 import { deploymentCapabilities } from '../core/deployment-capabilities.js';
@@ -101,18 +102,20 @@ export function initContributorsModule() {
     listContainer.replaceChildren();
     loading = createLoadingController(listContainer,{skeletonHTML:skeletonRows(),crossfadeOptions:{mode:'enter'}});
     window.filterContributors = filter => {
+        clearTimeout(contributorSearchTimer);
         activeFilter=filter;
-        // Immediate feedback using only the currently authorized, server-masked page.
-        if(window.loadedContributors)renderContributors(window.loadedContributors,{preview:true});
+        document.querySelectorAll('#tab-contributors .filter-chip').forEach(chip=>{const active=chip.dataset.filter===filter;chip.classList.toggle('active',active);chip.setAttribute('aria-pressed',String(active));});
         void fetchContributorsData();
     };
     window.searchContributorsLocal = () => {
-        if(window.loadedContributors)renderContributors(window.loadedContributors,{preview:true});
+        requestGuard.begin();
+        loading.destroy();
         clearTimeout(contributorSearchTimer);
         contributorSearchTimer=setTimeout(()=>void fetchContributorsData(),350);
     };
     syncBirthYearFilters();
     refreshBtn = document.getElementById('refresh-contributors-btn');
+    registerListRefresh(listContainer, fetchContributorsData, {button:refreshBtn});
     if(refreshBtn&&!document.getElementById('certificate-email-templates-btn')){
         const button=document.createElement('button');button.id='certificate-email-templates-btn';button.type='button';button.className='chrome-btn-outline';button.dataset.i18n='email_templates.title';button.textContent=__('email_templates.title');button.style.display=isPanelAdmin()?'':'none';button.onclick=openCertificateEmailTemplates;refreshBtn.before(button);refreshBtn.parentElement.classList.add('certificate-template-entry-row');
     }
@@ -200,6 +203,7 @@ async function loadContributors(append = false) {
     } catch (error) {
         console.error('[CONTRIBUTORS] Failed to fetch data:', error);
         if (!requestGuard.isCurrent(request)) return;
+        loading.destroy();
         lastLoadFailed=true;lastFailureAt=Date.now();
         if(['functions/unavailable','functions/deadline-exceeded',
             'functions/resource-exhausted','functions/internal'].includes(error.code)) {

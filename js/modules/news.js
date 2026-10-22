@@ -1,3 +1,4 @@
+import { registerListRefresh } from '../ui/listRefresh.js';
 import { deploymentCapabilities } from '../core/deployment-capabilities.js';
 import { isPanelAdmin } from './roles.js';
 import { showLoadError } from '../ui/states.js';
@@ -13,6 +14,7 @@ import { userErrorMessage, __, showToast, getLang, onLangChange, escapeHTML } fr
 let unsubscribeFromArticles = null;
 let editingArticle=null;
 let newsEpoch=0;
+let newsReadEpoch=0, settleNewsRead=()=>{}, finishNewsRead=()=>{};
 
 /**
  * Handles the submission of the news article creation form.
@@ -112,47 +114,48 @@ async function handleDeleteArticle(slug) {
 /**
  * Attaches a real-time listener to the 'news' collection in Firestore.
  */
+function renderArticles() {
+    const container=dom.articlesListContainer, articles=window.loadedArticles||[];
+    const canEdit=deploymentCapabilities.newsRevisions && isPanelAdmin();
+    const formatDate=value=>{const d=value?.toDate?.() || (value?new Date(value):null);return d && Number.isFinite(d.getTime())?new Intl.DateTimeFormat(getLang()==='tr'?'tr-TR':'en-GB',{dateStyle:'medium',timeStyle:'short'}).format(d):'—';};
+    const html=articles.length?articles.map(article=>{
+        const translation=article.translations?.[getLang()] || article.translations?.en || article.translations?.tr || {};
+        const title=translation.title || __('news.untitled');
+        return `<article class="article-item news-card" data-news-slug="${escapeHTML(article.id)}" ${canEdit?'tabindex="0" role="group"':''} aria-label="${escapeHTML(title)}">
+            <div class="news-card-heading"><span class="news-card-status">${getLang()==='tr'?'Yayında':'Published'}</span><time>${escapeHTML(formatDate(article.publishedAt))}</time></div>
+            <h4>${escapeHTML(title)}</h4><p class="news-card-summary">${escapeHTML(translation.summary || (getLang()==='tr'?'Özet eklenmemiş.':'No summary added.'))}</p>
+            <div class="news-card-tags">${(article.tags||[]).map(tag=>`<span>${escapeHTML(tag)}</span>`).join('')}</div>
+            <div class="news-card-meta"><span>${escapeHTML(Object.keys(article.translations||{}).map(v=>v.toUpperCase()).join(' · '))}</span><span>${(article.references||[]).length} ${getLang()==='tr'?'kaynak':'references'}</span>${article.updatedAt?`<span>${getLang()==='tr'?'Güncellendi: ':'Updated: '}${escapeHTML(formatDate(article.updatedAt))}</span>`:''}</div>
+            <div class="news-card-actions">${canEdit?`<button type="button" class="chrome-btn-outline news-edit-btn" data-slug="${escapeHTML(article.id)}">${getLang()==='tr'?'Düzenle':'Edit'}</button>`:''}${isPanelAdmin()?`<button type="button" class="chrome-btn-outline delete-btn" data-slug="${escapeHTML(article.id)}">${__('common.delete')}</button>`:''}</div>
+        </article>`;
+    }).join(''):`<p class="form-hint">${__('news.empty')}</p>`;
+    crossfade(container,()=>{container.innerHTML=html;});
+}
 export function listenForArticles() {
-    const finishLoading = beginPanelLoading(dom.articlesListContainer);
-    if (unsubscribeFromArticles) unsubscribeFromArticles(); 
-
-    console.log("[CLIENT] Attaching real-time listener for 'news' collection.");
-    unsubscribeFromArticles = db.collection('news').orderBy('publishedAt', 'desc').onSnapshot(snapshot => {
-        finishLoading();
-        const container = dom.articlesListContainer;
-        if (snapshot.empty) {
-            window.loadedArticles = [];
-            crossfade(container, () => { container.innerHTML = `<p class="form-hint" data-i18n="news.empty">${__('news.empty')}</p>`; });
-            return;
-        }
-        const articles = [];
-        const fragment=document.createDocumentFragment();
-        snapshot.forEach(doc => {
-            articles.push({ id: doc.id, ...doc.data() });
-            const item = document.createElement('div');
-            item.className = 'article-item';
-            item.innerHTML = `
-                <div class="item-details">
-                    <span class="item-title">${escapeHTML(doc.data().translations?.[getLang()]?.title || __('news.untitled'))}</span>
-                </div>
-                <div class="item-actions">
-${deploymentCapabilities.newsRevisions && isPanelAdmin() ? `<button type="button" class="chrome-btn-outline news-edit-btn" data-slug="${escapeHTML(doc.id)}">${getLang()==='tr'?'Düzenle':'Edit'}</button>` : ''}
-                    <button class="delete-btn" data-slug="${escapeHTML(doc.id)}">${__('common.delete')}</button>
-                </div>`;
-            fragment.appendChild(item);
-        });
-        crossfade(container, () => container.replaceChildren(fragment));
-        window.loadedArticles = articles;
-    }, error => {
-        finishLoading();
-        console.error("[CLIENT] Error listening for article updates:", error);
+    settleNewsRead();finishNewsRead();
+    const epoch=++newsReadEpoch;
+    const finishLoading=beginPanelLoading(dom.articlesListContainer);
+    finishNewsRead=finishLoading;
+    if(unsubscribeFromArticles)unsubscribeFromArticles();
+    let settle;
+    const ready=new Promise(resolve=>{settle=resolve;});
+    settleNewsRead=settle;
+    unsubscribeFromArticles=db.collection('news').orderBy('publishedAt','desc').onSnapshot(snapshot=>{
+        if(epoch!==newsReadEpoch)return;
+        window.loadedArticles=[];
+        snapshot.forEach(doc=>window.loadedArticles.push({...doc.data(),id:doc.id}));
+        renderArticles();finishLoading();settle();
+    },error=>{
+        if(epoch!==newsReadEpoch)return;
+        finishLoading();settle();
         showLoadError(dom.articlesListContainer,()=>__('news.load_error'),listenForArticles,{staleSelector:'.article-item'});
     });
+    return ready;
 }
 
 function clearNewsEditor(){
     editingArticle=null;
-    const submit=document.getElementById('submit-btn');if(submit)setButtonLoading(submit,false);
+    const submit=document.getElementById('submit-btn');if(submit){setButtonLoading(submit,false);submit.textContent=__('news.publish_btn');}
     for(const id of ['news-editing-hint','news-history-trigger','news-history','news-edit-cancel'])document.getElementById(id)?.remove();
     for(const lang of ['tr','en']){const input=document.getElementById('cover-image-'+lang);if(input)input.required=true;}
 }
@@ -195,10 +198,12 @@ async function showNewsHistory(slug){
 function editArticle(slug){
     const article=(window.loadedArticles||[]).find(a=>a.id===slug);
     if(!article||!deploymentCapabilities.newsRevisions||!isPanelAdmin())return;
+    document.getElementById('submit-btn')?.blur();
     document.querySelector('[data-nav-panel="news.editor"]')?.click();
     if(document.getElementById('submit-btn')?.disabled)return;
     newsEpoch++;
     editingArticle=article;
+    document.getElementById('submit-btn').textContent=__('common.save');
     document.getElementById('news-history')?.remove();
     for(const lang of ['en','tr']){
         for(const field of ['title','summary','content']){
@@ -233,6 +238,7 @@ function editArticle(slug){
  * Detaches the real-time listener for articles.
  */
 export function stopListeningForArticles() {
+    newsReadEpoch++;settleNewsRead();finishNewsRead();
     newsEpoch++;clearNewsEditor();window.loadedArticles=[];
     if (unsubscribeFromArticles) {
         unsubscribeFromArticles();
@@ -245,14 +251,19 @@ export function stopListeningForArticles() {
  * Initializes all event listeners for the news management module.
  */
 export function initNewsModule() {
-    onLangChange(()=>{const btn=document.getElementById('submit-btn');btn.textContent=__(btn.disabled?'news.publishing':'news.publish_btn');if(unsubscribeFromArticles)listenForArticles();});
+    registerListRefresh(dom.articlesListContainer,listenForArticles);
+    onLangChange(()=>{const btn=document.getElementById('submit-btn');btn.textContent=__(btn.disabled?'news.publishing':editingArticle?'common.save':'news.publish_btn');if(unsubscribeFromArticles)renderArticles();});
+    dom.articlesListContainer.addEventListener('keydown',e=>{if(e.target.matches('[data-news-slug]') && ['Enter',' '].includes(e.key)){e.preventDefault();editArticle(e.target.dataset.newsSlug);}});
     dom.newsForm.addEventListener('submit', handleNewsFormSubmit);
     dom.articlesListContainer.addEventListener('click', (e) => {
         const edit=e.target.closest('.news-edit-btn');
         if(edit){editArticle(edit.dataset.slug);return;}
-        if (e.target.classList.contains('delete-btn')) {
-            const slug = e.target.getAttribute('data-slug');
-            handleDeleteArticle(slug);
+        const remove=e.target.closest('.delete-btn');
+        if (remove) {
+            const slug = remove.dataset.slug;
+            handleDeleteArticle(slug);return;
         }
+        const card=e.target.closest('[data-news-slug]');
+        if(card)editArticle(card.dataset.newsSlug);
     });
 }

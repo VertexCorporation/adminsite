@@ -285,7 +285,7 @@ note('Mobile topbar matches workspace gutters; theme glyph centered at 5 phone w
 {
  const contributorBefore=calls.filter(name=>name==='getvertexcontributors').length;
  failContributorReadOnce=1;
- await page.locator('#refresh-contributors-btn').click();
+ await page.locator('#contributors-list-container').focus();await page.keyboard.press('Alt+r');
  await page.waitForFunction(()=>document.querySelector('#contributors-list-container .contributor-row') &&
    !document.querySelector('#contributors-list-container[aria-busy="true"]'));
  assert(calls.filter(name=>name==='getvertexcontributors').length-contributorBefore>=2);
@@ -327,7 +327,7 @@ await page.locator('[data-details]').first().click();await page.waitForSelector(
 await page.locator('.contributor-cell-dept').first().click();await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
 await page.locator('.contributor-row').first().focus();await page.keyboard.press('Enter');await page.waitForSelector('.vx-drawer.is-open');await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});
 await page.locator('.edit-contributor-btn').first().hover();assert.equal(await page.locator('.edit-contributor-btn').first().evaluate(button=>getComputedStyle(button).backgroundColor),'rgba(0, 0, 0, 0)');note('Whole application row and transparent action hover');
-const waitCrossfade = () => page.waitForFunction(() => !document.querySelector('.ui-crossfade-ghost'));
+const waitCrossfade = async () => {await page.waitForTimeout(400);await page.waitForFunction(() => !document.querySelector('.ui-crossfade-ghost') && document.getElementById('contributors-list-container').getAttribute('aria-busy')!=='true');};
 await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);
 await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),1);
 await page.evaluate(()=>window.filterContributors('verified'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
@@ -346,7 +346,9 @@ await page.evaluate(fixtures=>{
 },people);
 await waitCrossfade();
 const listTopBefore=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().top);
+contributorDelay=200;
 const filterTransition=await page.evaluate(()=>{
+ window.__filterPaints=0;document.getElementById('contributors-list-container').addEventListener('vertex:list-painted',()=>window.__filterPaints++,{once:true});
  window.filterContributors('verified');
  const host=document.getElementById('contributors-list-container');
  return {top:host.getBoundingClientRect().top,ghost:!!host.querySelector('.ui-crossfade-ghost'),
@@ -356,12 +358,15 @@ const filterTransition=await page.evaluate(()=>{
 });
 assert(Math.abs(filterTransition.top-listTopBefore)<1,'Filter moved its list header vertically');
 assert.equal(filterTransition.ghost,false,JSON.stringify(filterTransition));
-assert.equal(filterTransition.newRows,43);
-assert.equal(filterTransition.animating,true);
+assert.equal(filterTransition.newRows,85);
+assert.equal(filterTransition.animating,false);
 assert(filterTransition.height>=460,JSON.stringify(filterTransition));
 assert.equal(await page.locator('#contributors-list-container').evaluate(el=>el.style.minHeight),'');
 assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="verified"]').getAttribute('aria-pressed'),'true');
 await waitCrossfade();
+assert.equal(await page.locator('.contributor-table-rows > .contributor-row').count(),43);
+assert.equal(await page.evaluate(()=>window.__filterPaints),1);
+contributorDelay=0;
 people=null;
 await page.evaluate(()=>{
  window.loadedContributors=window.__savedContributors;
@@ -383,15 +388,15 @@ note('Failed retrySafe gate and retry:true contract');
 history=[];await openCert();await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('tr');});assert.equal(await page.locator('.certificate-drawer .vx-drawer-title').innerText(),'Sertifika Tanımla');await page.evaluate(async()=>{(await import('/js/lang.js')).setLang('en');});await page.keyboard.press('Escape');note('Live TR/EN popover localization');
 for(let i=0;i<8;i++){await openCert();await page.keyboard.press('Escape');assert.equal(await page.locator('.certificate-drawer:not([aria-hidden=true])').count(),0);}assert(await page.locator('.certificate-manage-btn').first().evaluate(el=>el===document.activeElement));note('Repeated open/close and focus restoration');
 await page.emulateMedia({colorScheme:'light'});await page.evaluate(async()=>{(await import('/js/modules/shell.js')).applyTheme('system');});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(248, 249, 250)');await page.emulateMedia({colorScheme:'dark'});await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(15, 15, 16)');note('System theme follows OS');
-people=[];await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .state-block');note('Empty state');
-failContributors=true;await page.locator('#refresh-contributors-btn').click();await page.waitForSelector('#contributors-list-container .contributors-inline-error button');failContributors=false;people=null;await page.locator('#contributors-list-container .contributors-inline-error button').click();await page.waitForFunction(()=>!document.querySelector('#contributors-list-container .contributors-inline-error')&&!!document.querySelector('#contributors-list-container .contributor-row'));note('Error and retry state');
+people=[];await page.locator('#contributors-list-container').focus();await page.keyboard.press('Alt+r');await page.waitForSelector('#contributors-list-container .state-block');note('Empty state');
+failContributors=true;await page.locator('#contributors-list-container').focus();await page.keyboard.press('Alt+r');await page.waitForSelector('#contributors-list-container .contributors-inline-error button');failContributors=false;people=null;await page.locator('#contributors-list-container .contributors-inline-error button').click();await page.waitForFunction(()=>!document.querySelector('#contributors-list-container .contributors-inline-error')&&!!document.querySelector('#contributors-list-container .contributor-row'));note('Error and retry state');
 // Close any contributor drawer left open by the preceding certificate/focus tests.
 await page.keyboard.press('Escape');
 await page.waitForSelector('.vx-drawer.is-open',{state:'detached'});
 await page.evaluate(()=>{document.getElementById('contributors-list-container').replaceChildren();});
 const blankHeight=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().height);
 contributorDelay=500;
-await page.locator('#refresh-contributors-btn').click();
+await page.locator('#contributors-list-container').focus();await page.keyboard.press('Alt+r');
 await page.waitForSelector('#contributors-list-container .skeleton');
 const skeletonHeight=await page.locator('#contributors-list-container').evaluate(el=>el.getBoundingClientRect().height);
 await page.waitForSelector('.contributor-row');
@@ -403,7 +408,7 @@ contributorDelay=0;
 note('Stable applicant viewport through delayed first hydration')
 people=[{...person,name:'Old Response'}];contributorDelay=500;
 await page.evaluate(()=>{import('/js/modules/contributors.js').then(m=>m.fetchContributorsData());});await page.waitForTimeout(75);people=[{...person,name:'Latest Response'}];contributorDelay=0;
-await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});await page.waitForTimeout(550);assert.equal(await page.locator('.contributor-name').innerText(),'Old Response');await page.locator('#refresh-contributors-btn').click();await page.waitForFunction(()=>document.querySelector('.contributor-name')?.textContent==='Latest Response');people=null;note('Concurrent refreshes coalesce and subsequent refresh loads latest data');
+await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});await page.waitForTimeout(550);assert.equal(await page.locator('.contributor-name').innerText(),'Old Response');await page.locator('#contributors-list-container').focus();await page.keyboard.press('Alt+r');await page.waitForFunction(()=>document.querySelector('.contributor-name')?.textContent==='Latest Response');people=null;note('Concurrent refreshes coalesce and subsequent refresh loads latest data');
 // Draft-preview integration: the real-site iframe handshake may not trigger
 // publication or registration, and must deliver unsaved form edits securely.
 await page.route('https://events.vertexishere.com/**',route=>route.fulfill({
@@ -506,8 +511,10 @@ await selectTab('contributors');
  assert.equal(await page.evaluate(async()=> (await import('/js/modules/roles.js')).getEffectivePanelLevel('contributors.list')),'read');
  assert.equal(await page.locator('.contributor-cell-age').innerText(),'—');
  await page.locator('#contributor-search').fill('person@example.invalid');
+ await page.waitForTimeout(500);
  assert.equal(await page.locator('.contributor-row').count(),0);
  await page.locator('#contributor-search').fill('Local test fixture');
+ await page.waitForTimeout(500);
  assert.equal(await page.locator('.contributor-row').count(),0);
  await page.locator('#contributor-search').fill('Example Participant');
  await page.waitForSelector('.contributor-row');

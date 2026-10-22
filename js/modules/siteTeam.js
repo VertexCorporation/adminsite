@@ -1,3 +1,4 @@
+import { registerListRefresh } from '../ui/listRefresh.js';
 import { showLoadError } from '../ui/states.js';
 import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from './shell.js';
@@ -145,6 +146,7 @@ async function remove(id) {
 }
 
 export function initSiteTeamPanel() {
+ registerListRefresh(el('team-mod-list'),loadTeam);
     if (!el('team-mod-list')) return;
     el('team-mod-add').addEventListener('click', add);
     el('team-mod-input').addEventListener('keydown', (e) => {

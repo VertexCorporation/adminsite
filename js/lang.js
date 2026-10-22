@@ -1,5 +1,7 @@
 const LANG = {
   tr: {
+    "catalog.unnamed_user":"İsimsiz kullanıcı",
+    "catalog.no_email":"E-posta eklenmemiş",
     "catalog.users": "Kullanıcılar",
     "catalog.contributors": "Adaylar",
     "catalog.models": "Hizmetler",
@@ -1012,6 +1014,8 @@ const LANG = {
   },
 
   en: {
+    "catalog.unnamed_user":"Unnamed user",
+    "catalog.no_email":"No email added",
     "catalog.users": "Users",
     "catalog.contributors": "Applicants",
     "catalog.models": "Services",

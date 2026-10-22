@@ -1,3 +1,4 @@
+import { registerListRefresh } from '../ui/listRefresh.js';
 import { deploymentCapabilities } from '../core/deployment-capabilities.js';
 import { showLoadError } from '../ui/states.js';
 import { crossfade } from '../ui/transition.js';
@@ -118,6 +119,7 @@ async function loadSubscriptions() {
             tier: String(sub.tier || ''),
             source: String(sub.source || 'unknown'),
             canRemove: sub.canRemove === true,
+            updatedAt:sub.updatedAt || null,
             expiresAt: sub.expiresAt || null
         })).filter(sub => sub.uid);
         subscriptions.sort((a, b) => new Date(b.expiresAt || 0) - new Date(a.expiresAt || 0));
@@ -176,7 +178,7 @@ async function handleRemoveSubscription(uid, button) {
     }
     if (!await confirmDialog(()=>({
         title:__('common.confirm'),
-        body:__('subs.remove_confirm'),
+        body:__('subs.remove_confirm')+(['app_store','play_store'].includes(entry.source)?' '+(getLang()==='tr'?'Bu işlem uygulamadaki erişimi kaldırır; mağazadaki otomatik ödemeyi iptal etmez.':'This removes app access; it does not cancel store billing.') : ''),
         danger:true,
         rows:[
             {label:getLang()==='tr'?'Kişi':'User',value:entry.displayName||entry.email||entry.uid},
@@ -186,7 +188,7 @@ async function handleRemoveSubscription(uid, button) {
     }))) return;
     setButtonLoading(button,true);
     try {
-        const result = await removeUserSubscriptionFn({ uid });
+        const result = await removeUserSubscriptionFn({ uid, expectedSource:entry.source, expectedUpdatedAt:entry.updatedAt });
         showToast(() => __('subs.remove_success'), 'success');
         await loadSubscriptions();
     } catch (error) {
@@ -283,6 +285,7 @@ async function handleBulkSubmit() {
 }
 
 export function initSubscriptionsModule() {
+ registerListRefresh(dom.subscriptionsList,loadSubscriptions,{button:document.getElementById('refresh-subscriptions-btn')});
     populatePlanOptions();
     resetDefaultDates();
     onLangChange(() => {
