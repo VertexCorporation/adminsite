@@ -186,6 +186,8 @@
 
 .menu-list { display: flex; flex-direction: column; padding: var(--space-1); }
 .menu-item {
+    text-align: left;
+    justify-content: flex-start;
     display: flex;
     align-items: center;
     gap: var(--space-3);
@@ -292,8 +294,6 @@ input,select,textarea {max-width:100%;min-width:0;}
 button {font:inherit;color:inherit;}
 .form-submit-row {display:flex;gap:8px;flex-wrap:wrap;}
 .panel-menu-pop {border:1px solid var(--border-subtle);border-radius:12px;}
-.panel-menu-row {display:flex;justify-content:space-between;padding:8px;}
-.perm-hidden-choice {display:flex;align-items:center;gap:8px;padding:8px;}
 .panel-menu-section-title {margin:16px 0 8px;font-weight:600;}
 
 /* Shared switches retain native keyboard and form behavior. */

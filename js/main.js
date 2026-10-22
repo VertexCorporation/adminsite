@@ -25,7 +25,7 @@ import { initNewsModule, listenForArticles, stopListeningForArticles } from './m
 import { initNotificationModule, listenForScheduledTasks, stopListeningForScheduledTasks } from './modules/notification.js';
 import { initContributorsModule, fetchContributorsData, applyChipVisibility } from './modules/contributors.js';
 import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscriptions.js';
-import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getCurrentUserAccess, getEffectivePanelLevel, initPanelMenus, PANELS } from './modules/roles.js';
+import { loadDepartmentPermissions, getAccessibleTabs, initRolesModule, setCurrentUser, getCurrentUserAccess, getEffectivePanelLevel, PERMISSION_CATEGORIES } from './modules/roles.js';
 import { initSiteTeamPanel, loadTeam } from './modules/siteTeam.js';
 import { initTeamCardsPanel, loadTeamCards } from './modules/teamCards.js';
 import { updateGridVisibleCounts, initAdaptiveGrids } from './modules/views.js';
@@ -113,7 +113,14 @@ export function startApp(firebaseConfig) {
         }
     });
 
-    const loadRolesWorkspace=()=>{initRolesModule();initPanelMenus();};
+    document.addEventListener('vertex:permissions-updated',()=>{
+        if(!auth.currentUser)return;
+        const access=getCurrentUserAccess();
+        if(!access.isCore)applyTabFilter(getAccessibleTabs(access.departments));
+        applyPanelGate(access.isCore);applyChipVisibility();
+        renderProfile(auth.currentUser,access.isCore,access.departments,true);
+    });
+    const loadRolesWorkspace=()=>initRolesModule();
     const loadedWorkspaces=createWorkspaceLoader({
         tasks:[['contributors.list',fetchContributorsData],['models.library',fetchFullModelsData],['models.manage',fetchFullModelsData],['news.published',listenForArticles],['news.editor',listenForArticles],['notifications.scheduled',listenForScheduledTasks],['subscriptions.list',refreshSubscriptions],['system.deptUsers',refreshDepartmentUsers],['system.serverStatus',initializeMaintenanceStatus],['system.deptPerms',loadRolesWorkspace],['chat.channels',refreshConsoleChat]],
         canLoad:key=>!!auth.currentUser&&dom.adminPanel.style.display!=='none'&&
@@ -430,15 +437,11 @@ function initProfileMenu() {
 function renderPermSummary() {
     const container = document.getElementById('profile-perms');
     if (!container) return;
-    container.innerHTML = PANELS ? Object.entries(PANELS).map(([tabId, panels]) => {
-        const best = panels.reduce((acc, p) => {
-            const lvl = getEffectivePanelLevel(`${tabId}.${p.id}`);
-            return ({ none: 0, read: 1, write: 2 })[lvl] > ({ none: 0, read: 1, write: 2 })[acc] ? lvl : acc;
-        }, 'none');
-        const label = best === 'write' ? __('perms.level_write') : best === 'read' ? __('perms.level_read') : __('perms.level_none');
-        const cls = best === 'write' ? 'perm-write' : best === 'read' ? 'perm-read' : 'perm-none';
-        return `<div class="perm-summary-row"><span>${__(`nav.${tabId}`)}</span><span class="perm-badge ${cls}">${label}</span></div>`;
-    }).join('') : '';
+    container.innerHTML = PERMISSION_CATEGORIES.map(category => {
+        const levels=category.screens.flatMap(screen=>screen.scopes.map(getEffectivePanelLevel));
+        const best=levels.includes('write')?'write':levels.includes('read')?'read':'none';
+        return `<div class="perm-summary-row"><span>${__(category.key)}</span><span class="perm-badge perm-${best}">${__('perms.level_'+best)}</span></div>`;
+    }).join('');
 }
 
 function disableReadOnlyControls(panel) {
