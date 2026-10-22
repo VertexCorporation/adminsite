@@ -20,6 +20,7 @@ function boundedClone(node, budget) {
 }
 export function crossfade(container, mutate, { duration = 220, preserveHeight = true, mode = 'crossfade' } = {}) {
     running.get(container)?.();
+    if(container.hasAttribute('data-refresh-surface'))mode='enter';
     // Applicant filtering is an update, not a navigation: never leave the
     // outgoing list rendered over the new list.  An incoming-only opacity
     // animation preserves the table geometry and does not clone form controls.
@@ -28,15 +29,19 @@ export function crossfade(container, mutate, { duration = 220, preserveHeight = 
         const scrollTop = oldRows?.scrollTop || 0;
         const scrollLeft = oldRows?.scrollLeft || 0;
         const hadContent = container.childElementCount > 0;
+        const previous = container.innerHTML;
         mutate();
+        if(previous===container.innerHTML)return;
+        container.dispatchEvent(new Event('vertex:list-painted'));
         const rows = container.querySelector(':scope > .contributor-table-rows');
         if (rows) {
             rows.scrollTop = Math.min(scrollTop, Math.max(0, rows.scrollHeight - rows.clientHeight));
             rows.scrollLeft = scrollLeft;
         }
-        if (!hadContent || !rows || !rows.isConnected || reducedMotion() ||
-            rows.getBoundingClientRect().height === 0) return;
-        const animation = rows.animate([{opacity:.82},{opacity:1}],
+        const incoming = rows || container;
+        if (!hadContent || !incoming.isConnected || reducedMotion() ||
+            incoming.getBoundingClientRect().height === 0) return;
+        const animation = incoming.animate([{opacity:.82},{opacity:1}],
             {duration:140,easing:'cubic-bezier(.2,.8,.2,1)'});
         let finished = false;
         const cancel = () => {

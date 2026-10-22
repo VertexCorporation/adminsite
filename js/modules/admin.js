@@ -1,3 +1,4 @@
+import { registerListRefresh } from '../ui/listRefresh.js';
 import { showLoadError } from '../ui/states.js';
 import { icon } from '../utils/icons.js';
 import { confirmDialog } from './shell.js';
@@ -464,6 +465,8 @@ export function refreshDepartmentUsers() {
 }
 
 export function initAdminModule() {
+ registerListRefresh(document.getElementById('dept-users-list'),loadDepartmentUsers,{button:document.getElementById('refresh-dept-users-btn')});
+ registerListRefresh(document.getElementById('gcs-backup-status'),loadBackupHealthStatus,{button:document.getElementById('refresh-backup-btn')});
     renderDepartmentOptions();
     onLangChange(() => {
         renderDepartmentOptions();

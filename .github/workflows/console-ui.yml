@@ -43,6 +43,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node tests/ui-browser.cjs
       - run: node tests/catalog-browser.cjs
+      - run: node tests/list-refresh-browser.cjs
       - name: Full legacy application browser regression
         run: npm run test:browser
         env:

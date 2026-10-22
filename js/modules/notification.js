@@ -1,3 +1,4 @@
+import { registerListRefresh } from '../ui/listRefresh.js';
 import { deploymentCapabilities } from '../core/deployment-capabilities.js';
 import { crossfade } from '../ui/transition.js';
 import { showLoadError } from '../ui/states.js';
@@ -353,12 +354,14 @@ async function handleCancelTask(taskId) {
  * Attaches a real-time listener for scheduled notifications.
  */
 export function listenForScheduledTasks() {
+    let settle;const ready=new Promise(resolve=>{settle=resolve;});
     const finishLoading = beginPanelLoading(dom.scheduledTasksListContainer);
     if (unsubscribeFromScheduledTasks) unsubscribeFromScheduledTasks();
 
     unsubscribeFromScheduledTasks = db.collection('scheduledNotifications')
         .orderBy('scheduleTime', 'asc')
         .onSnapshot(snapshot => {
+        settle();
         finishLoading();
             const container = dom.scheduledTasksListContainer;
             if (snapshot.empty) {
@@ -388,11 +391,13 @@ export function listenForScheduledTasks() {
             });
             crossfade(container, () => container.replaceChildren(fragment));
         }, error => {
+        settle();
         finishLoading();
             console.error("[CLIENT] Error listening for scheduled tasks:", error);
             showLoadError(dom.scheduledTasksListContainer,()=>__('notif.tasks_error'),
                 listenForScheduledTasks,{staleSelector:'.task-item'});
         });
+    return ready;
 }
 
 /**
@@ -409,6 +414,7 @@ export function stopListeningForScheduledTasks() {
  * Initializes all event listeners for the notification module.
  */
 export function initNotificationModule() {
+    registerListRefresh(dom.scheduledTasksListContainer,listenForScheduledTasks);
     let lastUid=null;
     auth?.onAuthStateChanged(user=>{
         const nextUid=user?.uid||null;

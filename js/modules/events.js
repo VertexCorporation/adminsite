@@ -1,3 +1,4 @@
+import { registerListRefresh } from '../ui/listRefresh.js';
 import { registrationValue, registrationCSVCell } from '../utils/event-registration-values.js';
 import { renderPager } from '../ui/pager.js';
 import { deploymentCapabilities } from '../core/deployment-capabilities.js';
@@ -206,6 +207,7 @@ export function initEventsModule() {
   }catch(e){fail(e);}
  };
  document.getElementById('events-new').onclick=()=>fill(null);
+ registerListRefresh(document.getElementById('events-list'),refresh,{button:document.getElementById('events-refresh')});
  document.getElementById('events-refresh').onclick=()=>refresh().catch(fail);
  const upload=async file=>{
   if(file.size>10*1024*1024)throw Error(tr('En fazla 10 MB','Maximum 10 MB'));
@@ -343,6 +345,7 @@ export function initEventsModule() {
    });
   }catch(e){if(valid())showLoadError(box,()=>tr('Etkinlik kayıtları yüklenemedi','Could not load event registrations'),()=>button.click(),{staleSelector:'.event-registration-table'});}finally{finishLoading();if(valid())setButtonLoading(button,false);}
  };
+ registerListRefresh(document.getElementById('events-registrations'),()=>{const button=document.getElementById('events-load-registrations');return button.onclick({currentTarget:button});});
  document.addEventListener('vertex:workspace',e=>{if(e.detail.keys.includes('events.list'))refresh().catch(fail);});
  fill(null);
 }

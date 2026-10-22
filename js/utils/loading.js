@@ -193,9 +193,12 @@ export function beginPanelLoading(container, rowFactory = skeletonListItem) {
     const controller = createLoadingController(container, {
         skeletonHTML: skeletonRows(5, rowFactory)
     });
-    let done = false;
+    let done = false, painted = false;
+    const onPaint = () => { painted = true; };
+    container.addEventListener('vertex:list-painted',onPaint);
     const entry = { cancel: () => {
         done = true;
+        container.removeEventListener('vertex:list-painted',onPaint);
         controller.destroy();
     }};
     panelLoaders.set(container,entry);
@@ -204,6 +207,7 @@ export function beginPanelLoading(container, rowFactory = skeletonListItem) {
         if (done || panelLoaders.get(container) !== entry) return;
         done = true;
         panelLoaders.delete(container);
+        container.removeEventListener('vertex:list-painted',onPaint);
         // Never restore serialized innerHTML: doing so destroys existing form
         // values, delegated handlers, and live interactive state.
         if (originalNodes.length && container.querySelector('.skeleton') &&
@@ -214,6 +218,6 @@ export function beginPanelLoading(container, rowFactory = skeletonListItem) {
             container.firstChild !== originalNodes[0] &&
             !container.querySelector('.skeleton,.ui-crossfade-ghost');
         controller.destroy();
-        if (changed) animateContent(container);
+        if (changed && !painted) animateContent(container);
     };
 }

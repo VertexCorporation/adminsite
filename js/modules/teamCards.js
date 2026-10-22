@@ -1,3 +1,4 @@
+import { registerListRefresh } from '../ui/listRefresh.js';
 // Public website directory (siteTeam kind=card). The public homepage and
 // this console now read/write the SAME collection and share fixed role codes.
 import {
@@ -350,6 +351,8 @@ function renderWeeklyStars(container, starsData) {
  * Ekip Yönetim panelinin genel başlatıcısı
  */
 export function initTeamCardsPanel() {
+ registerListRefresh(document.getElementById('team-cards-list'),loadTeamCards);
+ registerListRefresh(document.getElementById('weekly-stars-container'),initWeeklyStarsPanel);
     const addBtn=document.getElementById('add-team-card-btn');
     if(addBtn)addBtn.onclick=()=>openTeamCardDrawer(null);
     // Live data is requested only after Core authorization and workspace navigation.

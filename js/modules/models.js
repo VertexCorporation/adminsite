@@ -1,3 +1,4 @@
+import { registerListRefresh } from '../ui/listRefresh.js';
 import { crossfade } from '../ui/transition.js';
 import { beginPanelLoading, skeletonListItem, skeletonChatMessage, setButtonLoading } from '../utils/loading.js';
 // js/modules/models.js
@@ -1342,6 +1343,8 @@ function openTranslationEditor(modelPath) {
  * Initializes all event listeners for the models module.
  */
 export function initModelsModule() {
+ registerListRefresh(dom.manualModelsListContainer,fetchFullModelsData);
+ registerListRefresh(dom.allModelsListContainer,fetchFullModelsData);
     initModelWorkspace();
     auth?.onAuthStateChanged?.(user=>{if(user)void resumeImageCleanups();});
     dom.modelForm.addEventListener('submit', handleModelFormSubmit);
@@ -1448,7 +1451,7 @@ function initModelWorkspace(){
     initCatalogFilters();
     const heading=document.querySelector('#tab-models .panel-section-title');const toolbar=document.createElement('div');toolbar.className='model-workspace-actions';heading.append(toolbar);
     function paint(){
-        toolbar.innerHTML=`<button type="button" class="chrome-btn-outline" data-model-refresh>${icon('refresh')}<span data-i18n="common.refresh">${__('common.refresh')}</span></button>${canEditModels('models.manage')?`<button type="button" class="chrome-btn-primary" data-model-create>${icon('plus')}<span data-i18n="models.add">${__('models.add')}</span></button>`:''}${isPanelAdmin()?`<button type="button" class="chrome-btn-outline" data-model-publish>${icon('device-floppy')}<span data-i18n="models.publish">${__('models.publish')}</span></button>`:''}`;
+        toolbar.innerHTML=`<button type="button" class="chrome-btn-outline" data-model-refresh data-refresh-control hidden>${icon('refresh')}<span data-i18n="common.refresh">${__('common.refresh')}</span></button>${canEditModels('models.manage')?`<button type="button" class="chrome-btn-primary" data-model-create>${icon('plus')}<span data-i18n="models.add">${__('models.add')}</span></button>`:''}${isPanelAdmin()?`<button type="button" class="chrome-btn-outline" data-model-publish>${icon('device-floppy')}<span data-i18n="models.publish">${__('models.publish')}</span></button>`:''}`;
         toolbar.querySelector('[data-model-refresh]').onclick=fetchFullModelsData;
         const create=toolbar.querySelector('[data-model-create]');if(create)create.onclick=()=>{resetModelForm();openModelEditor();};
         const publish=toolbar.querySelector('[data-model-publish]');if(publish)publish.onclick=async()=>{if(!isPanelAdmin()||publish.disabled)return;const approved=await confirmDialog(()=>({title:__('models.publish'),body:__('models.publish_confirm')}));if(!approved)return;publish.disabled=true;try{await updateModelsListFn({});await fetchFullModelsData();showToast(() => __('models.published'),'success');}catch(error){showToast(()=>userErrorMessage(error),'error');}finally{publish.disabled=false;}};
