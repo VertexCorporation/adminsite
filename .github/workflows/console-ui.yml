@@ -42,6 +42,7 @@ jobs:
       - run: node --test tests/ui.test.cjs
       - run: npx playwright install --with-deps chromium
       - run: node tests/ui-browser.cjs
+      - run: node tests/catalog-browser.cjs
       - name: Full legacy application browser regression
         run: npm run test:browser
         env:

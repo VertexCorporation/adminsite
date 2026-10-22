@@ -3,16 +3,16 @@ import { reducedMotion } from '../ui/motion.js';
 
 // Commit workspace visibility in a single synchronous update. Previous
 // outgoing-card crossfades rendered the old page on top of the requested one.
-export function showWorkspace(tab, keys) {
+export function showWorkspace(tab, keys, action = '') {
     if (!tab || tab.id === 'tab-system') return;
     const cards = [...tab.querySelectorAll('.panel-card[data-panel]')];
     const selected = keys.filter(key => getEffectivePanelLevel(key) !== 'none');
-    const next = selected.join(',');
+    const next = selected.join(',') + ':' + action;
     const changed = !!tab.dataset.workspace && tab.dataset.workspace !== next;
     const enteringTab = tab.classList.contains('ui-tab-entering');
     for (const card of cards) {
         card.classList.remove('workspace-enter');
-        card.hidden = !(selected.includes(card.dataset.panel) && card.style.display !== 'none');
+        card.hidden = !(selected.includes(card.dataset.panel) && (!card.dataset.workspaceAction || card.dataset.workspaceAction === action) && card.style.display !== 'none');
     }
     updateGridVisibleCounts(tab);
     tab.dataset.workspace = next;
@@ -23,7 +23,7 @@ export function showWorkspace(tab, keys) {
                     {duration:170,easing:'cubic-bezier(.2,.8,.2,1)'});
         }
     }
-    document.dispatchEvent(new CustomEvent('vertex:workspace',{detail:{keys:selected}}));
+    document.dispatchEvent(new CustomEvent('vertex:workspace',{detail:{keys:selected, action}}));
 }
 
 /** Every grid records its actual number of visible panels. */

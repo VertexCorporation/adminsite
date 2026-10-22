@@ -11,13 +11,14 @@ const boundary=strings.indexOf('\n  en: {');
 assert(boundary>0,'Turkish and English translation sections should both exist');
 const dictionaries=[strings.slice(0,boundary),strings.slice(boundary)];
 const expected={
- 'navgroup.workspace':['Çalışma Alanı','Workspace'],
- 'subnav.vertex_status':['Vertex Durumu','Vertex Status'],
- 'subnav.catalog':['Model Kataloğu','Model Catalog'],
- 'subnav.manage_models':['Modelleri Yönet','Manage Models'],
- 'subnav.active_subscriptions':['Aktif Abonelikler','Active Subscriptions'],
- 'subnav.server':['Sunucu','Server'],
- 'subnav.exports_attributions':['Dışa Aktarma','Exports'],
+ 'catalog.users':['Kullanıcılar','Users'],
+ 'catalog.contributors':['Adaylar','Applicants'],
+ 'catalog.models':['Hizmetler','Services'],
+ 'catalog.publications':['Yayınlar','Publications'],
+ 'catalog.subscriptions':['Abonelikler','Subscriptions'],
+ 'catalog.scene':['Sahne','Stage'],
+ 'catalog.system':['Sistem','System'],
+ 'catalog.transfer':['Aktarım','Transfer'],
 };
 for(const [key,values] of Object.entries(expected)){
  test('sidebar '+key+' is translated consistently',()=>{

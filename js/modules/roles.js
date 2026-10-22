@@ -7,7 +7,7 @@ import { db, saveDepartmentPermissionsFn, getPanelPermissionsFn, listDepartmentP
 import { userErrorMessage, showToast, __, onLangChange, getLang } from '../utils/ui.js';
 
 const TABS = [
-    { id: 'contributors', icon: 'group', key: 'nav.users' },
+    { id: 'contributors', icon: 'group', key: 'catalog.contributors' },
     { id: 'users', icon: 'group', key: 'nav.users' },
     { id: 'models', icon: 'smart_toy', key: 'nav.models' },
     { id: 'news', icon: 'newspaper', key: 'nav.news' },
@@ -33,6 +33,9 @@ const DEPARTMENTS = [
 // Panel kataloğu: her sekmenin "kanalları". Anahtar formatı `${tabId}.${panelId}`.
 export const PANELS = {
     users: [
+        { id: 'directory', key: 'catalog.information', icon: 'group' },
+        { id: 'status', key: 'catalog.status', icon: 'verified_user' },
+        { id: 'statistics', key: 'catalog.statistics', icon: 'database' },
         { id: 'deleteAccount', key: 'deleteAccount.title', icon: 'person_remove' }
     ],
     contributors: [

@@ -528,14 +528,18 @@ function expandModule(module, expanded) {
 export function refreshNavigation() {
     document.querySelectorAll('.nav-module').forEach(module => {
         const button = module.querySelector('.dock-btn');
-        const available = button.style.display !== 'none';
-        module.hidden = !available;
+        let available = button.style.display !== 'none';
         module.querySelectorAll('[data-nav-panel]').forEach(child => {
             const keys = child.dataset.navPanel.split(',');
             child.hidden = !keys.some(key => (key !== 'system.deptPerms' || isPanelAdmin()) && getEffectivePanelLevel(key) !== 'none');
             if (child.dataset.navAction === 'model-editor') child.hidden = getEffectivePanelLevel('models.manage') !== 'write';
+            if (child.dataset.navAction === 'templates') child.hidden = !isPanelAdmin();
             if (child.dataset.navAction === 'certificates') child.hidden = !isPanelAdmin();
         });
+        const children=[...module.querySelectorAll('[data-nav-panel]')];
+        available = available && (!children.length || children.some(child=>!child.hidden));
+        module.hidden = !available;
+        module.querySelectorAll('.catalog-subheading').forEach(heading=>{let next=heading.nextElementSibling,visible=false;while(next&&!next.classList.contains('catalog-subheading')){if(next.matches('[data-nav-panel]')&&!next.hidden)visible=true;next=next.nextElementSibling;}heading.hidden=!visible;});
         button.querySelector('.nav-chevron')?.toggleAttribute('hidden', ![...module.querySelectorAll('[data-nav-panel]')].some(child => !child.hidden));
         expandModule(module, available && button.classList.contains('active'));
     });
@@ -544,7 +548,7 @@ export function refreshNavigation() {
     const selected=activeModule?.querySelector('[data-nav-selected]:not([hidden])')||activeModule?.querySelector('.sidebar-sub-btn:not([hidden])');
     selected?.setAttribute('aria-current','page');
     document.querySelectorAll('.sidebar-group').forEach(group => { group.hidden = ![...group.querySelectorAll('.nav-module')].some(module => !module.hidden); });
-    if(selected)showWorkspace(document.querySelector('.tab-panel.active'),selected.dataset.navPanel.split(','));
+    if(selected)showWorkspace(document.querySelector('.tab-panel.active'),selected.dataset.navPanel.split(','), selected.dataset.navAction);
     syncTopbarTitle();
     syncMobileDock();
 }
@@ -552,7 +556,7 @@ export function refreshNavigation() {
 function syncMobileDock() {
     document.querySelectorAll('[data-mobile-tab]').forEach(button=>{
         const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);
-        button.hidden=!source||source.style.display==='none';
+        button.hidden=!source||source.style.display==='none'||source.closest('.nav-module')?.hidden;
         button.setAttribute('aria-current',source?.classList.contains('active')?'page':'false');
         button.setAttribute('aria-label',source?.textContent.trim()||'');
     });
@@ -600,7 +604,7 @@ function initNavigation() {
         if (changed) window.scrollTo({top:0,behavior:'instant'});
     };
     const dock=document.createElement('nav');dock.className='mobile-bottom-dock';dock.setAttribute('aria-label',__('navigation.main'));
-    dock.innerHTML=['home','contributors','models','news','notifications'].map((id,i)=>`<button type="button" data-mobile-tab="tab-${id}">${icon(['home','users-group','robot','news','bell'][i])}</button>`).join('')+`<button type="button" data-mobile-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`;
+    dock.innerHTML=['home','users','contributors','publications'].map((id,i)=>`<button type="button" data-mobile-tab="tab-${id}">${icon(['home','users-group','user-plus','news'][i])}</button>`).join('')+`<button type="button" data-mobile-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`;
     document.querySelector('.app-layout').append(dock);
     dock.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.hasAttribute('data-mobile-more')){openMore(button);return;}const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);if(source){
         const module=source.closest('.nav-module');
@@ -627,7 +631,7 @@ function initNavigation() {
             }).join('')+'<section><button type="button" data-more-profile>'+__('nav.profile')+icon('chevron-right')+'</button></section></nav>';
             body.querySelectorAll('[data-more-panel]').forEach(button=>button.onclick=()=>{const child=[...document.querySelectorAll('.sidebar-sub-btn:not([hidden])')].find(el=>el.dataset.navPanel===button.dataset.morePanel&&el.dataset.navAction===button.dataset.moreAction);if(child){closeModal();child.click();}});
             body.querySelectorAll('[data-more-tab]').forEach(button=>button.onclick=()=>{const main=document.querySelector('.dock-btn[data-target="'+button.dataset.moreTab+'"]');closeModal();activateTab(main);});
-            body.querySelector('[data-more-profile]').onclick=()=>{closeModal();document.querySelector('.sidebar-footer .dock-btn').click();};
+            body.querySelector('[data-more-profile]').onclick=()=>{closeModal();document.querySelector('.sidebar-footer [data-target="tab-profile"]').click();};
         };paint();
         unsubscribe=onLangChange(paint);document.addEventListener('vertex:departments',()=>{if(body.isConnected)paint();},{once:true});
 
@@ -641,6 +645,9 @@ function initNavigation() {
     const restoreRoute = () => {
         const params=new URLSearchParams(location.search);
         const route=history.state?.vertexRoute || {panel:params.get('panel'),action:params.get('view')||''};
+        if(route.panel==='contributors.users')route.panel='users.directory';
+        if(['contributors.vertexStatus','users.status','users.deleteAccount'].includes(route.panel))route.panel='users.status,users.deleteAccount';
+        if(route.panel?.includes('system.teamLog')&&route.action==='verification'){route.panel='system.teamLog';route.action='honor';}
         if (route.panel === 'home' || route.panel === 'chat') {
             const tabButton = document.querySelector('.dock-btn[data-target="tab-' + route.panel + '"]');
             if(tabButton){restoringRoute=true;activateTab(tabButton);restoringRoute=false;}
@@ -673,7 +680,7 @@ function initNavigation() {
         activateTab(parent, child);
         recordRoute(child);syncTopbarTitle();
         const action = child.dataset.navAction;
-        if(action!=='certificates')closeDrawer(false);
+        if(!['certificates','templates'].includes(action))closeDrawer(false);
         if (parent.dataset.target === 'tab-system') document.dispatchEvent(new CustomEvent('vertex:system-section',{detail:action}));
         const keys = child.dataset.navPanel.split(',');
         // refreshNavigation has already rendered the destination. Avoid a
@@ -683,6 +690,7 @@ function initNavigation() {
         // Restore URLs without stealing focus; pointer/touch navigation also
         // leaves focus on the chosen control. Only keyboard activation moves it.
         const focusDestination = event.isTrusted && event.detail === 0;
+        if (action === 'templates') document.dispatchEvent(new CustomEvent('vertex:application-templates'));
         if (action === 'model-editor') {if(focusDestination)card?.focus({preventScroll:true});}
         else {
             window.scrollTo({top:0,behavior:'instant'});
@@ -690,7 +698,7 @@ function initNavigation() {
             else if (card && focusDestination) { card.tabIndex = -1; card.focus({preventScroll:true}); }
         }
     });
-    document.querySelector('.sidebar-footer .dock-btn')?.addEventListener('click', event => { activateTab(event.currentTarget); closeSidebarDrawer(true); });
+    document.querySelectorAll('.sidebar-footer .dock-btn').forEach(button => button.addEventListener('click', event => { activateTab(event.currentTarget); closeSidebarDrawer(true); }));
     toggle?.addEventListener('click', () => {
         if (sidebar.classList.contains('open')) { closeSidebarDrawer(true); return; }
         mobileTrigger = document.activeElement;
