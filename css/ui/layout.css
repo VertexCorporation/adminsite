@@ -176,3 +176,29 @@
  :where(.panel-card) > .panel-header {flex-wrap:wrap;row-gap:var(--space-2)}
  :where(.panel-card) > .panel-header > :is(button,.btn-refresh,.form-submit-row) {max-width:100%}
 }
+
+/* Mobile header uses the same horizontal inset as .app-main (space-4).
+   The desktop topbar and its typography are intentionally unchanged. */
+@media (max-width: 720px) {
+    .app-header {
+        padding-inline: var(--space-4);
+    }
+
+    /* A single-icon action needs explicit centering, not inline-flex start alignment. */
+    #theme-menu-btn {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        min-width: 38px;
+        height: 38px;
+        padding: 0;
+        gap: 0;
+    }
+
+    #theme-menu-btn > .icon {
+        display: block;
+        margin: 0;
+        justify-self: center;
+        align-self: center;
+    }
+}
