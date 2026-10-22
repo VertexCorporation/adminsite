@@ -233,6 +233,52 @@ const selectTab=async id=>{if(await page.evaluate(()=>innerWidth<1024)){const do
  await page.locator('[data-nav-panel="contributors.list"][data-nav-action=""]').click();
  note('Account deletion consent shows a visible checkbox and activates only after explicit verification');
 }
+// The topbar and workspace must share the exact same gutters on phones.
+// The theme glyph must be centered inside its real tappable button, not just
+// visually near the center; tablet/desktop geometry stays untouched.
+for(const width of [320,360,390,430,720,768,1024]){
+ await page.setViewportSize({width,height:900});
+ const measured=await page.evaluate(()=>{
+  const header=document.querySelector('.app-header');
+  const main=document.querySelector('.app-main');
+  const title=document.querySelector('.topbar-page-title');
+  const action=document.querySelector('#logout-btn');
+  const theme=document.querySelector('#theme-menu-btn');
+  const glyph=theme?.querySelector('.icon');
+  const head=header?.getBoundingClientRect();
+  const body=main?.getBoundingClientRect();
+  const t=title?.getBoundingClientRect();
+  const last=action?.getBoundingClientRect();
+  const button=theme?.getBoundingClientRect();
+  const iconRect=glyph?.getBoundingClientRect();
+  const hs=getComputedStyle(header),ms=getComputedStyle(main);
+  return {
+   headerLeft:head.left+parseFloat(hs.paddingLeft),
+   headerRight:head.right-parseFloat(hs.paddingRight),
+   contentLeft:body.left+parseFloat(ms.paddingLeft),
+   contentRight:body.right-parseFloat(ms.paddingRight),
+   titleLeft:t.left,
+   actionRight:last.right,
+   themeDisplay:getComputedStyle(theme).display,
+   glyphCenter:iconRect?.left+iconRect?.width/2,
+   buttonCenter:button.left+button.width/2
+  };
+ });
+ const near=(a,b)=>Math.abs(a-b)<=1;
+ if(width<=720){
+  assert(near(measured.headerLeft,measured.contentLeft),width+' mobile left gutter: '+JSON.stringify(measured));
+  assert(near(measured.headerRight,measured.contentRight),width+' mobile right gutter: '+JSON.stringify(measured));
+  assert(near(measured.titleLeft,measured.contentLeft),width+' mobile page label: '+JSON.stringify(measured));
+  assert(near(measured.actionRight,measured.contentRight),width+' mobile actions: '+JSON.stringify(measured));
+  assert(near(measured.glyphCenter,measured.buttonCenter),width+' theme glyph centering: '+JSON.stringify(measured));
+  assert.equal(measured.themeDisplay,'grid');
+ }else{
+  assert.equal(measured.themeDisplay,'flex',width+' desktop/tablet keeps existing theme button');
+ }
+}
+await page.setViewportSize({width:1440,height:900});
+note('Mobile topbar matches workspace gutters; theme glyph centered at 5 phone widths, desktop unchanged');
+
 // Recover a transient 503 for both data-heavy screens without reloading the page.
 {
  const contributorBefore=calls.filter(name=>name==='getvertexcontributors').length;
