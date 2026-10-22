@@ -247,6 +247,10 @@ export function openDrawer(opts = {}) {
 
     const body = root.querySelector('.vx-drawer-body');
     opts.render?.(body);
+    // Establish the closed geometry before starting the CSS transition.
+    // A single rAF without this paint boundary can skip the entrance motion.
+    void root.offsetWidth;
+    void scrim.offsetWidth;
 
     requestAnimationFrame(() => {
         if (activeDrawer?.root !== root) return;
@@ -333,6 +337,8 @@ export function openModal(opts = {}) {
     lockScroll('modal');
     const body = root.querySelector('.vx-modal-body');
     opts.render?.(body);
+    void root.offsetWidth;
+    void overlay.offsetWidth;
     requestAnimationFrame(() => { if(activeModal?.root !== root)return;overlay.classList.add('is-open'); root.classList.add('is-open'); });
 
     registerSurface('modal');
@@ -464,6 +470,8 @@ export function confirmDialog(options = {}) {
 
         const unsubscribeLang = onLangChange(paint);
         paint();
+        void root.offsetWidth;
+        void overlay.offsetWidth;
 
         requestAnimationFrame(() => {
             if (!root.isConnected) return;

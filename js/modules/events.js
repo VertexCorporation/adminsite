@@ -38,6 +38,11 @@ export function initEventsModule() {
   ]){const control=document.getElementById(id);if(control)control.textContent=tr(trLabel,enLabel);}
   const refresh=document.getElementById('events-refresh');
   if(refresh)refresh.setAttribute('aria-label',tr('Yenile','Refresh'));
+  const fieldLabel=document.querySelector('label[for="events-registration-search"]');
+  if(fieldLabel)fieldLabel.textContent=tr('Etkinlik kimliği','Event ID');
+  const reviewLabel=document.getElementById('events-review-label');
+  if(reviewLabel?.lastChild?.nodeType===3)
+   reviewLabel.lastChild.textContent=' '+tr('Tarih tutarsızlığını kaynakla doğruladım','Date discrepancy verified against source');
  };
  updateActionLabels();
  onLangChange(updateActionLabels);
@@ -292,26 +297,28 @@ export function initEventsModule() {
    };
    const loadRemaining=async()=>{
     if(fetching)return;
-    loadMore.disabled=loadAll.disabled=exportButton.disabled=true;
+    setButtonLoading(loadAll,true);
+    loadMore.disabled=exportButton.disabled=true;
     try {
      // Bounded in-browser collection. Large reports require a dedicated background export.
      while(valid() && nextCursor && rows.length<2000)await fetchNext();
      if(nextCursor)showToast(tr('2.000 kayıt gösterildi. Daha büyük rapor için yöneticiye başvurun.','2,000 records loaded. Contact an administrator for larger exports.'),'info');
     }catch(error){fail(error);}
-    finally{loadMore.disabled=loadAll.disabled=exportButton.disabled=false;paint();}
+    finally{setButtonLoading(loadAll,false);loadMore.disabled=false;if(exportButton.dataset.state!=='loading')exportButton.disabled=false;paint();}
    };
    loadMore.onclick=async()=>{
     if(!valid()||fetching||loadMore.disabled)return;
-    loadMore.disabled=loadAll.disabled=exportButton.disabled=true;
+    setButtonLoading(loadMore,true);
+    loadAll.disabled=exportButton.disabled=true;
     try{await fetchNext();page=Math.ceil(rows.length/pageSize);paint();}
     catch(error){fail(error);}
-    finally{loadMore.disabled=loadAll.disabled=exportButton.disabled=false;}
+    finally{setButtonLoading(loadMore,false);loadAll.disabled=false;if(exportButton.dataset.state!=='loading')exportButton.disabled=false;}
    };
    loadAll.onclick=loadRemaining;
    search.addEventListener('input',()=>{page=1;paint();});
    exportButton.onclick=async()=>{
     if(!valid()||exportButton.disabled)return;
-    exportButton.disabled=true;
+    setButtonLoading(exportButton,true);
     try{
      if(!await confirmDialog({title:tr('Kişisel verileri dışa aktar','Export personal data'),
        body:tr('Yetkili olduğun etkinlik kayıtları CSV olarak indirilecek.','The visible event registrations will be exported as CSV.')}))return;
@@ -330,7 +337,7 @@ export function initEventsModule() {
      const anchor=document.createElement('a');anchor.href=url;
      anchor.download='event-registrations.csv';anchor.click();
      setTimeout(()=>URL.revokeObjectURL(url),1000);
-    }finally{exportButton.disabled=false;}
+    }finally{setButtonLoading(exportButton,false);}
    };
    paint();
    });
