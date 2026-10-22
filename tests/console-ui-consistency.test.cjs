@@ -40,3 +40,19 @@ test('workspace entrances remain single-screen and lightweight',()=>{
  assert.doesNotMatch(src('js/modules/views.js'),/crossfade\(host/);
  assert.match(src('js/ui/transition.js'),/duration = 220/);
 });
+
+test('overlays establish their initial geometry before entering',()=>{
+ const js=src('js/modules/shell.js');
+ assert.match(js,/opts\.render\?\.\(body\);\s*\/\/[\s\S]*?void root\.offsetWidth;\s*void scrim\.offsetWidth/);
+ assert.match(js,/opts\.render\?\.\(body\);\s*void root\.offsetWidth;\s*void overlay\.offsetWidth/);
+ assert.match(js,/paint\(\);\s*void root\.offsetWidth;\s*void overlay\.offsetWidth/);
+ assert.match(src('css/ui/layout.css'),/\.panel-header/);
+});
+test('paging and CSV actions retain the existing pending sweep instead of adding spinners',()=>{
+ const js=src('js/modules/events.js');
+ for(const action of ['loadMore','loadAll','exportButton']){
+  assert.ok(js.includes('setButtonLoading('+action+',true)'),action);
+  assert.ok(js.includes('setButtonLoading('+action+',false)'),action);
+ }
+ assert.doesNotMatch(js,/createElement\(['"]div['"]\)[^\n]*spinner/);
+});
