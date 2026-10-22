@@ -195,7 +195,8 @@ const server = http.createServer((req,res)=>{
      showSuccessState(host,'Completed');
      if(!host.textContent.includes('Completed'))throw Error('success state missing');
    });
-   await page.waitForTimeout(230);
+   // Wait for the actual CSS/WAAPI lifecycle rather than a hardcoded 190 ms fade.
+   await page.locator('#state-host .ui-crossfade-ghost').waitFor({state:'detached',timeout:2000});
    assert.equal(await page.locator('#state-host .ui-crossfade-ghost').count(),0);
    await page.waitForFunction(()=>document.getElementById('vertical').dataset.fogBottom==='true');
    assert.equal(await page.locator('#horizontal').getAttribute('data-fog-right'),'true');
