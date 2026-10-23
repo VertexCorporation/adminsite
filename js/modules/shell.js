@@ -34,7 +34,6 @@ export function applyTheme(mode) {
     const isDark = mode === 'dark' ||
         (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     if (meta) meta.setAttribute('content', isDark ? THEME_META_DARK : THEME_META_LIGHT);
-    document.getElementById('vertex-favicon')?.setAttribute('href', `assets/favicon-${isDark ? 'dark' : 'light'}.svg?v=2`);
     document.dispatchEvent(new CustomEvent('vertex:theme', { detail: { mode } }));
     setTimeout(() => html.classList.remove('theme-anim'), 200);
     updateThemeButton();

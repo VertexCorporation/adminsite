@@ -29,8 +29,8 @@
     <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Vertex Konsol">
     <meta name="twitter:image" content="https://admin.vertexishere.com/assets/vertex-konsol-og.png">
     <!-- Favicons -->
-    <link rel="icon" href="favicon.png" type="image/png" sizes="32x32">
-    <link id="vertex-favicon" rel="icon" href="assets/favicon-dark.svg?v=2" type="image/svg+xml">
+    <link id="vertex-favicon" rel="icon" href="assets/favicon-light.svg?v=2" type="image/svg+xml" media="(prefers-color-scheme: light)">
+    <link id="vertex-favicon-dark" rel="icon" href="assets/favicon-dark.svg?v=2" type="image/svg+xml" media="(prefers-color-scheme: dark)">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180">
 
     <!-- Google Fonts & Icons -->
@@ -50,12 +50,23 @@
 <link rel="stylesheet" href="assets/releases/d7885d88b737/css/stabilization.css">
 
     <script>
+        // Favicons follow the browser preference, independently of the console theme.
+        (function () {
+            const browserTheme = window.matchMedia('(prefers-color-scheme: dark)');
+            const lightIcon = document.getElementById('vertex-favicon');
+            const darkIcon = document.getElementById('vertex-favicon-dark');
+            const sync = () => {
+                lightIcon.media = browserTheme.matches ? 'not all' : 'all';
+                darkIcon.media = browserTheme.matches ? 'all' : 'not all';
+            };
+            sync();
+            if (browserTheme.addEventListener) browserTheme.addEventListener('change', sync);
+            else if (browserTheme.addListener) browserTheme.addListener(sync);
+        })();
         // Sayfa yüklenmeden önce localStorage'dan temayı ayarlayan betik
         (function () {
             try {
                 const theme = localStorage.getItem('theme');
-                const dark = theme !== 'light' && (theme !== 'system' || matchMedia('(prefers-color-scheme: dark)').matches);
-                document.getElementById('vertex-favicon')?.setAttribute('href', `assets/favicon-${dark ? 'dark' : 'light'}.svg?v=2`);
                 if (theme === 'light' || theme === 'system') {
                     document.documentElement.setAttribute('data-theme', theme);
                 }
