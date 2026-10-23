@@ -139,7 +139,7 @@ async function loadDepartmentUsers() {
         const users = [];
         let pageToken;const tokens=new Set();
         do {
-            const result = await listDepartmentUsersFn({ pageToken: pageToken || null });
+            const result = await listDepartmentUsersFn({ source: 'members', pageToken: pageToken || null });
             if(!Array.isArray(result.data?.users))throw Object.assign(new Error('Invalid user list'),{code:'functions/internal'});
             users.push(...result.data.users);
             pageToken = result.data.nextPageToken || null;
