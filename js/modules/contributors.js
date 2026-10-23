@@ -458,6 +458,10 @@ function openContributorDetails(person) {
                 try{
                     const {data}=await toggleContributorVerificationFn({contributorId:person.id,hasVerified:next});
                     const status=data?.status;
+                    if(['verified','unverified'].includes(status)){
+                        person.hasVerified=status==='verified';
+                        showToast(()=>__('contributors.verify_updated'),'success');
+                    }else{
                     if(next && !['pending','processing','succeeded','legacy','uncertain','failed','revoked'].includes(status))
                         throw Object.assign(new Error('Unconfirmed certificate response'),{code:'functions/internal'});
                     if(next && ['uncertain','failed','revoked'].includes(status)){
@@ -476,6 +480,7 @@ function openContributorDetails(person) {
                         person.hasVerified=false;
                         person.certificateDeliveryStatus='revoked';
                         showToast(()=>__('contributors.verify_updated'),'success');
+                    }
                     }
                     const list=window.loadedContributors||[];
                     const cached=list.find(p=>p.id===person.id);

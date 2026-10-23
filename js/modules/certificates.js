@@ -6,7 +6,7 @@ import { icon } from '../utils/icons.js';
 import { openDrawer, confirmDialog } from './shell.js';
 import { createLoadingController, skeletonRows, skeletonCertificate, setButtonLoading } from '../utils/loading.js';
 import { isPanelAdmin } from './roles.js';
-const awards = [{type:'tenacity',months:1,icon:'award',tr:'Dirayet',en:'Tenacity'},{type:'constancy',months:3,icon:'shield',tr:'Metanet',en:'Constancy'},{type:'nobility',months:6,icon:'diamond',tr:'Azamet',en:'Nobility'},{type:'majesty',months:12,icon:'crown',tr:'Asalet',en:'Majesty'}];
+const awards = [{type:'merit',days:7,icon:'award',tr:'Liyakat',en:'Merit'},{type:'tenacity',months:1,icon:'award',tr:'Dirayet',en:'Tenacity'},{type:'constancy',months:3,icon:'shield',tr:'Metanet',en:'Constancy'},{type:'nobility',months:6,icon:'diamond',tr:'Azamet',en:'Nobility'},{type:'majesty',months:12,icon:'crown',tr:'Asalet',en:'Majesty'}];
 const pending = new Set();
 const unresolved = new Set();
 const deliveryWatchers = new Map();
@@ -14,13 +14,13 @@ function monitorDelivery(person, data) {
     const key=person.id, viewerUid=auth.currentUser?.uid;
     deliveryWatchers.get(key)?.stop();
     deliveryWatchers.delete(key);
-    if(!viewerUid || !data.history.some(job=>certificateInFlight(job.status)))return;
-    const watcher=watchCertificateDelivery({
+    if(!viewerUid)return;
+    const watcher=watchCertificateDelivery({keepWatching:true,
         read:async()=>(await getVertexCertificateDetailsFn({contributorId:key})).data,
         currentUser:()=>auth.currentUser?.uid,viewerUid,
         update:next=>{
             document.dispatchEvent(new CustomEvent('vertex:certificate-status',{detail:{contributorId:key,data:next}}));
-            if(!next.history.some(job=>certificateInFlight(job.status)))deliveryWatchers.delete(key);
+
         },
         failure:job=>showToast(()=>`${typeName(job.certificateType)}: ${statusName(job.status)}`,'error')
     });
@@ -45,7 +45,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
     let details, selected, generation = 0, alive = true, unsubscribe, paintHistory;
     const onDelivery=event=>{if(event.detail.contributorId!==person.id)return;details=event.detail.data;if(!historyOpen)render();else paintHistory?.();};
     document.addEventListener('vertex:certificate-status',onDelivery);
-    const dispose=()=>{alive=false;generation++;unsubscribe?.();document.removeEventListener('vertex:certificate-status',onDelivery);};
+    const dispose=()=>{deliveryWatchers.get(person.id)?.stop();deliveryWatchers.delete(person.id);alive=false;generation++;unsubscribe?.();document.removeEventListener('vertex:certificate-status',onDelivery);};
     const pop=options.body || openDrawer({title:__('cert.title'),onAfterClose:dispose});
     options.onDispose?.(dispose);
     const root=pop.closest('.vx-drawer');root.classList.add('certificate-drawer');
@@ -64,7 +64,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
         const focusedAward=document.activeElement?.dataset.award;
         const e=details.eligibility || {};
         setTitle('cert.title');back(options.onBack ? ()=>{dispose();options.onBack();}:null);
-        loader.success(`<div class="cert-recipient"><strong>${esc(person.name)}</strong><small>${esc(person.email)}</small></div><dl class="cert-facts"><div><dt>${__('cert.joined')}</dt><dd>${esc(formatCertificateDate(e.joinedAt))}</dd></div><div><dt>${__('cert.participation')}</dt><dd>${e.participationDays===undefined?'—':esc(e.participationDays)}</dd></div></dl><p class="cert-notice">${esc(eligibilityText())}</p><div class="cert-options">${awards.map(a=>`<button type="button" class="cert-option ${selected===a.type?'is-selected':''} ${(details.history || []).some(job=>job.certificateType===a.type&&certificateAccepted(job.status))?'is-issued':''}" data-award="${a.type}" aria-pressed="${selected===a.type}" ${blocked(a.type)?'disabled':''}>${icon(a.icon)}<span class="cert-option-main"><strong>${esc(typeName(a.type,details.types))}</strong></span><span class="cert-option-tenure">${a.months} ${__(a.months===1?'cert.month':'cert.months')}</span><span class="cert-option-check">${icon('check')}</span></button>`).join('')}</div>`);
+        loader.success(`<div class="cert-recipient"><strong>${esc(person.name)}</strong><small>${esc(person.email)}</small></div><dl class="cert-facts"><div><dt>${__('cert.joined')}</dt><dd>${esc(formatCertificateDate(e.joinedAt))}</dd></div><div><dt>${__('cert.participation')}</dt><dd>${e.participationDays===undefined?'—':esc(e.participationDays)}</dd></div></dl><p class="cert-notice">${details.automationEnabled?esc(__('cert.automatic'))+' · ':''}${esc(eligibilityText())}</p><div class="cert-options">${awards.map(a=>`<button type="button" class="cert-option ${selected===a.type?'is-selected':''} ${(details.history || []).some(job=>job.certificateType===a.type&&certificateAccepted(job.status))?'is-issued':''}" data-award="${a.type}" aria-pressed="${selected===a.type}" ${blocked(a.type)?'disabled':''}>${icon(a.icon)}<span class="cert-option-main"><strong>${esc(typeName(a.type,details.types))}</strong></span><span class="cert-option-tenure">${a.days?__('cert.week'):a.months+' '+__(a.months===1?'cert.month':'cert.months')}</span><span class="cert-option-check">${icon('check')}</span></button>`).join('')}</div>`);
         footer.innerHTML=`<button class="chrome-btn-primary" data-review ${!selected||blocked(selected)?'disabled':''}>${__('cert.review')}</button><div class="cert-secondary-actions"><button class="chrome-btn-outline" data-date>${__('cert.date_edit')}</button><button class="chrome-btn-outline" data-history>${__('cert.history')}</button></div><button class="chrome-btn-outline" data-email-templates>${__('email_templates.title')}</button>`;
         pop.querySelectorAll('[data-award]').forEach(b=>b.onclick=()=>{
             selected=b.dataset.award;
@@ -92,7 +92,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
             const {data}=await issueVertexCertificateFn({contributorId:person.id,certificateType:type,...(retry?{retry:true}:{})});
             if(!data?.id || typeof data.status!=='string')throw Object.assign(new Error('Invalid issuance response'),{code:'functions/internal'});
             const accepted=certificateAccepted(data.status);
-            showToast(()=>accepted?__('cert.success'):statusName(data.status),accepted?'success':'error');
+            showToast(()=>accepted?__('cert.success'):statusName(data.status),accepted?'success':certificateInFlight(data.status)?'info':'error');
             selected=undefined;
             details.history=[...(details.history || []).filter(job=>job.id!==data.id),{id:data.id,certificateType:type,status:data.status}];
             pending.delete(key);

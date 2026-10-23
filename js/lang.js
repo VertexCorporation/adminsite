@@ -406,6 +406,8 @@ const LANG = {
 "news.delete_confirm":"Bu makale silinecek. Devam edilsin mi?","notif.cancel_confirm":"Bu zamanlanmış bildirim iptal edilsin mi?","models.delete_confirm":"Bu model silinecek. Bu işlem geri alınamaz.","models.block_confirm":"Bu model kalıcı olarak engellenecek. Devam edilsin mi?","common.refresh":"Yenile","common.actions":"İşlemler","models.add":"Model ekle","models.publish":"Kataloğu yayınla","models.publish_confirm":"Mevcut model kataloğu uygulamaya yayınlanacak. Devam edilsin mi?","models.published":"Model kataloğu yayınlandı.",
 "notif.empty":"Zamanlanmış bildirim yok.",
 
+    "cert.week":"1 hafta",
+    "cert.automatic":"Hak edilen sertifikalar otomatik gönderilir. Tik yalnızca gönderim onaylanınca görünür.",
     "cert.month":"ay",
     "cert.success":"Başarılı",
     "contributors.applied_at":"Başvuru tarihi",
@@ -1406,6 +1408,8 @@ const LANG = {
 "news.delete_confirm":"Delete this article?","notif.cancel_confirm":"Cancel this scheduled notification?","models.delete_confirm":"Delete this model? This cannot be undone.","models.block_confirm":"Permanently block this model?","common.refresh":"Refresh","common.actions":"Actions","models.add":"Add model","models.publish":"Publish catalog","models.publish_confirm":"The current model catalog will be published to the application. Continue?","models.published":"Model catalog published.",
 "notif.empty":"No scheduled notifications found.",
 
+    "cert.week":"1 week",
+    "cert.automatic":"Earned certificates are sent automatically. A checkmark appears after confirmed submission.",
     "cert.month":"month",
     "cert.success":"Successful",
     "contributors.applied_at":"Application date",

@@ -4,12 +4,12 @@ const fs=require('node:fs');
 const code=fs.readFileSync('js/modules/certificateDelivery.js','utf8');
 const moduleReady=import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
 const history=(status,attemptId)=>({history:[{id:'person--tenacity',certificateType:'tenacity',status,attemptId}]});
-async function fixture(initial='processing'){
+async function fixture(initial='processing',keepWatching=false){
     const {watchCertificateDelivery}=await moduleReady;
     let queued,uid='owner',next=history('submitted','attempt-1'),reads=0;
     const updates=[],errors=[];
     const watcher=watchCertificateDelivery({
-        read:async()=>{reads++;if(next instanceof Error)throw next;return next;},
+        keepWatching,read:async()=>{reads++;if(next instanceof Error)throw next;return next;},
         currentUser:()=>uid,viewerUid:'owner',update:data=>updates.push(data),failure:job=>errors.push(job),
         schedule:fn=>{queued=fn;return fn;},cancel:()=>{queued=undefined;}
     });
@@ -40,6 +40,13 @@ test('stopping a watcher prevents further updates',async()=>{
 });
 test('only accepted ledger states render a persistent check',async()=>{
     const {certificateAccepted}=await moduleReady;
-    for(const status of ['pending','processing','submitted','succeeded','delivered','legacy'])assert.equal(certificateAccepted(status),true,status);
-    for(const status of ['failed','uncertain','revoked',undefined])assert.equal(certificateAccepted(status),false,status);
+    for(const status of ['submitted','succeeded','delivered'])assert.equal(certificateAccepted(status),true,status);
+    for(const status of ['pending','processing','legacy','failed','uncertain','revoked',undefined])assert.equal(certificateAccepted(status),false,status);
+});
+
+test('an open drawer refreshes terminal jobs and removes a tick after late failure',async()=>{
+    const f=await fixture('submitted',true);
+    assert.ok(f.queued);f.setNext(history('failed','attempt-1'));await f.poll();
+    assert.equal(f.updates.at(-1).history[0].status,'failed');assert.equal(f.errors.length,1);
+    await f.poll();assert.equal(f.errors.length,1);f.watcher.stop();assert.equal(f.queued,undefined);
 });
