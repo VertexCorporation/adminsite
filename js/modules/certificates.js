@@ -97,8 +97,7 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
             selected=undefined;
             details.history=[...(details.history || []).filter(job=>job.id!==data.id),{id:data.id,certificateType:type,status:data.status}];
             pending.delete(key);
-            if(alive)render();
-            monitorDelivery(person,details);
+            if(alive){render();monitorDelivery(person,details);}
             // Directory refresh is independent of the accepted issuance UI.
             Promise.resolve(refresh?.()).catch(error=>console.warn('[CERTIFICATES] Directory refresh failed',error.code));
         } catch(error) { selected=undefined;if(alive&&!historyOpen)render();if(!error.httpStatus || ['functions/internal','functions/deadline-exceeded','functions/unavailable'].includes(error.code))unresolved.add(key);showToast(()=>userErrorMessage(error),'error'); }
