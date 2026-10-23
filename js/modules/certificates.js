@@ -19,6 +19,7 @@ function monitorDelivery(person, data) {
         read:async()=>(await getVertexCertificateDetailsFn({contributorId:key})).data,
         currentUser:()=>auth.currentUser?.uid,viewerUid,
         update:next=>{
+            if(next===data)return; // Initial state is already rendered; avoid a duplicate transition.
             document.dispatchEvent(new CustomEvent('vertex:certificate-status',{detail:{contributorId:key,data:next}}));
 
         },
