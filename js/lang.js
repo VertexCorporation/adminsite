@@ -1,5 +1,20 @@
 const LANG = {
   tr: {
+    "resetAccount.title": "Şifre Sıfırlama",
+    "resetAccount.intro": "Tek veya birden fazla e-posta adresine 3 gün geçerli şifre sıfırlama bağlantısı gönderin.",
+    "resetAccount.emails": "E-posta adresleri",
+    "resetAccount.hint": "Adresleri satır, boşluk, virgül veya noktalı virgülle ayırın. En fazla 200 adres.",
+    "resetAccount.send": "Sıfırlama Bağlantılarını Gönder",
+    "resetAccount.invalid": "1–200 geçerli e-posta adresi girin.",
+    "resetAccount.sending": "Gönderiliyor",
+    "resetAccount.complete": "{count} e-posta gönderim hizmeti tarafından kabul edildi. Adres bazında sonuçlar aşağıda.",
+    "resetAccount.sent": "Gönderim kabul edildi",
+    "resetAccount.uncertain": "Gönderim belirsiz; yeniden göndermeden önce kontrol edin",
+    "resetAccount.failed": "Başarısız",
+    "resetAccount.disabled": "Hesap devre dışı",
+    "resetAccount.not-found": "Hesap bulunamadı",
+    "resetAccount.preparing": "İşlem hazırlanıyor",
+
     "catalog.unnamed_user":"İsimsiz kullanıcı",
     "catalog.no_email":"E-posta eklenmemiş",
     "catalog.users": "Kullanıcılar",
@@ -1002,6 +1017,21 @@ const LANG = {
   },
 
   en: {
+    "resetAccount.title": "Password Reset",
+    "resetAccount.intro": "Send password reset links valid for 3 days to one or more email addresses.",
+    "resetAccount.emails": "Email addresses",
+    "resetAccount.hint": "Separate addresses with lines, spaces, commas or semicolons. Maximum 200 addresses.",
+    "resetAccount.send": "Send Reset Links",
+    "resetAccount.invalid": "Enter 1–200 valid email addresses.",
+    "resetAccount.sending": "Sending",
+    "resetAccount.complete": "{count} emails accepted by the delivery service. Per-address results are listed below.",
+    "resetAccount.sent": "Delivery accepted",
+    "resetAccount.uncertain": "Delivery uncertain; review before resending",
+    "resetAccount.failed": "Failed",
+    "resetAccount.disabled": "Account disabled",
+    "resetAccount.not-found": "Account not found",
+    "resetAccount.preparing": "Preparing",
+
     "catalog.unnamed_user":"Unnamed user",
     "catalog.no_email":"No email added",
     "catalog.users": "Users",
