@@ -7,19 +7,23 @@ export function initApprovedAccountSetup(){
  const section=document.createElement('section');section.className='mt-4';
  const button=document.createElement('button');button.type='button';button.className='chrome-btn-outline';button.id='prepare-approved-accounts';
  const status=document.createElement('p');status.id='approved-accounts-status';status.setAttribute('role','status');
+ const hint=document.createElement('p');
  const output=document.createElement('textarea');output.id='approved-accounts-messages';output.readOnly=true;output.rows=12;output.hidden=true;output.style.width='100%';
  output.setAttribute('aria-label','Prepared account messages — not sent');
- const label=()=>{button.textContent=document.documentElement.lang==='en'?'Prepare approved member accounts':'Onaylı üyelerin hesaplarını hazırla';};label();onLangChange(label);
+ const label=()=>{const en=document.documentElement.lang==='en';button.textContent=en?'Prepare approved member accounts':'Onaylı üyelerin hesaplarını hazırla';hint.textContent=en?'Enter approved member emails above to prepare only those accounts. Leave empty for the full approved roster.':'Yalnızca belirli onaylı üyelerin hesaplarını hazırlamak için yukarıya e-postalarını girin. Onaylı listenin tamamı için boş bırakın.';};label();onLangChange(label);
  section.hidden=true;auth.onAuthStateChanged(user=>{section.hidden=user?.email?.toLowerCase()!=='mustawtfa@gmail.com';});
- section.append(button,status,output);form.after(section);
+ section.append(hint,button,status,output);form.after(section);
  let busy=false,requestId=null,messages=[];
  button.addEventListener('click',async()=>{
   if(busy||!auth.currentUser||!isPanelAdmin())return;
   busy=true;button.disabled=true;requestId||='approved-'+crypto.randomUUID();
   try{
    status.textContent=document.documentElement.lang==='en'?'Checking approved roster…':'Onaylı üye listesi kontrol ediliyor…';
-   const preview=await consolePeopleCall('sendConsolePasswordResets',{prepareApproved:true,preview:true});
-   const ids=preview.data.applicationIds;if(!Array.isArray(ids)||ids.length!==57)throw Error('Approved roster changed ('+(Array.isArray(ids)?ids.length:'missing')+').');
+   const emails=document.getElementById('password-reset-emails')?.value.trim()||'';
+   const preview=await consolePeopleCall('sendConsolePasswordResets',{prepareApproved:true,preview:true,...(emails?{emails}:{})});
+   const ids=preview.data.applicationIds;
+   if(emails&&preview.data.filtered!==true)throw Error('Selected account preparation requires the updated server.');
+   if(!Array.isArray(ids)||!ids.length||ids.length>200||preview.data.total!==ids.length)throw Error('Approved roster changed ('+(Array.isArray(ids)?ids.length:'missing')+').');
    let processed=0,created=0;
    for(let at=0;at<ids.length;at+=1){
     status.textContent=(document.documentElement.lang==='en'?'Preparing accounts: ':'Hesaplar hazırlanıyor: ')+processed+'/'+ids.length;
