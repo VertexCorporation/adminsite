@@ -1,3 +1,4 @@
+import { initApprovedAccountSetup } from './modules/approvedAccountSetup.js';
 import { createWorkspaceLoader } from './utils/workspace-loader.js';
 import { initEventsModule } from './modules/events.js';
 import { initDirectoryModule } from './modules/directory.js';
@@ -57,6 +58,7 @@ export function startApp(firebaseConfig) {
         ['people', initPeopleModule],
         ['directory', initDirectoryModule],
         ['account-deletion', initAccountDeletionModule],
+        ['approved-account-setup', initApprovedAccountSetup],
         ['models', initModelsModule],
         ['news', initNewsModule],
         ['events', initEventsModule],
