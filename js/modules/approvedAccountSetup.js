@@ -14,6 +14,33 @@ export function initApprovedAccountSetup(){
  section.hidden=true;auth.onAuthStateChanged(user=>{section.hidden=user?.email?.toLowerCase()!=='mustawtfa@gmail.com';});
  section.append(hint,button,status,output);form.after(section);
  let busy=false,requestId=null,messages=[];
+ const permissionsButton=document.createElement('button');permissionsButton.type='button';permissionsButton.className='chrome-btn-outline';
+ const permissionsStatus=document.createElement('p');permissionsStatus.id='approved-permissions-status';permissionsStatus.setAttribute('role','status');
+ const permissionOutput=document.createElement('textarea');permissionOutput.readOnly=true;permissionOutput.hidden=true;permissionOutput.rows=12;permissionOutput.style.width='100%';permissionOutput.setAttribute('aria-label','Approved permission results');
+ const permissionLabel=()=>{permissionsButton.textContent=document.documentElement.lang==='en'?'Apply approved console permissions':'Onaylı konsol izinlerini uygula';};permissionLabel();onLangChange(permissionLabel);
+ section.append(permissionsButton,permissionsStatus,permissionOutput);
+ let permissionResults=[];
+ permissionsButton.addEventListener('click',async()=>{
+  if(busy||!auth.currentUser||!isPanelAdmin())return;
+  busy=true;permissionsButton.disabled=true;button.disabled=true;permissionResults=[];
+  const show=()=>{permissionOutput.value=JSON.stringify(permissionResults,null,2);permissionOutput.hidden=permissionResults.length===0;};show();
+  try{
+   permissionsStatus.textContent='Checking approved permissions…';
+   const preview=await consolePeopleCall('sendConsolePasswordResets',{applyApprovedPermissions:true,preview:true});
+   const ids=preview.data.applicationIds;if(!Array.isArray(ids)||ids.length!==58||preview.data.chiefs!==9||preview.data.moderators!==10)throw Error('Approved permission roster changed.');
+   for(const id of ids){
+    permissionsStatus.textContent='Applying approved permissions: '+permissionResults.length+'/'+ids.length;
+    const {data}=await consolePeopleCall('sendConsolePasswordResets',{applyApprovedPermissions:true,applicationIds:[id]});
+    if(!Array.isArray(data.results)||data.results.length!==1)throw Error('Permission result needs review.');
+    permissionResults.push(...data.results);show();
+   }
+   const ready=permissionResults.filter(r=>r.consoleReady).length,corporate=permissionResults.filter(r=>r.corporateUid&&r.corporateUid!==r.uid&&r.corporateReady).length;
+   permissionsStatus.textContent=document.documentElement.lang==='en'
+    ?permissionResults.length+' members assigned. Chiefs: 9. Moderators: 10. Primary accounts ready: '+ready+'. Awaiting email verification: '+(permissionResults.length-ready)+'. Additional corporate accounts ready: '+corporate+'.'
+    :permissionResults.length+' üyeye izin atandı. Şef: 9. Moderatör: 10. Erişimi hazır ana hesap: '+ready+'. E-posta doğrulaması bekleyen: '+(permissionResults.length-ready)+'. Ek kurumsal hesap: '+corporate+'.';
+  }catch(error){console.error('[APPROVED_PERMISSIONS]',error.code||'client-error');permissionsStatus.textContent=permissionResults.length+'/58 completed. '+userErrorMessage(error)+(error.code?' ('+error.code+')':' '+String(error.message||'').slice(0,160));}
+  finally{busy=false;permissionsButton.disabled=false;button.disabled=false;}
+ });
  button.addEventListener('click',async()=>{
   if(busy||!auth.currentUser||!isPanelAdmin())return;
   busy=true;button.disabled=true;requestId||='approved-'+crypto.randomUUID();

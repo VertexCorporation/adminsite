@@ -72,7 +72,7 @@ function getCallable(name) {
     }
     let fn=callableCache.get(name);
     if (!fn) {
-        fn=functions.httpsCallable(name,{timeout:CALLABLE_TIMEOUT_MS});
+        fn=functions.httpsCallable(name,{timeout:name==='sendConsolePasswordResets'?540000:CALLABLE_TIMEOUT_MS});
         callableCache.set(name,fn);
     }
     return fn;
