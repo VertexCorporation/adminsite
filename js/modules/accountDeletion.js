@@ -1,3 +1,4 @@
+import { initPasswordResetModule } from './passwordReset.js';
 import { auth, consolePeopleCall } from '../core/firebase.js';
 import { isPanelAdmin } from './roles.js';
 import { confirmDialog } from './shell.js';
@@ -6,6 +7,7 @@ import { __, userErrorMessage } from '../utils/ui.js';
 // The server, not the sidebar, authorizes this destructive operation.
 // A verified account lookup precedes each request; no arbitrary UID submission.
 export function initAccountDeletionModule() {
+    initPasswordResetModule();
     const byId = id => document.getElementById(id);
     const form = byId('account-deletion-search-form');
     if (!form) return;
