@@ -138,11 +138,13 @@ export function startApp(firebaseConfig) {
         if (user) {
             console.log(`[AUTH] User signed in: ${user.email}`);
             try {
-                const idTokenResult = await user.getIdTokenResult(true);
                 if(epoch!==authEpoch || document.documentElement.dataset.startupFailed === 'true')return;
                 // Authentication token establishes identity only; Core and
                 // departments must be checked against current server records.
                 if(!deploymentCapabilities.consolePeople)throw new Error('Console authorization endpoint is unavailable.');
+                // Start both current-server checks together. Capture access errors until
+                // pending activation has had a chance to finish. Never trust cached claims.
+                const accessRequest=consolePeopleCall('getMyConsoleAccess',{}).then(value=>({value}),error=>({error}));
                 const ownProfile=(await db.collection('users').doc(user.uid).get()).data();
                 if(ownProfile?.personnelOwnership==='pending'){
                     if(!user.emailVerified){
@@ -152,7 +154,10 @@ export function startApp(firebaseConfig) {
                     }
                     await consolePeopleCall('completePersonnelActivation',{});
                 }
-                const access=normalizeConsoleAccessResponse((await consolePeopleCall('getMyConsoleAccess',{})).data);
+                const accessResult=ownProfile?.personnelOwnership==='pending'
+                    ? {value:await consolePeopleCall('getMyConsoleAccess',{})}:await accessRequest;
+                if(accessResult.error)throw accessResult.error;
+                const access=normalizeConsoleAccessResponse(accessResult.value.data);
                 let isAdmin=access.isCore;
                 let departments=access.departments;
                 if(epoch!==authEpoch)return;
@@ -188,7 +193,7 @@ export function startApp(firebaseConfig) {
 
                 updateHome(user, isAdmin, departments);
                 if(deploymentCapabilities.consolePeople){
-                  let revision=null;
+                  let revision=access.authzVersion??ownProfile?.authzVersion??0;
                   personnelUnsubscribe=db.collection('users').doc(user.uid).onSnapshot(async snapshot=>{
                     const profile=snapshot.data()||{};if(!profile.contributorId&&!profile.personnelManaged&&!profile.consoleAccessManaged)return;
                     const next=profile.authzVersion||0;if(next===revision)return;revision=next;

@@ -497,7 +497,7 @@ function openContributorDetails(person) {
             menu.querySelector('[data-delete]').onclick=async()=>{
                 if(pending||!isPanelAdmin())return; closePopover();
                 if(!await confirmDialog(()=>({title:__('contributors.delete_action'),body:__('contributors.delete_warning'),confirmLabel:__('contributors.delete_action'),danger:true})))return;
-                pending=true;paint();try{await deleteVertexContributorFn({contributorId:person.id});closeDrawer();showToast(() => __('contributors.deleted'),'success');await fetchContributorsData();}catch{showToast(() => __('system.error'),'error');pending=false;paint();}
+                pending=true;paint();try{await deleteVertexContributorFn({contributorId:person.id});closeDrawer();showToast(() => __('contributors.deleted'),'success');await fetchContributorsData();}catch(error){console.error('[CONTRIBUTORS] Delete failed',error.code||'unknown');showToast(() => userErrorMessage(error),'error');pending=false;paint();}
             };
         }}));
     }
