@@ -17,12 +17,13 @@ export function initApprovedAccountSetup(){
   if(busy||!auth.currentUser||!isPanelAdmin())return;
   busy=true;button.disabled=true;requestId||='approved-'+crypto.randomUUID();
   try{
+   status.textContent=document.documentElement.lang==='en'?'Checking approved roster…':'Onaylı üye listesi kontrol ediliyor…';
    const preview=await consolePeopleCall('sendConsolePasswordResets',{prepareApproved:true,preview:true});
-   const ids=preview.data.applicationIds;if(!Array.isArray(ids)||ids.length!==57)throw Error('Approved roster changed.');
+   const ids=preview.data.applicationIds;if(!Array.isArray(ids)||ids.length!==57)throw Error('Approved roster changed ('+(Array.isArray(ids)?ids.length:'missing')+').');
    let processed=0,created=0;
-   for(let at=0;at<ids.length;at+=5){
+   for(let at=0;at<ids.length;at+=1){
     status.textContent=(document.documentElement.lang==='en'?'Preparing accounts: ':'Hesaplar hazırlanıyor: ')+processed+'/'+ids.length;
-    const {data}=await consolePeopleCall('sendConsolePasswordResets',{prepareApproved:true,applicationIds:ids.slice(at,at+5),requestId});
+    const {data}=await consolePeopleCall('sendConsolePasswordResets',{prepareApproved:true,applicationIds:ids.slice(at,at+1),requestId});
     processed+=(data.results||[]).length;created+=(data.results||[]).filter(row=>row.created).length;
     messages.push(...(data.messages||[]));
     output.value=messages.map(mail=>'To: '+mail.to+'\nSubject: '+mail.subject+'\n\n'+mail.text).join('\n\n-----\n\n');output.hidden=messages.length===0;
@@ -30,7 +31,7 @@ export function initApprovedAccountSetup(){
    status.textContent=document.documentElement.lang==='en'
     ?processed+' accounts checked; '+created+' created. '+messages.length+' messages prepared. Email has not been sent.'
     :processed+' hesap kontrol edildi; '+created+' hesap oluşturuldu. '+messages.length+' ileti hazırlandı. Henüz posta gönderilmedi.';
-  }catch(error){status.textContent=userErrorMessage(error);}
+  }catch(error){console.error('[APPROVED_ACCOUNT_SETUP]',error.code||'client-error',error.name||'Error',error.code?'':String(error.message||'').slice(0,160));status.textContent=userErrorMessage(error)+(error.code?' ('+error.code+')':' '+String(error.message||'').slice(0,160));}
   finally{busy=false;button.disabled=false;}
  });
 }
