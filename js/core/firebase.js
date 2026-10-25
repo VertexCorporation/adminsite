@@ -14,7 +14,7 @@ let toggleVertexStatusFn, setUserDepartmentFn, setUserDepartmentsFn, listDepartm
 let setUserSubscriptionFn, removeUserSubscriptionFn, listUserSubscriptionsFn, bulkSetUserSubscriptionsFn, previewBulkUserSubscriptionsFn;
 let listConsoleChatChannelsFn, createConsoleChatChannelFn, updateConsoleChatChannelFn, postConsoleChatMessageFn, listConsoleChatMessagesFn, updateConsoleChatTaskStatusFn, deleteConsoleChatMessageFn, deleteConsoleChatChannelFn, listConsoleChatDirectoryFn;
 let getPanelPermissionsFn;
-let listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn;
+let listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn, translateTeamBiographyFn;
 let prepareModelImageCleanupFn, confirmModelImageCleanupFn;
 
 
@@ -206,6 +206,7 @@ function initFirebase(firebaseConfig) {
     deleteConsoleChatMessageFn = callable('deleteConsoleChatMessage');
     deleteConsoleChatChannelFn = callable('deleteConsoleChatChannel');
     listConsoleChatDirectoryFn = callable('listConsoleChatDirectory');
+    translateTeamBiographyFn = callable('translateTeamBiography');
     listSiteTeamFn = callable('listSiteTeam');
     setSiteTeamEntryFn = callable('setSiteTeamEntry');
     deleteSiteTeamEntryFn = callable('deleteSiteTeamEntry');
@@ -266,6 +267,7 @@ export {
     deleteConsoleChatMessageFn,
     deleteConsoleChatChannelFn,
     listConsoleChatDirectoryFn,
+    translateTeamBiographyFn,
     listSiteTeamFn,
     setSiteTeamEntryFn,
     deleteSiteTeamEntryFn,

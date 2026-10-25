@@ -12,8 +12,9 @@ test('public team editor is one canonical management surface',()=>{
  assert.match(source,/setSiteTeamEntryFn\(\{kind:'card'/);
  assert.match(source,/deleteSiteTeamEntryFn\(\{kind:'card'/);
  assert.match(source,/setSiteTeamEntryFn\(\{kind:'photo'/);
- assert.match(source,/id="team-card-bio"/);
- assert.match(source,/maxlength="6000"/);
+ assert.match(source,/mountBiographyEditor/);
+ assert.match(source,/\.\.\.biographies.read\(\)/);
+ assert.match(get('js/modules/teamBiographies.js'),/maxlength="6000"/);
  assert.match(source,/if \(auth\.currentUser\) void loadTeamCards/);
  assert.doesNotMatch(source,/export async function initTeamProfilePanel/);
  assert.match(source,/initWeeklyStarsPanel/);

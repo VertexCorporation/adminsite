@@ -4,7 +4,7 @@ The sidebar has seven work areas: Users, Applicants, Services, Publications,
 Subscriptions, Stage, and System. Home, Chat, and Profile are independent entries.
 
 Existing backend permission keys are retained. Publications groups `news.*`,
-`events.*`, and `notifications.*`. Stage exposes separate honor, leaders, and
+`events.*`, and `notifications.*`. Stage exposes separate honor, chefs, and
 stars screens using the existing `system.teamLog` authorization contract.
 No department gains access from a category rename. All `users.*` screens remain
 Core-only. Legacy user-directory and membership URLs redirect to Users; the old
