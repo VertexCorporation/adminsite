@@ -26,18 +26,20 @@ save/read functions, intentional clearing, legacy-client preservation, Core
 rejection, input bounds, rate limits, provider failure/partial results,
 plaintext requests, token reuse, Chinese mapping and bounded concurrency.
 
-## Pending live rollout
+## Direct rollout
 
-The connected Chrome approval session failed while accessing Cloud Shell.
-No backend functions or frontend changes have been deployed yet. Live Google
-API activation, service-account permission, preserved deployment settings and
-an authenticated live translation remain unverified. Keep both frontend PRs
-draft until the backend rollout and live verification finish.
+Cloud Shell verified a successful Google Translation v3 request under the
+existing runtime service account. `listSiteTeam` and `setSiteTeamEntry` were
+deployed directly; the write function's environment and service account were
+preserved. The translation callable uses `europe-west4` because the shared CPU
+quota in `europe-west1` is exhausted. The console routes only translation to
+that region, keeping Auth, App Check and callable errors under the Firebase SDK.
 
 Follow `docs/CHEF-BIOGRAPHIES.md` in Fulcrum PR #90 for direct terminal steps.
 The limited manifest selects only `listSiteTeam`, `setSiteTeamEntry` and
-`translateTeamBiography`; it requires no GitHub Actions. Commits in this
-continuation include `[skip ci]` to avoid Actions usage.
+`translateTeamBiography`. No GitHub Actions are needed. Use `[skip actions]`
+on production frontend merge commits so GitHub workflows stay skipped while
+the existing Cloudflare Pages integration publishes the static files.
 
 Companion PRs:
 
