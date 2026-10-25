@@ -27,17 +27,17 @@ export function initApprovedAccountSetup(){
   try{
    permissionsStatus.textContent='Checking approved permissions…';
    const preview=await consolePeopleCall('sendConsolePasswordResets',{applyApprovedPermissions:true,preview:true});
-   const ids=preview.data.applicationIds;if(!Array.isArray(ids)||ids.length!==58||preview.data.chiefs!==9||preview.data.moderators!==10)throw Error('Approved permission roster changed.');
+   const ids=preview.data.applicationIds;if(preview.data.supportsLinkedAccounts!==true||!Array.isArray(ids)||ids.length!==58||preview.data.chiefs!==9||preview.data.moderators!==10)throw Error('Approved permission roster changed.');
    for(const id of ids){
     permissionsStatus.textContent='Applying approved permissions: '+permissionResults.length+'/'+ids.length;
-    const {data}=await consolePeopleCall('sendConsolePasswordResets',{applyApprovedPermissions:true,applicationIds:[id]});
+    const {data}=await consolePeopleCall('sendConsolePasswordResets',{applyApprovedPermissions:true,provisionLinkedAccounts:true,applicationIds:[id]});
     if(!Array.isArray(data.results)||data.results.length!==1)throw Error('Permission result needs review.');
     permissionResults.push(...data.results);show();
    }
-   const ready=permissionResults.filter(r=>r.consoleReady).length,corporate=permissionResults.filter(r=>r.corporateUid&&r.corporateUid!==r.uid&&r.corporateReady).length;
+   const ready=permissionResults.filter(r=>r.ready).length,corporate=permissionResults.filter(r=>r.corporateUid&&r.corporateUid!==r.uid).length;
    permissionsStatus.textContent=document.documentElement.lang==='en'
-    ?permissionResults.length+' members assigned. Chiefs: 9. Moderators: 10. Primary accounts ready: '+ready+'. Awaiting first sign-in or password setup: '+(permissionResults.length-ready)+'. Additional corporate accounts ready: '+corporate+'.'
-    :permissionResults.length+' üyeye izin atandı. Şef: 9. Moderatör: 10. Erişimi hazır ana hesap: '+ready+'. İlk giriş veya şifre belirleme bekleyen: '+(permissionResults.length-ready)+'. Ek kurumsal hesap: '+corporate+'.';
+    ?permissionResults.length+' members assigned. Chiefs: 9. Moderators: 10. Primary accounts ready: '+ready+'. Accounts needing review: '+(permissionResults.length-ready)+'. Additional corporate accounts ready: '+corporate+'.'
+    :permissionResults.length+' üyeye izin atandı. Şef: 9. Moderatör: 10. Erişimi hazır ana hesap: '+ready+'. İnceleme gereken hesap: '+(permissionResults.length-ready)+'. Ek kurumsal hesap: '+corporate+'.';
   }catch(error){console.error('[APPROVED_PERMISSIONS]',error.code||'client-error');permissionsStatus.textContent=permissionResults.length+'/58 completed. '+userErrorMessage(error)+(error.code?' ('+error.code+')':' '+String(error.message||'').slice(0,160));}
   finally{busy=false;permissionsButton.disabled=false;button.disabled=false;}
  });

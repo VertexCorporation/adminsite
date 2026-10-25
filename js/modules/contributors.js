@@ -290,6 +290,7 @@ function openContributorEditor(contributor) {
                     <label for="ce-email" data-i18n="contributors.field_email">${__('contributors.field_email')}</label>
                     <input type="email" id="ce-email" value="${escapeHTML(contributor.email || '')}">
                 </div>
+                ${contributor.additionalEmail?`<div class="form-group-field"><label for="ce-additional-email">${document.documentElement.lang==='en'?'Additional account email':'Ek hesap e-postası'}</label><input type="email" id="ce-additional-email" value="${escapeHTML(contributor.additionalEmail)}" readonly></div>`:''}
                 <div class="form-group-field">
                     <label for="ce-phone" data-i18n="contributors.field_phone">${__('contributors.field_phone')}</label>
                     <input type="text" id="ce-phone" value="${escapeHTML(contributor.phone || '')}">
@@ -428,6 +429,7 @@ function openContributorDetails(person) {
     function paint() {
         if (!body?.isConnected) return;
         const rows = [['contributors.field_department',displayDepartmentName(person.department)],['contributors.field_email',person.email],['contributors.field_phone',person.phone],['contributors.field_birth_date',birthDateLabel(person)],['contributors.field_language',person.language==='tr'?'Türkçe':person.language==='en'?'English':person.language],['contributors.col_status',person.hasVerified?__('contributors.verified_label'):__('contributors.unverified_label')],['contributors.delivery_label',__(person.emailSent===true?'contributors.delivery_succeeded':['pending','processing'].includes(person.certificateDeliveryStatus)?'contributors.delivery_pending':['uncertain','failed'].includes(person.certificateDeliveryStatus)?'contributors.delivery_failed':'contributors.delivery_unconfirmed')],['contributors.applied_at',formatCertificateDate(person.createdAt)],['contributors.field_interview',formatCertificateDate(person.interviewDate)],['cert.joined',person.joinedAt?formatCertificateDate(person.joinedAt):__('cert.not_joined')]];
+        if(person.additionalEmail)rows.splice(2,0,[document.documentElement.lang==='en'?'Additional account email':'Ek hesap e-postası',person.additionalEmail]);
         body.innerHTML=`<dl class="detail-list">${rows.map(([label,value])=>`<div class="detail-row"><dt>${__(label)}</dt><dd>${escapeHTML(String(value??'—'))}</dd></div>`).join('')}</dl>${person.about?`<p class="drawer-bio">${escapeHTML(person.about)}</p>`:''}<div class="contributor-links">${['linkedin','github'].filter(k=>/^https?:\/\//.test(person[k]||'')).map(k=>`<a class="chrome-btn-outline" href="${escapeHTML(person[k])}" target="_blank" rel="noopener noreferrer">${icon('brand-'+k)}${k==='linkedin'?'LinkedIn':'GitHub'}</a>`).join('')}</div>`;
         const footer=body.closest('.vx-drawer').querySelector('.vx-drawer-footer');
         if(isPanelAdmin()&&person.isVertex===true){

@@ -144,22 +144,10 @@ export function startApp(firebaseConfig) {
                 // Authentication token establishes identity only; Core and
                 // departments must be checked against current server records.
                 if(!deploymentCapabilities.consolePeople)throw new Error('Console authorization endpoint is unavailable.');
-                // Start both current-server checks together. Capture access errors until
-                // pending activation has had a chance to finish. Never trust cached claims.
-                const accessRequest=consolePeopleCall('getMyConsoleAccess',{}).then(value=>({value}),error=>({error}));
-                const ownProfile=(await db.collection('users').doc(user.uid).get()).data();
-                if(ownProfile?.personnelOwnership==='pending'){
-                    await user.reload();
-                    if(!user.emailVerified){
-                        showToast(()=>document.documentElement.lang==='en'?'Use Google sign-in or set your password using the setup link already sent to you. No separate verification email is needed.':'Google ile giriş yapın veya size gönderilen bağlantıdan şifrenizi belirleyin. Ayrı bir doğrulama e-postası gerekmiyor.','info');
-                        await auth.signOut();hideBootstrapLoader();return;
-                    }
-                    await consolePeopleCall('completePersonnelActivation',{});
-                }
-                const accessResult=ownProfile?.personnelOwnership==='pending'
-                    ? {value:await consolePeopleCall('getMyConsoleAccess',{})}:await accessRequest;
-                if(accessResult.error)throw accessResult.error;
-                const access=normalizeConsoleAccessResponse(accessResult.value.data);
+                // Active application provisioning prepares membership server-side.
+                // Every successful Auth provider uses the same access check.
+                const accessResult=await consolePeopleCall('getMyConsoleAccess',{});
+                const access=normalizeConsoleAccessResponse(accessResult.data);
                 let isAdmin=access.isCore;
                 let departments=access.departments;
                 if(epoch!==authEpoch)return;
