@@ -31,9 +31,10 @@ plaintext requests, token reuse, Chinese mapping and bounded concurrency.
 Cloud Shell verified a successful Google Translation v3 request under the
 existing runtime service account. `listSiteTeam` and `setSiteTeamEntry` were
 deployed directly; the write function's environment and service account were
-preserved. The translation callable uses `europe-west4` because the shared CPU
-quota in `europe-west1` is exhausted. The console routes only translation to
-that region, keeping Auth, App Check and callable errors under the Firebase SDK.
+preserved. All three callables use the existing `europe-west1` region. The new translation
+service started successfully with fractional CPU and startup CPU boost disabled
+to fit the nearly exhausted regional quota. Auth, App Check and callable errors
+remain under the Firebase SDK.
 
 Follow `docs/CHEF-BIOGRAPHIES.md` in Fulcrum PR #90 for direct terminal steps.
 The limited manifest selects only `listSiteTeam`, `setSiteTeamEntry` and
