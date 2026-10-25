@@ -149,9 +149,9 @@ export function startApp(firebaseConfig) {
                 const accessRequest=consolePeopleCall('getMyConsoleAccess',{}).then(value=>({value}),error=>({error}));
                 const ownProfile=(await db.collection('users').doc(user.uid).get()).data();
                 if(ownProfile?.personnelOwnership==='pending'){
+                    await user.reload();
                     if(!user.emailVerified){
-                        await user.sendEmailVerification({url:'https://admin.vertexishere.com/'});
-                        showToast(()=>document.documentElement.lang==='en'?'Please verify your email using the link just sent, then sign in again.':'E-postanıza gönderilen bağlantıyla adresinizi doğrulayın, ardından tekrar giriş yapın.','info');
+                        showToast(()=>document.documentElement.lang==='en'?'Use Google sign-in or set your password using the setup link already sent to you. No separate verification email is needed.':'Google ile giriş yapın veya size gönderilen bağlantıdan şifrenizi belirleyin. Ayrı bir doğrulama e-postası gerekmiyor.','info');
                         await auth.signOut();hideBootstrapLoader();return;
                     }
                     await consolePeopleCall('completePersonnelActivation',{});
