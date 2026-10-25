@@ -27,7 +27,7 @@ export function initApprovedAccountSetup(){
   try{
    permissionsStatus.textContent='Checking approved permissions…';
    const preview=await consolePeopleCall('sendConsolePasswordResets',{applyApprovedPermissions:true,preview:true});
-   const ids=preview.data.applicationIds;if(!Array.isArray(ids)||ids.length!==58||preview.data.chiefs!==9||preview.data.moderators!==10)throw Error('Approved permission roster changed.');
+   const ids=preview.data.applicationIds;if(preview.data.supportsLinkedAccounts!==true||!Array.isArray(ids)||ids.length!==58||preview.data.chiefs!==9||preview.data.moderators!==10)throw Error('Approved permission roster changed.');
    for(const id of ids){
     permissionsStatus.textContent='Applying approved permissions: '+permissionResults.length+'/'+ids.length;
     const {data}=await consolePeopleCall('sendConsolePasswordResets',{applyApprovedPermissions:true,provisionLinkedAccounts:true,applicationIds:[id]});
