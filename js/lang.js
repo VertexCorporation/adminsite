@@ -1,5 +1,13 @@
 const LANG = {
   tr: {
+    "loginAliases.title": "Giriş e-postaları",
+    "loginAliases.hint": "Eklenen adresler bu hesabın şifresini ve yetkilerini kullanır.",
+    "loginAliases.email": "Alternatif e-posta",
+    "loginAliases.add": "E-posta ekle",
+    "loginAliases.remove": "Adresi kaldır",
+    "loginAliases.more": "Daha fazla göster",
+    "loginAliases.add_confirm": "Bu adresin hesap sahibine ait olduğunu onaylayın. Adres, bu hesabın şifresiyle girişte kullanılabilecek.",
+    "loginAliases.remove_confirm": "Bu adresle giriş ve henüz açılmamış alternatif adres sıfırlama bağlantıları kapatılacak. Ana hesap korunacak.",
     "resetAccount.title": "Şifre Sıfırlama",
     "resetAccount.intro": "Tek veya birden fazla e-posta adresine 3 gün geçerli şifre sıfırlama bağlantısı gönderin.",
     "resetAccount.emails": "E-posta adresleri",
@@ -1017,6 +1025,14 @@ const LANG = {
   },
 
   en: {
+    "loginAliases.title": "Sign-in email addresses",
+    "loginAliases.hint": "Added addresses use this account's password and permissions.",
+    "loginAliases.email": "Alternative email",
+    "loginAliases.add": "Add email",
+    "loginAliases.remove": "Remove address",
+    "loginAliases.more": "Show more",
+    "loginAliases.add_confirm": "Confirm that this address belongs to the account owner. It will allow sign-in using this account's password.",
+    "loginAliases.remove_confirm": "Sign-in with this address and alias reset invitations not yet exchanged will stop working. The primary account will be preserved.",
     "resetAccount.title": "Password Reset",
     "resetAccount.intro": "Send password reset links valid for 3 days to one or more email addresses.",
     "resetAccount.emails": "Email addresses",
