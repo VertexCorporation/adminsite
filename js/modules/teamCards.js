@@ -1,3 +1,4 @@
+import {mountBiographyEditor} from './teamBiographies.js';
 import { crossfade } from '../ui/transition.js';
 import { registerListRefresh } from '../ui/listRefresh.js';
 // Public website directory (siteTeam kind=card). The public homepage and
@@ -63,7 +64,7 @@ function renderTeamCardsList(){
     '<span class="team-list-name">'+escapeHTML(card.name)+'</span>'+
     '<span class="position-badge">'+escapeHTML(card.position)+'</span></div>'+
     '<span class="team-list-meta">'+escapeHTML(title)+'</span>'+
-    '<span class="team-list-meta">'+(card.bio?.trim()?'Biyografi mevcut':'Biyografi yok — kart tıklanamaz')+'</span></div>'+
+    '<span class="team-list-meta">'+((card.bio?.trim()||Object.values(card.biographies||{}).some(value=>typeof value==='string'&&value.trim()))?(getLang()==='tr'?'Biyografi mevcut':'Biography available'):(getLang()==='tr'?'Biyografi yok — kart tıklanamaz':'No biography — profile unavailable'))+'</span></div>'+
     '<div class="team-list-actions"><button class="icon-btn" type="button" data-edit-card="'+escapeHTML(card.id)+'" aria-label="'+__('common.edit')+'">'+icon('pencil',{size:16})+'</button>'+
     '<button class="icon-btn danger" type="button" data-del-card="'+escapeHTML(card.id)+'" aria-label="'+__('common.delete')+'">'+icon('trash',{size:16})+'</button></div></div>';
  }).join('');});
@@ -116,13 +117,13 @@ export function openTeamCardDrawer(existing=null){
    return '<option value="'+code+'" '+(existing?.position===code?'selected':'')+' '+(occupier?'disabled':'')+'>'+
    (code==='CDO'?'CDO — Chief Design Officer':code)+(occupier?' ('+escapeHTML(occupier.name)+')':'')+'</option>';
  }).join('')+'</select></div>'+
- '<div class="form-group-field"><label for="team-card-bio">Biyografi (boşsa profil açılmaz)</label>'+
- '<textarea id="team-card-bio" rows="7" maxlength="6000" placeholder="Kişinin biyografisi; yeni paragraf için boş satır bırakın.">'+escapeHTML(existing?.bio||'')+'</textarea></div>'+
+ '<div class="form-section" id="team-biographies"></div>'+
  '<div class="form-section"><div class="form-section-title">Bağlantılar</div>'+
  SOCIAL_FIELDS.map(([key,label])=>
  '<div class="form-group-field"><label for="team-card-'+key+'">'+(key==='email'?__('team_cards.email_label'):label)+'</label>'+
  '<input type="'+(key==='email'?'email':'url')+'" id="team-card-'+key+'" maxlength="2048" placeholder="'+(key==='email'?'name@vertexishere.com':'https://')+'" value="'+escapeHTML(links[key]||'')+'"></div>').join('')+
  '</div></form>';
+ const biographies=mountBiographyEditor(body.querySelector('#team-biographies'),existing||{});
  const fileInput=body.querySelector('#team-card-photo-input');
  body.querySelector('#team-card-choose-photo').addEventListener('click',()=>fileInput.click());
  fileInput.addEventListener('change',()=>{
@@ -138,6 +139,7 @@ export function openTeamCardDrawer(existing=null){
  });
  body.querySelector('#team-card-form').addEventListener('submit',async event=>{
    event.preventDefault();if(saving)return;
+   if(biographies.busy){showToast(()=>getLang()==='tr'?'Çevirinin tamamlanmasını bekleyin.':'Wait for translation to finish.','error');return;}
    const name=body.querySelector('#team-card-name').value.trim();
    const position=body.querySelector('#team-card-position').value;
    if(!name||!POSITIONS.includes(position))return;
@@ -157,7 +159,7 @@ export function openTeamCardDrawer(existing=null){
        return value?[{label,url:key==='email'?'mailto:'+value:value}]:[];
      });
      await setSiteTeamEntryFn({kind:'card',id:existing?.id,name,position,
-       imageUrl,links,bio:body.querySelector('#team-card-bio').value.trim()});
+       imageUrl,links,...biographies.read()});
      closeDrawer();showToast(()=>__('team_cards.saved'),'success');
      await loadTeamCards();
    }catch(error){showToast(()=>userErrorMessage(error),'error');}
