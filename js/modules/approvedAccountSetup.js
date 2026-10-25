@@ -36,8 +36,8 @@ export function initApprovedAccountSetup(){
    }
    const ready=permissionResults.filter(r=>r.consoleReady).length,corporate=permissionResults.filter(r=>r.corporateUid&&r.corporateUid!==r.uid&&r.corporateReady).length;
    permissionsStatus.textContent=document.documentElement.lang==='en'
-    ?permissionResults.length+' members assigned. Chiefs: 9. Moderators: 10. Primary accounts ready: '+ready+'. Awaiting email verification: '+(permissionResults.length-ready)+'. Additional corporate accounts ready: '+corporate+'.'
-    :permissionResults.length+' üyeye izin atandı. Şef: 9. Moderatör: 10. Erişimi hazır ana hesap: '+ready+'. E-posta doğrulaması bekleyen: '+(permissionResults.length-ready)+'. Ek kurumsal hesap: '+corporate+'.';
+    ?permissionResults.length+' members assigned. Chiefs: 9. Moderators: 10. Primary accounts ready: '+ready+'. Awaiting first sign-in or password setup: '+(permissionResults.length-ready)+'. Additional corporate accounts ready: '+corporate+'.'
+    :permissionResults.length+' üyeye izin atandı. Şef: 9. Moderatör: 10. Erişimi hazır ana hesap: '+ready+'. İlk giriş veya şifre belirleme bekleyen: '+(permissionResults.length-ready)+'. Ek kurumsal hesap: '+corporate+'.';
   }catch(error){console.error('[APPROVED_PERMISSIONS]',error.code||'client-error');permissionsStatus.textContent=permissionResults.length+'/58 completed. '+userErrorMessage(error)+(error.code?' ('+error.code+')':' '+String(error.message||'').slice(0,160));}
   finally{busy=false;permissionsButton.disabled=false;button.disabled=false;}
  });
