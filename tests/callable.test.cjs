@@ -13,6 +13,7 @@ function harness(handler,{signedIn=true}={}){
    }},
    console:{error(){},warn(){}},setTimeout,clearTimeout,Promise
  };
+ box.firebase={app:()=>({functions:region=>({httpsCallable:(name,settings)=>{definitions.push({name,settings,region});return async data=>{calls.push({name,data});return handler(name,data,calls.length);};}})})};
  vm.createContext(box);
  vm.runInContext(source.slice(source.indexOf('// Firebase Functions SDK owns'),source.indexOf('// httpsCallable')),box);
  return {...box,calls,definitions,call:box.callCallable};
@@ -61,4 +62,11 @@ test('malformed successful payload fails safely',async()=>{
  const h=harness(async()=>({wrong:true}));
  await assert.rejects(h.call('setUserDepartments'),e=>e.code==='functions/internal');
  assert.equal(h.calls.length,1);
+});
+
+test('biography translation alone selects its deployed region and keeps the SDK callable protocol',async()=>{
+ const h=harness(async()=>({data:{translations:{tr:'Metin'}}}));
+ const r=await h.call('translateTeamBiography',{text:'Text',sourceLang:'en',targetLangs:['tr']});
+ assert.equal(r.data.translations.tr,'Metin');assert.equal(h.definitions[0].region,'europe-west4');assert.equal(h.definitions[0].settings.timeout,20000);
+ await h.call('setSiteTeamEntry',{kind:'card'});assert.equal(h.definitions[1].region,undefined);
 });
