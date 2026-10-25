@@ -1,4 +1,5 @@
 import { initApprovedAccountSetup } from './modules/approvedAccountSetup.js';
+import { signInWithAccountEmail } from './utils/account-email-login.js';
 import { createWorkspaceLoader } from './utils/workspace-loader.js';
 import { initEventsModule } from './modules/events.js';
 import { initDirectoryModule } from './modules/directory.js';
@@ -224,13 +225,7 @@ export function startApp(firebaseConfig) {
         if(!email||!password){showToast(()=>__('auth.required'),'info');return;}
         loginPending=true;dom.loginBtn.disabled=true;dom.loginBtn.setAttribute('aria-busy','true');
         try{
-            try{await auth.signInWithEmailAndPassword(email,password);}
-            catch(error){
-                if(!/^[a-z]+@vertexishere\.com$/i.test(email)||!['auth/invalid-credential','auth/user-not-found','auth/wrong-password','auth/invalid-login-credentials'].includes(error.code))throw error;
-                const {data}=await consolePeopleCall('signInWithPersonnelEmail',{email,password});
-                if(typeof data?.token!=='string')throw error;
-                await auth.signInWithCustomToken(data.token);
-            }
+            await signInWithAccountEmail(auth,consolePeopleCall,email,password);
         }catch(error){console.error('[AUTH] Login failed',error.code);showToast(()=>userErrorMessage(error),'error');}
         finally{loginPending=false;dom.loginBtn.disabled=false;dom.loginBtn.removeAttribute('aria-busy');}
     }
@@ -455,3 +450,4 @@ function hideBootstrapLoader() {
     loader.addEventListener('transitionend',()=>loader.remove(),{once:true});
     setTimeout(()=>loader.remove(),window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:220);
 }
+

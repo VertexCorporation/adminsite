@@ -1,4 +1,5 @@
 import { registerListRefresh } from '../ui/listRefresh.js';
+import { mountAccountLoginAliases } from './accountLoginAliases.js';
 import { auth, consolePeopleCall, verifyUserEmailFn } from '../core/firebase.js';
 import { isPanelAdmin, getEffectivePanelLevel } from './roles.js';
 import { openDrawer, closeDrawer, confirmDialog } from './shell.js';
@@ -58,6 +59,9 @@ async function openUser(summary){
  try{const {data}=await consolePeopleCall('getConsoleUser',{uid:summary.uid});if(closed||!body.isConnected||actor!==auth.currentUser?.uid)return;const u=data.user;
  body.innerHTML=`<div class="catalog-identity catalog-user-heading">${identity(u)}</div><dl class="profile-details">${field('profile.uid',u.uid)}${field('people.created',date(u.authCreatedAt))}${field('people.email_status',yes(u.emailVerified))}${field('catalog.account',__(u.disabled?'catalog.banned':'catalog.enabled'))}${field('people.membership',__('people.'+u.membership))}${field('people.department',u.departments?.join(', ')||u.department)}${field('people.subscription',(u.subscription?.tier||'free').toUpperCase())}</dl><div class="catalog-actions"><button type="button" class="chrome-btn-outline" id="directory-manage-status">${esc(__('catalog.status'))}</button>${getEffectivePanelLevel('subscriptions.assign')==='write'?`<button type="button" class="chrome-btn-outline" id="directory-assign-subscription">${esc(__('subs.assign_btn'))}</button>`:''}</div>`;
  body.querySelector('#directory-manage-status').onclick=()=>showStatus(u);body.querySelector('#directory-assign-subscription')?.addEventListener('click',()=>subscription(u));
+ if(isPanelAdmin()&&u.membership==='active'){
+  const aliases=document.createElement('section');body.append(aliases);mountAccountLoginAliases(aliases,u.uid);
+ }
  }catch(error){if(!closed&&body.isConnected&&actor===auth.currentUser?.uid)body.textContent=userErrorMessage(error);}
 }
 function paintStatus(u){
@@ -105,3 +109,4 @@ export function initDirectoryModule(){
  onLangChange(()=>{if(state.users.length)paintRows();else paintPager();if(state.selected)paintStatus(state.selected);if(state.stats)void statistics();});
 }
 let statusEpoch=0;
+
