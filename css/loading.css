@@ -156,3 +156,24 @@
     .sk-chat-msg { max-width:90%; }
     .sk-card { padding:var(--space-3); }
 }
+
+/* Weekly Stars uses the same light sweep for text-only saves and retries.
+   Preserve the accessible label and button dimensions throughout the request. */
+#weekly-stars-container .button-pending{position:relative;overflow:hidden;animation:none}
+#weekly-stars-container .button-pending::after{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(90deg,transparent,currentColor,transparent);
+    opacity:.14;transform:translateX(-100%);
+    animation:skeletonWave 800ms ease-in-out infinite alternate;
+}
+#weekly-stars-container.is-refreshing::before{
+    width:100%;transform:none;
+    background:linear-gradient(90deg,transparent,var(--text-muted),transparent);
+    background-size:200% 100%;
+    animation:weeklyStarsRefreshShimmer 1600ms ease-in-out infinite;
+}
+@keyframes weeklyStarsRefreshShimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+@media(prefers-reduced-motion:reduce){
+    #weekly-stars-container .button-pending::after,
+    #weekly-stars-container.is-refreshing::before{animation:none;transform:none}
+}

@@ -10,7 +10,7 @@ import {
 import {escapeHTML, showToast, userErrorMessage, __, getLang, onLangChange} from '../utils/ui.js';
 import {icon} from '../utils/icons.js';
 import {openDrawer, closeDrawer, confirmDialog} from './shell.js';
-import {setButtonLoading} from '../utils/loading.js';
+import {beginPanelLoading, skeletonFormField, setButtonLoading} from '../utils/loading.js';
 import {isoWeekInIstanbul} from '../utils/isoWeek.js';
 import {loadWeeklyStarsDirectory} from '../utils/weekly-stars-directory.js';
 import {showLoadError} from '../ui/states.js';
@@ -178,8 +178,7 @@ const starId=person=>person&&typeof person==='object'?person.id:null;
 export async function initWeeklyStarsPanel() {
     const container = document.getElementById('weekly-stars-container');
     if (!container) return;
-    if(!weeklyCache)container.textContent=__('common.loading');
-    container.setAttribute('aria-busy','true');
+    const finishLoading=beginPanelLoading(container,skeletonFormField);
     try {
         const {data}=await getWeeklyStarsFn({});
         if(!data||!Array.isArray(data.history))throw new Error('Invalid weekly stars result');
@@ -192,9 +191,9 @@ export async function initWeeklyStarsPanel() {
         renderWeeklyStars(container,{...data,directory:weeklyDirectory,directoryError});
     } catch(err) {
         console.warn('[WEEKLY_STARS] Load failed:',err);
-        if(weeklyCache)showToast(()=>userErrorMessage(err),'error');
-        else showLoadError(container,()=>userErrorMessage(err),initWeeklyStarsPanel);
-    }finally{container.removeAttribute('aria-busy');}
+        showLoadError(container,()=>userErrorMessage(err),initWeeklyStarsPanel,
+            {staleSelector:'#weekly-stars-form'});
+    }finally{finishLoading();}
 }
 
 function renderWeeklyStars(container, starsData) {
@@ -318,7 +317,12 @@ function renderWeeklyStars(container, starsData) {
     drawSelected();
     drawResults();
     const retryDirectory=container.querySelector('#stars-directory-retry');
-    if(retryDirectory)retryDirectory.onclick=initWeeklyStarsPanel;
+    if(retryDirectory)retryDirectory.onclick=async()=>{
+        if(retryDirectory.disabled)return;
+        setButtonLoading(retryDirectory,true);
+        try{await initWeeklyStarsPanel();}
+        finally{setButtonLoading(retryDirectory,false);}
+    };
     if(starsData.directoryError)container.querySelector('#save-weekly-stars-btn').disabled=true;
 
     const form = container.querySelector('#weekly-stars-form');
@@ -330,6 +334,7 @@ function renderWeeklyStars(container, starsData) {
         const contributors = selected.slice();
 
         const saveBtn = container.querySelector('#save-weekly-stars-btn');
+        if(saveBtn.disabled)return;
         setButtonLoading(saveBtn, true);
 
         try {
