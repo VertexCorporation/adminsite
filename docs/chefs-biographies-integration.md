@@ -52,3 +52,18 @@ After backend deploy, verify the full console translation → review → save �
 localized homepage/profile path, then release the frontends using their direct
 publishing path. The existing immutable console snapshot already contains the
 new editor; no extra Actions snapshot job is needed for this branch.
+
+## Translation client deadline repair (2026-10-26)
+
+The translation callable now has a dedicated 60-second client deadline. The
+server's existing 20-second execution deadline, provider deadline and quotas
+are unchanged. The previous equal 20-second client/server deadlines left no
+room for cold startup or queueing. Live Cloud Run logs showed roughly ten
+seconds of cold startup; an authenticated retry in the existing console draft
+returned all 15 translations. The earlier error code was not retained, so its
+exact cause cannot be proven retrospectively. Callable diagnostics now include
+the safe Firebase error code, with no request text or credentials. Translation
+remains non-retried to avoid duplicate quota consumption. Eleven focused
+transport tests, syntax checks and all 79 immutable asset checks pass. The
+broader suite passes 175 checks; four fixture-dependent files require a sibling
+Fulcrum checkout and could not run in this isolated frontend checkout.
