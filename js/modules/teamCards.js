@@ -21,7 +21,7 @@ let teamCards=[];
 let cardsLoading=false;
 let cardsLoaded=false;
 const byId=id=>document.getElementById(id);
-const SOCIAL_FIELDS=Object.freeze([['linkedin','LinkedIn'],['instagram','Instagram'],['x','X'],['email','Email'],['tiktok','TikTok']]);
+const SOCIAL_FIELDS=Object.freeze([['linkedin','LinkedIn'],['instagram','Instagram'],['x','X'],['tiktok','TikTok'],['email','Email']]);
 const linksFor=card=>Object.fromEntries((card?.links||[]).map(link=>{
  let key=String(link.label||'').toLowerCase();
  if(key==='twitter')key='x';
