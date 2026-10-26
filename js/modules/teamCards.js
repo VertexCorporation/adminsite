@@ -12,6 +12,7 @@ import {icon} from '../utils/icons.js';
 import {openDrawer, closeDrawer, confirmDialog} from './shell.js';
 import {setButtonLoading} from '../utils/loading.js';
 import {isoWeekInIstanbul} from '../utils/isoWeek.js';
+import {loadWeeklyStarsDirectory} from '../utils/weekly-stars-directory.js';
 import {showLoadError} from '../ui/states.js';
 
 export const POSITIONS=Object.freeze(['CEO','CTO','COO','CFO','CMO','CDO','CHRO','CCO','CLO','CITO']);
@@ -185,10 +186,8 @@ export async function initWeeklyStarsPanel() {
         weeklyCache=data;
         let directoryError=null;
         try{
-            const response=await getVertexContributorsFn({});
-            if(!Array.isArray(response.data?.contributors))throw new Error('Invalid participant directory');
-            weeklyDirectory=response.data.contributors.filter(person=>
-                person&&typeof person.id==='string'&&person.name&&person.isVertex===true);
+            weeklyDirectory=(await loadWeeklyStarsDirectory(getVertexContributorsFn))
+                .sort((a,b)=>a.name.localeCompare(b.name,getLang()==='tr'?'tr':'en'));
         }catch(error){directoryError=error;weeklyDirectory=[];}
         renderWeeklyStars(container,{...data,directory:weeklyDirectory,directoryError});
     } catch(err) {
@@ -225,7 +224,7 @@ function renderWeeklyStars(container, starsData) {
                 <div class="form-group-field">
                     <label for="stars-person-search">${__('weekly_stars.contributors_label')}</label>
                     <div id="stars-selected" class="stars-selected" aria-live="polite"></div>
-                    <div class="search-field">
+                    <div class="search-input-field">
                         ${icon('search',{size:16})}
                         <input type="search" id="stars-person-search" autocomplete="off"
                            placeholder="${getLang()==='tr'?'Katılımcı ara':'Search participants'}" 
@@ -288,9 +287,8 @@ function renderWeeklyStars(container, starsData) {
     const drawResults=()=>{
         results.replaceChildren();
         const query=search.value.trim().toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US');
-        if(!query)return;
         const matches=directory.filter(person=>!selected.some(entry=>starId(entry)===person.id)&&
-            (person.name+' '+(person.email||'')).toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US').includes(query)).slice(0,20);
+            (person.name+' '+(person.email||'')).toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US').includes(query));
         matches.forEach(person=>{
             const button=document.createElement('button');
             button.type='button';button.className='stars-person-result';
@@ -318,6 +316,7 @@ function renderWeeklyStars(container, starsData) {
     };
     search.addEventListener('input',drawResults);
     drawSelected();
+    drawResults();
     const retryDirectory=container.querySelector('#stars-directory-retry');
     if(retryDirectory)retryDirectory.onclick=initWeeklyStarsPanel;
     if(starsData.directoryError)container.querySelector('#save-weekly-stars-btn').disabled=true;
