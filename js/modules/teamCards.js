@@ -13,6 +13,7 @@ import {openDrawer, closeDrawer, confirmDialog} from './shell.js';
 import {beginPanelLoading, skeletonFormField, setButtonLoading} from '../utils/loading.js';
 import {isoWeekInIstanbul} from '../utils/isoWeek.js';
 import {loadWeeklyStarsDirectory} from '../utils/weekly-stars-directory.js';
+import {persistWeeklyStars} from '../utils/weekly-stars-save.js';
 import {showLoadError} from '../ui/states.js';
 
 export const POSITIONS=Object.freeze(['CEO','CTO','COO','CFO','CMO','CDO','CHRO','CCO','CLO','CITO']);
@@ -173,23 +174,28 @@ export function openTeamCardDrawer(existing=null){
  */
 let weeklyCache=null;
 let weeklyDirectory=[];
+let weeklyLoadEpoch=0,weeklySaveRequest=null;
 const starName=person=>typeof person==='string'?person:(person?.name||'');
 const starId=person=>person&&typeof person==='object'?person.id:null;
 export async function initWeeklyStarsPanel() {
     const container = document.getElementById('weekly-stars-container');
-    if (!container) return;
+    if (!container || weeklySaveRequest) return;
+    const epoch=++weeklyLoadEpoch;
     const finishLoading=beginPanelLoading(container,skeletonFormField);
     try {
         const {data}=await getWeeklyStarsFn({});
         if(!data||!Array.isArray(data.history))throw new Error('Invalid weekly stars result');
-        weeklyCache=data;
         let directoryError=null;
+        let directory=[];
         try{
-            weeklyDirectory=(await loadWeeklyStarsDirectory(getVertexContributorsFn))
+            directory=(await loadWeeklyStarsDirectory(getVertexContributorsFn))
                 .sort((a,b)=>a.name.localeCompare(b.name,getLang()==='tr'?'tr':'en'));
-        }catch(error){directoryError=error;weeklyDirectory=[];}
+        }catch(error){directoryError=error;}
+        if(epoch!==weeklyLoadEpoch)return;
+        weeklyCache=data;weeklyDirectory=directory;
         renderWeeklyStars(container,{...data,directory:weeklyDirectory,directoryError});
     } catch(err) {
+        if(epoch!==weeklyLoadEpoch)return;
         console.warn('[WEEKLY_STARS] Load failed:',err);
         showLoadError(container,()=>userErrorMessage(err),initWeeklyStarsPanel,
             {staleSelector:'#weekly-stars-form'});
@@ -239,6 +245,7 @@ function renderWeeklyStars(container, starsData) {
                     <button type="submit" class="chrome-btn-primary" id="save-weekly-stars-btn">
                         ${__('weekly_stars.save_btn')}
                     </button>
+                    <p id="weekly-stars-save-status" class="form-hint" role="status" aria-live="polite">${starsData.saveStatus?escapeHTML(__('weekly_stars.saved')):''}</p>
                 </div>
             </form>
 
@@ -262,6 +269,7 @@ function renderWeeklyStars(container, starsData) {
     const selected=Array.isArray(current?.contributors)?current.contributors.slice():[];
     const directory=starsData.directory||[];
     const selectedHost=container.querySelector('#stars-selected');
+    const clearSaveStatus=()=>{container.querySelector('#weekly-stars-save-status').textContent='';};
     const search=container.querySelector('#stars-person-search');
     const results=container.querySelector('#stars-search-results');
     const drawSelected=()=>{
@@ -279,7 +287,7 @@ function renderWeeklyStars(container, starsData) {
             const button=document.createElement('button');
             button.type='button';button.textContent='×';
             button.setAttribute('aria-label',__('common.delete')+' '+starName(person));
-            button.onclick=()=>{selected.splice(index,1);drawSelected();drawResults();};
+            button.onclick=()=>{clearSaveStatus();selected.splice(index,1);drawSelected();drawResults();};
             chip.append(button);selectedHost.append(chip);
         });
     };
@@ -302,6 +310,7 @@ function renderWeeklyStars(container, starsData) {
                     return;
                 }
                 selected.push({id:person.id,name:person.name});
+                clearSaveStatus();
                 search.value='';drawSelected();drawResults();
                 search.focus({preventScroll:true});
             };
@@ -326,6 +335,7 @@ function renderWeeklyStars(container, starsData) {
     if(starsData.directoryError)container.querySelector('#save-weekly-stars-btn').disabled=true;
 
     const form = container.querySelector('#weekly-stars-form');
+    form.addEventListener('input',clearSaveStatus);
     form.onsubmit = async e => {
         e.preventDefault();
         const week = parseInt(container.querySelector('#stars-week').value, 10);
@@ -334,23 +344,51 @@ function renderWeeklyStars(container, starsData) {
         const contributors = selected.slice();
 
         const saveBtn = container.querySelector('#save-weekly-stars-btn');
-        if(saveBtn.disabled)return;
+        if(saveBtn.disabled || weeklySaveRequest)return;
+        const request={},epoch=++weeklyLoadEpoch,uid=auth.currentUser?.uid;
+        weeklySaveRequest=request;
+        const status=container.querySelector('#weekly-stars-save-status');
+        status.textContent='';
+        const controls=[...form.elements].map(control=>[control,control.disabled]);
         setButtonLoading(saveBtn, true);
-
+        controls.forEach(([control])=>{control.disabled=true;});
+        form.setAttribute('aria-busy','true');
+        let saved,error;
         try {
-            await setWeeklyStarsFn({
+            saved=await persistWeeklyStars({
                 weekNumber: week,
                 year,
                 title,
                 contributors
-            });
-            showToast(() => __('weekly_stars.saved'), 'success');
-            await initWeeklyStarsPanel();
+            },{write:setWeeklyStarsFn,read:getWeeklyStarsFn});
         } catch (err) {
-            showToast(() => userErrorMessage(err), 'error');
+            error=err;
         } finally {
+            if(weeklySaveRequest===request)weeklySaveRequest=null;
             setButtonLoading(saveBtn, false);
+            controls.forEach(([control,disabled])=>{control.disabled=disabled;});
+            form.removeAttribute('aria-busy');
         }
+        if(epoch!==weeklyLoadEpoch || auth.currentUser?.uid!==uid)return;
+        if(error){
+            const message=()=>error.reason==='weekly-stars-save-unconfirmed'
+                ? (getLang()==='tr'?'Kaydın sonucu doğrulanamadı. Listeyi yenileyerek kontrol edin.':'Could not confirm the save. Refresh the list to check.')
+                : userErrorMessage(error);
+            status.textContent=message();showToast(message,'error');return;
+        }
+        // The write returns the authoritative selection. Updating it locally
+        // avoids another directory fetch keeping the completed save pending.
+        const previous=weeklyCache?.current;
+        const history=Array.isArray(saved.history)?saved.history.slice():[
+            ...(previous?[previous]:[]),...(weeklyCache?.history||[])
+        ];
+        const seen=new Set([saved.current.year+'-'+saved.current.weekNumber]);
+        weeklyCache={current:saved.current,history:history.filter(row=>{
+            const key=row.year+'-'+row.weekNumber;
+            if(seen.has(key))return false;seen.add(key);return true;
+        }).sort((a,b)=>b.year-a.year||b.weekNumber-a.weekNumber)};
+        renderWeeklyStars(container,{...weeklyCache,directory:weeklyDirectory,saveStatus:true});
+        showToast(() => __('weekly_stars.saved'), 'success');
     };
 }
 
@@ -370,6 +408,7 @@ export function initTeamCardsPanel() {
     });
     auth.onAuthStateChanged(user=>{
         if(user)return;
+        weeklyLoadEpoch++;weeklySaveRequest=null;
         weeklyCache=null;weeklyDirectory=[];cardsLoaded=false;teamCards=[];
         document.getElementById('weekly-stars-container')?.replaceChildren();
         document.getElementById('team-cards-list')?.replaceChildren();

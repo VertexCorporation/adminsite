@@ -19,7 +19,7 @@ function fixture(fetchStars,fetchDirectory=async()=>[]){
         userErrorMessage:e=>e.message,console:{warn:()=>{}}
     };
     vm.createContext(context);
-    vm.runInContext('let weeklyCache=null,weeklyDirectory=[];'+implementation+';this.load=initWeeklyStarsPanel;',context);
+    vm.runInContext('let weeklyCache=null,weeklyDirectory=[],weeklyLoadEpoch=0,weeklySaveRequest=null;'+implementation+';this.load=initWeeklyStarsPanel;',context);
     return {load:context.load,events};
 }
 
