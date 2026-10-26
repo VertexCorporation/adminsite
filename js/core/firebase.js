@@ -31,6 +31,9 @@ let prepareModelImageCleanupFn, confirmModelImageCleanupFn;
 // Firebase Functions SDK owns endpoint discovery, Auth and App Check headers,
 // CORS and HTTP error decoding. No hard-coded Cloud Run service names.
 const CALLABLE_TIMEOUT_MS = 20000;
+// Translation's 20-second server execution can follow a cold start or queue.
+// The client deadline must allow both; this remains a single, non-retried call.
+const BIOGRAPHY_TRANSLATION_TIMEOUT_MS = 60000;
 const callableCache = new Map();
 const RETRYABLE_READS = new Set([
     'listConsoleUsers','getConsoleUser','getConsoleUserStatistics',
@@ -72,7 +75,7 @@ function getCallable(name) {
     }
     let fn=callableCache.get(name);
     if (!fn) {
-        fn=functions.httpsCallable(name,{timeout:name==='sendConsolePasswordResets'?540000:CALLABLE_TIMEOUT_MS});
+        fn=functions.httpsCallable(name,{timeout:name==='sendConsolePasswordResets'?540000:name==='translateTeamBiography'?BIOGRAPHY_TRANSLATION_TIMEOUT_MS:CALLABLE_TIMEOUT_MS});
         callableCache.set(name,fn);
     }
     return fn;
@@ -108,7 +111,7 @@ async function callCallable(name,data) {
             // Mutations are NEVER blindly resent: the server may have committed
             // even when a response times out.
             if(attempt===attempts-1 || !TRANSIENT_CODES.has(error.code) || !auth?.currentUser){
-                console.error('[CONSOLE_OPERATION]',{operation:'firebase.callable',function:name,category:classifyCallableError(error),durationMs:Math.max(0,Date.now()-started),release:globalThis.document?.querySelector?.('meta[name="vertex-release"]')?.content||'development',requestId});
+                console.error('[CONSOLE_OPERATION]',{operation:'firebase.callable',function:name,code:error.code,category:classifyCallableError(error),durationMs:Math.max(0,Date.now()-started),release:globalThis.document?.querySelector?.('meta[name="vertex-release"]')?.content||'development',requestId});
                 // No request body, user identity, credentials or remote technical message.
                 error.requestId=requestId;
                 throw error;
