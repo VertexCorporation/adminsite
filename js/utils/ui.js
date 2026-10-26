@@ -1,5 +1,5 @@
 import { showToast } from '../ui/toast.js';
-import { __ } from '../lang.js';
+import { __, getLang } from '../lang.js';
 export { showToast, dismissToasts } from '../ui/toast.js';
 // js/utils/ui.js
 
@@ -73,6 +73,9 @@ export async function getAuthToken(auth) {
 export function userErrorMessage(error, context='') {
     const code=String(error?.code||'').replace('functions/','').replace('auth/','');
     const reason=error?.details?.reason;
+    if(reason==='personnel-rollout-pending') return __('errors.personnel_rollout');
+    if(reason==='personnel-membership-review') return __('errors.personnel_membership');
+    if(reason==='personnel-version-conflict') return __('errors.personnel_stale');
     if(reason==='certificate-delivery-not-ready') {
         const blockers={
             'expansion-disabled':'cert.delivery_expansion_disabled',

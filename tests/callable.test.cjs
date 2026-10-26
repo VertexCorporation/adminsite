@@ -62,3 +62,13 @@ test('malformed successful payload fails safely',async()=>{
  await assert.rejects(h.call('setUserDepartments'),e=>e.code==='functions/internal');
  assert.equal(h.calls.length,1);
 });
+
+test('department preconditions retain actionable, localized error explanations',()=>{
+  const ui=fs.readFileSync('js/utils/ui.js','utf8');
+  const lang=fs.readFileSync('js/lang.js','utf8');
+  assert(ui.includes("import { __, getLang } from '../lang.js';"));
+  for(const reason of ['personnel-rollout-pending','personnel-membership-review','personnel-version-conflict'])
+    assert(ui.includes(reason),reason);
+  for(const key of ['errors.personnel_rollout','errors.personnel_membership','errors.personnel_stale'])
+    assert.equal(lang.split("'"+key+"'").length,3,key+' must be translated to both languages');
+});
