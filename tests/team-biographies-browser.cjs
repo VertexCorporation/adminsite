@@ -24,9 +24,9 @@ const server=http.createServer((req,res)=>{
  try{
  const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
- await page.evaluate(async()=>{const {mountBiographyEditor}=await import('/js/modules/teamBiographies.js');window.mount=card=>window.editor=mountBiographyEditor(document.querySelector('#editor'),card);window.mount({bio:'Legacy biography',bioSourceLang:'en',biographies:{tr:'Türkçe metin',fr:'Texte vérifié'}});});
+ await page.evaluate(async()=>{const {mountBiographyEditor}=await import('/js/modules/teamBiographies.js');window.mount=card=>window.editor=mountBiographyEditor(document.querySelector('#editor'),card);window.mount({bio:'Legacy biography',bioSourceLang:'en',biographies:{en:'English biography',tr:'Türkçe metin',fr:'Texte vérifié'}});});
  assert.equal(await page.locator('[data-bio-lang]').count(),16);
- assert.equal(await page.locator('[data-bio-lang=en]').inputValue(),'Legacy biography');
+ assert.equal(await page.locator('[data-bio-lang=en]').inputValue(),'English biography');
  await page.locator('#team-bio-translate').click();
  assert(await page.evaluate(()=>editor.busy));
  const request=await page.evaluate(()=>calls.at(-1));assert.equal(request.sourceLang,'en');assert.equal(request.targetLangs.length,13);assert(!request.targetLangs.includes('fr'));
@@ -46,18 +46,15 @@ const server=http.createServer((req,res)=>{
  await page.locator('#team-bio-overwrite').check();await page.locator('#team-bio-translate').click();
  assert.equal(await page.evaluate(()=>calls.at(-1).targetLangs.length),15);
  await page.evaluate(()=>fail(new Error('Provider error')));await page.waitForFunction(()=>!editor.busy);
- const saved=await page.evaluate(()=>editor.read());assert.equal(saved.biographies.fr,'Texte vérifié');assert.equal(saved.bio,'Changed source');assert.equal(saved.bioSourceLang,'en');assert.equal(Object.keys(saved.biographies).length,16);
+ const saved=await page.evaluate(()=>editor.read());assert.equal(saved.biographies.fr,'Texte vérifié');assert.equal(Object.hasOwn(saved,'bio'),false);assert.equal(saved.biographies.en,'Changed source');assert.equal(saved.bioSourceLang,'en');assert.equal(Object.keys(saved.biographies).length,16);
  assert.equal(await page.evaluate(()=>toasts.at(-1)[1]),'error');
- // Untagged legacy text must be assigned to a language before editing localized fields.
- await page.evaluate(()=>mount({bio:'Untagged legacy'}));
- assert.equal(await page.locator('#team-bio-source').inputValue(),'');
- assert(await page.locator('#team-bio-language').isDisabled());
- assert(!(await page.locator('[data-bio-lang=tr]').isVisible()));
- await page.locator('#team-bio-source').selectOption('en');
- assert.equal(await page.locator('[data-bio-lang=en]').inputValue(),'Untagged legacy');
+ // The retired legacy field is ignored; only localized biographies are edited.
+ await page.evaluate(()=>mount({bio:'Retired legacy'}));
+ assert.equal(await page.locator('#team-bio-legacy').count(),0);
+ assert.equal(await page.locator('[data-bio-lang=tr]').inputValue(),'');
  assert(await page.locator('#team-bio-language').isEnabled());
  // Untrusted biography text remains literal, including textarea close tags.
- await page.evaluate(()=>mount({bio:'</textarea><img src=x onerror=alert(1)>',bioSourceLang:'tr'}));assert.equal(await page.locator('#editor img').count(),0);
+ await page.evaluate(()=>mount({biographies:{tr:'</textarea><img src=x onerror=alert(1)>'},bioSourceLang:'tr'}));assert.equal(await page.locator('#editor img').count(),0);
  await page.locator('[data-bio-lang=tr]').fill('');const callCount=await page.evaluate(()=>calls.length);await page.locator('#team-bio-translate').click();assert.equal(await page.evaluate(()=>calls.length),callCount);
  for(const width of [390,768,1440]){await page.setViewportSize({width,height:900});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
  assert.deepEqual(errors,[]);console.log('PASS 16 fields, language selection, legacy preservation, partial results, manual edits, stale source, overwrite, failure, RTL and XSS');
