@@ -75,7 +75,7 @@ function getCallable(name) {
     }
     let fn=callableCache.get(name);
     if (!fn) {
-        fn=functions.httpsCallable(name,{timeout:name==='sendConsolePasswordResets'?540000:name==='translateTeamBiography'?BIOGRAPHY_TRANSLATION_TIMEOUT_MS:CALLABLE_TIMEOUT_MS});
+        fn=functions.httpsCallable(name,{timeout:name==='sendConsolePasswordResets'?540000:name==='createConsoleCustomerAccount'?150000:name==='translateTeamBiography'?BIOGRAPHY_TRANSLATION_TIMEOUT_MS:CALLABLE_TIMEOUT_MS});
         callableCache.set(name,fn);
     }
     return fn;
