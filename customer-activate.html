@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="tr" data-theme="system">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Cortex</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/customer-activation.css">
+</head>
+<body>
+  <main>
+    <header><span class="brand">CORTEX</span><label><span class="sr-only" data-i18n="customer.activationLanguage">Dil</span><select id="activation-language"><option value="tr">Türkçe</option><option value="en">English</option></select></label></header>
+    <h1 data-i18n="customer.activationTitle">Cortex hesabınız hazır.</h1>
+    <p data-i18n="customer.activationIntro">Kendi şifrenizi belirleyin. Ardından Cortex uygulamasında e-posta adresinizle giriş yapabilirsiniz.</p>
+    <p data-i18n="customer.activationExpiry">Davet en fazla 20 saat geçerlidir. Uygulama e-posta doğrulaması isterse doğrulamayı tamamlayın.</p>
+    <button id="activation-begin" type="button" data-i18n="customer.activationBegin">Şifremi Belirle</button>
+    <p id="activation-status" role="status" aria-live="polite"></p>
+    <small data-i18n="customer.activationPrivacy">Şifrenizi yalnızca siz belirlersiniz. Bu davet size Vertex personel veya yönetici yetkisi vermez.</small>
+  </main>
+  <script type="module" src="js/customer-activation.js"></script>
+</body>
+</html>

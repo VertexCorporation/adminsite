@@ -1,4 +1,5 @@
 import { initPasswordResetModule } from './passwordReset.js';
+import { initCustomerAccounts } from './customerAccounts.js';
 import { auth, consolePeopleCall } from '../core/firebase.js';
 import { isPanelAdmin } from './roles.js';
 import { confirmDialog } from './shell.js';
@@ -8,6 +9,7 @@ import { __, userErrorMessage } from '../utils/ui.js';
 // A verified account lookup precedes each request; no arbitrary UID submission.
 export function initAccountDeletionModule() {
     initPasswordResetModule();
+    initCustomerAccounts();
     const byId = id => document.getElementById(id);
     const form = byId('account-deletion-search-form');
     if (!form) return;
