@@ -11,5 +11,5 @@ export const deploymentCapabilities = Object.freeze({
     consolePeople: true,
     consoleAccountActivation: true,
     consoleMembershipWrites: false,
-    consolePersonnelWrites: false
+    consolePersonnelWrites: true
 });

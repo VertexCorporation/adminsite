@@ -2,13 +2,21 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
 const root=path.resolve(__dirname,'..'),fixture=fs.readFileSync(path.join(__dirname,'browser.cjs'),'utf8').split('await page.addInitScript(()=>{')[1].split('\n});')[0];
 const server=http.createServer((req,res)=>{const f=path.join(root,decodeURIComponent(req.url.split('?')[0])==='/'?'index.html':req.url.split('?')[0]);if(!f.startsWith(root+path.sep)){res.statusCode=403;return res.end();}fs.readFile(f,(e,b)=>{res.statusCode=e?404:200;res.setHeader('Content-Type',f.endsWith('.js')?'text/javascript':f.endsWith('.css')?'text/css':f.endsWith('.svg')?'image/svg+xml':'text/html');res.end(e?'':b);});});
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH,args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']}:{} )}),page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],calls=[];
-const removedSubscriptions=new Set();let fail=false,indexReady=true;const user={uid:'u0',name:'Example User',email:'user@example.invalid',authCreatedAt:'2026-10-20T10:00:00Z',emailVerified:false,disabled:false,membership:'unlinked',departments:[],providers:['password'],subscription:{tier:'pro'}};
+const removedSubscriptions=new Set();let fail=false,indexReady=true,roleWriteFails=false;const user={uid:'u0',name:'Example User',email:'user@example.invalid',authCreatedAt:'2026-10-20T10:00:00Z',emailVerified:false,disabled:false,membership:'unlinked',departments:[],providers:['password'],subscription:{tier:'pro'}};
+const roleUser={...user,uid:'staff-1',name:'Staff Candidate',email:'staff@example.invalid',membership:'active',
+ linkStatus:'linked',contributor:{id:'staff-app',name:'Staff Candidate'},department:'Array',departments:['Array'],
+ role:'member',authzVersion:7,emailVerified:true,disabled:false};
 page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(fixture);
 await page.route('**/*',async route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1'){if(u.pathname.endsWith('/js/core/initializer.js'))return route.fulfill({contentType:'text/javascript',body:"import {startApp} from '../main.js';startApp({apiKey:'fixture'});"});return route.continue();}
 if(u.hostname.endsWith('run.app')){const name=u.hostname.split('-')[0],data=route.request().postDataJSON()?.data||{};calls.push({name,data});let result={};
-if(name==='listconsoleusers'){if(fail)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE'}})});result=!indexReady?{indexReady:false,users:[],indexed:0}:data.search?{users:[data.search==='no-profile'?{...user,uid:'opaque-uid-123',name:'',email:null}:user]}:{users:Array.from({length:data.cursor?5:100},(_,i)=>({...user,uid:'u'+(i+(data.cursor?100:0)),name:(data.cursor?'Next ':'User ')+i})),nextCursor:data.cursor?null:'page-2',indexReady:true};}
+if(name==='listconsoleusers'){if(fail)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE'}})});result=!indexReady?{indexReady:false,users:[],indexed:0}:data.search?{users:[data.search==='staff@example.invalid'?roleUser:data.search==='no-profile'?{...user,uid:'opaque-uid-123',name:'',email:null}:user]}:{users:Array.from({length:data.cursor?5:100},(_,i)=>({...user,uid:'u'+(i+(data.cursor?100:0)),name:(data.cursor?'Next ':'User ')+i})),nextCursor:data.cursor?null:'page-2',indexReady:true};}
 if(name==='prepareconsoleuserdirectory'){indexReady=true;result={complete:true,indexed:105};}
-if(name==='setconsoleaccountdisabled'){user.disabled=data.disabled;result={disabled:data.disabled};}if(name==='verifyuseremail'){user.emailVerified=true;result={};}if(name==='getconsoleuser')result={user};if(name==='getconsoleuserstatistics')result={total:105,verified:90,disabled:2};
+if(name==='setconsoleaccountdisabled'){user.disabled=data.disabled;result={disabled:data.disabled};}if(name==='verifyuseremail'){user.emailVerified=true;result={};}if(name==='getconsoleuser')result={user:data.uid==='staff-1'?roleUser:user};
+if(name==='updateconsolepersonnel'){
+ if(roleWriteFails)return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:{status:'FAILED_PRECONDITION',message:'Personnel changed. Refresh and try again.'}})});
+ roleUser.role=data.role;roleUser.authzVersion++;result={authzVersion:roleUser.authzVersion};
+}
+if(name==='getconsoleuserstatistics')result={total:105,verified:90,disabled:2};
 if(name==='getvertexcontributors')result={contributors:[],nextCursor:null};
 if(name==='removeusersubscription'){removedSubscriptions.add(data.uid);result={success:true};}if(name==='listusersubscriptions')result={subscriptions:['vertex','app_store'].filter(source=>!removedSubscriptions.has(source)).map(source=>({uid:source,email:source+'@example.invalid',displayName:'Person '+source,tier:'pro',source,canRemove:true,expiresAt:null,updatedAt:null}))};if(name==='listsiteteam')result={honors:[],cards:[]};if(name==='getweeklystars')result={history:[]};
 if(name==='getserverstatus')result={isUnderMaintenance:false};if(name==='listdepartmentusers')result={users:[]};if(name==='getbackuphealthstatus')result={};if(name==='listconsolechatchannels')result={channels:[],isAdmin:true};
@@ -19,7 +27,7 @@ await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#
 assert.equal(await page.locator('[data-nav-group="catalog"]>.nav-module').count(),7);
 await nav('users.directory');await page.locator('[data-directory-row]').first().waitFor();assert.equal(await page.locator('[data-directory-row]').count(),100);assert(calls.some(c=>c.name==='listconsoleusers'&&c.data.pageSize===100));
 await page.locator('#directory-next').click();await page.getByText('Next 0',{exact:true}).waitFor();assert.equal(await page.locator('[data-directory-row]').count(),5);await page.locator('#directory-previous').click();await page.getByText('User 0',{exact:true}).waitFor();
-await page.locator('[data-directory-row]').first().click();await page.locator('#directory-assign-subscription').waitFor();await page.locator('#directory-assign-subscription').click();await page.locator('#subscription-return-user').waitFor();assert.equal(await page.locator('#sub-user-email').inputValue(),user.email);await page.locator('#subscription-return-user').click();await page.locator('#directory-manage-status').waitFor();await page.locator('#directory-manage-status').click();await page.locator('[data-account-action]').first().waitFor();assert.equal(await page.locator('[data-account-action]').count(),5);assert.equal(await page.locator('#account-status-search').inputValue(),user.email);
+await page.locator('[data-directory-row]').first().click();await page.locator('#directory-assign-subscription').waitFor();await page.locator('#directory-assign-subscription').click();await page.locator('#subscription-return-user').waitFor();assert.equal(await page.locator('#sub-user-email').inputValue(),user.email);await page.locator('#subscription-return-user').click();await page.locator('#directory-manage-status').waitFor();assert.equal(await page.locator('#directory-role-form').count(),0);await page.locator('#directory-manage-status').click();await page.locator('[data-account-action]').first().waitFor();assert.equal(await page.locator('[data-account-action]').count(),5);assert.equal(await page.locator('#account-status-search').inputValue(),user.email);
 // Account mutations happen only after confirmation and keep the selected UID.
 assert(!calls.some(c=>/setconsoleaccountdisabled|verifyuseremail|adminrequestaccountdeletion|setusersubscription/.test(c.name)));
 await page.locator('[data-account-action="ban"]').click();await page.locator('.confirm-cancel').click();await page.locator('.vx-modal').waitFor({state:'detached'});assert(!calls.some(c=>c.name==='setconsoleaccountdisabled'));
@@ -38,6 +46,40 @@ indexReady=false;await page.locator('#directory-list').focus();await page.keyboa
 
 await page.locator('#directory-search').fill('no-profile');await page.locator('#directory-search-form').evaluate(form=>form.requestSubmit());await page.getByText('Unnamed user',{exact:true}).waitFor();assert(await page.getByText('No email added',{exact:true}).isVisible());assert(!await page.locator('#directory-list').innerText().then(text=>text.includes('opaque-uid-123')));
 await page.locator('#directory-search').fill('');await page.locator('#directory-search-form').evaluate(form=>form.requestSubmit());await page.getByText('User 0',{exact:true}).waitFor();
+// Current Users drawer: linked active personnel can change ONLY the role.
+await page.locator('#directory-search').fill('staff@example.invalid');
+await page.locator('#directory-search-form').evaluate(form=>form.requestSubmit());
+await page.getByText('Staff Candidate',{exact:true}).first().waitFor();
+await page.locator('[data-directory-row]').first().click();
+await page.locator('#directory-role-form').waitFor();
+assert.equal(await page.locator('#directory-role').inputValue(),'member');
+assert(await page.locator('#directory-role-form button[type="submit"]').isDisabled());
+await page.locator('#directory-role').selectOption('moderator');
+await page.locator('#directory-role-form button[type="submit"]').click();
+await page.locator('.confirm-cancel').click();
+await page.locator('.vx-modal').waitFor({state:'detached'});
+assert(!calls.some(c=>c.name==='updateconsolepersonnel'));
+await page.locator('#directory-role-form button[type="submit"]').click();
+await page.locator('.confirm-ok').click();
+await page.waitForFunction(()=>document.querySelector('#directory-role')?.value==='moderator'&&/Moderatör|Moderator/.test(document.querySelector('.vx-drawer.is-open .profile-details')?.textContent||'')&&document.querySelector('#directory-role-form button[type="submit"]')?.disabled,{},{timeout:8000});
+const changed=calls.filter(c=>c.name==='updateconsolepersonnel');
+assert.equal(changed.length,1);
+assert.deepEqual(changed[0].data,{uid:'staff-1',department:'Array',role:'moderator',expectedVersion:7});
+assert.equal(roleUser.authzVersion,8);
+assert(!calls.some(c=>c.name==='setuserdepartments'));
+roleWriteFails=true;
+await page.locator('#directory-role').selectOption('chef');
+await page.locator('#directory-role-form button[type="submit"]').click();
+await page.locator('.confirm-ok').click();
+await page.waitForTimeout(250);
+assert.equal(roleUser.role,'moderator');
+assert.equal(await page.locator('#directory-role-form').count(),1);
+roleWriteFails=false;
+await page.keyboard.press('Escape');
+await page.locator('.vx-drawer').waitFor({state:'detached'});
+await page.locator('#directory-search').fill('');
+await page.locator('#directory-search-form').evaluate(form=>form.requestSubmit());
+await page.getByText('User 0',{exact:true}).waitFor();
 await nav('subscriptions.list');await page.locator('#subscriptions-list [data-uid="vertex"]').waitFor();
 for(const uid of ['vertex','app_store']){await page.locator('#subscriptions-list [data-uid="'+uid+'"]').click();await page.locator('.confirm-ok').click();await page.locator('#subscriptions-list [data-uid="'+uid+'"]').waitFor({state:'detached'});assert(calls.some(c=>c.name==='removeusersubscription'&&c.data.uid===uid&&c.data.expectedSource===uid));}
 await nav('news.published');await page.locator('.news-card h4').first().waitFor();assert(await page.locator('.news-card-summary').first().isVisible());await page.locator('.news-card h4').first().click();await page.locator('#news-editing-hint').waitFor();assert.equal(await page.locator('#title-en').inputValue(),'Saved Fixture');await page.locator('#news-form').evaluate(form=>form.requestSubmit());await page.waitForFunction(()=>!document.querySelector('#news-editing-hint'));assert(calls.some(c=>c.name==='updatenewsarticle'&&c.data.slug==='fixture-article'));

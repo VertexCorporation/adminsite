@@ -8,6 +8,13 @@
 .catalog-user-heading{margin-bottom:22px;}
 .catalog-selected-user{display:flex;justify-content:space-between;gap:16px;margin:20px 0;}
 .catalog-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;}
+.catalog-role-form{border-top:1px solid var(--border-subtle);padding-top:20px;margin-top:20px;gap:12px;}
+.catalog-role-form h4{font-size:var(--fs-body,15px);margin:0;}
+.catalog-role-form .form-group-field{margin:0;}
+.catalog-role-form select{width:100%;}
+.catalog-role-form button[type="submit"]{align-self:flex-start;}
+@media(max-width:600px){.catalog-role-form button[type="submit"]{width:100%;}}
+
 .catalog-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
 .catalog-stat{padding:24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md,12px);display:flex;flex-direction:column;gap:12px;}
 .catalog-stat strong{font-size:clamp(24px,4vw,36px);}

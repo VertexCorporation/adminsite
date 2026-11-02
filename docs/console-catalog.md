@@ -17,6 +17,23 @@ Auth-backed directory. Initial directory preparation is an explicit operation an
 supports stopping between batches. Counts come from directory aggregation, not
 from the current page or an Auth-wide scan on each refresh.
 
+The current Users detail drawer also exposes a **personnel role** selector for
+active Vertex members with a linked Contributor record and a primary department.
+The choices are `member`, `moderator` and `chef`; it preserves the existing
+department(s), does not touch Core access, and sends a Core-authorized
+`updateConsolePersonnel` request with the exact UID and `authzVersion`.
+The operator must explicitly confirm the target and role; cancellation never
+writes. The public Staff strip is populated from moderator/chef roles, subject
+to the public team cache TTL.
+
+**Personnel rollout requirement:** deploy and verify Fulcrum's
+`updateConsolePersonnel` function before publishing a frontend with
+`consolePersonnelWrites: true`. Fulcrum additionally requires both
+`config/personnelFeatures.personnelWritesEnabled` and
+`config/personnelFeatures.authorizationCutoverComplete` to be true.
+If either condition is false, the server rejects the write. Do not
+circumvent this server-side protection to make the editor appear to work.
+
 Account Status offers ban/unban, email verification, account deletion, Vertex
 approval, and password reset. Vertex approval opens the matching application and
 uses its existing membership action. Deletion retains exact-email confirmation

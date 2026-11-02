@@ -1,10 +1,12 @@
 import { registerListRefresh } from '../ui/listRefresh.js';
 import { auth, consolePeopleCall, verifyUserEmailFn } from '../core/firebase.js';
 import { isPanelAdmin, getEffectivePanelLevel } from './roles.js';
+import { deploymentCapabilities } from '../core/deployment-capabilities.js';
 import { openDrawer, closeDrawer, confirmDialog } from './shell.js';
 import { createLoadingController, skeletonRows, skeletonListItem, setButtonLoading } from '../utils/loading.js';
 import { __, getLang, onLangChange, escapeHTML as esc, userErrorMessage, showToast } from '../utils/ui.js';
 const el=id=>document.getElementById(id);
+const personnelRoleOptions=['member','moderator','chef'];
 const state={users:[],cursor:null,next:null,history:[],page:1,busy:false,epoch:0,loaded:false,selected:null,stats:null,statsEpoch:0};
 const loaders=new Map();
 function loader(id){if(!loaders.has(id))loaders.set(id,createLoadingController(el(id),{skeletonHTML:skeletonRows(5,skeletonListItem),crossfadeOptions:{mode:'enter'}}));return loaders.get(id);}
@@ -52,12 +54,56 @@ function subscription(user){
  back.textContent=__('catalog.return_user');back.onclick=()=>{if(navigate('users.directory'))void openUser(user);};
  el('sub-plan').focus({preventScroll:true});
 }
+function canEditPersonnelRole(user){
+ return !!user && isPanelAdmin() && deploymentCapabilities.consolePersonnelWrites &&
+  user.linkStatus==='linked' && user.membership==='active' && !user.disabled &&
+  !!user.contributor && typeof user.department==='string' && user.department.length>0;
+}
+function renderPersonnelRoleForm(user){
+ const previous=personnelRoleOptions.includes(user.role)?user.role:'member';
+ return `<form id="directory-role-form" class="form-stack catalog-role-form">
+   <h4>${esc(__('people.manage_personnel'))}</h4>
+   <p class="form-hint">${esc(__('catalog.role_hint'))}</p>
+   <div class="form-group-field"><label for="directory-role">${esc(__('people.role'))}</label>
+   <select id="directory-role" required>${personnelRoleOptions.map(role=>`<option value="${role}" ${role===previous?'selected':''}>${esc(__('people.role_'+role))}</option>`).join('')}</select></div>
+   <button type="submit" class="chrome-btn-primary" disabled>${esc(__('catalog.role_update'))}</button>
+ </form>`;
+}
+function roleAccessHint(user){
+ return user?.linkStatus==='linked' && user.membership==='active' && !user.department
+  ? `<p class="form-hint">${esc(__('catalog.role_unavailable'))}</p>` : '';
+}
+async function savePersonnelRole(event,user,body,actor,isClosed){
+ event.preventDefault();
+ const form=event.currentTarget,select=form.querySelector('#directory-role'),button=form.querySelector('button[type="submit"]');
+ const role=select?.value;
+ if(!canEditPersonnelRole(user)||!personnelRoleOptions.includes(role)||role===(user.role||'member'))return;
+ const confirmed=await confirmDialog(()=>({
+   title:__('catalog.role_update'),body:__('catalog.role_confirm'),
+   rows:[{label:__('people.email'),value:user.email||user.uid},
+     {label:__('people.role'),value:__('people.role_'+(user.role||'member'))+' → '+__('people.role_'+role)}]
+ }));
+ if(!confirmed||isClosed()||!body.isConnected||actor!==auth.currentUser?.uid||!isPanelAdmin())return;
+ setButtonLoading(button,true);
+ try{
+   await consolePeopleCall('updateConsolePersonnel',{uid:user.uid,department:user.department,role,expectedVersion:user.authzVersion||0});
+   if(isClosed()||actor!==auth.currentUser?.uid)return;
+   closeDrawer(false);
+   showToast(()=>__('catalog.role_saved'),'success');
+   void openUser({uid:user.uid});
+   void load();
+ }catch(error){
+   if(!isClosed()&&actor===auth.currentUser?.uid)showToast(()=>userErrorMessage(error),'error');
+ }finally{if(button.isConnected)setButtonLoading(button,false);}
+}
 async function openUser(summary){
  const actor=auth.currentUser?.uid;let closed=false;
  const body=openDrawer({title:__('people.details'),titleKey:'people.details',onAfterClose:()=>{closed=true;},render:host=>host.innerHTML=skeletonRows(4,skeletonListItem)});
  try{const {data}=await consolePeopleCall('getConsoleUser',{uid:summary.uid});if(closed||!body.isConnected||actor!==auth.currentUser?.uid)return;const u=data.user;
- body.innerHTML=`<div class="catalog-identity catalog-user-heading">${identity(u)}</div><dl class="profile-details">${field('profile.uid',u.uid)}${field('people.created',date(u.authCreatedAt))}${field('people.email_status',yes(u.emailVerified))}${field('catalog.account',__(u.disabled?'catalog.banned':'catalog.enabled'))}${field('people.membership',__('people.'+u.membership))}${field('people.department',u.departments?.join(', ')||u.department)}${field('people.subscription',(u.subscription?.tier||'free').toUpperCase())}</dl><div class="catalog-actions"><button type="button" class="chrome-btn-outline" id="directory-manage-status">${esc(__('catalog.status'))}</button>${getEffectivePanelLevel('subscriptions.assign')==='write'?`<button type="button" class="chrome-btn-outline" id="directory-assign-subscription">${esc(__('subs.assign_btn'))}</button>`:''}</div>`;
+ body.innerHTML=`<div class="catalog-identity catalog-user-heading">${identity(u)}</div><dl class="profile-details">${field('profile.uid',u.uid)}${field('people.created',date(u.authCreatedAt))}${field('people.email_status',yes(u.emailVerified))}${field('catalog.account',__(u.disabled?'catalog.banned':'catalog.enabled'))}${field('people.membership',__('people.'+u.membership))}${field('people.department',u.departments?.join(', ')||u.department)}${field('people.role',u.role?__('people.role_'+u.role):'—')}${field('people.subscription',(u.subscription?.tier||'free').toUpperCase())}</dl>${canEditPersonnelRole(u)?renderPersonnelRoleForm(u):roleAccessHint(u)}<div class="catalog-actions"><button type="button" class="chrome-btn-outline" id="directory-manage-status">${esc(__('catalog.status'))}</button>${getEffectivePanelLevel('subscriptions.assign')==='write'?`<button type="button" class="chrome-btn-outline" id="directory-assign-subscription">${esc(__('subs.assign_btn'))}</button>`:''}</div>`;
  body.querySelector('#directory-manage-status').onclick=()=>showStatus(u);body.querySelector('#directory-assign-subscription')?.addEventListener('click',()=>subscription(u));
+ const roleForm=body.querySelector('#directory-role-form');
+ if(roleForm){const select=roleForm.querySelector('#directory-role'),save=roleForm.querySelector('button[type="submit"]');select.addEventListener('change',()=>{save.disabled=select.value===(u.role||'member');});roleForm.addEventListener('submit',event=>{void savePersonnelRole(event,u,body,actor,()=>closed);});}
  }catch(error){if(!closed&&body.isConnected&&actor===auth.currentUser?.uid)body.textContent=userErrorMessage(error);}
 }
 function paintStatus(u){
