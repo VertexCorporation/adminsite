@@ -61,7 +61,7 @@ await page.locator('.vx-modal').waitFor({state:'detached'});
 assert(!calls.some(c=>c.name==='updateconsolepersonnel'));
 await page.locator('#directory-role-form button[type="submit"]').click();
 await page.locator('.confirm-ok').click();
-await page.waitForFunction(()=>document.querySelector('#directory-role')?.value==='moderator'&&document.querySelector('#directory-role-form button[type="submit"]')?.disabled);
+await page.waitForFunction(()=>document.querySelector('#directory-role')?.value==='moderator'&&/Moderatör|Moderator/.test(document.querySelector('.profile-details')?.textContent||'')&&document.querySelector('#directory-role-form button[type="submit"]')?.disabled);
 const changed=calls.filter(c=>c.name==='updateconsolepersonnel');
 assert.equal(changed.length,1);
 assert.deepEqual(changed[0].data,{uid:'staff-1',department:'Array',role:'moderator',expectedVersion:7});
