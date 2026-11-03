@@ -1,5 +1,31 @@
 const LANG = {
   tr: {
+    "beacons.title":"Beacon Başvuruları",
+    "beacons.all":"Tümü",
+    "beacons.pending":"Bekleyen",
+    "beacons.approved":"Onaylı",
+    "beacons.rejected":"Reddedilen",
+    "beacons.suspended":"Askıda",
+    "beacons.search":"İsim, e-posta veya kurum ara…",
+    "beacons.more":"Daha fazla",
+    "beacons.empty":"Eşleşen başvuru bulunamadı.",
+    "beacons.name":"Ad Soyad",
+    "beacons.institution":"Kurum",
+    "beacons.type":"Kurum türü",
+    "beacons.status":"Durum",
+    "beacons.year":"Kuruluş yılı",
+    "beacons.details":"Başvuru detayları",
+    "beacons.approve":"Onayla",
+    "beacons.reject":"Reddet",
+    "beacons.suspend":"Askıya al",
+    "beacons.role":"Görev",
+    "beacons.location":"Konum",
+    "beacons.phone":"Telefon",
+    "beacons.birthDate":"Doğum tarihi",
+    "beacons.motivation":"Motivasyon",
+    "beacons.plan":"İlk 90 günlük plan",
+    "beacons.reviewReason":"Karar notu",
+
     "catalog.beacon":"Beacon",
     "customer.activationLanguage": "Dil",
     "customer.activationTitle": "Cortex hesabınız hazır.",
@@ -1089,6 +1115,32 @@ const LANG = {
   },
 
   en: {
+    "beacons.title":"Beacon Applications",
+    "beacons.all":"All",
+    "beacons.pending":"Pending",
+    "beacons.approved":"Approved",
+    "beacons.rejected":"Rejected",
+    "beacons.suspended":"Suspended",
+    "beacons.search":"Search name, email or institution…",
+    "beacons.more":"Load more",
+    "beacons.empty":"No matching applications.",
+    "beacons.name":"Full name",
+    "beacons.institution":"Institution",
+    "beacons.type":"Institution type",
+    "beacons.status":"Status",
+    "beacons.year":"Founding year",
+    "beacons.details":"Application details",
+    "beacons.approve":"Approve",
+    "beacons.reject":"Reject",
+    "beacons.suspend":"Suspend",
+    "beacons.role":"Role",
+    "beacons.location":"Location",
+    "beacons.phone":"Phone",
+    "beacons.birthDate":"Birth date",
+    "beacons.motivation":"Motivation",
+    "beacons.plan":"First 90-day plan",
+    "beacons.reviewReason":"Review note",
+
     "catalog.beacon":"Beacon",
     "customer.activationLanguage": "Language",
     "customer.activationTitle": "Your Cortex account is ready.",
@@ -2244,4 +2296,5 @@ export const translationsReady = new Promise(resolve => {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready, { once: true });
   else ready();
 });
+
 
