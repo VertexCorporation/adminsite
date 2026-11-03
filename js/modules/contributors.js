@@ -119,7 +119,7 @@ export function initContributorsModule() {
     if(refreshBtn&&!document.getElementById('certificate-email-templates-btn')){
         const button=document.createElement('button');button.id='certificate-email-templates-btn';button.type='button';button.className='chrome-btn-outline';button.dataset.i18n='email_templates.title';button.textContent=__('email_templates.title');button.style.display=isPanelAdmin()?'':'none';button.onclick=openCertificateEmailTemplates;refreshBtn.before(button);refreshBtn.parentElement.classList.add('certificate-template-entry-row');
     }
-    onLangChange(() => { const headers=['name','department','birthYear','status','applied','actions']; document.querySelectorAll('.contributor-table-head').forEach(header=>{if(header.closest('.ui-crossfade-ghost'))return;[...header.children].filter(el=>el.matches('span')).forEach((el,i)=>{if(headers[i])el.textContent=__('contributors.col_'+headers[i]);});}); if(window.loadedContributors) renderContributors(window.loadedContributors); });
+    onLangChange(() => { const headers=['name','department','birthYear','status','applied','actions']; document.querySelectorAll('.contributor-table-head').forEach(header=>{if(header.closest('.ui-crossfade-ghost')||header.closest('[data-panel="users.beacons"]'))return;[...header.children].filter(el=>el.matches('span')).forEach((el,i)=>{if(headers[i])el.textContent=__('contributors.col_'+headers[i]);});}); if(window.loadedContributors) renderContributors(window.loadedContributors); });
 
     if (refreshBtn) {
         refreshBtn.addEventListener('click', fetchContributorsData);
