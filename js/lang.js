@@ -1,5 +1,6 @@
 const LANG = {
   tr: {
+    "catalog.beacon":"Beacon",
     "customer.activationLanguage": "Dil",
     "customer.activationTitle": "Cortex hesabınız hazır.",
     "customer.activationIntro": "Kendi şifrenizi belirleyin. Ardından Cortex uygulamasında e-posta adresinizle giriş yapabilirsiniz.",
@@ -1088,6 +1089,7 @@ const LANG = {
   },
 
   en: {
+    "catalog.beacon":"Beacon",
     "customer.activationLanguage": "Language",
     "customer.activationTitle": "Your Cortex account is ready.",
     "customer.activationIntro": "Set your own password. Then sign in to the Cortex app using your email address.",
@@ -2242,3 +2244,4 @@ export const translationsReady = new Promise(resolve => {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready, { once: true });
   else ready();
 });
+

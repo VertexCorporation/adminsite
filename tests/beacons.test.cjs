@@ -1,0 +1,14 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+function setup(level='write'){
+ class Element{constructor(tag='div'){this.tag=tag;this.children=[];this.handlers={};this.value='';this.hidden=false;this.disabled=false;this.attributes={};this.textContent='';}append(...nodes){this.children.push(...nodes)}replaceChildren(...nodes){this.children=nodes}setAttribute(k,v){this.attributes[k]=v}removeAttribute(k){delete this.attributes[k]}addEventListener(k,v){this.handlers[k]=v}}
+ const nodes=Object.fromEntries(['beacon-admin-list','beacon-admin-filter','beacon-admin-search','beacon-admin-next','beacon-admin-refresh'].map(id=>[id,new Element()])),events={},calls=[];
+ const document={getElementById:id=>nodes[id],createElement:tag=>new Element(tag),addEventListener:(e,f)=>events[e]=f};
+ const sample={id:'00000000-0000-4000-8000-000000000001',name:'<img src=x onerror=alert(1)>',institution:'Club',status:'pending',revision:4,email:'person@example.org'};
+ const source=fs.readFileSync('js/modules/beacons.js','utf8').replace(/^import .*?;\n/gm,'').replace('export function','function')+'\ninitBeaconsModule();';
+ vm.runInNewContext(source,{document,window:{prompt:()=> 'Reviewed institution authority'},consolePeopleCall:async(name,data)=>{calls.push({name,data});return {data:name==='listBeaconApplications'?{applications:[sample],nextCursor:null}:{status:'approved'}}},auth:{currentUser:{uid:'core'},onAuthStateChanged(){}},getEffectivePanelLevel:()=>level,getLang:()=> 'en',showToast(){},userErrorMessage:e=>e.message,confirmDialog:async()=>true,escapeHTML:s=>s.replaceAll('<','&lt;')});
+ return {nodes,events,calls};
+}
+const settle=()=>new Promise(setImmediate);
+test('Core workspace loads details as text and leaves review actions enabled',async()=>{const b=setup();b.events['vertex:workspace']({detail:{keys:['users.beacons']}});await settle();const card=b.nodes['beacon-admin-list'].children[0];assert.equal(card.children[0].textContent,'<img src=x onerror=alert(1)> · Pending');assert.equal(card.children.filter(x=>x.tag==='button').length,3);assert.equal(card.children.find(x=>x.tag==='button').disabled,false)});
+test('review sends the original revision for optimistic concurrency control',async()=>{const b=setup();b.events['vertex:workspace']({detail:{keys:['users.beacons']}});await settle();const button=b.nodes['beacon-admin-list'].children[0].children.find(x=>x.tag==='button');await button.handlers.click();const call=b.calls.find(c=>c.name==='reviewBeaconApplication');assert.equal(call.data.expectedRevision,4);assert.equal(call.data.status,'approved');assert.equal(call.data.applicationId,'00000000-0000-4000-8000-000000000001')});
+test('denied workspace never requests applicant PII',async()=>{const b=setup('none');b.events['vertex:workspace']({detail:{keys:['users.beacons']}});await settle();assert.equal(b.calls.length,0)});

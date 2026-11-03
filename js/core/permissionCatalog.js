@@ -2,6 +2,7 @@
 // server authorization scopes, not independently configurable card panels.
 export const PERMISSION_CATEGORIES = [
     {id:'users',key:'catalog.users',screens:[
+        {id:'beacon',key:'catalog.beacon',scopes:['users.beacons'],coreOnly:true},
         {id:'information',key:'catalog.information',scopes:['users.directory'],coreOnly:true},
         {id:'status',key:'catalog.status_short',scopes:['users.status','users.deleteAccount'],coreOnly:true},
         {id:'statistics',key:'catalog.statistics',scopes:['users.statistics'],coreOnly:true}
@@ -90,3 +91,4 @@ export function setScreenPermission(departments,dept,screen,level) {
     const entry=departments[dept] ||= {panels:{}};
     for(const scope of screen.scopes)entry.panels[scope]=level;
 }
+

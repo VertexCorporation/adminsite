@@ -1,3 +1,4 @@
+import {initBeaconsModule} from './modules/beacons.js';
 import { initApprovedAccountSetup } from './modules/approvedAccountSetup.js';
 import { createWorkspaceLoader } from './utils/workspace-loader.js';
 import { initEventsModule } from './modules/events.js';
@@ -54,6 +55,7 @@ export function startApp(firebaseConfig) {
     // Bind independent features without allowing one broken optional module
     // to prevent other workspaces and the central auth listener from starting.
     const featureInitializers = [
+        ['beacons',initBeaconsModule],
         ['admin', initAdminModule],
         ['people', initPeopleModule],
         ['directory', initDirectoryModule],
@@ -455,3 +457,4 @@ function hideBootstrapLoader() {
     loader.addEventListener('transitionend',()=>loader.remove(),{once:true});
     setTimeout(()=>loader.remove(),window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:220);
 }
+
