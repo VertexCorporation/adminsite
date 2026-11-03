@@ -1,3 +1,4 @@
+import {initOriginModule} from './modules/origin.js';
 import {initBeaconsModule} from './modules/beacons.js';
 import { initApprovedAccountSetup } from './modules/approvedAccountSetup.js';
 import { createWorkspaceLoader } from './utils/workspace-loader.js';
@@ -56,6 +57,7 @@ export function startApp(firebaseConfig) {
     // to prevent other workspaces and the central auth listener from starting.
     const featureInitializers = [
         ['beacons',initBeaconsModule],
+        ['origin',initOriginModule],
         ['admin', initAdminModule],
         ['people', initPeopleModule],
         ['directory', initDirectoryModule],
@@ -457,4 +459,5 @@ function hideBootstrapLoader() {
     loader.addEventListener('transitionend',()=>loader.remove(),{once:true});
     setTimeout(()=>loader.remove(),window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:220);
 }
+
 

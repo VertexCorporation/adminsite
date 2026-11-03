@@ -7,12 +7,18 @@ export const PERMISSION_CATEGORIES = [
         {id:'status',key:'catalog.status_short',scopes:['users.status','users.deleteAccount'],coreOnly:true},
         {id:'statistics',key:'catalog.statistics',scopes:['users.statistics'],coreOnly:true}
     ]},
+    {id:'origin',key:'origin.title',screens:[
+        {id:'members',key:'origin.members',scopes:['origin.members'],coreOnly:true},
+        {id:'applications',key:'origin.applications',scopes:['origin.applications'],coreOnly:true},
+        {id:'payments',key:'origin.payments',scopes:['origin.payments'],coreOnly:true}
+    ]},
     {id:'contributors',key:'catalog.contributors',screens:[
         {id:'applications',key:'subnav.applicants',scopes:['contributors.list']}
     ]},
     {id:'models',key:'catalog.models',screens:[
         {id:'catalog',key:'subnav.catalog',scopes:['models.library']},
-        {id:'management',key:'catalog.management',scopes:['models.manage']}
+        {id:'management',key:'catalog.management',scopes:['models.manage']},
+        {id:'origin-finance',key:'origin.finance',scopes:['models.origin'],coreOnly:true}
     ]},
     {id:'publications',key:'catalog.publications',screens:[
         {id:'news-published',key:'subnav.published',group:'nav.news',scopes:['news.published']},
@@ -91,4 +97,5 @@ export function setScreenPermission(departments,dept,screen,level) {
     const entry=departments[dept] ||= {panels:{}};
     for(const scope of screen.scopes)entry.panels[scope]=level;
 }
+
 

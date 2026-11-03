@@ -77,7 +77,7 @@ export function isPanelAdmin() {
 }
 export function getEffectivePanelLevel(panelKey) {
     if(currentUser.isAdmin)return 'write';
-    if(panelKey.startsWith('users.') || ['contributors.users','contributors.vertexStatus','system.deptPerms','subscriptions.assign'].includes(panelKey))return 'none';
+    if(panelKey.startsWith('origin.') || panelKey==='models.origin' || panelKey.startsWith('users.') || ['contributors.users','contributors.vertexStatus','system.deptPerms','subscriptions.assign'].includes(panelKey))return 'none';
     if(!departmentPermissions)return 'none';
     return bestLevel(panelKey,currentUser.departments);
 }
@@ -338,3 +338,4 @@ async function initializeRoles() {
     if(!rolesInitialized){rolesInitialized=true;onLangChange(renderMatrixTable);}
 }
 export {DEPARTMENTS};
+

@@ -609,7 +609,7 @@ function initNavigation() {
         if (changed) window.scrollTo({top:0,behavior:'instant'});
     };
     const dock=document.createElement('nav');dock.className='mobile-bottom-dock';dock.setAttribute('aria-label',__('navigation.main'));
-    dock.innerHTML=[['home','home'],['users','users-group'],['contributors','user-plus'],['models','robot'],['publications','news'],['subscriptions','crown'],['scene','award'],['system','settings']].map(([id,glyph])=>`<button type="button" data-mobile-tab="tab-${id}">${icon(glyph)}</button>`).join('')+`<button type="button" data-mobile-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`;
+    dock.innerHTML=[['home','home'],['users','users-group'],['origin','crown'],['contributors','user-plus'],['models','robot'],['publications','news'],['subscriptions','crown'],['scene','award'],['system','settings']].map(([id,glyph])=>`<button type="button" data-mobile-tab="tab-${id}">${icon(glyph)}</button>`).join('')+`<button type="button" data-mobile-more aria-label="${__('contributors.more')}">${icon('dots')}</button>`;
     document.querySelector('.app-layout').append(dock);
     dock.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.hasAttribute('data-mobile-more')){openMore(button);return;}const source=document.querySelector(`.dock-btn[data-target="${button.dataset.mobileTab}"]`);if(source){
         const module=source.closest('.nav-module');
@@ -892,3 +892,4 @@ function unregisterSurface(id) {
 
 /** Açık yüzey var mı? */
 export function hasOpenSurface() { return openSurfaces.size > 0; }
+
