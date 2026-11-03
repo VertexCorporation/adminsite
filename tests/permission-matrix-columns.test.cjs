@@ -7,9 +7,9 @@ const css=fs.readFileSync('css/modules.css','utf8');
 const html=fs.readFileSync('index.html','utf8');
 const source=fs.readFileSync('js/core/permissionCatalog.js','utf8');
 const catalog=()=>import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
-test('permission editor matches all seven sidebar categories and every current screen',async()=>{
+test('permission editor matches all eight sidebar categories and every current screen',async()=>{
  const {PERMISSION_CATEGORIES:categories}=await catalog();
- assert.deepEqual(categories.map(c=>c.id),['users','contributors','models','publications','subscriptions','scene','system']);
+ assert.deepEqual(categories.map(c=>c.id),['users','origin','contributors','models','publications','subscriptions','scene','system']);
  const scopes=new Set(categories.flatMap(c=>c.screens.flatMap(s=>s.scopes)));
  const nav=[...html.matchAll(/data-nav-panel="([^"]+)"/g)].flatMap(m=>m[1].split(','));
  assert.deepEqual([...scopes].sort(),[...new Set(nav)].sort());
@@ -51,3 +51,6 @@ test('custom category levels and screen edits cannot modify Core-only scopes',as
  assert.equal(result.Core,undefined);
  assert.equal(m.categoryPermissionLevel(result,'Core',category),'write');
 });
+
+
+test('Origin operations and finance are Core-only in every department',async()=>{const m=await catalog();const screens=[...m.PERMISSION_CATEGORIES.find(c=>c.id==='origin').screens,m.PERMISSION_CATEGORIES.find(c=>c.id==='models').screens.find(s=>s.id==='origin-finance')];for(const screen of screens){assert.equal(screen.coreOnly,true);for(const department of m.PERMISSION_DEPARTMENTS.filter(d=>d!=='Core'))assert.equal(m.screenPermissionLevel({[department]:{panels:Object.fromEntries(screen.scopes.map(s=>[s,'write']))}},department,screen),'none');}});
