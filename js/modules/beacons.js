@@ -1,9 +1,10 @@
+import {initBeaconOrganizations} from './beacon-organizations.js';
 import {consolePeopleCall,auth} from '../core/firebase.js';
 import {getEffectivePanelLevel} from './roles.js';
 import {showToast,userErrorMessage,getLang,escapeHTML,__,onLangChange} from '../utils/ui.js';
 import {confirmDialog,openDrawer,closeDrawer} from './shell.js';
 export function initBeaconsModule(){
- const host=document.getElementById('beacon-admin-list');if(!host)return;
+ const host=document.getElementById('beacon-admin-list');if(!host)return;initBeaconOrganizations();
  let cursor=null,rows=[],busy=false,generation=0,filter='all';const tr=()=>getLang()==='tr';
  const statusText=s=>__('beacons.'+s);
  const elem=(tag,text,cls='')=>{const e=document.createElement(tag);e.textContent=text;e.className=cls;return e};
@@ -29,7 +30,7 @@ export function initBeaconsModule(){
  async function review(row,status){if(busy||getEffectivePanelLevel('users.beacons')!=='write')return;
  const reason=window.prompt(tr()?'Karar gerekçesi (onay dışında zorunlu):':'Reason (required except for approval):','');if(reason===null||status!=='approved'&&!reason.trim())return;
  if(!await confirmDialog({title:tr()?'Beacon başvurusunu güncelle':'Update Beacon application',body:escapeHTML(row.name+' → '+statusText(status)),confirmLabel:tr()?'Kaydet':'Save'}))return;
- busy=true;render();try{await consolePeopleCall('reviewBeaconApplication',{applicationId:row.id,status,expectedRevision:row.revision||0,reason});closeDrawer();showToast(tr()?'Karar kaydedildi.':'Decision saved.','success');}catch(error){showToast(()=>userErrorMessage(error),'error');}finally{busy=false;await load();}}
+ busy=true;render();try{await consolePeopleCall('reviewBeaconApplication',{applicationId:row.id,status,expectedRevision:row.revision||0,reason});document.dispatchEvent(new CustomEvent('vertex:beacons-updated'));closeDrawer();showToast(tr()?'Karar kaydedildi.':'Decision saved.','success');}catch(error){showToast(()=>userErrorMessage(error),'error');}finally{busy=false;await load();}}
  document.getElementById('beacon-admin-refresh').addEventListener('click',()=>load());document.getElementById('beacon-admin-next').addEventListener('click',()=>load(true));document.getElementById('beacon-admin-search').addEventListener('input',render);document.querySelectorAll('[data-beacon-filter]').forEach(button=>button.addEventListener('click',()=>{filter=button.dataset.beaconFilter;document.querySelectorAll('[data-beacon-filter]').forEach(chip=>{chip.classList.toggle('active',chip===button);chip.setAttribute('aria-pressed',String(chip===button))});render()}));
  onLangChange(()=>{document.getElementById('beacon-admin-search').setAttribute('aria-label',__('beacons.search'));render()});
  document.addEventListener('vertex:workspace',e=>{if(e.detail?.keys?.includes('users.beacons'))load()});

@@ -1,5 +1,14 @@
 const LANG = {
   tr: {
+"beacons.organizations":"Beacon Organizasyonları",
+"beacons.org_empty":"Henüz onaylanmış bir Beacon organizasyonu bulunmuyor.",
+"beacons.org_hint":"Onaylanan Beacon’ların temsil ettiği kurumlar. Görsel eklenen kurumlar Beacon sayfasında görünür.",
+"beacons.org_add":"Görsel Ekle",
+"beacons.org_replace":"Görseli Değiştir",
+"beacons.org_uploading":"Yükleniyor…",
+"beacons.org_image_error":"En fazla 8 MB boyutunda PNG, JPEG veya WebP görseli seçin.",
+"beacons.org_saved":"Kurum görseli kaydedildi.",
+
     "beacons.title":"Beacon Başvuruları",
     "beacons.all":"Tümü",
     "beacons.pending":"Bekleyen",
@@ -1115,6 +1124,15 @@ const LANG = {
   },
 
   en: {
+"beacons.organizations":"Beacon Organizations",
+"beacons.org_empty":"There are no approved Beacon organizations yet.",
+"beacons.org_hint":"Institutions represented by approved Beacons. Organizations with an image appear on the Beacon page.",
+"beacons.org_add":"Add Image",
+"beacons.org_replace":"Replace Image",
+"beacons.org_uploading":"Uploading…",
+"beacons.org_image_error":"Choose a PNG, JPEG or WebP image up to 8 MB.",
+"beacons.org_saved":"Organization image saved.",
+
     "beacons.title":"Beacon Applications",
     "beacons.all":"All",
     "beacons.pending":"Pending",
