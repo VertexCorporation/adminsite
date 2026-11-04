@@ -42,3 +42,22 @@ test('startup does not retry denied origins or invalid configuration', async () 
         assert.equal(calls, 1);
     }
 });
+
+test('config fetch works without AbortSignal.timeout on older Samsung Internet', async () => {
+    const { fetchFirebaseConfig } = await load();
+    const originalTimeout = AbortSignal.timeout;
+    try {
+        AbortSignal.timeout = undefined;
+        let seenSignal;
+        const result = await fetchFirebaseConfig({
+            fetchImpl: async (_url, options) => {
+                seenSignal = options.signal;
+                return { ok: true, json: async () => ({ apiKey: 'fixture-mobile' }) };
+            }
+        });
+        assert.equal(result.apiKey, 'fixture-mobile');
+        assert.equal(typeof seenSignal.addEventListener, 'function');
+    } finally {
+        AbortSignal.timeout = originalTimeout;
+    }
+});
