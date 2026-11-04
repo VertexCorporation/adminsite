@@ -187,7 +187,8 @@ export function startApp(firebaseConfig) {
 
                 updateHome(user, isAdmin, departments);
                 if(deploymentCapabilities.consolePeople){
-                  let revision=access.authzVersion??ownProfile?.authzVersion??0;
+                  // The access response may legitimately omit authzVersion. Do not read an undeclared profile.
+                  let revision=access.authzVersion??0;
                   personnelUnsubscribe=db.collection('users').doc(user.uid).onSnapshot(async snapshot=>{
                     const profile=snapshot.data()||{};if(!profile.contributorId&&!profile.personnelManaged&&!profile.consoleAccessManaged)return;
                     const next=profile.authzVersion||0;if(next===revision)return;revision=next;
