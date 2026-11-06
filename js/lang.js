@@ -190,7 +190,7 @@ const LANG = {
     "customer.state.not-requested": "Gönderim istenmedi",
     "customer.state.not-configured": "E-posta hizmeti yapılandırılmamış; hesap hazır, davet gönderilmedi",
     "customer.state.sending": "Gönderim sürüyor; henüz doğrulanmadı",
-    "customer.state.accepted": "SMTP gönderimi kabul etti; teslimat doğrulanmadı",
+    "customer.state.accepted": "E-posta hizmeti gönderimi kabul etti; teslimat doğrulanmadı",
     "customer.state.uncertain": "Gönderim belirsiz; otomatik tekrar gönderilmez",
 
     "resetAccount.title": "Şifre Sıfırlama",
@@ -1408,7 +1408,7 @@ const LANG = {
     "customer.state.not-requested": "Not requested",
     "customer.state.not-configured": "Email service not configured; account ready, invitation not sent",
     "customer.state.sending": "Sending; not yet confirmed",
-    "customer.state.accepted": "Accepted by SMTP; delivery unconfirmed",
+    "customer.state.accepted": "Accepted by email service; delivery unconfirmed",
     "customer.state.uncertain": "Sending uncertain; automatic resend blocked",
 
     "resetAccount.title": "Password Reset",
