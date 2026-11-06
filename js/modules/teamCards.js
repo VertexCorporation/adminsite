@@ -13,6 +13,7 @@ import {openDrawer, closeDrawer, confirmDialog} from './shell.js';
 import {beginPanelLoading, skeletonFormField, setButtonLoading} from '../utils/loading.js';
 import {isoWeekInIstanbul} from '../utils/isoWeek.js';
 import {loadWeeklyStarsDirectory} from '../utils/weekly-stars-directory.js';
+import {STAR_DEPARTMENTS, starDepartment} from '../utils/weekly-stars-policy.js';
 import {persistWeeklyStars} from '../utils/weekly-stars-save.js';
 import {showLoadError} from '../ui/states.js';
 
@@ -238,7 +239,7 @@ function renderWeeklyStars(container, starsData) {
                     <div id="stars-search-results" class="stars-search-results" role="listbox"></div>
                     ${starsData.directoryError?`<div class="state-block" role="alert">${getLang()==='tr'?'Katılımcı listesi yüklenemedi. Mevcut kayıtlar korunuyor.':'Could not load participants. Existing records are preserved.'}
                         <button type="button" class="chrome-btn-outline" id="stars-directory-retry">${__('common.retry')}</button></div>`:''}
-                    <small class="form-hint">${getLang()==='tr'?'En fazla 5 aktif katılımcı. İsimler kalıcı kimlikleriyle ilişkilendirilir.':'Select up to 5 active participants using their permanent IDs.'}</small>
+                    <small class="form-hint">${getLang()==='tr'?'En fazla 8 aktif katılımcı; her departmandan bir kişi. Core, Essence ve Senatus kapsam dışıdır.':'Select up to 8 active participants, one per department. Core, Essence and Senatus are excluded.'}</small>
                 </div>
 
                 <div>
@@ -294,7 +295,7 @@ function renderWeeklyStars(container, starsData) {
     const drawResults=()=>{
         results.replaceChildren();
         const query=search.value.trim().toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US');
-        const matches=directory.filter(person=>!selected.some(entry=>starId(entry)===person.id)&&
+        const matches=directory.filter(person=>starDepartment(person.department)&&!selected.some(entry=>starId(entry)===person.id)&&
             (person.name+' '+(person.email||'')).toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US').includes(query));
         matches.forEach(person=>{
             const button=document.createElement('button');
@@ -302,13 +303,17 @@ function renderWeeklyStars(container, starsData) {
             button.setAttribute('role','option');
             const name=document.createElement('strong');name.textContent=person.name;
             const detail=document.createElement('small');
-            detail.textContent=person.email||person.department||person.id;
+            detail.textContent=[starDepartment(person.department),person.email].filter(Boolean).join(' · ');
+            const departmentTaken=selected.some(entry=>starDepartment(directory.find(candidate=>candidate.id===starId(entry))?.department)===starDepartment(person.department));
+            button.disabled=departmentTaken;
+            if(departmentTaken)detail.textContent+=' · '+(getLang()==='tr'?'Bu departmandan biri seçildi.':'This department is already represented.');
             button.append(name,detail);
             button.onclick=()=>{
-                if(selected.length>=5){
-                    showToast(()=>getLang()==='tr'?'En fazla 5 kişi seçilebilir.':'A maximum of 5 participants may be selected.','error');
+                if(selected.length>=STAR_DEPARTMENTS.length){
+                    showToast(()=>getLang()==='tr'?'En fazla 8 kişi seçilebilir.':'A maximum of 8 participants may be selected.','error');
                     return;
                 }
+                if(departmentTaken)return;
                 selected.push({id:person.id,name:person.name});
                 clearSaveStatus();
                 search.value='';drawSelected();drawResults();
