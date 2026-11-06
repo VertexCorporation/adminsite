@@ -1,6 +1,6 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
-function fixture(){
+function fixture(options={}){
  const listeners={},fields=new Map(),nodes=new Map(),calls=[],dialogs=[];let allowed=true,fail=false,language='tr',langChange;
  for(const name of ['email','displayName','grant','tier','duration','expiresAt','sendInvite'])fields.set(name,{value:'',checked:false,disabled:false});
  fields.get('tier').value='plus';fields.get('duration').value='7';fields.get('sendInvite').checked=true;
@@ -10,7 +10,7 @@ function fixture(){
  const auth={currentUser:{uid:'core'}};
  const context={document:{documentElement:{lang:'tr'},getElementById:id=>nodes.get(id),addEventListener:(name,fn)=>listeners[name]=fn,createElement:()=>({textContent:''})},auth,isPanelAdmin:()=>allowed,
  crypto:{randomUUID:()=> 'customer-request-'+calls.length},__:key=>language+':'+key,userErrorMessage:()=> 'error',onLangChange:fn=>langChange=fn,
- confirmDialog:async fn=>{dialogs.push(fn());return true;},consolePeopleCall:async(name,data)=>{calls.push({name,data});if(data.preview)return {data:{existing:false,currentTier:'free',expiresAtMillis:Date.now()+7*86400000}};if(fail)throw Error('timeout');return {data:{uid:'customer',status:'complete',account:'created',profile:'ready',subscription:'granted',expiry:'scheduled',invitation:'accepted'}};}};
+ confirmDialog:async fn=>{dialogs.push(fn());return options.confirmed!==false;},consolePeopleCall:async(name,data)=>{calls.push({name,data});if(data.preview)return {data:{existing:false,currentTier:'free',expiresAtMillis:Date.now()+7*86400000,...options.preview}};if(fail)throw Error('timeout');return {data:{uid:'customer',status:'complete',account:'created',profile:'ready',subscription:'granted',expiry:'scheduled',invitation:'accepted'}};}};
  const source=fs.readFileSync('js/modules/customerAccounts.js','utf8').replace(/^import .*;\n/gm,'').replace('export function','function');vm.runInNewContext(source+'\ninitCustomerAccounts();',context);
  return {fields,nodes,calls,dialogs,auth,submit:()=>listeners['customer-account-form:submit']({preventDefault(){}}),edit:()=>listeners['customer-account-form:input'](),revoke:()=>{allowed=false;listeners['vertex:access-changed']();},fail:v=>fail=v,lang:()=>{language='en';langChange();}};
 }
@@ -30,4 +30,12 @@ test('form labels resolve in both languages and reuse existing themed controls',
  const html=fs.readFileSync('index.html','utf8'),section=html.split('id="customer-account-manager"')[1].split('id="password-reset-manager"')[0];
  for(const id of ['customer-email','customer-name','customer-tier','customer-duration','customer-expiry'])assert(section.includes('for="'+id+'"'));
  assert(section.includes('class="chrome-btn-outline"'));assert(section.includes('role="status"'));assert(!/style=|#[a-f0-9]{6}/i.test(section));
+});
+test('uncertain delivery needs a distinct warning and explicit confirmed retry flag',async()=>{
+ const preview={existing:true,previous:{invitation:'uncertain'}};
+ const canceled=fixture({preview,confirmed:false});canceled.fields.get('email').value='user@example.com';await canceled.submit();
+ assert.equal(canceled.calls.length,1);assert.equal(canceled.dialogs[0].warning,'tr:customer.retryInvitationWarning');
+ const confirmed=fixture({preview});confirmed.fields.get('email').value='user@example.com';await confirmed.submit();
+ assert.equal(confirmed.calls[1].data.retryInvitation,true);
+ const normal=fixture();normal.fields.get('email').value='user@example.com';await normal.submit();assert.equal(normal.calls[1].data.retryInvitation,undefined);
 });

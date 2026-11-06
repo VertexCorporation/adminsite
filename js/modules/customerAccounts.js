@@ -68,7 +68,7 @@ export function initCustomerAccounts() {
       const {data: preview} = await consolePeopleCall('createConsoleCustomerAccount', {...input, preview: true});
       if (!active()) return;
       const confirmed = await confirmDialog(() => ({title: __('customer.title'), body: __('customer.confirmBody'),
-        warning: preview.existing ? __('customer.existingWarning') : __('customer.timing'),
+        warning: preview.previous?.invitation === 'uncertain' ? __('customer.retryInvitationWarning') : preview.existing ? __('customer.existingWarning') : __('customer.timing'),
         rows: [
           {label: __('customer.email'), value: escape(input.email)},
           {label: __('customer.name'), value: escape(input.displayName || '—')},
@@ -79,7 +79,7 @@ export function initCustomerAccounts() {
         ], confirmLabel: __('customer.submit')}));
       if (!confirmed || !active()) {if (active()) status.textContent = ''; return;}
       status.textContent = __('customer.working');
-      const {data} = await consolePeopleCall('createConsoleCustomerAccount', {...input, requestId});
+      const {data} = await consolePeopleCall('createConsoleCustomerAccount', {...input, requestId, ...(preview.previous?.invitation === 'uncertain' ? {retryInvitation:true} : {})});
       if (!active()) return;
       result = data; render();
     } catch (error) {
