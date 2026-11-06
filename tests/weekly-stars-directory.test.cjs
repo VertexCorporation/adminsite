@@ -50,3 +50,14 @@ test('invalid or repeating pagination fails instead of looping or silently trunc
     }),/Invalid participant page cursor/);
     assert.equal(calls,2);
 });
+
+test('directory requests include legacy active memberships on every page',async()=>{
+ const calls=[];
+ const people=await load(async request=>{
+  calls.push(request);
+  return {data:request.cursor?{contributors:[{id:'legacy',name:'Legacy',membership:{isVertex:true}}]}:
+   {contributors:[person('modern')],nextCursor:'second'}};
+ });
+ assert.equal(people.map(p=>p.id).join(','),'modern,legacy');
+ assert(calls.every(request=>request.directory===true));
+});

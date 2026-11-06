@@ -13,7 +13,7 @@ import {openDrawer, closeDrawer, confirmDialog} from './shell.js';
 import {beginPanelLoading, skeletonFormField, setButtonLoading} from '../utils/loading.js';
 import {isoWeekInIstanbul} from '../utils/isoWeek.js';
 import {loadWeeklyStarsDirectory} from '../utils/weekly-stars-directory.js';
-import {STAR_DEPARTMENTS, starDepartment} from '../utils/weekly-stars-policy.js';
+import {STAR_DEPARTMENTS, starDepartment, starSearchText} from '../utils/weekly-stars-policy.js';
 import {persistWeeklyStars} from '../utils/weekly-stars-save.js';
 import {showLoadError} from '../ui/states.js';
 
@@ -294,18 +294,20 @@ function renderWeeklyStars(container, starsData) {
     };
     const drawResults=()=>{
         results.replaceChildren();
-        const query=search.value.trim().toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US');
-        const matches=directory.filter(person=>starDepartment(person.department)&&!selected.some(entry=>starId(entry)===person.id)&&
-            (person.name+' '+(person.email||'')).toLocaleLowerCase(getLang()==='tr'?'tr-TR':'en-US').includes(query));
+        const query=starSearchText(search.value);
+        const matches=directory.filter(person=>!selected.some(entry=>starId(entry)===person.id)&&
+            starSearchText(person.name+' '+(person.email||'')+' '+(person.department||'')).includes(query));
         matches.forEach(person=>{
             const button=document.createElement('button');
             button.type='button';button.className='stars-person-result';
             button.setAttribute('role','option');
             const name=document.createElement('strong');name.textContent=person.name;
             const detail=document.createElement('small');
-            detail.textContent=[starDepartment(person.department),person.email].filter(Boolean).join(' · ');
-            const departmentTaken=selected.some(entry=>starDepartment(directory.find(candidate=>candidate.id===starId(entry))?.department)===starDepartment(person.department));
-            button.disabled=departmentTaken;
+            const department=starDepartment(person.department);
+            detail.textContent=[person.department,person.email].filter(Boolean).join(' · ');
+            const departmentTaken=department&&selected.some(entry=>starDepartment(directory.find(candidate=>candidate.id===starId(entry))?.department)===starDepartment(person.department));
+            button.disabled=!department||departmentTaken;
+            if(!department)detail.textContent+=' · '+(getLang()==='tr'?'Bu departman yıldız üye seçimine uygun değil.':'This department is not eligible for weekly stars.');
             if(departmentTaken)detail.textContent+=' · '+(getLang()==='tr'?'Bu departmandan biri seçildi.':'This department is already represented.');
             button.append(name,detail);
             button.onclick=()=>{
@@ -313,7 +315,7 @@ function renderWeeklyStars(container, starsData) {
                     showToast(()=>getLang()==='tr'?'En fazla 8 kişi seçilebilir.':'A maximum of 8 participants may be selected.','error');
                     return;
                 }
-                if(departmentTaken)return;
+                if(!department||departmentTaken)return;
                 selected.push({id:person.id,name:person.name});
                 clearSaveStatus();
                 search.value='';drawSelected();drawResults();

@@ -4,12 +4,12 @@ export async function loadWeeklyStarsDirectory(fetchPage) {
     const people = new Map(), cursors = new Set();
     let cursor = null;
     do {
-        const {data} = await fetchPage({filter:'vertex', pageSize:50, cursor});
+        const {data} = await fetchPage({filter:'vertex', directory:true, pageSize:50, cursor});
         if (!data || !Array.isArray(data.contributors))
             throw new Error('Invalid participant directory');
         for (const person of data.contributors) {
             if (person && typeof person.id === 'string' && person.id &&
-                typeof person.name === 'string' && person.name.trim() && person.isVertex === true)
+                typeof person.name === 'string' && person.name.trim() && (person.isVertex === true || person.membership?.isVertex === true))
                 people.set(person.id, person);
         }
         const next = data.nextCursor;
