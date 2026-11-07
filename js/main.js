@@ -34,6 +34,7 @@ import { initTeamCardsPanel, loadTeamCards } from './modules/teamCards.js';
 import { updateGridVisibleCounts, initAdaptiveGrids } from './modules/views.js';
 import { initUserMenu } from './modules/userMenu.js';
 import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
+import { initReportsModule } from './modules/reports.js';
 
 /**
  * The main application function.
@@ -76,6 +77,7 @@ export function startApp(firebaseConfig) {
         ['team-cards', initTeamCardsPanel],
         ['home', initHomeModule],
         ['system-sections', initSystemSections],
+        ['reports', initReportsModule],
         ['icons', initIcons],
         ['adaptive-grid', initAdaptiveGrids],
     ];

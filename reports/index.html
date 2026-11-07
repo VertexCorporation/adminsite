@@ -152,7 +152,7 @@
     <main>
       <div class="topbar"><div class="topbar-left"><strong>Array Rapor Görev</strong><span class="circle"></span><span>Faaliyet takibi</span></div>
         <div class="topbar-actions">
-          <button type="button" class="button" id="backup-btn" title="Tüm verileri yedekle">↓ JSON yedek</button>
+          <button type="button" class="button" id="backup-btn" title="Departman config dosyasını indir">↓ Config indir</button>
           <button type="button" class="button" id="csv-btn" title="Kayıtları Excel'de açılabilen CSV olarak indir">↓ CSV</button>
           <button type="button" class="button primary" id="new-entry-btn">＋ Yeni kayıt</button>
           <input id="backup-input" type="file" accept="application/json,.json" hidden>
@@ -210,7 +210,7 @@
         <div class="task-list" id="task-list"></div>
         <div class="task-note"><strong>Not:</strong> Öncelik ve görev durumu yönetsel taslaktır. GitHub'da issue oluşturulmaz, depolarda değişiklik yapılmaz. Atamalar ve tamamlanma durumları bu sitede saklanır.</div>
       </section>
-      <footer><span>array. / rapor &amp; görev — herkesin işi, gün gün.</span><button class="button ghost mini" id="import-btn">↑ JSON yedeğini içe aktar</button></footer>
+      <footer><span>array. / rapor &amp; görev — herkesin işi, gün gün.</span><button class="button ghost mini" id="import-btn">↑ Config yükle</button></footer>
     </main>
   </div>
   <div class="overlay" id="overlay"></div>
@@ -283,6 +283,8 @@
         const data=await callReport('getReportWorkspace',department?{department}:{});
         reportDepartment=data.department;reportColor=data.color||'#e8662c';canEdit=data.canEdit===true;workspaceRevision=data.revision||0;availableDepartments=data.availableDepartments||[reportDepartment];
         team=[...new Set((data.team||[]).filter(Boolean))];
+        joinDates=data.joinDates&&typeof data.joinDates==='object'?{...data.joinDates}:{};updateNote=String(data.updateNote||'');
+        if(isIso(data.weekStart||''))weekStart=data.weekStart;if(isIso(data.selectedDay||''))selectedDay=data.selectedDay;
         if(!team.length&&reportDepartment==='Array')team=[...seed.team];
         const remoteRecords=safeRecords(data.records||[]),remoteTasks=safeTasks(data.tasks||[]);
         records=remoteRecords?.length?remoteRecords:(reportDepartment==='Array'?sourceEntries:[]);
@@ -294,7 +296,7 @@
     function saveRemote(){
       if(!canEdit)return;
       clearTimeout(saveTimer);saveTimer=setTimeout(async()=>{
-        try{const result=await callReport('saveReportWorkspace',{department:reportDepartment,records,tasks,revision:workspaceRevision});workspaceRevision=result.revision;}
+        try{const result=await callReport('saveReportWorkspace',{department:reportDepartment,color:reportColor,team,joinDates,weekStart,selectedDay,updateNote,records,tasks,revision:workspaceRevision});workspaceRevision=result.revision;}
         catch(error){showToast(error.code==='functions/aborted'?'Raporlar başka bir oturumda değişti. Sayfayı yenile.':'Değişiklik sunucuya kaydedilemedi.');console.error(error)}
       },250);
     }
@@ -304,7 +306,7 @@
     const STATUS={done:{name:'Çalışma bildirildi',short:'Çalışma',mark:'✓'},plan:{name:'Plan / öğrenme',short:'Plan',mark:'◌'},off:{name:'Çalışma yapmadı',short:'Yok',mark:'–'},noreport:{name:'Aktif değildi (rapor yok)',short:'Rapor yok',mark:'·'},missing:{name:'Bilgi girilmedi',short:'—',mark:'+'}};
     const sourceMapping={'Çalışma bildirildi':'done','Plan/öğrenme':'plan','Çalışma yapmadı':'off','Aktif değildi (rapor yok)':'noreport'};
     let team=[...seed.team];
-    const joinDates={...(seed.joinDates||{})};
+    let joinDates={...(seed.joinDates||{})};
     const MIGRATION_KEY='array-rapor-gorev-v5-seed-import-2026-11-07-saturday';
     function memberOn(name,date){return !joinDates[name]||date>=joinDates[name]}
     function eligible(date){return team.filter(n=>memberOn(n,date))}
@@ -316,6 +318,7 @@
     let activePerson=null;
     let editOriginalKey=null;
     let priorFocus=null;
+    let updateNote='';
     const $=id=>document.getElementById(id);
     const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     function cleanEntry(r){return {date:String(r.date||''),person:String(r.person||''),status:String(r.status||'missing'),project:String(r.project||''),summary:String(r.summary||''),next:String(r.next||''),link:String(r.link||''),source:String(r.source||'')}}
@@ -390,16 +393,35 @@
     function openPerson(n){if(!team.includes(n))return;priorFocus=document.activeElement;activePerson=n;renderDrawer();$('drawer').classList.add('open');refreshOverlay();$('drawer-close').focus()}
     function renderDrawer(){const n=activePerson;if(!n)return;$('drawer-name').textContent=n;$('drawer-avatar').textContent=initials(n);$('drawer-sub').textContent=weekTitle();const dates=weekDates();const recs=dates.map(d=>getRec(n,d));const done=recs.filter(r=>r?.status==='done').length;const report=recs.filter(r=>r&&r.status!=='noreport').length;$('drawer-content').innerHTML=`<div class="drawer-summary">Bu hafta <strong>${report} gün rapor</strong>, <strong>${done} gün çalışma bildirimi</strong> var. Boş günlerde kayıt henüz tamamlanmamış olabilir.</div><div style="margin-top:22px" class="eyebrow">Gün gün notlar</div>`+dates.map(d=>{const r=getRec(n,d),s=status(r);const href=safeHref(r?.link);return `<div class="drawer-day"><div class="drawer-day-head"><span class="drawer-day-title">${esc(dateLabel(d,{weekday:'long',day:'numeric',month:'long'}))}</span>${statusPill(s)}</div><p class="multiline">${esc(!memberOn(n,d)?'Bu tarihte henüz ekibe katılmamıştı.':r?.summary||(joinDates[n]===d?'Bugün ekibe katıldı; henüz günlük faaliyet raporu yok.':'Henüz kayıt bulunmuyor.'))}</p>${r?.next?`<div class="drawer-next">Sonraki adım: ${esc(r.next)}</div>`:''}${href?`<div style="margin-top:9px;font-size:11px"><a href="${esc(href)}" target="_blank" rel="noopener noreferrer" style="color:#54775a">Bağlantı ↗</a></div>`:''}<div style="margin-top:8px"><button class="button mini" data-edit-person="${esc(n)}" data-edit-date="${d}">Düzenle</button></div></div>`}).join('')}
     function closeDrawer(){activePerson=null;$('drawer').classList.remove('open');refreshOverlay();if(priorFocus?.focus)priorFocus.focus()}
-    function openEditor(n=team[0],date=selectedDay){if(!canEdit)return showToast('Düzenleme yetkisi yalnızca Core ekibindedir.');if(!team.includes(n)||!isIso(date))return;priorFocus=document.activeElement;const r=getRec(n,date);editOriginalKey=r?`${n}|${date}`:null;$('entry-person').innerHTML=team.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');$('entry-person').value=n;$('entry-date').value=date;$('entry-status').value=r?.status||'done';$('entry-project').value=r?.project||'';$('entry-summary').value=r?.summary||'';$('entry-next').value=r?.next||'';$('entry-link').value=r?.link||'';$('entry-source').value=r?.source||'';$('delete-entry').style.visibility=r?'visible':'hidden';$('entry-heading').textContent=r?'Kaydı düzenle':'Yeni günlük kayıt';$('entry-modal').classList.add('open');refreshOverlay();$('entry-status').focus()}
+    function openEditor(n=team[0],date=selectedDay){if(!canEdit)return showToast('Bu departman için yazma yetkin yok.');if(!team.includes(n)||!isIso(date))return;priorFocus=document.activeElement;const r=getRec(n,date);editOriginalKey=r?`${n}|${date}`:null;$('entry-person').innerHTML=team.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');$('entry-person').value=n;$('entry-date').value=date;$('entry-status').value=r?.status||'done';$('entry-project').value=r?.project||'';$('entry-summary').value=r?.summary||'';$('entry-next').value=r?.next||'';$('entry-link').value=r?.link||'';$('entry-source').value=r?.source||'';$('delete-entry').style.visibility=r?'visible':'hidden';$('entry-heading').textContent=r?'Kaydı düzenle':'Yeni günlük kayıt';$('entry-modal').classList.add('open');refreshOverlay();$('entry-status').focus()}
     function closeEditor(){$('entry-modal').classList.remove('open');refreshOverlay();if(priorFocus?.focus)priorFocus.focus()}
     function entryKey(r){return r.person+'|'+r.date}
     function onSave(e){e.preventDefault();const person=$('entry-person').value,date=$('entry-date').value,s=$('entry-status').value;if(!team.includes(person)||!isIso(date)||!STATUS[s]||s==='missing')return showToast('Kişi, tarih veya durum geçersiz.');const item=cleanEntry({person,date,status:s,project:$('entry-project').value.trim(),summary:$('entry-summary').value.trim(),next:$('entry-next').value.trim(),link:$('entry-link').value.trim(),source:$('entry-source').value.trim()});if(!item.summary)return showToast('Günlük not alanını doldur.');if(item.link&&!safeHref(item.link))return showToast('Bağlantı geçerli bir HTTP/HTTPS adresi olmalı.');if(editOriginalKey)records=records.filter(r=>entryKey(r)!==editOriginalKey);records=records.filter(r=>entryKey(r)!==entryKey(item));records.push(item);selectedDay=date;weekStart=monday(date);save();closeEditor();render();showToast('Günlük kayıt kaydedildi.')}
     function onDelete(){if(!editOriginalKey)return;const n=$('entry-person').value,date=$('entry-date').value;if(!confirm(`Bu günlük kayıt silinsin mi?\n${n} · ${dateLabel(date)}`))return;records=records.filter(r=>entryKey(r)!==editOriginalKey);save();closeEditor();render();showToast('Kayıt silindi.')}
     function markMissing(){const d=selectedDay;const missing=eligible(d).filter(n=>!getRec(n,d));if(!missing.length){showToast('Bu tarihte boş kayıt bulunmuyor.');return}if(!confirm(`${dateLabel(d)} için raporu bulunmayan ${missing.length} kişiyi “Aktif değildi (rapor yok)” olarak işaretlemek istiyor musun?`))return;records.push(...missing.map(person=>cleanEntry({date:d,person,status:'noreport',project:'—',summary:'Bugün günlük rapor gönderilmedi.',next:'Rapor yok bilgisi, kişinin gerçekten çalışmadığının kanıtı değildir.',link:'',source:''})));save();render();showToast(missing.length+' kişi rapor yok olarak işaretlendi.')}
     function download(name,type,content){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500)}
-    function exportJSON(){const data={app:'Array Rapor Görev',version:4,joinDates,exportedAt:new Date().toISOString(),team,tasks:tasks.map(normalTask),records:records.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.person.localeCompare(b.person,'tr'))};download('array-rapor-gorev-yedek.json','application/json;charset=utf-8',JSON.stringify(data,null,2));showToast('JSON yedek indirildi.')}
+    function exportJSON(){
+      const slug=reportDepartment.toLocaleLowerCase('tr-TR').replace(/[^a-z0-9çğıöşü]+/g,'-');
+      const data={app:reportDepartment+' Rapor Görev',version:5,department:reportDepartment,color:reportColor,weekStart,selectedDay,joinDates,updateNote,exportedAt:new Date().toISOString(),team:[...team],tasks:tasks.map(normalTask),records:records.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.person.localeCompare(b.person,'tr'))};
+      download(slug+'-rapor-gorev-config.json','application/json;charset=utf-8',JSON.stringify(data,null,2));showToast('Departman config dosyası indirildi.');
+    }
     function exportCSV(){const header=['Tarih','Kişi','Durum','Rapor','Proje / Alan','Günlük not','Engel / sonraki adım','Bağlantı','Kaynak'];const rows=records.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.person.localeCompare(b.person,'tr')).map(r=>[r.date,r.person,STATUS[r.status]?.name||'',r.status==='noreport'?'Rapor yok':'Rapor gönderdi',r.project,r.summary,r.next,r.link,r.source]);const quote=x=>'"'+String(x??'').replace(/"/g,'""')+'"';const data='\ufeff'+[header,...rows].map(r=>r.map(quote).join(';')).join('\r\n');download('array-rapor-gorev-gunluk-raporlar.csv','text/csv;charset=utf-8',data);showToast('CSV dosyası indirildi.')}
-    function importJSON(file){if(!file)return;file.text().then(s=>{let data;try{data=JSON.parse(s)}catch(e){return showToast('JSON dosyası okunamadı.')}if(!data||!Array.isArray(data.records)||!Array.isArray(data.team)||!data.team.every(n=>team.includes(n)))return showToast('Bu dosya uyumlu bir ekip yedeği değil.');const parsed=safeRecords(data.records);if(!parsed)return showToast('Yedekte geçerli kayıt bulunamadı.');if(!confirm(`${parsed.length} kayıt içeren yedek yüklensin mi? Mevcut kayıtların üzerine yazılacak.`))return;records=[...new Map([...sourceEntries.filter(r=>!parsed.some(p=>p.person===r.person&&p.date===r.date)),...parsed].map(r=>[r.person+'|'+r.date,r])).values()];if(Array.isArray(data.tasks)){const restored=safeTasks(data.tasks);if(restored){tasks=restored;saveTasks()}}save();render();showToast('Yedek yüklendi.')}).catch(()=>showToast('Dosya okunamadı.'))}
+    function importJSON(file){
+      if(!file||!canEdit)return showToast('Config yüklemek için yazma yetkisi gerekir.');
+      file.text().then(s=>{
+        let data;try{data=JSON.parse(s)}catch(e){return showToast('Config JSON dosyası okunamadı.')}
+        if(!data||!Array.isArray(data.records)||!Array.isArray(data.team)||!Array.isArray(data.tasks))return showToast('Config içinde team, tasks ve records dizileri bulunmalı.');
+        if(data.department&&data.department!==reportDepartment&&!confirm(data.department+' config dosyası '+reportDepartment+' tablosuna yüklenecek. Devam edilsin mi?'))return;
+        const importedTeam=[...new Set(data.team.filter(n=>typeof n==='string').map(n=>n.trim().slice(0,120)).filter(Boolean))];team=importedTeam;
+        const statusMap={...sourceMapping,'Plan / öğrenme':'plan','Rapor yok':'noreport',done:'done',plan:'plan',off:'off',noreport:'noreport'};
+        const normalized=data.records.map(r=>cleanEntry({...r,status:statusMap[r.status]||statusMap[r.report_status]||r.status}));
+        const parsed=safeRecords(normalized),restored=safeTasks(data.tasks);if(!parsed||!restored)return showToast('Config içindeki rapor veya görev kayıtları geçersiz.');
+        if(!confirm(parsed.length+' rapor ve '+restored.length+' görev yüklensin mi? Mevcut departman verisinin üzerine yazılacak.'))return;
+        records=parsed;tasks=restored;joinDates=data.joinDates&&typeof data.joinDates==='object'?Object.fromEntries(Object.entries(data.joinDates).filter(([name,date])=>importedTeam.includes(name)&&isIso(String(date)))):{};
+        if(isIso(String(data.weekStart||'')))weekStart=data.weekStart;if(isIso(String(data.selectedDay||'')))selectedDay=data.selectedDay;updateNote=String(data.updateNote||'').slice(0,1000);
+        saveRemote();render();showToast('Config yüklendi ve sunucuya kaydediliyor.');
+      }).catch(()=>showToast('Config dosyası okunamadı.'));
+    }
     function printWeek(){
       const dates=weekDates(),q=$('search-overview').value.trim().toLocaleLowerCase('tr-TR');
       const filtered=team.filter(n=>n.toLocaleLowerCase('tr-TR').includes(q));
@@ -582,7 +604,7 @@
     $('final-txt').addEventListener('click',()=>{download('array-rapor-gorev-haftalik-'+weekStart+'.txt','text/plain;charset=utf-8','\ufeff'+finalText());showToast('Haftalık final rapor indirildi.')});
     $('final-print').addEventListener('click',printFinal);
 
-    loadWorkspace();
+    loadWorkspace(new URLSearchParams(location.search).get('department')||'');
   </script>
 </body>
 </html>
