@@ -36,6 +36,9 @@ export const PERMISSION_CATEGORIES = [
     {id:'scene',key:'catalog.scene',screens:[
         {id:'showcase',key:'perms.scene_screens',scopes:['system.teamLog']}
     ]},
+    {id:'reports',key:'catalog.reports',screens:[
+        {id:'workspace',key:'reports.workspace',scopes:['reports.workspace']}
+    ]},
     {id:'system',key:'catalog.system',screens:[
         {id:'server',key:'subnav.server',scopes:['system.serverStatus']},
         {id:'members',key:'catalog.members',scopes:['system.deptAssign','system.deptUsers']},

@@ -76,6 +76,7 @@ export function isPanelAdmin() {
     return currentUser.isAdmin;
 }
 export function getEffectivePanelLevel(panelKey) {
+    if(panelKey==='reports.workspace')return currentUser.departments.length?'read':'none';
     if(currentUser.isAdmin)return 'write';
     if(panelKey.startsWith('origin.') || panelKey==='models.origin' || panelKey.startsWith('users.') || ['contributors.users','contributors.vertexStatus','system.deptPerms','subscriptions.assign'].includes(panelKey))return 'none';
     if(!departmentPermissions)return 'none';
@@ -83,8 +84,9 @@ export function getEffectivePanelLevel(panelKey) {
 }
 export function getAccessibleTabs(departments) {
     if (currentUser.isAdmin && departments.includes('Core')) return PERMISSION_CATEGORIES.map(category=>category.id);
-    return PERMISSION_CATEGORIES.filter(category=>category.screens.some(screen=>
-        !screen.coreOnly && screen.scopes.some(scope=>bestLevel(scope,departments)!=='none'))).map(category=>category.id);
+    const alwaysVisible = departments.length ? ['reports'] : [];
+    return [...new Set([...alwaysVisible,...PERMISSION_CATEGORIES.filter(category=>category.screens.some(screen=>
+        !screen.coreOnly && screen.scopes.some(scope=>bestLevel(scope,departments)!=='none'))).map(category=>category.id)])];
 }
 
 export function departmentHasAccess(department, categoryId) {
