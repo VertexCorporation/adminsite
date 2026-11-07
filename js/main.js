@@ -34,7 +34,6 @@ import { initTeamCardsPanel, loadTeamCards } from './modules/teamCards.js';
 import { updateGridVisibleCounts, initAdaptiveGrids } from './modules/views.js';
 import { initUserMenu } from './modules/userMenu.js';
 import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
-import { initDepartmentReports } from './modules/departmentReports.js';
 
 /**
  * The main application function.
@@ -72,7 +71,6 @@ export function startApp(firebaseConfig) {
         ['subscriptions', initSubscriptionsModule],
         ['user-menu', initUserMenu],
         ['chat', initConsoleChat],
-        ['department-reports', initDepartmentReports],
         ['profile', initProfileMenu],
         ['site-team', initSiteTeamPanel],
         ['team-cards', initTeamCardsPanel],
@@ -313,7 +311,7 @@ function resetTabFilter() {
 }
 
 function applyTabFilter(allowedTabs) {
-    const visibleTabs = new Set([...allowedTabs, 'home', 'profile', 'chat', 'reports']);
+    const visibleTabs = new Set([...allowedTabs, 'home', 'profile', 'chat']);
     if (allowedTabs.some(id => ['news','events','notifications'].includes(id))) visibleTabs.add('publications');
     if (getEffectivePanelLevel('system.teamLog') !== 'none') visibleTabs.add('scene');
     const dockButtons = document.querySelectorAll('.dock-btn');
@@ -384,8 +382,8 @@ function applyPanelGate(isAdmin) {
         } else {
             el.style.display = '';
             // Salt-okunur kartlar: içerik görünür, düzenleme öğeleri CSS ile gizli.
-            el.classList.toggle('panel-readonly', level !== 'write' && !el.closest('#tab-reports'));
-            if(level !== 'write' && !el.closest('#tab-reports')) disableReadOnlyControls(el);
+            el.classList.toggle('panel-readonly', level !== 'write');
+            if(level !== 'write') disableReadOnlyControls(el);
         }
     });
     if (!isAdmin) {
@@ -447,7 +445,6 @@ function renderPermSummary() {
 }
 
 function disableReadOnlyControls(panel) {
-    if (panel.closest('#tab-reports')) return; // Readers may filter and request tasks; writes are backend-authorized.
     panel.querySelectorAll('input,textarea,select,button').forEach(control => {
         if(control.id.includes('search') || control.matches('.btn-refresh,.filter-chip,.contributor-cell-name,.retry-btn,[data-read-action]'))return;
         if(!control.disabled)control.dataset.roleDisabled='true';

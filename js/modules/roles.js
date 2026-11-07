@@ -76,7 +76,6 @@ export function isPanelAdmin() {
     return currentUser.isAdmin;
 }
 export function getEffectivePanelLevel(panelKey) {
-    if (panelKey.startsWith('reports.')) return currentUser.departments.length ? (currentUser.isAdmin ? 'write' : 'read') : 'none';
     if(currentUser.isAdmin)return 'write';
     if(panelKey.startsWith('origin.') || panelKey==='models.origin' || panelKey.startsWith('users.') || ['contributors.users','contributors.vertexStatus','system.deptPerms','subscriptions.assign'].includes(panelKey))return 'none';
     if(!departmentPermissions)return 'none';
