@@ -1,0 +1,14 @@
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100svh; display: grid; place-items: center; padding: 24px; background: var(--bg-app); color: var(--text-primary); font: 16px/1.6 system-ui, sans-serif; }
+main { width: min(100%, 480px); padding: 32px; border: 1px solid var(--border-strong); border-radius: 24px; background: var(--bg-surface); }
+header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.brand { font-weight: 700; letter-spacing: .15em; }
+h1 { font-size: clamp(26px, 5vw, 34px); line-height: 1.2; margin: 36px 0 20px; }
+p, small { color: var(--text-secondary); }
+button, select { font: inherit; border-radius: 12px; border: 1px solid var(--border-strong); padding: 10px; background: var(--bg-elevated); color: var(--text-primary); }
+button { width: 100%; margin-top: 12px; cursor: pointer; font-weight: 600; }
+button:disabled { opacity: .6; cursor: wait; }
+button:focus-visible, select:focus-visible { outline: 3px solid var(--text-primary); outline-offset: 4px; }
+#activation-status { min-height: 2em; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 380px) { body { padding: 16px; } main { padding: 24px; } }
