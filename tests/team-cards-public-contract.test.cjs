@@ -1,10 +1,11 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 'use strict';
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const get=relative=>fs.readFileSync(path.join(root,relative),'utf8');
+const get = readConsoleSource;
 
 test('public team editor is one canonical management surface',()=>{
  const source=get('js/modules/teamCards.js');

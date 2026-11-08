@@ -1,9 +1,10 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+const read = readConsoleSource;
 
 test('home is the default view for admins and department members', () => {
   const html = read('index.html');

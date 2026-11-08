@@ -1,3 +1,4 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -6,7 +7,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const home = fs.readFileSync(path.join(root, 'js/modules/home.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'css/home.css'), 'utf8');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const html = readConsoleSource('index.html');
 const copyMatch = home.match(/const COPY = (\{[\s\S]*?\});\nconst MODULE_IDS/);
 const itemsMatch = home.match(/const TECHNOLOGIES = (\[[\s\S]*?\]);\nlet context = null;/);
 assert.ok(copyMatch, 'Home translations are defined');

@@ -7,7 +7,8 @@
     "audit:i18n": "node tests/i18n-audit.cjs",
     "test:startup": "node tests/startup-i18n.cjs",
     "verify:release": "node scripts/verify-release.cjs",
-    "check:syntax": "node scripts/check-syntax.cjs"
+    "check:syntax": "node scripts/check-syntax.cjs",
+    "check:architecture": "node scripts/check-architecture.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"

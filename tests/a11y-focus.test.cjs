@@ -1,7 +1,8 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 test('drawer and modal share a resilient keyboard focus trap and restore caller focus',()=>{
- const shell=fs.readFileSync('js/modules/shell.js','utf8');
+ const shell=readConsoleSource('js/modules/shell.js');
  assert(shell.includes('function trapDialogTab(root,event)'));
  assert(shell.includes('event.shiftKey?last:first'));
  assert(shell.includes("el.getClientRects().length"));

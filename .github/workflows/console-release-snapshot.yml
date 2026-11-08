@@ -6,9 +6,11 @@ on:
     paths:
       - 'js/**'
       - 'css/**'
+      - 'l10n/**'
+      - 'partials/**'
       - 'assets/fonts/ubuntu-medium.ttf'
       - 'firebase-config.json'
-      - 'scripts/release.cjs'
+      - 'scripts/**'
       - '.github/workflows/console-release-snapshot.yml'
 
 permissions:

@@ -3,9 +3,8 @@
 // the same release. This command is read-only and is safe in PR/CI checks.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p));
-const files=[];
-for(const dir of ['js','css'])for(const name of fs.readdirSync(path.join(root,dir),{recursive:true}).filter(x=>fs.statSync(path.join(root,dir,x)).isFile()).sort())files.push(dir+'/'+name);
-files.push('assets/fonts/ubuntu-medium.ttf','firebase-config.json');
+const {sourceFiles}=require('./source-files.cjs');
+const files=sourceFiles(root);
 const hash=crypto.createHash('sha256');
 for(const file of files)hash.update(file).update(read(file));
 const release=hash.digest('hex').slice(0,12),prefix='assets/releases/'+release;

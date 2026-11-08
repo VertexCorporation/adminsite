@@ -6,8 +6,8 @@ test('immutable release generation is idempotent and consumes old manifest white
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'vertex-release-'));
  try{
   for(const dir of ['scripts','assets/fonts'])fs.mkdirSync(path.join(temp,dir),{recursive:true});
-  for(const dir of ['js','css'])fs.cpSync(path.join(root,dir),path.join(temp,dir),{recursive:true});
-  for(const file of ['scripts/release.cjs','index.html','assets/fonts/ubuntu-medium.ttf','firebase-config.json']){
+  for(const dir of ['js','css','l10n','partials'])fs.cpSync(path.join(root,dir),path.join(temp,dir),{recursive:true});
+  for(const file of ['scripts/release.cjs','scripts/source-files.cjs','index.html','assets/fonts/ubuntu-medium.ttf','firebase-config.json']){
    fs.copyFileSync(path.join(root,file),path.join(temp,file));
   }
   const run=()=>execFileSync(process.execPath,['scripts/release.cjs'],{cwd:temp,stdio:'pipe'});

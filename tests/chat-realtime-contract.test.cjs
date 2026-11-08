@@ -1,9 +1,10 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 'use strict';
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const source=fs.readFileSync('js/modules/consoleChat.js','utf8');
-const model=fs.readFileSync('js/modules/models.js','utf8');
+const model=readConsoleSource('js/modules/models.js');
 
 test('chat realtime subscriptions only observe server-provided channel metadata',()=>{
   assert.match(source,/db\.collection\('chatHints'\)\.doc\(id\)\.onSnapshot/);

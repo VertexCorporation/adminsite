@@ -7,6 +7,9 @@ on:
   pull_request:
     paths:
       - 'css/**'
+      - 'l10n/**'
+      - 'partials/**'
+      - 'scripts/**'
       - 'js/**'
       - 'index.html'
       - 'tests/**'
@@ -25,6 +28,7 @@ jobs:
       - run: npm install --no-package-lock
       # Generate the immutable release in CI's temporary checkout only.
       # Never push the generated assets or deploy the website.
+      - run: npm run check:architecture
       - run: node scripts/release.cjs
       # GitHub's adminsite runner cannot read the private Fulcrum repository.
       # Its four real-contract tests run separately in an isolated private
@@ -41,6 +45,7 @@ jobs:
           node --test "${testfiles[@]}"
       - run: node --test tests/ui.test.cjs
       - run: npx playwright install --with-deps chromium
+      - run: node tests/architecture-browser.cjs
       - run: node tests/ui-browser.cjs
       - run: node tests/catalog-browser.cjs
       - run: node tests/list-refresh-browser.cjs

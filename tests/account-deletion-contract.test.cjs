@@ -1,8 +1,9 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const read = path => fs.readFileSync(path, 'utf8');
+const read = readConsoleSource;
 
 test('Core-only Users navigation mounts the deletion page', () => {
     const html = read('index.html');

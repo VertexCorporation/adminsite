@@ -1,9 +1,10 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 'use strict';
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const src=file=>fs.readFileSync(path.join(__dirname,'..',file),'utf8');
+const src = readConsoleSource;
 
 test('event refresh shares a header row with the title and remains accessible',()=>{
  const html=src('index.html');

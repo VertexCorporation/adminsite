@@ -1,0 +1,94 @@
+<div class="tab-panel" id="tab-chat">
+                <div class="panel-section-title">
+                    <h2 data-i18n="chat.title">Sohbet</h2>
+                    <p data-i18n="chat.desc">Departman kanalları, görev takibi ve @etiket bildirimleri.</p>
+                </div>
+
+                <div class="chat-layout">
+                    <div class="panel-card chat-sidebar">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="forum"></i>
+                                <h3 data-i18n="chat.channels">Kanallar</h3>
+                            </div>
+                            <button type="button" id="chat-create-btn" class="icon-action-btn" title="Kanal Oluştur" style="display:none;">
+                                <i class="" data-icon="add"></i>
+                            </button>
+                        </div>
+                        <div id="chat-channel-list" class="chat-channel-list">
+</div>
+                    </div>
+
+                    <div class="panel-card chat-main">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" id="chat-channel-icon" data-icon="tag"></i>
+                                <h3 id="chat-channel-title">—</h3>
+                            </div>
+                            <div id="chat-channel-badges" class="dept-badges">
+</div>
+                            <button type="button" id="chat-channel-edit" class="icon-action-btn" title="Kanalı Düzenle" style="display:none;">
+                                <i class="" data-icon="settings"></i>
+                            </button>
+                        </div>
+                        <div id="chat-channel-desc" class="intro-description">
+</div>
+                        <div id="chat-messages" class="chat-messages">
+                            <p class="form-hint chat-hint" data-i18n="chat.select_hint">Bir kanal seçin.</p>
+                        </div>
+                        <div id="chat-composer" class="chat-composer" style="display:none;">
+                            <textarea id="chat-input" rows="2" data-i18n-placeholder="chat.placeholder" placeholder="Mesaj yazın — @Departman veya @mail ile etiketleyin">
+</textarea>
+                            <div class="chat-composer-actions">
+                                <label class="chat-task-toggle">
+<input type="checkbox" id="chat-as-task"><span data-i18n="chat.as_task">Görev/Sorun</span>
+</label>
+                                <button type="button" id="chat-send" class="chrome-btn-accent"><i class="" data-icon="send"></i>
+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="chat-channel-form" class="panel-card chat-channel-form" style="display:none;">
+                    <div class="card-title-row">
+                        <div class="title-details">
+                            <i class="" data-icon="add_circle"></i>
+                            <h3 id="chat-form-title" data-i18n="chat.form_create">Kanal Oluştur</h3>
+                        </div>
+                    </div>
+                    <div class="form-stack">
+                        <div class="form-group-field">
+                            <label for="chat-form-name" data-i18n="chat.name_label">Kanal Adı</label>
+                            <input type="text" id="chat-form-name" maxlength="60" placeholder="örn. Genel, Array Görev Kanalı" data-i18n-placeholder="chat.name_ph">
+                        </div>
+                        <div class="form-group-field">
+                            <label for="chat-form-desc" data-i18n="chat.description_label">Açıklama</label>
+                            <input type="text" id="chat-form-desc" maxlength="300" placeholder="Kanalın amacı" data-i18n-placeholder="chat.desc_ph">
+                        </div>
+                        <div class="form-group-field">
+                            <label data-i18n="chat.departments_label">Hangi departmanlara açık?</label>
+                            <div id="chat-form-depts" class="chat-form-depts">
+</div>
+                        </div>
+                        <div class="form-group-field">
+                            <label for="chat-form-postlevel" data-i18n="chat.writers_label">Kimler yazabilir?</label>
+                            <select id="chat-form-postlevel">
+                                <option value="all" data-i18n="chat.everyone">Herkes</option>
+                                <option value="admins" data-i18n="chat.core_only">Yalnızca Core</option>
+                            </select>
+                        </div>
+                        <div class="form-group-field" id="chat-pin-group" style="display:none;">
+                            <label class="chat-task-toggle">
+<input type="checkbox" id="chat-form-pin"><span data-i18n="chat.pin">Sabitle</span>
+</label>
+                        </div>
+                        <div class="form-submit-row">
+                            <button type="button" id="chat-form-delete" class="chat-form-delete-btn" style="display:none;"><i class="" data-icon="delete"></i><span data-i18n="chat.delete_channel">Kanalı Sil</span>
+</button>
+                            <button type="button" id="chat-form-save" class="chrome-btn-accent" data-i18n="common.save">Kaydet</button>
+                            <button type="button" id="chat-form-cancel" class="chrome-btn-outline" data-i18n="common.cancel">İptal</button>
+                        </div>
+                    </div>
+                </div>
+            </div>

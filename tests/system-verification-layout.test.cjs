@@ -1,10 +1,11 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const html = readConsoleSource('index.html');
 const css = fs.readFileSync(path.join(root, 'css/layout.css'), 'utf8');
 
 test('verification cards use full-width fallback spans', () => {

@@ -1,0 +1,312 @@
+<div class="tab-panel" id="tab-publications">
+<div class="panel-section-title">
+<h2 data-i18n="catalog.publications">Yayınlar</h2>
+</div>
+<div class="grid-layout">
+                    <!-- Haber Editörü -->
+                    <div id="news-creator" class="panel-card col-span-7" data-panel="news.editor">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="post_add"></i>
+                                <h3 data-i18n="news.form_title">Haber Duyurusu Yaz</h3>
+                            </div>
+                        </div>
+
+                        <form id="news-form" class="form-scrollable-container">
+                            <!-- Türkçe İçerik -->
+                            <div class="form-block-group">
+                                <span class="block-title" data-i18n="news.tr_section">Türkçe Yayın İçeriği</span>
+                                <div class="form-group-field">
+                                    <label for="title-tr" data-i18n="news.tr_title">Başlık (TR)</label>
+                                    <input type="text" id="title-tr" data-i18n-placeholder="news.tr_title_ph" placeholder="Haber başlığı" required>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="summary-tr" data-i18n="news.tr_summary">Özet (TR)</label>
+                                    <textarea id="summary-tr" data-i18n-placeholder="news.tr_summary_ph" placeholder="Haber akış kartındaki özet" rows="2" required>
+</textarea>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="content-tr" data-i18n="news.tr_content">Detay (TR)</label>
+                                    <textarea id="content-tr" data-i18n-placeholder="news.tr_content_ph" placeholder="Makale detaylı içeriği (Markdown destekler)" rows="5" required>
+</textarea>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="cover-image-tr" data-i18n="news.tr_cover">Kapak Fotoğrafı (TR)</label>
+                                    <input type="file" id="cover-image-tr" accept="image/*" required>
+                                </div>
+                            </div>
+
+                            <!-- İngilizce İçerik -->
+                            <div class="form-block-group">
+                                <span class="block-title" data-i18n="news.en_section">English Content (İngilizce)</span>
+                                <div class="form-group-field">
+                                    <label for="title-en" data-i18n="news.en_title">Title (EN)</label>
+                                    <input type="text" id="title-en" data-i18n-placeholder="news.en_title_ph" placeholder="Article Title" required>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="summary-en" data-i18n="news.en_summary">Summary (EN)</label>
+                                    <textarea id="summary-en" data-i18n-placeholder="news.en_summary_ph" placeholder="Short description summary" rows="2" required>
+</textarea>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="content-en" data-i18n="news.en_content">Body (EN)</label>
+                                    <textarea id="content-en" data-i18n-placeholder="news.en_content_ph" placeholder="Detailed content details" rows="5" required>
+</textarea>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="cover-image-en" data-i18n="news.en_cover">Cover Image (EN)</label>
+                                    <input type="file" id="cover-image-en" accept="image/*" required>
+                                </div>
+                            </div>
+
+                            <!-- Etiketler -->
+                            <div class="form-block-group">
+                                <span class="block-title" data-i18n="news.meta_section">Meta Veri & Referanslar</span>
+                                <div class="form-group-field">
+                                    <label for="tags" data-i18n="news.tags">Etiketler</label>
+                                    <input type="text" id="tags" data-i18n-placeholder="news.tags_ph" placeholder="Ör. guncelleme, topluluk (virgülle ayırın)">
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="references" data-i18n="news.references">Kaynak Bağlantıları (URL)</label>
+                                    <textarea id="references" data-i18n-placeholder="news.references_ph" placeholder="Her satıra bir adet bağlantı gelecek şekilde" rows="2">
+</textarea>
+                                </div>
+                            </div>
+
+                            <div class="form-submit-row">
+                                <button type="submit" id="submit-btn" class="chrome-btn-accent"><span data-i18n="news.publish_btn">Haber Makalesini Yayınla</span>
+</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Yayınlanmış Makaleler -->
+                    <div id="news-manager" class="panel-card col-span-5" data-panel="news.published">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="article"></i>
+                                <h3 data-i18n="news.active_articles">Aktif Yayındaki Haberler</h3>
+                            </div>
+                        </div>
+                        <div id="articles-list-container" class="scrollable-list-box">
+                            <p class="form-hint" style="text-align:center; padding: 2rem;" data-i18n="news.no_articles">Yayınlanmış haber makalesi bulunamadı.</p>
+                        </div>
+                    </div>
+
+<section class="panel-card col-span-12" data-panel="events.list">
+  <div class="card-title-row events-section-header">
+    <div class="title-details">
+<h3 data-i18n="panel.events.list">Etkinlik Listesi</h3>
+</div>
+    <button type="button" id="events-refresh" class="btn-refresh" title="Yenile" data-i18n-title="contributors.refresh" aria-label="Yenile">
+      <i data-icon="refresh" aria-hidden="true"></i><span data-i18n="contributors.refresh">Yenile</span>
+    </button>
+  </div>
+  <div id="events-list" aria-live="polite">
+</div>
+</section>
+<section class="panel-card col-span-12" data-panel="events.editor">
+<div class="card-title-row">
+<div class="title-details">
+<h3 data-i18n="panel.events.editor">Etkinlik Oluştur</h3>
+</div>
+</div>
+<form id="events-editor">
+<div id="events-fields" class="form-grid">
+</div>
+<div class="form-group-field event-review-control">
+<label id="events-review-label">
+<input type="checkbox" name="dateReviewed"> Tarih tutarsızlığını kaynakla doğruladım / Date discrepancy resolved</label>
+</div>
+<div class="form-submit-row events-editor-actions">
+   <button type="button" id="events-preview" data-read-action class="chrome-btn-outline">Önizleme</button>
+   <button type="submit" id="events-editor-submit" class="chrome-btn-primary">Kaydet</button>
+   <button type="button" id="events-new" class="chrome-btn-outline">Yeni</button>
+  </div>
+</form>
+<div id="events-preview-content" hidden>
+</div>
+</section>
+<section class="panel-card col-span-12" data-panel="events.registrations">
+ <div class="card-title-row">
+<div class="title-details">
+<h3 data-i18n="panel.events.registrations">Kayıtlar</h3>
+</div>
+</div>
+ <div class="event-registration-controls">
+  <div class="form-group-field">
+<label for="events-registration-search">Etkinlik kimliği / Event ID</label>
+<input id="events-registration-search">
+</div>
+  <button type="button" id="events-load-registrations" class="btn-refresh">Kayıtları yükle</button>
+ </div>
+ <div id="events-registrations" aria-live="polite">
+</div>
+</section>
+
+                    <!-- Bildirim Gönderici Form -->
+                    <div id="notification-sender" class="panel-card col-span-7" data-panel="notifications.sender">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="campaign"></i>
+                                <h3 data-i18n="notif.form_title">Push Bildirim Gönder / Ayarla</h3>
+                            </div>
+                        </div>
+
+                        <form id="notification-form" class="form-scrollable-container">
+                            <div class="form-block-group">
+                                <span class="block-title" data-i18n="notif.template_section">Hazır Şablon & Anahtarlar</span>
+                                <div class="form-group-field">
+                                    <label for="notification-template-selector" data-i18n="notif.template_label">Hazır Şablonlar</label>
+                                    <select id="notification-template-selector" data-i18n-options="true">
+                                        <option value="" data-i18n="notif.template_none">-- Şablon Kullanma --</option>
+                                        <optgroup data-i18n="template.group.system" label="Sistem & Teklifler">
+                                            <option value="newModel" data-i18n="template.newModel">Yeni Model Eklendi</option>
+                                            <option value="newFeature" data-i18n="template.newFeature">Yeni Özellik Eklendi</option>
+                                            <option value="upsellFeature" data-i18n="template.upsellFeature">Abonelik Kampanyası</option>
+                                            <option value="appUpdate" data-i18n="template.appUpdate">Uygulama Güncelleme Uyarısı</option>
+                                            <option value="rateApp" data-i18n="template.rateApp">Uygulamayı Puanla</option>
+                                            <option value="referral" data-i18n="template.referral">Arkadaşına Öner</option>
+                                            <option value="socialMedia" data-i18n="template.socialMedia">Sosyal Medya Katılımı</option>
+                                        </optgroup>
+                                        <optgroup data-i18n="template.group.engagement" label="Kullanıcı Etkileşimi">
+                                            <option value="comeback" data-i18n="template.comeback">Geri Dönüş Çağrısı (Genel)</option>
+                                            <option value="longTimeNoSee" data-i18n="template.longTimeNoSee">Uzun Süre Giriş Yapmayanlar</option>
+                                            <option value="howAreYou" data-i18n="template.howAreYou">Hal Hatır Sorma</option>
+                                            <option value="goodMorning" data-i18n="template.goodMorning">Günaydın Mesajı</option>
+                                            <option value="goodNight" data-i18n="template.goodNight">İyi Geceler Mesajı</option>
+                                        </optgroup>
+                                        <optgroup data-i18n="template.group.fun" label="Eğlenceli & Şakalar">
+                                            <option value="randomFact" data-i18n="template.randomFact">İlginç Bilgi</option>
+                                            <option value="showerThought" data-i18n="template.showerThought">Duş Düşünceleri</option>
+                                            <option value="fortuneCookie" data-i18n="template.fortuneCookie">Şans Kurabiyesi</option>
+                                            <option value="hackerJoke" data-i18n="template.hackerJoke">Yazılımcı Şakaları</option>
+                                            <option value="pirate" data-i18n="template.pirate">Korsan Modu</option>
+                                            <option value="trollAnime" data-i18n="template.trollAnime">Troll (Anime)</option>
+                                            <option value="trollAiRebellion" data-i18n="template.trollAiRebellion">Troll (Yapay Zeka İsyanı)</option>
+                                            <option value="singularity" data-i18n="template.singularity">Singularity</option>
+                                            <option value="detectiveCase" data-i18n="template.detectiveCase">Dedektif Hikayesi</option>
+                                            <option value="originStory" data-i18n="template.originStory">Hikaye Başlangıcı</option>
+                                            <option value="rejectionStory" data-i18n="template.rejectionStory">Reddedilme Anısı</option>
+                                            <option value="cooking" data-i18n="template.cooking">Şefin Tarifi</option>
+                                            <option value="existential" data-i18n="template.existential">Varoluşsal Kriz</option>
+                                            <option value="openSource" data-i18n="template.openSource">Açık Kaynak Sevgisi</option>
+                                        </optgroup>
+                                        <optgroup data-i18n="template.group.tech" label="Teknik Detaylar">
+                                            <option value="offlineReady" data-i18n="template.offlineReady">Çevrimdışı Çalışma Hazır</option>
+                                            <option value="customModel" data-i18n="template.customModel">Kendi Modelini Kur</option>
+                                            <option value="dynamicChat" data-i18n="template.dynamicChat">Dinamik Sohbet Odaları</option>
+                                            <option value="ggufSupport" data-i18n="template.ggufSupport">GGUF Desteği Aktif</option>
+                                            <option value="themeCustomization" data-i18n="template.themeCustomization">Tema Özelleştirme</option>
+                                            <option value="homeworkHelper" data-i18n="template.homeworkHelper">Ödev Asistanı Tanıtımı</option>
+                                            <option value="lowBattery" data-i18n="template.lowBattery">Düşük Batarya Tasarruf Modu</option>
+                                        </optgroup>
+                                        <optgroup data-i18n="template.group.special" label="Özel Günler">
+                                            <option value="newYear" data-i18n="template.newYear">Yılbaşı Tebriği</option>
+                                            <option value="valentinesDay" data-i18n="template.valentinesDay">Sevgililer Günü</option>
+                                            <option value="ataturkRemembrance" data-i18n="template.ataturkRemembrance">10 Kasım Atatürk'ü Anma</option>
+                                            <option value="mothersDay" data-i18n="template.mothersDay">Anneler Günü</option>
+                                            <option value="fathersDay" data-i18n="template.fathersDay">Babalar Günü</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+
+                                <div class="flex-row">
+                                    <div class="form-group-field flex-grow">
+                                        <label for="notification-title-key" data-i18n="notif.title_key">Başlık Anahtarı (Title Key)</label>
+                                        <input type="text" id="notification-title-key" data-i18n-placeholder="notif.title_key_ph" placeholder="Ör. notificationTitleKey">
+                                    </div>
+                                    <div class="form-group-field flex-grow">
+                                        <label for="notification-body-key" data-i18n="notif.body_key">Gövde Anahtarı (Body Key)</label>
+                                        <input type="text" id="notification-body-key" data-i18n-placeholder="notif.body_key_ph" placeholder="Ör. notificationBodyKey">
+                                    </div>
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="notification-data-payload" data-i18n="notif.data_payload">İsteğe Bağlı Veri Yükü (JSON)</label>
+                                    <textarea id="notification-data-payload" data-i18n-placeholder="notif.data_payload_ph" placeholder='Ör. {"modelId": "llama-8b"}' rows="1">
+</textarea>
+                                </div>
+                            </div>
+
+                            <div class="form-block-group">
+                                <span class="block-title" data-i18n="notif.fallback_section">Yedek Bildirim İçeriği</span>
+                                <div class="form-group-field">
+                                    <label for="notification-title" data-i18n="notif.fallback_title">Genel Başlık</label>
+                                    <input type="text" id="notification-title" data-i18n-placeholder="notif.fallback_title_ph" placeholder="Yedek bildirim başlığı">
+                                </div>
+                                <div class="form-group-field">
+                                    <label for="notification-body" data-i18n="notif.fallback_body">Genel Mesaj Gövdesi</label>
+                                    <textarea id="notification-body" data-i18n-placeholder="notif.fallback_body_ph" placeholder="Gönderilecek genel mesaj metni" rows="2">
+</textarea>
+                                </div>
+                            </div>
+
+                            <div class="form-block-group">
+                                <span class="block-title" data-i18n="notif.targeting">Kullanıcı Hedefleme</span>
+                                <div class="form-group-field">
+                                    <label for="notification-target-type" data-i18n="notif.target_label">Alıcı Grubu</label>
+                                    <select id="notification-target-type" required>
+                                        <option value="" disabled selected data-i18n="notif.target_placeholder">Bir grup seçin...</option>
+                                        <option value="ALL_USERS" data-i18n="notif.target_all">Tüm Kullanıcılar</option>
+                                        <option value="SINGLE_USER" data-i18n="notif.target_single">Tek Bir Kullanıcı (UID ile)</option>
+                                        <option value="SUBSCRIPTION_LEVEL" data-i18n="notif.target_level">Abonelik Seviyesine Göre</option>
+                                    </select>
+                                </div>
+
+                                <div id="target-specific-inputs" class="conditional-block">
+                                    <div id="target-uid-input" class="form-group-field" style="display:none;">
+                                        <label for="notification-target-uid" data-i18n="notif.uid_label">Kullanıcı UID</label>
+                                        <input type="text" id="notification-target-uid" data-i18n-placeholder="notif.uid_ph" placeholder="Firebase UID adresi">
+                                    </div>
+                                    <div id="target-level-input" class="form-group-field" style="display:none;">
+                                        <label for="notification-target-level" data-i18n="notif.level_label">Minimum Abonelik Düzeyi</label>
+                                        <select id="notification-target-level">
+                                            <option value="0" data-i18n="notif.level0">Ücretsiz Üyeler (Level 0)</option>
+                                            <option value="1" data-i18n="notif.level1">Plus Üyeler (Level 1)</option>
+                                            <option value="2" data-i18n="notif.level2">Pro Üyeler (Level 2)</option>
+                                            <option value="3" data-i18n="notif.level3">Ultra Üyeler (Level 3)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-block-group">
+                                <span class="block-title" data-i18n="notif.mode">Gönderim Modu</span>
+                                <div class="chrome-switch-row" style="justify-content: flex-start; gap: 10px;">
+                                    <span class="switch-label-text" data-i18n="notif.send_now">Hemen Gönder</span>
+                                    <label class="chrome-switch">
+                                        <input type="checkbox" id="notification-schedule-switch">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span class="switch-label-text" data-i18n="notif.schedule">Zamanla</span>
+                                </div>
+
+                                <div id="schedule-datetime-picker" class="conditional-block" style="display:none; margin-top: 10px;">
+                                    <div class="form-group-field">
+                                        <label for="notification-schedule-time" data-i18n="notif.datetime">Tarih ve Saat</label>
+                                        <input type="datetime-local" id="notification-schedule-time">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-submit-row">
+                                <button type="submit" id="submit-notification-btn" class="chrome-btn-accent"><span data-i18n="notif.submit_btn">Bildirimi Gönder</span>
+</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Zamanlanmış Görevler Listesi -->
+                    <div id="scheduled-tasks-manager" class="panel-card col-span-5" data-panel="notifications.scheduled">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="calendar_month"></i>
+                                <h3 data-i18n="notif.scheduled_title">Zamanlanmış Bildirimler</h3>
+                            </div>
+                        </div>
+                        <div id="scheduled-tasks-list-container" class="scrollable-list-box">
+                            <p class="form-hint" style="text-align:center; padding: 2rem;" data-i18n="notif.no_scheduled">Kuyrukta bekleyen bildirim bulunamadı.</p>
+                        </div>
+                    </div>
+                </div>
+</div>

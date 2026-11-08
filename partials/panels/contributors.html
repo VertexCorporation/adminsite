@@ -1,0 +1,54 @@
+<div class="tab-panel" id="tab-contributors">
+                <div class="panel-section-title">
+                    <h2 data-i18n="catalog.contributors">Adaylar</h2>
+                    <p data-i18n="contributors.desc">Vertex topluluk üyelerini inceleyin, onaylayın ve yönetici yetkilerini yönetin.</p>
+                </div>
+
+                <div class="grid-layout">
+
+                    <!-- Başvurular Listesi -->
+                    <div class="panel-card col-span-12" data-panel="contributors.list">
+                        <div class="card-title-row">
+                            <div class="title-details">
+                                <i class="" data-icon="group_work"></i>
+                                <h3 data-i18n="contributors.section">Başvuran Adaylar & Üyeler</h3>
+                            </div>
+                            <button id="refresh-contributors-btn" class="btn-refresh">
+                                <i class="" data-icon="refresh"></i>
+                                <span data-i18n="contributors.refresh">Yenile</span>
+                            </button>
+                        </div>
+
+                        <!-- Kategori Çipleri -->
+                        <div class="scroll-chips-row filter-chips">
+                            <button class="filter-chip active" data-filter="all" onclick="filterContributors('all')" data-i18n="contributors.filter.all">Tümü</button>
+                            <button class="filter-chip" data-filter="vertex" onclick="filterContributors('vertex')" data-i18n="contributors.filter.vertex">Aktif Vertexliler</button>
+                            <button class="filter-chip" data-filter="verified" onclick="filterContributors('verified')" data-i18n="contributors.filter.verified">Onaylılar</button>
+                            <button class="filter-chip" data-filter="unverified" onclick="filterContributors('unverified')" data-i18n="contributors.filter.unverified">Onay Bekleyenler</button>
+                            <button class="filter-chip" data-filter="age-14-15" onclick="filterContributors('age-14-15')">2011–2012</button>
+                            <button class="filter-chip" data-filter="age-16-17" onclick="filterContributors('age-16-17')">2009–2010</button>
+                            <button class="filter-chip" data-filter="age-18" onclick="filterContributors('age-18')">≤2008</button>
+                            <button class="filter-chip" data-filter="linkedin" onclick="filterContributors('linkedin')" data-i18n="contributors.filter.linkedin">LinkedIn</button>
+                            <button class="filter-chip" data-filter="github" onclick="filterContributors('github')" data-i18n="contributors.filter.github">GitHub</button>
+                            <button class="filter-chip" data-filter="interview" onclick="filterContributors('interview')" data-i18n="contributors.filter.interview">Mülakatlılar</button>
+                        </div>
+
+                        <!-- Applicant search and manual entry. Add is restricted to panel writers. -->
+                        <div class="contributor-search-toolbar">
+                            <div class="search-input-field">
+                                <i class=" search-icon" data-icon="search"></i>
+                                <input type="text" id="contributor-search" data-i18n-placeholder="contributors.search" placeholder="Listede isim, e-posta veya biyografi ara..." oninput="searchContributorsLocal()">
+                            </div>
+                            <button type="button" id="add-manual-application" class="chrome-btn-outline contributor-add-btn" aria-label="Manuel başvuru ekle" title="Manuel başvuru ekle" data-i18n-aria-label="manual_application.add" data-i18n-title="manual_application.add" hidden><i data-icon="plus"></i>
+</button>
+                        </div>
+
+                        <div id="contributors-list-container" class="scrollable-list-box">
+
+                        </div>
+                    </div>
+
+                    <!-- Vertex Status Toggle -->
+
+                </div>
+            </div>
