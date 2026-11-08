@@ -402,7 +402,7 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('../assets/fonts/ubuntu-medium.ttf') format('truetype');
+  src: url('../../assets/fonts/ubuntu-medium.ttf') format('truetype');
 }
 
 /* Visibility-aware adaptive grid shared across workspaces. */
