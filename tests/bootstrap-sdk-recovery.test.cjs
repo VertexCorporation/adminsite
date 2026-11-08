@@ -5,9 +5,8 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const initializer = fs.readFileSync('js/core/initializer.js', 'utf8');
-const start = initializer.indexOf('const loadScriptOnce = url =>');
-const end = initializer.indexOf("\ntry {\n    if (['localhost'", start);
-assert(start !== -1 && end > start, 'SDK loading logic must remain testable');
+const {nodes}=require('./helpers/source-ast.cjs');
+const implementation=nodes(initializer,n=>n.type==='VariableDeclaration' && n.declarations.some(d=>['loadScriptOnce','loadScript'].includes(d.id.name))).map(n=>initializer.slice(n.start,n.end)).join('\n');
 
 function harness(outcomes) {
     let attempted = 0, removed = 0;
@@ -27,7 +26,7 @@ function harness(outcomes) {
         if (ms === 400) queueMicrotask(callback);
         return 1;
     }, clearTimeout() {} };
-    vm.runInNewContext(initializer.slice(start, end) + '\nglobalThis.loadScriptForTest = loadScript;', context);
+    vm.runInNewContext(implementation + '\nglobalThis.loadScriptForTest = loadScript;', context);
     return { load: context.loadScriptForTest, get attempted() { return attempted; }, get removed() { return removed; } };
 }
 
@@ -50,6 +49,6 @@ test('bootstrap diagnostic stages are non-sensitive and the authz fallback is de
     assert.match(initializer, /startupStage = 'authentication'/);
     assert.match(initializer, /STARTUP_TIMEOUT = 45000/);
     const main = fs.readFileSync('js/main.js', 'utf8');
-    assert.match(main, /let revision=access\.authzVersion\?\?0/);
+    assert.match(main, /let revision\s*=\s*access\.authzVersion\s*\?\?\s*0/);
     assert.doesNotMatch(main, /ownProfile\?\./);
 });

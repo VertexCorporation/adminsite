@@ -5,10 +5,9 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 
 const source=fs.readFileSync('js/modules/certificateEmailTemplates.js','utf8');
-const start=source.indexOf('    let loadGeneration=0;');
-const end=source.indexOf('    const unsubscribe=onLangChange(paint);load();',start);
-assert(start>0&&end>start,'Keep template-loading lifecycle testable');
-const implementation=source.slice(start,end);
+const {nodes}=require('./helpers/source-ast.cjs');
+const declarations=nodes(source,n=>n.type==='FunctionDeclaration'&&n.id.name==='load'||n.type==='VariableDeclaration'&&n.declarations.some(d=>d.id.name==='loadGeneration'));
+const implementation=declarations.map(n=>source.slice(n.start,n.end)).join('\n');
 
 function fixture(getResponse){
     const failures=[],footer={hidden:false};

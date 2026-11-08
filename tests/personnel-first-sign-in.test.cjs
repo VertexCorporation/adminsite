@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const source=fs.readFileSync(require('node:path').join(__dirname,'../js/main.js'),'utf8');
 const start=source.indexOf('// Active application provisioning prepares membership server-side.');
-const end=source.indexOf('let isAdmin=access.isCore;',start);
+const end=source.indexOf('let isAdmin = access.isCore;',start);
 assert(start>=0&&end>start);
 const run=new Function('consolePeopleCall','normalizeConsoleAccessResponse','user',
  'return(async()=>{'+source.slice(start,end)+'return access;})()');

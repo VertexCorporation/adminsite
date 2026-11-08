@@ -7,7 +7,11 @@ test('member search tolerates Turkish accents, case and extra spaces',()=>{
   assert.equal(starSearchText(name),starSearchText(query));
 });
 const source=fs.readFileSync('js/modules/teamCards.js','utf8');
-const draw=source.slice(source.indexOf('    const drawResults=()=>{'),source.indexOf("    search.addEventListener('input',drawResults);"));
+const {nodes}=require('./helpers/source-ast.cjs');
+const node=nodes(source,n=>n.type==='VariableDeclaration'&&n.declarations.some(d=>d.id.name==='drawResults'))[0];
+const draw=source.slice(node.start,node.end);
+const {LANG}=require('./i18n-audit.cjs');
+
 function render(query=''){
  const node=()=>({children:[],append(...children){this.children.push(...children);},setAttribute(){},replaceChildren(){this.children=[];}});
  const results=node(),directory=[{id:'a',name:'Çağrı Işık',isVertex:true,department:'Array'},
@@ -15,7 +19,7 @@ function render(query=''){
   {id:'unknown',name:'Departmansız Üye',isVertex:true},
   {id:'second',name:'İkinci Array',isVertex:true,department:'array'}];
  const context={document:{createElement:node},directory,selected:[{id:'second'}],results,search:{value:query},
-  getLang:()=> 'tr',starId:p=>p?.id};
+  __:key=>LANG.tr[key],getLang:()=> 'tr',starId:p=>p?.id};
  vm.runInNewContext(policy+'\n'+draw+';drawResults();',context);
  return results.children;
 }

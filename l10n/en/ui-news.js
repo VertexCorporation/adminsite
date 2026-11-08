@@ -1,0 +1,16 @@
+export default {
+  'news.ui.chooseAJpegPngOrWebpImage': 'Choose a JPEG, PNG or WebP image.',
+  'news.ui.couldNotObtainAnImageUploadUrl': 'Could not obtain an image upload URL.',
+  'news.ui.coverImageUploadFailed': 'Cover image upload failed.',
+  'news.ui.editing': 'Editing: ',
+  'news.ui.loadingRevisions': 'Loading revisions…',
+  'news.ui.noPriorRevisions': 'No prior revisions.',
+  'news.ui.noSummaryAdded': 'No summary added.',
+  'news.ui.published': 'Published',
+  'news.ui.references': 'references',
+  'news.ui.restore': 'Restore',
+  'news.ui.restoreRevision': 'Restore revision',
+  'news.ui.revisionHistory': 'Revision history',
+  'news.ui.revisionRestored': 'Revision restored.',
+  'news.ui.updated': 'Updated: ',
+};

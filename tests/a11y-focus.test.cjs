@@ -1,18 +1,8 @@
-const {readConsoleSource} = require('./helpers/console-source.cjs');
 'use strict';
-const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
-test('drawer and modal share a resilient keyboard focus trap and restore caller focus',()=>{
- const shell=readConsoleSource('js/modules/shell.js');
- assert(shell.includes('function trapDialogTab(root,event)'));
- assert(shell.includes('event.shiftKey?last:first'));
- assert(shell.includes("el.getClientRects().length"));
- assert(shell.includes('const trapFocus = e => trapDialogTab(root,e)'));
- assert(shell.includes('trapDialogTab(root,e);'));
- assert(shell.includes('previousModalFocus'));
- assert(shell.includes('previousDrawerFocus'));
-});
-test('reduced motion remains supported in the canonical UI lifecycle',()=>{
- const motion=fs.readFileSync('js/ui/motion.js','utf8');
- assert(motion.includes('prefers-reduced-motion: reduce'));
- assert(motion.includes('if (reducedMotion()'));
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const {harness}=require('./helpers/module-harness.cjs');
+for(const type of ['Modal','Drawer'])test(type+' traps Tab and restores caller focus',async()=>{
+ const h=harness('<button id="caller">Open</button>');
+ try{const ui=await h.load('js/ui/surfaces.js'),caller=h.document.getElementById('caller');caller.focus();const body=ui['open'+type]({title:'Dialog'});body.innerHTML='<button id="first">First</button><button id="last">Last</button>';const first=body.closest('.vx-modal,.vx-drawer').querySelector('button'),last=h.document.getElementById('last');last.focus();last.dispatchEvent(new h.window.KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));assert.equal(h.document.activeElement,first);first.dispatchEvent(new h.window.KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true}));assert.equal(h.document.activeElement,last);ui['close'+type]();assert.equal(h.document.activeElement,caller);}finally{h.close();}
 });

@@ -1,0 +1,113 @@
+/* ---------- Sohbet ---------- */
+.chat-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--space-4);
+  max-width: var(--content-max);
+  align-items: start;
+}
+.chat-sidebar,
+.chat-main {
+  min-width: 0;
+}
+.chat-channel-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+}
+.chat-channel-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--fs-component-title);
+  text-align: left;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
+}
+.chat-channel-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.chat-channel-item.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.chat-channel-item .icon {
+  flex-shrink: 0;
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 460px;
+  overflow-y: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-app);
+  margin: var(--space-3) 0;
+}
+.chat-hint {
+  text-align: center;
+  color: var(--text-muted);
+  padding: var(--space-6) var(--space-4);
+}
+
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 78%;
+}
+.chat-msg.mine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.chat-msg-head {
+  font-size: var(--fs-metadata);
+  color: var(--text-muted);
+}
+.chat-msg-body {
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-secondary);
+  color: var(--text-primary);
+  line-height: var(--lh-normal);
+  overflow-wrap: anywhere;
+}
+.chat-msg.is-task .chat-msg-body {
+  border-left: 2px solid var(--status-warning);
+}
+
+.chat-composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.chat-composer textarea {
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--fs-secondary);
+  resize: vertical;
+}
+.chat-composer textarea:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  box-shadow: var(--focus-ring);
+}

@@ -4,11 +4,12 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 
 // Reuse the established synthetic Auth fixture; never connect QA to live data.
-function architectureFixture({lang = 'en', failFragment = false} = {}) {
+function architectureFixture({lang = 'en', failFragment = false, reportAccess = 'core'} = {}) {
     const legacy = fs.readFileSync(path.join(root, 'tests/browser.cjs'), 'utf8');
     const fixture = legacy.split('await page.addInitScript(()=>{')[1].split('\n});')[0];
     const script = `
 ${fixture}
+window.__testClaims = ${JSON.stringify(reportAccess === 'core' ? {admin:true} : {departments:['Array']})};
 localStorage.setItem('siteLang', ${JSON.stringify(lang)});
 sessionStorage.setItem('firebaseConfig', JSON.stringify({apiKey:'synthetic-test'}));
 window.firebase.initializeApp = () => window.firebase.apps.push({});
@@ -37,7 +38,8 @@ window.fetch = async (input, init) => {
         return Response.json({ok:true});
     }
     const name = url.hostname.split('-')[0];
-    if (name === 'getreportworkspace') result = {department:'Core',canEdit:true,team:[],records:[],tasks:[],availableDepartments:['Core'],revision:0};
+    if (name === 'getreportworkspace') {const input=JSON.parse(init.body).data;result={schemaVersion:2,department:input.department,weekStart:input.weekStart,canEdit:${JSON.stringify(reportAccess !== 'member')},members:[{id:'report-person',name:'Report Person'}],entries:[],tasks:[],openTasks:[],availableDepartments:${JSON.stringify(reportAccess === 'core'?['Core','Array']:['Array'])},cursors:{entries:null,tasks:null,open:null}};}
+    else if (name === 'savereporttask' || name === 'savereportentry') result={revision:1};
     else if (name === 'getvertexcontributors') result = {contributors:[]};
     else if (name === 'listconsolechatchannels') result = {channels:[],isAdmin:true};
     else if (name === 'listconsoleusers') result = {users:[],nextCursor:null};

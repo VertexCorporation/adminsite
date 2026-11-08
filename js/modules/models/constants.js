@@ -1,16 +1,16 @@
 // --- CONSTANTS ---
-export const CURATOR_API_URL = "https://cortexishere.com/curated";
-export const FULL_DB_URL = "https://cortexishere.com/models";
+export const CURATOR_API_URL = 'https://cortexishere.com/curated';
+export const FULL_DB_URL = 'https://cortexishere.com/models';
 export const TARGET_LANGUAGES = ['tr', 'fr', 'zh'];
 
 export const MODEL_TYPE = {
-    OFFLINE: 'offline',
-    ROLEPLAY: 'roleplay'
+  OFFLINE: 'offline',
+  ROLEPLAY: 'roleplay',
 };
 
 export const STATUS = {
-    VERIFIED: 'verified',
-    AUDITED_CORRECTED: 'audited_corrected',
+  VERIFIED: 'verified',
+  AUDITED_CORRECTED: 'audited_corrected',
 };
 
 // --- CHAT FORMAT TEMPLATES ---
@@ -25,8 +25,8 @@ export const CHAT_TEMPLATES = {
       user_end: '<|im_end|>',
       assistant_start: '<|im_start|>assistant',
       assistant_end: '<|im_end|>',
-      stop_generation: ['<|im_end|>', '<|endoftext|>', '</s>']
-    }
+      stop_generation: ['<|im_end|>', '<|endoftext|>', '</s>'],
+    },
   },
 
   // === Llama-2 / Mistrali ===
@@ -39,8 +39,8 @@ export const CHAT_TEMPLATES = {
       user_end: '[/INST]',
       assistant_start: '',
       assistant_end: '</s>',
-      stop_generation: ['</s>', '[INST]', '[/INST]']
-    }
+      stop_generation: ['</s>', '[INST]', '[/INST]'],
+    },
   },
 
   // === Alpaca / Instruction format ===
@@ -53,10 +53,10 @@ export const CHAT_TEMPLATES = {
       user_end: '\n',
       assistant_start: '### Response:\n',
       assistant_end: '',
-      stop_generation: ['### Instruction:', '</s>']
-    }
+      stop_generation: ['### Instruction:', '</s>'],
+    },
   },
-  
+
   // === Llama-3 / 3.1 (header_id + eot_id) ===
   llama3: {
     template: 'llama3',
@@ -67,8 +67,8 @@ export const CHAT_TEMPLATES = {
       user_end: '<|eot_id|>',
       assistant_start: '<|start_header_id|>assistant<|end_header_id|>\n\n',
       assistant_end: '<|eot_id|>',
-      stop_generation: ['<|eot_id|>', '</s>']
-    }
+      stop_generation: ['<|eot_id|>', '</s>'],
+    },
   },
 
   // === Gemma-2 (start_of_turn / end_of_turn) ===
@@ -81,8 +81,8 @@ export const CHAT_TEMPLATES = {
       user_end: '<end_of_turn>',
       assistant_start: '<start_of_turn>model\n',
       assistant_end: '<end_of_turn>',
-      stop_generation: ['<end_of_turn>', '</s>']
-    }
+      stop_generation: ['<end_of_turn>', '</s>'],
+    },
   },
 
   // === Anthropic-style (Human/Assistant) ===
@@ -95,8 +95,8 @@ export const CHAT_TEMPLATES = {
       user_end: '',
       assistant_start: '\n\nAssistant: ',
       assistant_end: '',
-      stop_generation: ['\n\nHuman:', '</s>']
-    }
+      stop_generation: ['\n\nHuman:', '</s>'],
+    },
   },
 
   // === Plain Dialogue (User:/Assistant:) ===
@@ -109,8 +109,8 @@ export const CHAT_TEMPLATES = {
       user_end: '\n',
       assistant_start: 'Assistant: ',
       assistant_end: '\n',
-      stop_generation: ['\nUser:', '</s>']
-    }
+      stop_generation: ['\nUser:', '</s>'],
+    },
   },
 
   // === Phi-3 / GLM-vari modern rolu etiketleri ===
@@ -123,7 +123,7 @@ export const CHAT_TEMPLATES = {
       user_end: '<|end|>\n',
       assistant_start: '<|assistant|>\n',
       assistant_end: '<|end|>\n',
-      stop_generation: ['<|end|>', '</s>']
-    }
-  }
+      stop_generation: ['<|end|>', '</s>'],
+    },
+  },
 };

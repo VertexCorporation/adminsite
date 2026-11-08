@@ -1,0 +1,33 @@
+/* Beacon shares the candidate row vocabulary, with its own institution columns. */
+.beacon-table-head {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-strong);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  align-items: center;
+}
+.beacon-table-head,
+#beacon-admin-list .contributor-row {
+  grid-template-columns: minmax(140px, 1.5fr) minmax(130px, 1.5fr) 100px 110px minmax(160px, 1.5fr) 140px;
+}
+.beacon-table-head > span:nth-child(3),
+.beacon-table-head > span:nth-child(4),
+#beacon-admin-list .contributor-cell-age {
+  text-align: center;
+}
+.beacon-table-head > span:last-child {
+  text-align: right;
+}
+@media (max-width: 1023px) {
+  .beacon-table-head {
+    display: none;
+  }
+  #beacon-admin-list .contributor-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}

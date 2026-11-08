@@ -1,0 +1,116 @@
+export default {
+  'homeCopy.eyebrow': 'VERTEX CONSOLE',
+  'homeCopy.welcome': 'Welcome back',
+  'homeCopy.noName': 'Welcome back.',
+  'homeCopy.intro':
+    "You're in the workspace connecting Vertex's teams, processes, and technologies. Find the tools you need to build together, all in one place.",
+  'homeCopy.identity': 'Your workspace',
+  'homeCopy.admin': 'Administrator',
+  'homeCopy.member': 'Team member',
+  'homeCopy.department': 'Department',
+  'homeCopy.howStart': 'Open a module available to you or scroll down to get to know Vertex.',
+  'homeCopy.overviewEyebrow': '03 | WORKSPACE',
+  'homeCopy.overviewTitle': 'One center. A connected ecosystem.',
+  'homeCopy.overview.0':
+    'Vertex Console is the digital management and work environment of the Vertex organization. It helps teams working across different disciplines collaborate within a shared structure, keep processes traceable, and coordinate operational resources centrally.',
+  'homeCopy.overview.1':
+    'We believe building technology means more than writing software. Technology should also improve how we work, communicate, and organize our efforts.',
+  'homeCopy.overview.2':
+    'For this reason, Vertex Console is an evolving digital hub that connects systems according to the needs of our organization.',
+  'homeCopy.modulesEyebrow': '04 | GET STARTED',
+  'homeCopy.modulesTitle': 'How can you use the console?',
+  'homeCopy.modulesLead':
+    'The sidebar is the quickest way into your daily workflow. You will only see modules available under your current permissions. Select a card to open that workspace.',
+  'homeCopy.noModules':
+    'There are no accessible modules to show right now. Contact the responsible team if you need additional access.',
+  'homeCopy.modules.contributors.0': 'Applicants',
+  'homeCopy.modules.contributors.1': 'Review applications and manage templates.',
+  'homeCopy.modules.models.0': 'Services',
+  'homeCopy.modules.models.1': 'Manage the AI catalog and models.',
+  'homeCopy.modules.news.0': 'News',
+  'homeCopy.modules.news.1': 'Read Vertex updates and contribute to publishing if authorized.',
+  'homeCopy.modules.notifications.0': 'Notifications',
+  'homeCopy.modules.notifications.1': 'Work with permitted messages and scheduled notifications.',
+  'homeCopy.modules.subscriptions.0': 'Subscriptions',
+  'homeCopy.modules.subscriptions.1': 'View subscription records and workflows that you can access.',
+  'homeCopy.modules.chat.0': 'Chat',
+  'homeCopy.modules.chat.1': "Open the console's communication area to coordinate with your team.",
+  'homeCopy.modules.system.0': 'System',
+  'homeCopy.modules.system.1': 'Access only the administrative tools explicitly available to you.',
+  'homeCopy.modules.users.0': 'Users',
+  'homeCopy.modules.users.1': 'Review and manage registered accounts.',
+  'homeCopy.modules.publications.0': 'Publications',
+  'homeCopy.modules.publications.1': 'Manage news, events, and notifications.',
+  'homeCopy.modules.scene.0': 'Stage',
+  'homeCopy.modules.scene.1': 'Manage the honor roll, chefs, and stars.',
+  'homeCopy.modules.origin.0': 'Origin',
+  'homeCopy.modules.origin.1': 'Manage applications, members and payments.',
+  'homeCopy.cultureEyebrow': '05 | WORK CULTURE',
+  'homeCopy.cultureTitle': 'How we work together',
+  'homeCopy.culture.0':
+    'Different departments at Vertex have distinct responsibilities but contribute toward shared goals. Coordination across product, communications, operations, and people teams keeps decisions clear and work sustainable.',
+  'homeCopy.culture.1':
+    'Shared workspaces are more than storage: they preserve institutional knowledge. Clear document locations, accessible updates, and traceable decisions support our everyday work.',
+  'homeCopy.culture.2':
+    'Explicit responsibilities and permissions improve security and enable teams to work independently. The goal is for the right people to access the right resources.',
+  'homeCopy.culture.3':
+    'We keep learning, experimenting, and building. AI and automation help reduce repetitive work so people can focus on meaningful contributions.',
+  'homeCopy.benefitsEyebrow': '06 | GROWTH AND RECOGNITION',
+  'homeCopy.benefitsTitle': 'Certificates and team benefits',
+  'homeCopy.benefits.0':
+    "Vertex's digital certification system can document eligible team members' contributions, commitment, and achievements. Verifiable certificates make those milestones easier to share professionally.",
+  'homeCopy.benefits.1':
+    "Verification infrastructure helps confirm a certificate's validity. Certificate categories, issuance criteria, and records follow the relevant operational rules.",
+  'homeCopy.benefits.2':
+    'Eligible team members may also receive product and technology benefits, including Cortex Plus. These benefits are not automatically granted to everyone; confirmed entitlements determine access.',
+  'homeCopy.closing.0':
+    'Vertex is more than the technologies we build. It is the people who make them possible, the ideas we share, and the culture we create together.',
+  'homeCopy.closing.1': 'Every step you take here contributes to the growth of this ecosystem.',
+  'homeCopy.closing.2': 'Welcome to Vertex.',
+  'homeCopy.tagline': "Built for what's next.",
+  'homeCopy.steps.0': 'CONNECT',
+  'homeCopy.steps.1': 'EXPLORE',
+  'homeCopy.steps.2': 'CONTRIBUTE',
+  'homeCopy.productsEyebrow': '01 | BUILT BY VERTEX',
+  'homeCopy.productsTitle': 'Four connected technologies.',
+  'homeCopy.productsLead':
+    'The products and infrastructure developed by Vertex address different needs, all within one ecosystem.',
+  'homeCopy.products.cortex.name': 'Cortex',
+  'homeCopy.products.cortex.role': 'AI platform',
+  'homeCopy.products.cortex.description':
+    'The Vertex platform connecting research, learning, and creation with artificial intelligence.',
+  'homeCopy.products.ally.name': 'Ally',
+  'homeCopy.products.ally.role': 'Intelligent assistants',
+  'homeCopy.products.ally.description':
+    'Assistant experiences designed to support teams and users with everyday tasks.',
+  'homeCopy.products.mergen.name': 'Mergen',
+  'homeCopy.products.mergen.role': 'AI architecture',
+  'homeCopy.products.mergen.description': 'An AI architecture designed to connect models, services, and data flows.',
+  'homeCopy.products.fulcrum.name': 'Fulcrum',
+  'homeCopy.products.fulcrum.role': 'Shared server infrastructure',
+  'homeCopy.products.fulcrum.description':
+    'Shared server components and operational infrastructure for Vertex services.',
+  'homeCopy.technologyEyebrow': '02 | TECHNOLOGIES WE USE',
+  'homeCopy.technologyTitle': 'Useful tools. Better workflows.',
+  'homeCopy.technologyLead':
+    'Tools we use across daily operations, development, and the infrastructure behind Vertex products.',
+  'homeCopy.technology.firebase': 'Authentication, application data, and cloud services.',
+  'homeCopy.technology.workspace': 'Shared Drive spaces, documents, and team coordination.',
+  'homeCopy.technology.zapier': 'Automating recurring work and workflows between services.',
+  'homeCopy.technology.cal': 'Scheduling meetings and organizing booking links.',
+  'homeCopy.technology.fal': 'Working with image generation and generative AI models.',
+  'homeCopy.technology.miro': 'Shared boards, brainstorming, and process mapping.',
+  'homeCopy.technology.secret': 'Discovering software offers and benefits for startups.',
+  'homeCopy.technology.elevenlabs': 'AI-powered voice generation and spoken experiences.',
+  'homeCopy.technology.daytona': 'Creating isolated code execution and development environments.',
+  'homeCopy.technology.gitlab': 'Organizing code repositories and development workflows.',
+  'homeCopy.technology.assemblyai': 'Speech transcription and audio analysis.',
+  'homeCopy.technology.github': 'Code collaboration, version control, and project tracking.',
+  'homeCopy.technology.granola': 'Organizing meeting notes and conversation summaries.',
+  'homeCopy.technology.composio': 'Connecting AI agents with external tools and services.',
+  'homeCopy.technology.deepgram': 'Audio processing and speech-based application experiences.',
+  'homeCopy.technology.cloudflare': 'Domains, traffic management, and network security.',
+  'homeCopy.technologyNote':
+    'You can manage certain features of these tools directly in Vertex Console, where your permissions allow. Not every feature is integrated, and access depends on the relevant account and team permissions.',
+  'homeCopy.pageAriaLabel': 'Vertex Console | Home',
+};

@@ -1,227 +1,298 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title data-i18n="page.title">Vertex Konsol</title>
-
-    <!-- release:start -->
-    <meta name="vertex-release" content="76055fa555b8">
-    <script type="importmap">{"imports":{"/js/core/appConfig.js":"/assets/releases/76055fa555b8/js/core/appConfig.js","/js/core/bootstrap.js":"/assets/releases/76055fa555b8/js/core/bootstrap.js","/js/core/deployment-capabilities.js":"/assets/releases/76055fa555b8/js/core/deployment-capabilities.js","/js/core/firebase.js":"/assets/releases/76055fa555b8/js/core/firebase.js","/js/core/htmlFragments.js":"/assets/releases/76055fa555b8/js/core/htmlFragments.js","/js/core/initializer.js":"/assets/releases/76055fa555b8/js/core/initializer.js","/js/core/permissionCatalog.js":"/assets/releases/76055fa555b8/js/core/permissionCatalog.js","/js/customer-activation.js":"/assets/releases/76055fa555b8/js/customer-activation.js","/js/lang.js":"/assets/releases/76055fa555b8/js/lang.js","/js/main.js":"/assets/releases/76055fa555b8/js/main.js","/js/modules/accountDeletion.js":"/assets/releases/76055fa555b8/js/modules/accountDeletion.js","/js/modules/admin.js":"/assets/releases/76055fa555b8/js/modules/admin.js","/js/modules/approvedAccountSetup.js":"/assets/releases/76055fa555b8/js/modules/approvedAccountSetup.js","/js/modules/beacon-organizations.js":"/assets/releases/76055fa555b8/js/modules/beacon-organizations.js","/js/modules/beacons.js":"/assets/releases/76055fa555b8/js/modules/beacons.js","/js/modules/certificateDelivery.js":"/assets/releases/76055fa555b8/js/modules/certificateDelivery.js","/js/modules/certificateEmailTemplates.js":"/assets/releases/76055fa555b8/js/modules/certificateEmailTemplates.js","/js/modules/certificates.js":"/assets/releases/76055fa555b8/js/modules/certificates.js","/js/modules/consoleChat.js":"/assets/releases/76055fa555b8/js/modules/consoleChat.js","/js/modules/contributors.js":"/assets/releases/76055fa555b8/js/modules/contributors.js","/js/modules/customerAccounts.js":"/assets/releases/76055fa555b8/js/modules/customerAccounts.js","/js/modules/dataExport.js":"/assets/releases/76055fa555b8/js/modules/dataExport.js","/js/modules/directory.js":"/assets/releases/76055fa555b8/js/modules/directory.js","/js/modules/eventFields.js":"/assets/releases/76055fa555b8/js/modules/eventFields.js","/js/modules/eventTime.js":"/assets/releases/76055fa555b8/js/modules/eventTime.js","/js/modules/events.js":"/assets/releases/76055fa555b8/js/modules/events.js","/js/modules/home.js":"/assets/releases/76055fa555b8/js/modules/home.js","/js/modules/manualApplication.js":"/assets/releases/76055fa555b8/js/modules/manualApplication.js","/js/modules/models.js":"/assets/releases/76055fa555b8/js/modules/models.js","/js/modules/models/access.js":"/assets/releases/76055fa555b8/js/modules/models/access.js","/js/modules/models/actions.js":"/assets/releases/76055fa555b8/js/modules/models/actions.js","/js/modules/models/catalog.js":"/assets/releases/76055fa555b8/js/modules/models/catalog.js","/js/modules/models/constants.js":"/assets/releases/76055fa555b8/js/modules/models/constants.js","/js/modules/models/form.js":"/assets/releases/76055fa555b8/js/modules/models/form.js","/js/modules/models/translations.js":"/assets/releases/76055fa555b8/js/modules/models/translations.js","/js/modules/news.js":"/assets/releases/76055fa555b8/js/modules/news.js","/js/modules/notification.js":"/assets/releases/76055fa555b8/js/modules/notification.js","/js/modules/origin.js":"/assets/releases/76055fa555b8/js/modules/origin.js","/js/modules/passwordReset.js":"/assets/releases/76055fa555b8/js/modules/passwordReset.js","/js/modules/people.js":"/assets/releases/76055fa555b8/js/modules/people.js","/js/modules/reports.js":"/assets/releases/76055fa555b8/js/modules/reports.js","/js/modules/roles.js":"/assets/releases/76055fa555b8/js/modules/roles.js","/js/modules/shell.js":"/assets/releases/76055fa555b8/js/modules/shell.js","/js/modules/siteTeam.js":"/assets/releases/76055fa555b8/js/modules/siteTeam.js","/js/modules/subscriptions.js":"/assets/releases/76055fa555b8/js/modules/subscriptions.js","/js/modules/system.js":"/assets/releases/76055fa555b8/js/modules/system.js","/js/modules/teamBiographies.js":"/assets/releases/76055fa555b8/js/modules/teamBiographies.js","/js/modules/teamCards.js":"/assets/releases/76055fa555b8/js/modules/teamCards.js","/js/modules/userMenu.js":"/assets/releases/76055fa555b8/js/modules/userMenu.js","/js/modules/vertex-roster.js":"/assets/releases/76055fa555b8/js/modules/vertex-roster.js","/js/modules/views.js":"/assets/releases/76055fa555b8/js/modules/views.js","/js/ui/controls.js":"/assets/releases/76055fa555b8/js/ui/controls.js","/js/ui/feedback.js":"/assets/releases/76055fa555b8/js/ui/feedback.js","/js/ui/listRefresh.js":"/assets/releases/76055fa555b8/js/ui/listRefresh.js","/js/ui/motion.js":"/assets/releases/76055fa555b8/js/ui/motion.js","/js/ui/overlay.js":"/assets/releases/76055fa555b8/js/ui/overlay.js","/js/ui/pager.js":"/assets/releases/76055fa555b8/js/ui/pager.js","/js/ui/states.js":"/assets/releases/76055fa555b8/js/ui/states.js","/js/ui/surfaces.js":"/assets/releases/76055fa555b8/js/ui/surfaces.js","/js/ui/toast.js":"/assets/releases/76055fa555b8/js/ui/toast.js","/js/ui/transition.js":"/assets/releases/76055fa555b8/js/ui/transition.js","/js/utils/console-access.js":"/assets/releases/76055fa555b8/js/utils/console-access.js","/js/utils/contributor-edit.js":"/assets/releases/76055fa555b8/js/utils/contributor-edit.js","/js/utils/contributor-state.js":"/assets/releases/76055fa555b8/js/utils/contributor-state.js","/js/utils/departments.js":"/assets/releases/76055fa555b8/js/utils/departments.js","/js/utils/dom.js":"/assets/releases/76055fa555b8/js/utils/dom.js","/js/utils/email-template-links.js":"/assets/releases/76055fa555b8/js/utils/email-template-links.js","/js/utils/email-template-validation.js":"/assets/releases/76055fa555b8/js/utils/email-template-validation.js","/js/utils/event-registration-values.js":"/assets/releases/76055fa555b8/js/utils/event-registration-values.js","/js/utils/icons.js":"/assets/releases/76055fa555b8/js/utils/icons.js","/js/utils/isoWeek.js":"/assets/releases/76055fa555b8/js/utils/isoWeek.js","/js/utils/loading.js":"/assets/releases/76055fa555b8/js/utils/loading.js","/js/utils/scrollEdges.js":"/assets/releases/76055fa555b8/js/utils/scrollEdges.js","/js/utils/ui.js":"/assets/releases/76055fa555b8/js/utils/ui.js","/js/utils/vertex-roster-report.js":"/assets/releases/76055fa555b8/js/utils/vertex-roster-report.js","/js/utils/weekly-stars-directory.js":"/assets/releases/76055fa555b8/js/utils/weekly-stars-directory.js","/js/utils/weekly-stars-policy.js":"/assets/releases/76055fa555b8/js/utils/weekly-stars-policy.js","/js/utils/weekly-stars-save.js":"/assets/releases/76055fa555b8/js/utils/weekly-stars-save.js","/js/utils/workspace-loader.js":"/assets/releases/76055fa555b8/js/utils/workspace-loader.js","/l10n/en.js":"/assets/releases/76055fa555b8/l10n/en.js","/l10n/en/common.js":"/assets/releases/76055fa555b8/l10n/en/common.js","/l10n/en/models.js":"/assets/releases/76055fa555b8/l10n/en/models.js","/l10n/en/people.js":"/assets/releases/76055fa555b8/l10n/en/people.js","/l10n/en/programs.js":"/assets/releases/76055fa555b8/l10n/en/programs.js","/l10n/en/publishing.js":"/assets/releases/76055fa555b8/l10n/en/publishing.js","/l10n/en/system.js":"/assets/releases/76055fa555b8/l10n/en/system.js","/l10n/tr.js":"/assets/releases/76055fa555b8/l10n/tr.js","/l10n/tr/common.js":"/assets/releases/76055fa555b8/l10n/tr/common.js","/l10n/tr/models.js":"/assets/releases/76055fa555b8/l10n/tr/models.js","/l10n/tr/people.js":"/assets/releases/76055fa555b8/l10n/tr/people.js","/l10n/tr/programs.js":"/assets/releases/76055fa555b8/l10n/tr/programs.js","/l10n/tr/publishing.js":"/assets/releases/76055fa555b8/l10n/tr/publishing.js","/l10n/tr/system.js":"/assets/releases/76055fa555b8/l10n/tr/system.js"}}</script>
-    <!-- release:end -->
-    <script type="module" src="assets/releases/76055fa555b8/js/lang.js"></script>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title data-i18n="page.title"></title>
+    <script type="module" src="js/lang.js"></script>
 
     <!-- SEO & Basic Meta -->
-    <meta name="description" data-i18n="page.desc" content="Vertex içerikleri, kullanıcı yönetimi ve sistem yönetimi için merkezi kontrol paneli.">
-    <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#0F0F10">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta
+      name="description"
+      data-i18n="page.desc"
+      content="Vertex içerikleri, kullanıcı yönetimi ve sistem yönetimi için merkezi kontrol paneli."
+    />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0F0F10" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-    <link rel="canonical" href="https://admin.vertexishere.com/">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Vertex Konsol">
-    <meta property="og:description" content="Vertex Corporation yönetim konsolu.">
-    <meta property="og:image" content="https://admin.vertexishere.com/assets/vertex-konsol-og.png">
-    <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-    <meta property="og:url" content="https://admin.vertexishere.com/">
-    <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Vertex Konsol">
-    <meta name="twitter:image" content="https://admin.vertexishere.com/assets/vertex-konsol-og.png">
+    <link rel="canonical" href="https://admin.vertexishere.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Vertex Konsol" />
+    <meta property="og:description" content="Vertex Corporation yönetim konsolu." />
+    <meta property="og:image" content="https://admin.vertexishere.com/assets/vertex-konsol-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://admin.vertexishere.com/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Vertex Konsol" />
+    <meta name="twitter:image" content="https://admin.vertexishere.com/assets/vertex-konsol-og.png" />
     <!-- Favicons -->
-    <link id="vertex-favicon" rel="icon" href="assets/favicon-light.svg?v=2" type="image/svg+xml" media="(prefers-color-scheme: light)">
-    <link id="vertex-favicon-dark" rel="icon" href="assets/favicon-dark.svg?v=2" type="image/svg+xml" media="(prefers-color-scheme: dark)">
-    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180">
+    <link
+      id="vertex-favicon"
+      rel="icon"
+      href="assets/favicon-light.svg?v=2"
+      type="image/svg+xml"
+      media="(prefers-color-scheme: light)"
+    />
+    <link
+      id="vertex-favicon-dark"
+      rel="icon"
+      href="assets/favicon-dark.svg?v=2"
+      type="image/svg+xml"
+      media="(prefers-color-scheme: dark)"
+    />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180" />
 
     <!-- Google Fonts & Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet" />
 
     <!-- Styles -->
-    <link rel="stylesheet" href="assets/releases/76055fa555b8/css/tokens.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/base.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/layout.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/components.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/motion.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/loading.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/modules.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/certificates.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/stabilization.css">
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/motion.css" />
+    <link rel="stylesheet" href="css/loading.css" />
+    <link rel="stylesheet" href="css/modules.css" />
+    <link rel="stylesheet" href="css/certificates.css" />
+    <link rel="stylesheet" href="css/layout/interaction.css" />
 
     <script>
-        // Favicons follow the browser preference, independently of the console theme.
-        (function () {
-            const browserTheme = window.matchMedia('(prefers-color-scheme: dark)');
-            const lightIcon = document.getElementById('vertex-favicon');
-            const darkIcon = document.getElementById('vertex-favicon-dark');
-            const sync = () => {
-                lightIcon.media = browserTheme.matches ? 'not all' : 'all';
-                darkIcon.media = browserTheme.matches ? 'all' : 'not all';
-            };
-            sync();
-            if (browserTheme.addEventListener) browserTheme.addEventListener('change', sync);
-            else if (browserTheme.addListener) browserTheme.addListener(sync);
-        })();
-        // Sayfa yüklenmeden önce localStorage'dan temayı ayarlayan betik
-        (function () {
-            try {
-                const theme = localStorage.getItem('theme');
-                if (theme === 'light' || theme === 'system') {
-                    document.documentElement.setAttribute('data-theme', theme);
-                }
-            } catch (e) {
-                console.error("localStorage'dan tema ayarlanamadı", e);
-            }
-        })();
-    </script>
-    <script>
-        // Alan adı kontrolü
-        var requiredDomain = "admin.vertexishere.com";
-        var currentDomain = window.location.hostname;
-        if (currentDomain !== requiredDomain && currentDomain !== "localhost" && currentDomain !== "127.0.0.1") {
-            window.location.replace("https://" + requiredDomain + window.location.pathname + window.location.search);
+      // Favicons follow the browser preference, independently of the console theme.
+      (function () {
+        const browserTheme = window.matchMedia('(prefers-color-scheme: dark)');
+        const lightIcon = document.getElementById('vertex-favicon');
+        const darkIcon = document.getElementById('vertex-favicon-dark');
+        const sync = () => {
+          lightIcon.media = browserTheme.matches ? 'not all' : 'all';
+          darkIcon.media = browserTheme.matches ? 'all' : 'not all';
+        };
+        sync();
+        if (browserTheme.addEventListener) browserTheme.addEventListener('change', sync);
+        else if (browserTheme.addListener) browserTheme.addListener(sync);
+      })();
+      // Sayfa yüklenmeden önce localStorage'dan temayı ayarlayan betik
+      (function () {
+        try {
+          const theme = localStorage.getItem('theme');
+          if (theme === 'light' || theme === 'system') {
+            document.documentElement.setAttribute('data-theme', theme);
+          }
+        } catch (e) {
+          console.error("localStorage'dan tema ayarlanamadı", e);
         }
+      })();
     </script>
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/people.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/home.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/ui/controls.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/ui/overlay.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/ui/toast.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/ui/scroll.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/ui/layout.css">
-<link rel="stylesheet" href="assets/releases/76055fa555b8/css/catalog.css">
-</head>
+    <script>
+      // Alan adı kontrolü
+      var requiredDomain = 'admin.vertexishere.com';
+      var currentDomain = window.location.hostname;
+      if (currentDomain !== requiredDomain && currentDomain !== 'localhost' && currentDomain !== '127.0.0.1') {
+        window.location.replace('https://' + requiredDomain + window.location.pathname + window.location.search);
+      }
+    </script>
+    <link rel="stylesheet" href="css/modules/people.css" />
+    <link rel="stylesheet" href="css/home.css" />
+    <link rel="stylesheet" href="css/ui/controls.css" />
+    <link rel="stylesheet" href="css/ui/overlay.css" />
+    <link rel="stylesheet" href="css/ui/toast.css" />
+    <link rel="stylesheet" href="css/ui/scroll.css" />
+    <link rel="stylesheet" href="css/ui/layout.css" />
+    <link rel="stylesheet" href="css/modules/catalog-layout.css" />
+    <link rel="stylesheet" href="css/reports.css" />
+  </head>
 
-<body>
-
+  <body>
     <!-- Başlatıcı Yükleme Ekranı -->
-    <div id="app-loader" class="vx-app-loader" role="status" data-i18n-aria-label="common.loading" aria-label="Vertex Konsol yükleniyor"><div class="vx-loader-mark" aria-hidden="true"><img class="vx-loader-logo vx-loader-base" src="assets/vertex-logo.svg" alt=""><img class="vx-loader-logo vx-loader-sweep" src="assets/vertex-logo.svg" alt=""></div><span class="sr-only" data-i18n="common.loading">Yükleniyor</span></div>
+    <div id="app-loader" class="vx-app-loader" role="status" data-i18n-aria-label="common.loading" aria-label="">
+      <div class="vx-loader-mark" aria-hidden="true">
+        <img class="vx-loader-logo vx-loader-base" src="assets/vertex-logo.svg" alt="" />
+        <img class="vx-loader-logo vx-loader-sweep" src="assets/vertex-logo.svg" alt="" />
+      </div>
+      <span class="sr-only" data-i18n="common.loading"></span>
+    </div>
 
     <!-- Hızlı Toast Bildirim Alanı -->
     <div id="toast-container"></div>
 
     <!-- GİRİŞ EKRANI -->
     <div id="login-container" class="container">
-        <div class="login-box">
-            <div class="login-header">
-                <div class="logo-orb">
-                    <img src="assets/vertex-logo.svg" class="vertex-brand-logo" width="32" height="32" alt="">
-                </div>
-                <h1 data-i18n="login.title">Vertex Konsol</h1>
-
-            </div>
-
-            <form id="login-form" class="form-wrapper" novalidate>
-                <div class="input-field">
-                    <svg class="prefix-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                    </svg>
-                    <input type="email" id="email" data-i18n-aria-label="login.email" data-i18n-placeholder="login.email" placeholder="E-posta Adresiniz" autocomplete="email" required>
-                </div>
-
-                <div class="input-field">
-                    <svg class="prefix-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
-                    </svg>
-                    <input type="password" id="password" autocomplete="current-password" data-i18n-aria-label="login.password" data-i18n-placeholder="login.password" placeholder="Şifreniz" required>
-                </div>
-
-                <button id="login-btn" type="submit" class="chrome-btn-primary">
-                    <span data-i18n="login.btn">Oturum Aç</span>
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="margin-left: 8px;">
-                        <path d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"/>
-                    </svg>
-                </button>
-            </form>
-
-            <div class="divider">
-                <span data-i18n="login.or">veya</span>
-            </div>
-
-            <div class="social-login-grid">
-                <button id="google-login-btn" class="chrome-social-btn google" type="button">
-                    <svg viewBox="0 0 24 24" width="16" height="16">
-                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    <span>Google</span>
-                </button>
-                <button id="apple-login-btn" class="chrome-social-btn apple" type="button">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-                    </svg>
-                    <span>Apple</span>
-                </button>
-            </div>
+      <div class="login-box">
+        <div class="login-header">
+          <div class="logo-orb">
+            <img src="assets/vertex-logo.svg" class="vertex-brand-logo" width="32" height="32" alt="" />
+          </div>
+          <h1 data-i18n="login.title"></h1>
         </div>
+
+        <form id="login-form" class="form-wrapper" novalidate="">
+          <div class="input-field">
+            <svg class="prefix-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path
+                d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"
+              ></path>
+            </svg>
+            <input
+              type="email"
+              id="email"
+              data-i18n-aria-label="login.email"
+              data-i18n-placeholder="login.email"
+              placeholder=""
+              autocomplete="email"
+              required=""
+            />
+          </div>
+
+          <div class="input-field">
+            <svg class="prefix-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path
+                d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"
+              ></path>
+            </svg>
+            <input
+              type="password"
+              id="password"
+              autocomplete="current-password"
+              data-i18n-aria-label="login.password"
+              data-i18n-placeholder="login.password"
+              placeholder=""
+              required=""
+            />
+          </div>
+
+          <button id="login-btn" type="submit" class="chrome-btn-primary">
+            <span data-i18n="login.btn"></span>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="margin-left: 8px">
+              <path
+                d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"
+              ></path>
+            </svg>
+          </button>
+        </form>
+
+        <div class="divider">
+          <span data-i18n="login.or"></span>
+        </div>
+
+        <div class="social-login-grid">
+          <button id="google-login-btn" class="chrome-social-btn google" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path
+                fill="currentColor"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              ></path>
+              <path
+                fill="currentColor"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              ></path>
+              <path
+                fill="currentColor"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              ></path>
+              <path
+                fill="currentColor"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              ></path>
+            </svg>
+            <span><span data-i18n="index.ui.google"></span></span>
+          </button>
+          <button id="apple-login-btn" class="chrome-social-btn apple" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path
+                d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"
+              ></path>
+            </svg>
+            <span><span data-i18n="index.ui.apple"></span></span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- ANA PANEL (FULLSCREEN SHELL) -->
-    <div id="admin-panel" class="app-layout" style="display:none;">
+    <div id="admin-panel" class="app-layout" style="display: none">
+      <!-- ÜST BAŞLIK (SABİT HEADER) -->
+      <header class="app-header">
+        <button
+          id="nav-toggle"
+          type="button"
+          class="icon-action-btn"
+          aria-label=""
+          data-i18n-aria-label="navigation.main"
+          aria-controls="navigation-tabs-dock"
+          aria-expanded="false"
+        >
+          <i data-icon="menu"></i>
+        </button>
+        <span class="topbar-page-title"></span>
+        <div class="header-control-buttons topbar-actions">
+          <div id="user-menu-root"></div>
+          <button
+            id="lang-toggle-btn"
+            class="topbar-select-btn"
+            aria-haspopup="dialog"
+            data-i18n-title="language.select"
+            aria-label=""
+            data-i18n-aria-label="language.select"
+          >
+            <i data-icon="language"></i>
+            <span id="lang-indicator"><span data-i18n="language.tr"></span></span>
+          </button>
+          <button
+            id="theme-menu-btn"
+            class="topbar-select-btn"
+            aria-haspopup="dialog"
+            data-i18n-title="header.theme"
+            title=""
+          >
+            <i data-icon="sun"></i>
+            <span class="topbar-select-label"></span>
+          </button>
+          <button id="logout-btn" class="btn-sign-out">
+            <i class="" data-icon="logout"></i>
+            <span data-i18n="header.logout"></span>
+          </button>
+        </div>
+      </header>
 
-        <!-- ÜST BAŞLIK (SABİT HEADER) -->
-        <header class="app-header"><button id="nav-toggle" type="button" class="icon-action-btn" aria-label="Ana navigasyon" data-i18n-aria-label="navigation.main" aria-controls="navigation-tabs-dock" aria-expanded="false"><i data-icon="menu"></i></button><span class="topbar-page-title"></span>
-            <div class="header-control-buttons topbar-actions"><div id="user-menu-root"></div>
-                <button id="lang-toggle-btn" class="topbar-select-btn" aria-haspopup="dialog" data-i18n-title="language.select" aria-label="Dil" data-i18n-aria-label="language.select">
-                    <i data-icon="language"></i>
-                    <span id="lang-indicator">Türkçe</span>
-                </button>
-                <button id="theme-menu-btn" class="topbar-select-btn" aria-haspopup="dialog" data-i18n-title="header.theme" title="Theme">
-                    <i data-icon="sun"></i><span class="topbar-select-label"></span>
-                </button>
-                <button id="logout-btn" class="btn-sign-out">
-                    <i class="" data-icon="logout"></i>
-                    <span data-i18n="header.logout">Çıkış</span>
-                </button>
-            </div>
-        </header>
+      <!-- ORTAK HİBRİT NAVİGASYON (MOBİLDE ALT BAR, DESKTOPTA SOL SIDEBAR) -->
+      <template data-fragment="navigation"></template>
 
-        <!-- ORTAK HİBRİT NAVİGASYON (MOBİLDE ALT BAR, DESKTOPTA SOL SIDEBAR) -->
-        <template data-fragment="navigation"></template>
+      <!-- İÇERİK ALANI -->
+      <main class="app-main">
+        <div class="tab-scroll-container" id="tab-scroll-container">
+          <!-- VERTEX KONSOL EV / DİJİTAL ORYANTASYON -->
+          <template data-fragment="panels/home"></template>
 
-        <!-- İÇERİK ALANI -->
-        <main class="app-main">
-            <div class="tab-scroll-container" id="tab-scroll-container">
+          <template data-fragment="panels/origin"></template>
+          <template data-fragment="panels/users"></template>
+          <template data-fragment="panels/publications"></template>
+          <template data-fragment="panels/scene"></template>
+          <template data-fragment="panels/reports"></template>
+          <!-- SEKME 1: ADAYLAR -->
+          <template data-fragment="panels/contributors"></template>
 
-            <!-- VERTEX KONSOL EV / DİJİTAL ORYANTASYON -->
-            <template data-fragment="panels/home"></template>
+          <!-- SEKME 2: MODEL KÜTÜPHANESİ -->
+          <template data-fragment="panels/models"></template>
 
+          <!-- SEKME 3: HABERLER VE DUYURULAR -->
 
-            <template data-fragment="panels/origin"></template><template data-fragment="panels/users"></template><template data-fragment="panels/publications"></template><template data-fragment="panels/scene"></template>
-<template data-fragment="panels/reports"></template>
-<!-- SEKME 1: ADAYLAR -->
-            <template data-fragment="panels/contributors"></template>
+          <!-- SEKME 4: BİLDİRİM YÖNETİMİ -->
 
-            <!-- SEKME 2: MODEL KÜTÜPHANESİ -->
-            <template data-fragment="panels/models"></template>
+          <!-- SEKME 5: SİSTEM VE SUNUCU -->
+          <template data-fragment="panels/system"></template>
 
-            <!-- SEKME 3: HABERLER VE DUYURULAR -->
-
-
-            <!-- SEKME 4: BİLDİRİM YÖNETİMİ -->
-
-
-
-            <!-- SEKME 5: SİSTEM VE SUNUCU -->
-            <template data-fragment="panels/system"></template>
-
-<template data-fragment="panels/chat"></template>
-<template data-fragment="panels/subscriptions"></template>
-<template data-fragment="panels/profile"></template>
-        </main>
-
+          <template data-fragment="panels/chat"></template>
+          <template data-fragment="panels/subscriptions"></template>
+          <template data-fragment="panels/profile"></template>
+        </div>
+      </main>
     </div>
 
     <!-- Firebase SDK ve Entegrasyon Modülleri -->
-    <script type="module" src="assets/releases/76055fa555b8/js/core/bootstrap.js"></script>
-
-
-</body>
-
+    <script type="module" src="js/core/bootstrap.js"></script>
+  </body>
 </html>
-
-
-

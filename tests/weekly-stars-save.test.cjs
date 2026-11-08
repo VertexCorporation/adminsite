@@ -44,8 +44,10 @@ test('failed verification remains uncertain instead of claiming either success o
 });
 
 const moduleSource=fs.readFileSync('js/modules/teamCards.js','utf8');
-const handler=moduleSource.slice(moduleSource.indexOf('    form.onsubmit = async e => {'),
- moduleSource.indexOf('\n    };\n}',moduleSource.indexOf('    form.onsubmit = async e => {'))+7);
+const {nodes}=require('./helpers/source-ast.cjs');
+const handlerNode=nodes(moduleSource,n=>n.type==='AssignmentExpression'&&moduleSource.slice(n.left.start,n.left.end)==='form.onsubmit')[0];
+const handler=moduleSource.slice(handlerNode.start,handlerNode.end)+';';
+
 function uiFixture(save){
  const events=[],status={textContent:''},button={disabled:false},field={disabled:false};
  const nodes={'#stars-week':{value:'44'},'#stars-year':{value:'2026'},'#stars-title':{value:'Week 44'},
