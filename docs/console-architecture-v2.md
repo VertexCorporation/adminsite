@@ -1,6 +1,6 @@
 # Console architecture and deployment
 
-The console uses native ES modules. HTML fragments define layout; controllers
+The console uses native ES modules. Navigation lives in `modules/shell.js`; theme/menu controls live in `ui/appearance.js`, and keyboard navigation in `ui/commandPalette.js`. HTML fragments define layout; controllers
 bind behavior; feature services call Vertex's existing backend; area stores own
 loaded data. `core/session.js` invalidates stores on identity or access-revision
 changes and rejects responses captured in an older session. Exporters read from

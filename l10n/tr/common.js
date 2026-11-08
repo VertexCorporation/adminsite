@@ -501,4 +501,6 @@ export default {
   'auth.enter_credentials': 'Lütfen e-posta ve şifrenizi girin.',
   'auth.session_expired': 'Oturum süreniz doldu. Lütfen tekrar giriş yapın.',
   'auth.try_again': 'Tekrar Dene',
+  'errors.security_verification': 'Security verification could not be completed. Check your connection and try again.',
+  'errors.record_conflict': 'This record changed in another session. Reload before saving.',
 };

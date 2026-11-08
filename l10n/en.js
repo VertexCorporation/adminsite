@@ -28,7 +28,6 @@ import uiPublications from './en/ui-publications.js';
 import uiRoster from './en/ui-roster.js';
 import uiSubscriptions from './en/ui-subscriptions.js';
 import uiTeam from './en/ui-team.js';
-import uiUi from './en/ui-ui.js';
 import uiUsers from './en/ui-users.js';
 
 export default Object.freeze({
@@ -62,6 +61,5 @@ export default Object.freeze({
   ...uiRoster,
   ...uiSubscriptions,
   ...uiTeam,
-  ...uiUi,
   ...uiUsers,
 });

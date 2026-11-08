@@ -499,4 +499,6 @@ export default {
   'auth.enter_credentials': 'Please enter both email and password.',
   'auth.session_expired': 'Authentication session expired. Please log in again.',
   'auth.try_again': 'Try Again',
+  'errors.security_verification': 'Security verification could not complete. Check your connection and try again.',
+  'errors.record_conflict': 'This record changed in another session. Refresh before saving.',
 };

@@ -91,11 +91,10 @@ export function userErrorMessage(error, context = '') {
     return detail ? __('cert.delivery_not_ready') + ' ' + __(detail) : __('cert.delivery_not_ready');
   }
   if (error?.reason === 'app-check-unavailable' || reason === 'app-check-unavailable')
-    return __('ui.ui.securityVerificationCouldNotCompleteCheckYour');
+    return __('errors.security_verification');
   if (error?.reason === 'authentication-unavailable' || reason === 'authentication-unavailable')
     return __('errors.auth');
-  if (reason === 'permission-revision-conflict' || code === 'aborted')
-    return __('ui.ui.thisRecordChangedInAnotherSessionRefresh');
+  if (reason === 'permission-revision-conflict' || code === 'aborted') return __('errors.record_conflict');
   const keys = {
     'permission-denied': 'errors.permission',
     'insufficient-permission': 'auth.denied',

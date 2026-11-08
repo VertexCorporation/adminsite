@@ -26,7 +26,7 @@ function readConsoleSource(file) {
         const source = read(file);
         return dictionaries + source.slice(source.indexOf('const supportedLang'));
     }
-    if (file === 'js/modules/shell.js') return read(file) + '\n' + read('js/ui/surfaces.js') + '\n' + read('js/ui/appearance.js');
+    if (file === 'js/modules/shell.js') return read(file) + '\n' + read('js/ui/surfaces.js') + '\n' + read('js/ui/appearance.js') + '\n' + read('js/ui/commandPalette.js');
     if (file === 'js/modules/models.js') {
         return [file, ...['form', 'catalog', 'translations', 'actions', 'constants', 'access']
             .map(name => `js/modules/models/${name}.js`)].map(read).join('\n');
