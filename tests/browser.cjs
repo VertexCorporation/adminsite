@@ -31,7 +31,7 @@ await page.addInitScript(()=>{
  const collection=name=>name==='news'?newsChain:name==='config'?{...chain,doc:id=>id==='departmentPermissions'?configDoc:chain}:chain;
  const user={uid:'admin',email:'admin@example.invalid',displayName:'Local Admin',getIdTokenResult:async()=>({claims:window.__testClaims || {admin:true}}),getIdToken:async()=>'test-only',updateProfile:async()=>{}};
  const listeners=[];const auth={currentUser:user,onAuthStateChanged:fn=>{listeners.push(fn);setTimeout(()=>fn(user),10);return ()=>{};},signOut:async()=>{auth.currentUser=null;listeners.forEach(fn=>fn(null));},signInWithEmailAndPassword:async()=>{if(window.__testAuthError)throw Object.assign(new Error('Private authentication detail'),{code:window.__testAuthError});auth.currentUser=user;listeners.forEach(fn=>fn(user));}};
- window.firebase={apps:[],initializeApp:()=>{},auth:()=>auth,firestore:()=>({collection}),storage:()=>({}),functions:()=>({}),appCheck:()=>({activate:()=>{},getToken:async()=>({token:'fixture-app-check'})}),app:()=>({functions:()=>({httpsCallable:(name)=>async data=>{
+ window.firebase={apps:[],initializeApp:()=>window.firebase.apps.push({}),auth:()=>auth,firestore:()=>({collection}),storage:()=>({}),functions:()=>({}),appCheck:()=>({activate:()=>{},getToken:async()=>({token:'fixture-app-check'})}),app:()=>({functions:()=>({httpsCallable:(name)=>async data=>{
    if(name==='getMyConsoleAccess'){
      // A real callable resolves CURRENT server-owned membership on every
      // authentication change. The synthetic fixture follows the test's
@@ -69,6 +69,7 @@ await page.route('**/*',async route=>{
   if(name==='getserverstatus'&&failMaintenance)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture maintenance unavailable'}})});
   if(name==='togglecontributorverification'&&failVerify)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture verification unavailable'}})});
   let result={};
+  if(name==='getreportworkspace'){const department=route.request().postDataJSON()?.data?.department||'Core';result={department,color:'#263238',canEdit:true,team:[],records:[],tasks:[],availableDepartments:[department],revision:0};}
   if(name==='togglecontributorverification'){
     const request=route.request().postDataJSON().data;
     const target=(people||[person]).find(p=>p.id===request.contributorId);
