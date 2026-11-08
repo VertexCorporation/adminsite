@@ -13,6 +13,17 @@ function input(form, name, label, value = '', type = 'text') {
   wrap.append(caption);
   const field = document.createElement(type === 'textarea' ? 'textarea' : type === 'select' ? 'select' : 'input');
   field.name = name;
+  const limits = {
+    title: 180,
+    project: 180,
+    summary: 6000,
+    next: 3000,
+    link: 800,
+    ref: 800,
+    source: 500,
+    description: 3500,
+  };
+  if (limits[name]) field.maxLength = limits[name];
   if (!['textarea', 'select'].includes(type)) field.type = type;
   field.value = value || '';
   wrap.append(field);
@@ -73,6 +84,7 @@ export function openReportEditor(kind, entity) {
       state.data.members.map((member) => [member.id, member.name]),
       entity?.memberId,
     );
+    person.required = true;
     person.disabled = !!entity;
     const day = input(form, 'date', 'reports.date', entity?.date || week, 'date');
     day.disabled = !!entity;

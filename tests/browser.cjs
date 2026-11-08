@@ -69,7 +69,7 @@ await page.route('**/*',async route=>{
   if(name==='getserverstatus'&&failMaintenance)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture maintenance unavailable'}})});
   if(name==='togglecontributorverification'&&failVerify)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture verification unavailable'}})});
   let result={};
-  if(name==='getreportworkspace'){const department=route.request().postDataJSON()?.data?.department||'Core';result={department,color:'#263238',canEdit:true,team:[],records:[],tasks:[],availableDepartments:[department],revision:0};}
+  if(name==='getreportworkspace'){const department=route.request().postDataJSON()?.data?.department||'Core';result={schemaVersion:2,department,weekStart:route.request().postDataJSON()?.data?.weekStart,canEdit:true,members:[],entries:[],tasks:[],openTasks:[],availableDepartments:[department],cursors:{entries:null,tasks:null,open:null}};}
   if(name==='togglecontributorverification'){
     const request=route.request().postDataJSON().data;
     const target=(people||[person]).find(p=>p.id===request.contributorId);
@@ -343,9 +343,10 @@ people=Array.from({length:85},(_,i)=>({
   ...person,id:'filter-fixture-'+i,name:'Applicant '+i,
   email:'applicant'+i+'@example.invalid',hasVerified:i%2===0
 }));
-await page.evaluate(fixtures=>{
- window.__savedContributors=window.loadedContributors;
- window.loadedContributors=fixtures;
+await page.evaluate(async fixtures=>{
+ const {contributorsStore}=await import('/js/stores/areaStore.js');
+ window.__savedContributors=contributorsStore.value;
+ contributorsStore.value=fixtures;
  window.filterContributors('all');
 },people);
 await waitCrossfade();
@@ -372,8 +373,9 @@ assert.equal(await page.locator('.contributor-table-rows > .contributor-row').co
 assert.equal(await page.evaluate(()=>window.__filterPaints),1);
 contributorDelay=0;
 people=null;
-await page.evaluate(()=>{
- window.loadedContributors=window.__savedContributors;
+await page.evaluate(async()=>{
+ const {contributorsStore}=await import('/js/stores/areaStore.js');
+ contributorsStore.value=window.__savedContributors;
  delete window.__savedContributors;
  window.filterContributors('all');
 });
@@ -520,7 +522,7 @@ await selectTab('contributors');
  await page.locator('#contributor-search').fill('Example Participant');
  await page.waitForSelector('.contributor-row');
  assert.equal(await page.locator('.contributor-row').count(),1);
- assert.equal(await page.evaluate(()=>Object.hasOwn(window.loadedContributors[0],'email') && window.loadedContributors[0].email!==undefined),false);
+ assert.equal(await page.evaluate(async()=>{const rows=(await import('/js/stores/areaStore.js')).contributorsStore.value;return Object.hasOwn(rows[0],'email') && rows[0].email!==undefined;}),false);
  await page.locator('#contributor-search').fill('');
  await page.locator('[data-details]').click();
  assert.equal(await page.locator('.vx-drawer-body').innerText().then(s=>s.includes('person@example.invalid')),false);

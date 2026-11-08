@@ -9,7 +9,7 @@ the owning stores and require both exporter and source-area access.
 ## Reports
 
 The standalone `reports/index.html`, iframe, duplicated auth state, public seed,
-local persistence and whole-workspace autosave are removed. The Reports sidebar
+local persistence and whole-workspace autosave are removed. Old /reports URLs redirect to the authenticated Console report workspace. The Reports sidebar
 expands Department → Overview / Daily / People / Tasks / Weekly. The native
 controller, renderers, editor, service and store are separate modules. Members
 read their assigned departments; Core edits all; moderators/chefs edit their own

@@ -9,12 +9,21 @@ const label = (day) =>
     timeZone: 'UTC',
   }).format(new Date(day + 'T12:00:00Z'));
 const status = (value) => t('status.' + value);
+function evidenceLink(value) {
+  try {
+    const url = new URL(value);
+    if (!['http:', 'https:'].includes(url.protocol)) return '';
+  } catch {
+    return '';
+  }
+  return `<a href="${esc(value)}" target="_blank" rel="noopener noreferrer">${esc(t('evidence'))}</a>`;
+}
 function entryRows(data, canEdit) {
   return (
     data.entries
       .map(
         (entry) =>
-          `<article class="report-record"><header><strong>${esc(entry.personName)}</strong><span>${esc(label(entry.date))} · ${esc(status(entry.status))}</span></header><h4>${esc(entry.project)}</h4><p class="report-copy">${esc(entry.summary)}</p>${entry.next ? `<p class="report-copy report-next">${esc(entry.next)}</p>` : ''}${entry.link ? `<a href="${esc(entry.link)}" target="_blank" rel="noopener noreferrer">${esc(t('evidence'))}</a>` : ''}${canEdit ? `<button type="button" class="chrome-btn-outline" data-report-edit-entry="${esc(entry.id)}">${esc(__('common.edit'))}</button>` : ''}</article>`,
+          `<article class="report-record"><header><strong>${esc(entry.personName)}</strong><span>${esc(label(entry.date))} · ${esc(status(entry.status))}</span></header><h4>${esc(entry.project)}</h4><p class="report-copy">${esc(entry.summary)}</p>${entry.next ? `<p class="report-copy report-next">${esc(entry.next)}</p>` : ''}${evidenceLink(entry.link)}${entry.source ? `<p class="form-hint">${esc(entry.source)}</p>` : ''}${canEdit ? `<button type="button" class="chrome-btn-outline" data-report-edit-entry="${esc(entry.id)}">${esc(__('common.edit'))}</button>` : ''}</article>`,
       )
       .join('') || `<p class="state-block">${esc(t('emptyEntries'))}</p>`
   );
@@ -41,7 +50,7 @@ function tasks(data, canEdit) {
     all
       .map(
         (task) =>
-          `<article class="report-record"><header><strong>${esc(task.title)}</strong><span>${esc(t('taskStatus.' + task.status))} · ${esc(t('priority.' + task.priority))}</span></header><p>${esc(task.project)}</p><p class="report-copy">${esc(task.description)}</p><p>${esc(task.assignees.map((id) => members.get(id) || t('unknownMember')).join(', '))}</p>${task.due ? `<p>${esc(t('due'))}: ${esc(task.due)}</p>` : ''}${canEdit ? `<button type="button" class="chrome-btn-outline" data-report-edit-task="${esc(task.id)}">${esc(__('common.edit'))}</button>` : `<button type="button" class="chrome-btn-outline" data-report-request-task="${esc(task.id)}">${esc(t('requestTask'))}</button>`}</article>`,
+          `<article class="report-record"><header><strong>${esc(task.title)}</strong><span>${esc(t('taskStatus.' + task.status))} · ${esc(t('priority.' + task.priority))}</span></header><p>${esc(task.project)}</p><p class="report-copy">${esc(task.description)}</p><p>${esc(task.assignees.map((id) => members.get(id) || t('unknownMember')).join(', '))}</p>${evidenceLink(task.ref)}${task.source ? `<p class="form-hint">${esc(task.source)}</p>` : ''}${task.due ? `<p>${esc(t('due'))}: ${esc(task.due)}</p>` : ''}${canEdit ? `<button type="button" class="chrome-btn-outline" data-report-edit-task="${esc(task.id)}">${esc(__('common.edit'))}</button>` : `<button type="button" class="chrome-btn-outline" data-report-request-task="${esc(task.id)}">${esc(t('requestTask'))}</button>`}</article>`,
       )
       .join('') || `<p class="state-block">${esc(t('emptyTasks'))}</p>`
   );
@@ -106,7 +115,16 @@ export function exportReport(state) {
     t('tasksCompleted') + ': ' + summary.completed,
   ];
   const entries = summary.entries.map((entry) =>
-    [entry.date, entry.personName, status(entry.status), entry.project, entry.summary, entry.next]
+    [
+      entry.date,
+      entry.personName,
+      status(entry.status),
+      entry.project,
+      entry.summary,
+      entry.next,
+      entry.link,
+      entry.source,
+    ]
       .filter(Boolean)
       .join('\n'),
   );
