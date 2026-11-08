@@ -29,3 +29,11 @@ test('logout cancels queued initialization and allows a fresh session to load',a
  const stale=loader.load(['a']);loader.clear();await stale;assert.equal(count,0);
  await loader.load(['a']);assert.equal(count,1);
 });
+
+test('registered session invalidation clears pending and successful workspace caches',async()=>{
+ let count=0,reset;
+ const loader=context.create({tasks:[['a',()=>count++]],canLoad:()=>true,onReset:listener=>{reset=listener;}});
+ await loader.load(['a']);await loader.load(['a']);assert.equal(count,1);
+ reset();await loader.load(['a']);assert.equal(count,2);
+ const old=loader.load(['a']);reset();await old;await loader.load(['a']);assert.equal(count,3);
+});

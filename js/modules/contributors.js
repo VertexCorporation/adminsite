@@ -428,6 +428,12 @@ function renderContributors(contributors) {
 
 onSessionReset(() => {
   requestGuard.begin();
+  inFlight = null;
+  inFlightContext = '';
+  nextContributorCursor = null;
+  lastLoadFailed = false;
+  clearTimeout(reloadTimer);
+  clearTimeout(contributorSearchTimer);
   contributorsStore.clear();
   listContainer?.replaceChildren();
   stopVerification();

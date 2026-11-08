@@ -1,4 +1,4 @@
-import { configureSession, updateSession } from './core/session.js';
+import { configureSession, updateSession, onSessionReset } from './core/session.js';
 import { initOriginModule } from './modules/origin.js';
 import { initBeaconsModule } from './modules/beacons.js';
 import { initApprovedAccountSetup } from './modules/approvedAccountSetup.js';
@@ -147,6 +147,7 @@ export function startApp(firebaseConfig) {
   });
   const loadRolesWorkspace = () => initRolesModule();
   const loadedWorkspaces = createWorkspaceLoader({
+    onReset: onSessionReset,
     tasks: [
       ['contributors.list', fetchContributorsData],
       ['models.library', fetchFullModelsData],

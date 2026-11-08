@@ -1,9 +1,15 @@
 // One lifetime per authenticated session. Failed reads can be retried on the
 // next workspace visit; simultaneous entry events share the same load.
-export function createWorkspaceLoader({ tasks, canLoad, onError = () => {} }) {
+export function createWorkspaceLoader({ tasks, canLoad, onError = () => {}, onReset = () => {} }) {
   const loaded = new Set(),
     pending = new Map();
   let epoch = 0;
+  const clear = () => {
+    epoch++;
+    loaded.clear();
+    pending.clear();
+  };
+  onReset(clear);
   return {
     load(keys) {
       const work = [];
@@ -38,10 +44,6 @@ export function createWorkspaceLoader({ tasks, canLoad, onError = () => {} }) {
     invalidate(key) {
       for (const [panel, load] of tasks) if (panel === key) loaded.delete(load);
     },
-    clear() {
-      epoch++;
-      loaded.clear();
-      pending.clear();
-    },
+    clear,
   };
 }
