@@ -1,6 +1,6 @@
 import { setButtonLoading } from '../../utils/loading.js';
 import { auth } from '../../core/firebase.js';
-import { showToast, userErrorMessage, __, getLang, getAuthToken, sanitizeHTML } from '../../utils/ui.js';
+import { showToast, userErrorMessage, __, getLang, getAuthToken, sanitizeHTML, simpleHash } from '../../utils/ui.js';
 import { openModal, closeModal } from '../shell.js';
 import { CURATOR_API_URL, TARGET_LANGUAGES, STATUS } from './constants.js';
 import { canEditModels } from './access.js';
