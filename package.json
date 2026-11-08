@@ -10,8 +10,8 @@
     "check:syntax": "node scripts/check-syntax.cjs",
     "check:architecture": "node scripts/check-architecture.cjs",
     "build": "node scripts/release.cjs",
-    "format": "prettier --write js l10n partials css index.html customer-activate.html",
-    "format:check": "prettier --check js l10n partials css index.html customer-activate.html",
+    "format": "prettier --write js l10n partials css scripts index.html customer-activate.html",
+    "format:check": "prettier --check js l10n partials css scripts index.html customer-activate.html",
     "check:localization": "node scripts/check-localization.cjs"
   },
   "devDependencies": {

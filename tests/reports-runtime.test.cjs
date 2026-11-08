@@ -1,34 +1,268 @@
 'use strict';
-const {test}=require('node:test');
-const assert=require('node:assert/strict');
-const fs=require('node:fs');
-const {harness}=require('./helpers/module-harness.cjs');
-const reportHTML=fs.readFileSync('partials/panels/reports.html','utf8');
-function authorize(session, uid='viewer', scopes={}) {session.configureSession({getUid:()=>uid,getLevel:scope=>scopes[scope]||'write'});session.updateSession({uid,isCore:true,departments:['Core']});}
-function workspace(department='Array') {return {schemaVersion:2,department,weekStart:'2026-11-02',canEdit:true,availableDepartments:['Array'],members:[{id:'uid_1',name:'Person'}],entries:[],tasks:[],openTasks:[],cursors:{entries:null,tasks:null,open:null}};}
-test('weekly counts exclude other weeks and include carried tasks completed this week',async()=>{
- const h=harness();try{const {weekSummary}=await h.load('js/modules/reports/domain.js');const result=weekSummary({entries:[{date:'2026-11-02',status:'done'},{date:'2026-10-30',status:'done'}],tasks:[{createdDate:'2026-10-31',completedDate:'2026-11-03'},{createdDate:'2026-11-04',completedDate:null},{createdDate:'2026-10-30',completedDate:'2026-11-01'}]},'2026-11-02');assert.equal(result.created,1);assert.equal(result.completed,1);assert.equal(result.work,1);assert.equal(result.tasks.length,2);}finally{h.close();}
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const { harness } = require('./helpers/module-harness.cjs');
+const reportHTML = fs.readFileSync('partials/panels/reports.html', 'utf8');
+function authorize(session, uid = 'viewer', scopes = {}) {
+  session.configureSession({ getUid: () => uid, getLevel: (scope) => scopes[scope] || 'write' });
+  session.updateSession({ uid, isCore: true, departments: ['Core'] });
+}
+function workspace(department = 'Array') {
+  return {
+    schemaVersion: 2,
+    department,
+    weekStart: '2026-11-02',
+    canEdit: true,
+    availableDepartments: ['Array'],
+    members: [{ id: 'uid_1', name: 'Person' }],
+    entries: [],
+    tasks: [],
+    openTasks: [],
+    cursors: { entries: null, tasks: null, open: null },
+  };
+}
+test('weekly counts exclude other weeks and include carried tasks completed this week', async () => {
+  const h = harness();
+  try {
+    const { weekSummary } = await h.load('js/modules/reports/domain.js');
+    const result = weekSummary(
+      {
+        entries: [
+          { date: '2026-11-02', status: 'done' },
+          { date: '2026-10-30', status: 'done' },
+        ],
+        tasks: [
+          { createdDate: '2026-10-31', completedDate: '2026-11-03' },
+          { createdDate: '2026-11-04', completedDate: null },
+          { createdDate: '2026-10-30', completedDate: '2026-11-01' },
+        ],
+      },
+      '2026-11-02',
+    );
+    assert.equal(result.created, 1);
+    assert.equal(result.completed, 1);
+    assert.equal(result.work, 1);
+    assert.equal(result.tasks.length, 2);
+  } finally {
+    h.close();
+  }
 });
-test('stores deny signed-out reads, reject late responses and isolate permission revisions',async()=>{
- const h=harness();try{const session=await h.load('js/core/session.js');let uid='a',level='write';session.configureSession({getUid:()=>uid,getLevel:()=>level});session.updateSession({uid,departments:['Array']});const {createAreaStore}=await h.load('js/stores/areaStore.js');const store=createAreaStore('models.library',[]),token=session.captureSession();assert.equal(store.set(['private'],token),true);uid='b';assert.equal(store.value.length,0);session.updateSession({uid,departments:['Array']});assert.equal(store.set(['stale'],token),false);const second=session.captureSession();session.updateSession({uid,departments:['Array'],permissionsRevision:2});assert.equal(store.set(['stale-permission'],second),false);level='none';assert.equal(store.set(['forbidden']),false);}finally{h.close();}
+test('stores deny signed-out reads, reject late responses and isolate permission revisions', async () => {
+  const h = harness();
+  try {
+    const session = await h.load('js/core/session.js');
+    let uid = 'a',
+      level = 'write';
+    session.configureSession({ getUid: () => uid, getLevel: () => level });
+    session.updateSession({ uid, departments: ['Array'] });
+    const { createAreaStore } = await h.load('js/stores/areaStore.js');
+    const store = createAreaStore('models.library', []),
+      token = session.captureSession();
+    assert.equal(store.set(['private'], token), true);
+    uid = 'b';
+    assert.equal(store.value.length, 0);
+    session.updateSession({ uid, departments: ['Array'] });
+    assert.equal(store.set(['stale'], token), false);
+    const second = session.captureSession();
+    session.updateSession({ uid, departments: ['Array'], permissionsRevision: 2 });
+    assert.equal(store.set(['stale-permission'], second), false);
+    level = 'none';
+    assert.equal(store.set(['forbidden']), false);
+  } finally {
+    h.close();
+  }
 });
-test('export requires permission for both exporter and the source area',async()=>{
- const h=harness();try{const session=await h.load('js/core/session.js'),scopes={'system.exporter':'write','contributors.list':'none'};session.configureSession({getUid:()=> 'a',getLevel:scope=>scopes[scope]||'none'});session.updateSession({uid:'a',departments:['Array']});const {getExportData}=await h.load('js/services/exportService.js');assert.throws(()=>getExportData('contributors'),error=>error.code==='functions/permission-denied');scopes['contributors.list']='read';const {contributorsStore}=await h.load('js/stores/areaStore.js');contributorsStore.set([{name:'Private'}]);const copy=getExportData('contributors');copy[0].name='Changed';assert.equal(contributorsStore.value[0].name,'Private');}finally{h.close();}
+test('export requires permission for both exporter and the source area', async () => {
+  const h = harness();
+  try {
+    const session = await h.load('js/core/session.js'),
+      scopes = { 'system.exporter': 'write', 'contributors.list': 'none' };
+    session.configureSession({ getUid: () => 'a', getLevel: (scope) => scopes[scope] || 'none' });
+    session.updateSession({ uid: 'a', departments: ['Array'] });
+    const { getExportData } = await h.load('js/services/exportService.js');
+    assert.throws(
+      () => getExportData('contributors'),
+      (error) => error.code === 'functions/permission-denied',
+    );
+    scopes['contributors.list'] = 'read';
+    const { contributorsStore } = await h.load('js/stores/areaStore.js');
+    contributorsStore.set([{ name: 'Private' }]);
+    const copy = getExportData('contributors');
+    copy[0].name = 'Changed';
+    assert.equal(contributorsStore.value[0].name, 'Private');
+  } finally {
+    h.close();
+  }
 });
-test('report pagination marks exhausted categories and merges IDs without duplication',async()=>{
- const calls=[];const h=harness('',{'js/core/firebase.js':{consolePeopleCall:async(name,input)=>{calls.push(input);return {data:calls.length===1?{...workspace(),entries:[{id:'one'}],tasks:[{id:'task'}],cursors:{entries:'one',tasks:null,open:null}}:{...workspace(),entries:[{id:'two'}]}};}}});try{authorize(await h.load('js/core/session.js'));const service=await h.load('js/services/reportsService.js');const result=await service.getReportWeek('Array','2026-11-02');assert.equal(result.entries.length,2);assert.equal(result.tasks.length,1);assert.equal(calls[1].cursors.tasks,false);assert.equal(calls[1].cursors.open,false);}finally{h.close();}
+test('report pagination marks exhausted categories and merges IDs without duplication', async () => {
+  const calls = [];
+  const h = harness('', {
+    'js/core/firebase.js': {
+      consolePeopleCall: async (name, input) => {
+        calls.push(input);
+        return {
+          data:
+            calls.length === 1
+              ? {
+                  ...workspace(),
+                  entries: [{ id: 'one' }],
+                  tasks: [{ id: 'task' }],
+                  cursors: { entries: 'one', tasks: null, open: null },
+                }
+              : { ...workspace(), entries: [{ id: 'two' }] },
+        };
+      },
+    },
+  });
+  try {
+    authorize(await h.load('js/core/session.js'));
+    const service = await h.load('js/services/reportsService.js');
+    const result = await service.getReportWeek('Array', '2026-11-02');
+    assert.equal(result.entries.length, 2);
+    assert.equal(result.tasks.length, 1);
+    assert.equal(calls[1].cursors.tasks, false);
+    assert.equal(calls[1].cursors.open, false);
+  } finally {
+    h.close();
+  }
 });
-test('switching department while a response is pending cannot apply the old department',async()=>{
- const pending={};const h=harness('',{'js/core/firebase.js':{consolePeopleCall:async(name,input)=>new Promise(resolve=>pending[input.department]=()=>resolve({data:workspace(input.department)}))}});try{authorize(await h.load('js/core/session.js'));const store=await h.load('js/stores/reportsStore.js');const first=store.loadReportWeek('Array','2026-11-02'),second=store.loadReportWeek('Pulse','2026-11-02');pending.Pulse();await second;pending.Array();await first;assert.equal(store.reportsStore.value.department,'Pulse');assert.equal(store.reportsStore.value.data.department,'Pulse');}finally{h.close();}
+test('switching department while a response is pending cannot apply the old department', async () => {
+  const pending = {};
+  const h = harness('', {
+    'js/core/firebase.js': {
+      consolePeopleCall: async (name, input) =>
+        new Promise((resolve) => (pending[input.department] = () => resolve({ data: workspace(input.department) }))),
+    },
+  });
+  try {
+    authorize(await h.load('js/core/session.js'));
+    const store = await h.load('js/stores/reportsStore.js');
+    const first = store.loadReportWeek('Array', '2026-11-02'),
+      second = store.loadReportWeek('Pulse', '2026-11-02');
+    pending.Pulse();
+    await second;
+    pending.Array();
+    await first;
+    assert.equal(store.reportsStore.value.department, 'Pulse');
+    assert.equal(store.reportsStore.value.data.department, 'Pulse');
+  } finally {
+    h.close();
+  }
 });
-test('report rendering localizes both languages, escapes content and obeys server canEdit',async()=>{
- const h=harness(reportHTML);try{const render=await h.load('js/modules/reports/render.js'),lang=await h.load('js/lang.js');const data={...workspace(),canEdit:false,entries:[{id:'entry',personName:'<script>bad</script>',date:'2026-11-02',status:'done',project:'Console',summary:'<img src=x onerror=bad()>',next:'',link:'javascript:alert(1)',source:'<img src=x>'}]};for(const locale of ['tr','en']){lang.setLang(locale);render.renderReportContent({department:'Array',weekStart:'2026-11-02',view:'daily',data});assert.equal(h.document.querySelectorAll('#reports-content script,#reports-content img').length,0);assert(h.document.getElementById('reports-content').textContent.includes('<img'));assert.equal(h.document.querySelectorAll('[data-report-edit-entry]').length,0);assert.equal(h.document.querySelectorAll('#reports-content a').length,0);assert.equal(h.document.getElementById('reports-new-entry').hidden,true);}data.canEdit=true;render.renderReportContent({department:'Array',weekStart:'2026-11-02',view:'daily',data});assert.equal(h.document.querySelectorAll('[data-report-edit-entry]').length,1);}finally{h.close();}
+test('report rendering localizes both languages, escapes content and obeys server canEdit', async () => {
+  const h = harness(reportHTML);
+  try {
+    const render = await h.load('js/modules/reports/render.js'),
+      lang = await h.load('js/lang.js');
+    const data = {
+      ...workspace(),
+      canEdit: false,
+      entries: [
+        {
+          id: 'entry',
+          personName: '<script>bad</script>',
+          date: '2026-11-02',
+          status: 'done',
+          project: 'Console',
+          summary: '<img src=x onerror=bad()>',
+          next: '',
+          link: 'javascript:alert(1)',
+          source: '<img src=x>',
+        },
+      ],
+    };
+    for (const locale of ['tr', 'en']) {
+      lang.setLang(locale);
+      render.renderReportContent({ department: 'Array', weekStart: '2026-11-02', view: 'daily', data });
+      assert.equal(h.document.querySelectorAll('#reports-content script,#reports-content img').length, 0);
+      assert(h.document.getElementById('reports-content').textContent.includes('<img'));
+      assert.equal(h.document.querySelectorAll('[data-report-edit-entry]').length, 0);
+      assert.equal(h.document.querySelectorAll('#reports-content a').length, 0);
+      assert.equal(h.document.getElementById('reports-new-entry').hidden, true);
+    }
+    data.canEdit = true;
+    render.renderReportContent({ department: 'Array', weekStart: '2026-11-02', view: 'daily', data });
+    assert.equal(h.document.querySelectorAll('[data-report-edit-entry]').length, 1);
+  } finally {
+    h.close();
+  }
 });
-test('member navigation contains only assigned departments and nested report views',async()=>{
- const nav='<div class="nav-module"><div id="nav-sub-reports"><div class="sidebar-submenu-inner"></div></div></div>';
- const h=harness(nav+reportHTML,{'js/modules/roles.js':{getCurrentUserAccess:()=>({isCore:false,departments:['Array']})},'js/core/firebase.js':{consolePeopleCall:async()=>({data:workspace()})}});try{authorize(await h.load('js/core/session.js'));const {initReportsModule}=await h.load('js/modules/reports.js');initReportsModule();assert.equal(h.document.querySelectorAll('[data-report-department]').length,1);assert.equal(h.document.querySelector('[data-report-department]').dataset.reportDepartment,'Array');assert.equal(h.document.querySelectorAll('#report-nav-Array [data-nav-action]').length,5);h.document.dispatchEvent(new h.window.CustomEvent('vertex:workspace',{detail:{keys:['reports.workspace'],action:'Array:weekly'}}));assert.equal(h.document.getElementById('report-nav-Array').hidden,false);await new Promise(setImmediate);await new Promise(setImmediate);}finally{h.close();}
+test('member navigation contains only assigned departments and nested report views', async () => {
+  const nav = '<div class="nav-module"><div id="nav-sub-reports"><div class="sidebar-submenu-inner"></div></div></div>';
+  const h = harness(nav + reportHTML, {
+    'js/modules/roles.js': { getCurrentUserAccess: () => ({ isCore: false, departments: ['Array'] }) },
+    'js/core/firebase.js': { consolePeopleCall: async () => ({ data: workspace() }) },
+  });
+  try {
+    authorize(await h.load('js/core/session.js'));
+    const { initReportsModule } = await h.load('js/modules/reports.js');
+    initReportsModule();
+    assert.equal(h.document.querySelectorAll('[data-report-department]').length, 1);
+    assert.equal(h.document.querySelector('[data-report-department]').dataset.reportDepartment, 'Array');
+    assert.equal(h.document.querySelectorAll('#report-nav-Array [data-nav-action]').length, 5);
+    h.document.dispatchEvent(
+      new h.window.CustomEvent('vertex:workspace', { detail: { keys: ['reports.workspace'], action: 'Array:weekly' } }),
+    );
+    assert.equal(h.document.getElementById('report-nav-Array').hidden, false);
+    await new Promise(setImmediate);
+    await new Promise(setImmediate);
+  } finally {
+    h.close();
+  }
 });
-test('editor waits for server ack and preserves draft after conflict',async()=>{
- let complete;const calls=[];
- const h=harness(reportHTML,{'js/core/firebase.js':{consolePeopleCall:async(name,input)=>{calls.push({name,input});if(name==='saveReportTask')return new Promise((resolve,reject)=>complete={resolve,reject});return {data:workspace()};}}});try{authorize(await h.load('js/core/session.js'));const {reportsStore}=await h.load('js/stores/reportsStore.js');reportsStore.value={department:'Array',weekStart:'2026-11-02',view:'tasks',data:workspace()};const editor=await h.load('js/modules/reports/editor.js');editor.openReportEditor('tasks');const form=h.document.querySelector('.report-editor');form.elements.title.value='Draft task';form.elements.project.value='Console';const lang=await h.load('js/lang.js');lang.setLang('en');assert.equal(form.querySelector('[data-i18n="reports.project"]').textContent,'Project / area');assert.equal(form.elements.title.value,'Draft task');form.reportValidity=()=>true;const promise=form.onsubmit({preventDefault(){}});assert.equal(form.querySelector('[type=submit]').disabled,true);assert.equal(form.isConnected,true);complete.reject(Object.assign(Error('Private backend details'),{code:'functions/aborted'}));await promise;assert.equal(form.elements.title.value,'Draft task');assert.equal(form.querySelector('[type=submit]').disabled,false);assert(!form.textContent.includes('Private backend details'));const retry=form.onsubmit({preventDefault(){}});const firstId=calls[0].input.operationId;assert.equal(calls[1].input.operationId,firstId);complete.resolve({data:{revision:1}});await retry;assert(!form.isConnected || form.closest('[aria-hidden=true]'));}finally{h.close();}
+test('editor waits for server ack and preserves draft after conflict', async () => {
+  let complete;
+  const calls = [];
+  const h = harness(reportHTML, {
+    'js/core/firebase.js': {
+      consolePeopleCall: async (name, input) => {
+        calls.push({ name, input });
+        if (name === 'saveReportTask') return new Promise((resolve, reject) => (complete = { resolve, reject }));
+        return { data: workspace() };
+      },
+    },
+  });
+  try {
+    authorize(await h.load('js/core/session.js'));
+    const { reportsStore } = await h.load('js/stores/reportsStore.js');
+    reportsStore.value = { department: 'Array', weekStart: '2026-11-02', view: 'tasks', data: workspace() };
+    const editor = await h.load('js/modules/reports/editor.js');
+    editor.openReportEditor('tasks');
+    const form = h.document.querySelector('.report-editor');
+    form.elements.title.value = 'Draft task';
+    form.elements.project.value = 'Console';
+    const lang = await h.load('js/lang.js');
+    lang.setLang('en');
+    assert.equal(form.querySelector('[data-i18n="reports.project"]').textContent, 'Project / area');
+    assert.equal(form.elements.title.value, 'Draft task');
+    form.reportValidity = () => true;
+    const promise = form.onsubmit({ preventDefault() {} });
+    assert.equal(form.querySelector('[type=submit]').disabled, true);
+    assert.equal(form.isConnected, true);
+    complete.reject(Object.assign(Error('Private backend details'), { code: 'functions/aborted' }));
+    await promise;
+    assert.equal(form.elements.title.value, 'Draft task');
+    assert.equal(form.querySelector('[type=submit]').disabled, false);
+    assert(!form.textContent.includes('Private backend details'));
+    const retry = form.onsubmit({ preventDefault() {} });
+    const firstId = calls[0].input.operationId;
+    assert.equal(calls[1].input.operationId, firstId);
+    complete.resolve({ data: { revision: 1 } });
+    await retry;
+    assert(!form.isConnected || form.closest('[aria-hidden=true]'));
+  } finally {
+    h.close();
+  }
+});
+
+test('clearing the report calendar selects the current week without an invalid-date exception', async () => {
+  const h = harness();
+  try {
+    const domain = await h.load('js/modules/reports/domain.js');
+    assert.equal(domain.monday(''), domain.monday(domain.today()));
+    assert.equal(domain.monday('2026-02-30'), domain.monday(domain.today()));
+  } finally {
+    h.close();
+  }
 });

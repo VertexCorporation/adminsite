@@ -13,6 +13,7 @@ export function addDays(day, count) {
 }
 export function monday(day = today()) {
   const d = new Date(day + 'T12:00:00Z');
+  if (!Number.isFinite(d.getTime()) || d.toISOString().slice(0, 10) !== day) return monday(today());
   return addDays(day, -((d.getUTCDay() + 6) % 7));
 }
 export function days(week) {
