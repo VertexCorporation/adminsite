@@ -1,12 +1,74 @@
 /* Reports own their content layout; shared controls/surfaces live in css/ui. */
 .reports-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  margin-block-end: 16px;
+}
+.reports-toolbar-main,
+.reports-week-controls,
+.reports-create-controls {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
+  align-items: center;
+  justify-content: center;
   gap: 12px;
+  min-width: 0;
 }
-.reports-toolbar .form-group-field {
-  margin: 0;
+.reports-toolbar-main {
+  gap: 20px;
+}
+.reports-week-controls input {
+  width: 160px;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+.reports-create-controls:has(> [hidden]):not(:has(> :not([hidden]))) {
+  display: none;
+}
+.reports-data-menu {
+  position: relative;
+  justify-self: end;
+  align-self: center;
+}
+.reports-data-menu summary {
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+}
+.reports-data-menu summary::-webkit-details-marker {
+  display: none;
+}
+.reports-data-options {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 8px);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: max-content;
+  max-width: min(300px, calc(100vw - 48px));
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  box-shadow: 0 12px 32px #0003;
+}
+.reports-data-menu:not([open]) .reports-data-options {
+  display: none;
+}
+@media (max-width: 760px) {
+  .reports-toolbar {
+    grid-template-columns: 1fr;
+  }
+  .reports-data-menu {
+    justify-self: end;
+  }
+  .reports-week-controls {
+    gap: 8px;
+  }
 }
 .report-department-group {
   display: flex;

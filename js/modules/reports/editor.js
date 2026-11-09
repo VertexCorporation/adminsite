@@ -43,7 +43,10 @@ function select(form, name, label, values, current) {
 }
 export function openReportEditor(kind, entity) {
   const state = reportsStore.value;
-  if (!state?.data?.canEdit) return;
+  if (!state?.data) return;
+  const ownMemberId = state.data.ownMemberId;
+  if (!state.data.canEdit && (kind !== 'entries' || !ownMemberId || (entity && entity.memberId !== ownMemberId)))
+    return;
   const session = captureSession(),
     department = state.department,
     week = state.weekStart;
@@ -81,8 +84,10 @@ export function openReportEditor(kind, entity) {
       form,
       'memberId',
       'reports.person',
-      state.data.members.map((member) => [member.id, member.name || t('unknownMember')]),
-      entity?.memberId,
+      state.data.members
+        .filter((member) => state.data.canEdit || member.id === ownMemberId)
+        .map((member) => [member.id, member.name || t('unknownMember')]),
+      entity?.memberId || ownMemberId,
     );
     person.required = true;
     person.disabled = !!entity;
@@ -144,7 +149,7 @@ export function openReportEditor(kind, entity) {
     operationId = crypto.randomUUID();
     status.textContent = '';
   });
-  if (entity) {
+  if (entity && state.data.canEdit) {
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'chrome-btn-danger';

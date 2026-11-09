@@ -38,7 +38,7 @@ window.fetch = async (input, init) => {
         return Response.json({ok:true});
     }
     const name = url.hostname.split('-')[0];
-    if (name === 'getreportworkspace') {const input=JSON.parse(init.body).data;result={schemaVersion:2,department:input.department,weekStart:input.weekStart,canEdit:${JSON.stringify(reportAccess !== 'member')},members:[{id:'report-person',name:'Report Person'}],entries:[],tasks:[],openTasks:[],availableDepartments:${JSON.stringify(reportAccess === 'core'?['Core','Array']:['Array'])},cursors:{entries:null,tasks:null,open:null}};}
+    if (name === 'getreportworkspace') {const input=JSON.parse(init.body).data;result={schemaVersion:2,backup:input.backup===true,department:input.department,weekStart:input.weekStart,ownMemberId:'admin',canEdit:${JSON.stringify(reportAccess !== 'member')},members:[{id:'admin',name:'Report Person'}],entries:[],tasks:[],openTasks:[],availableDepartments:${JSON.stringify(reportAccess === 'core'?['Core','Array']:['Array'])},cursors:{entries:null,tasks:null,open:null}};}
     else if (name === 'savereporttask' || name === 'savereportentry') result={revision:1};
     else if (name === 'getvertexcontributors') result = {contributors:[]};
     else if (name === 'listconsolechatchannels') result = {channels:[],isAdmin:true};

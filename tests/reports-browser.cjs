@@ -48,6 +48,14 @@ const server=http.createServer((request,response)=>{
   assert.equal(await page.locator('#reports-week').inputValue(),'2026-11-02');
   assert.equal(await department.getAttribute('aria-expanded'),'true');
   assert.equal(await page.locator('#reports-new-task').isVisible(),access!=='member');
+  assert.equal(await page.locator('#reports-new-entry').isVisible(),true);
+  assert.equal(await page.locator('[data-i18n=\"reports.week\"]').count(),0);
+  await page.locator('.reports-data-menu summary').click();
+  assert.equal(await page.locator('#reports-restore').isVisible(),access!=='member');
+  const downloadWait=page.waitForEvent('download');await page.locator('#reports-backup').click();const downloaded=await downloadWait;const savedBackup=JSON.parse(fs.readFileSync(await downloaded.path(),'utf8'));assert.equal(savedBackup.app,'vertex-console-reports');assert.equal(savedBackup.department,'Array');
+  if(access==='member'){await page.locator('#reports-new-entry').click();assert.equal(await page.locator('.report-editor [name=memberId] option').count(),1);await page.locator('.report-editor [name=summary]').fill('Own report');await page.locator('.report-editor [type=submit]').click();await page.locator('.vx-modal').waitFor({state:'detached'});}
+  if(access!=='member'){await page.locator('.reports-data-menu summary').click();await page.locator('#reports-restore').click();await page.locator('.vx-modal input[type=file]').setInputFiles({name:'restore.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({...savedBackup,entries:[{memberId:'admin',date:'2026-10-05',status:'done',summary:'Restored in fixture'}]}))});await page.locator('.vx-modal button[data-i18n=\"reports.restoreConfirm\"]').waitFor();await page.waitForFunction(()=>!document.querySelector('.vx-modal button[data-i18n=\"reports.restoreConfirm\"]').disabled);await page.locator('.vx-modal button[data-i18n=\"reports.restoreConfirm\"]').click();await page.locator('.vx-modal').waitFor({state:'detached'});}
+
   if(access!=='member'){await page.locator('#reports-new-task').click();await page.locator('.report-editor [name="title"]').fill('Browser task');await page.locator('.report-editor [name="project"]').fill('Console');await page.locator('.report-editor [type="submit"]').click();await page.locator('.vx-modal').waitFor({state:'detached'});}
   await page.reload();await page.locator('#app-loader').waitFor({state:'detached'});
   await page.locator('#reports-content[aria-busy="false"]').waitFor({timeout:10000});

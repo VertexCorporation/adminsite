@@ -59,5 +59,26 @@ export default {
   'reports.weekTasks': 'Haftanın görevleri',
   'reports.weekMetricsHint':
     'Görev sayıları seçilen haftanın oluşturulma ve tamamlanma tarihlerine göre hesaplanır. Eski verilerde tamamlanma tarihi son güncelleme tarihinden aktarılmış olabilir.',
-  'reports.fixedPolicy': 'Üyeler kendi departmanını görüntüler; Core ve departman yöneticileri düzenler.',
+  'reports.fixedPolicy':
+    'Üyeler kendi günlük kayıtlarını düzenler; Core ve departman yöneticileri departman kayıtlarını yönetir.',
+  'reports.dataMenu': 'İndir / geri yükle',
+  'reports.backup': 'Departman JSON yedeğini indir',
+  'reports.restore': 'JSON yedeğini geri yükle',
+  'reports.ownAccess': 'Departman raporlarını görüntüleyebilir, kendi günlük kayıtlarını ekleyip düzenleyebilirsin.',
+  'reports.backupHint':
+    'JSON yedeği departmanın tüm haftalarındaki günlük kayıtları ve görevleri kapsar. İsimler başvurulardan alınır.',
+  'reports.restoreHint':
+    'Bu departmana ait JSON yedeğini seç. Kayıtlar birleştirilir; aynı kişi ve tarihin kaydı ile aynı kimlikteki görev güncellenir. Dosyada bulunmayan mevcut kayıtlar silinmez.',
+  'reports.restorePreview': '{entries} günlük kayıt ve {tasks} görev geri yüklenecek.',
+  'reports.restoreConfirm': 'Önizlenen kayıtları geri yükle',
+  'reports.backupInvalid': 'JSON yedeği geçersiz, desteklenmiyor veya 10 MB sınırını aşıyor.',
+  'reports.backupDepartment': 'Yedek farklı bir departmana ait. İlgili departmanı açıp tekrar dene.',
+  'reports.backupMember':
+    'Yedekteki bir kişi mevcut başvurularla veya geçmiş üye kayıtlarıyla güvenli biçimde eşleştirilemedi. Hiçbir kayıt yüklenmedi.',
+  'reports.restoreProgress': '{done} / {total} kayıt sunucuya kaydedildi.',
+  'reports.restoreFailed':
+    'Geri yükleme durdu. {done} / {total} kayıt kaydedildi. Güncel veriyi yenileyip dosyayı tekrar seçebilirsin.',
+  'reports.restored': 'JSON yedeği sunucuya geri yüklendi.',
+  'reports.backupFile': 'JSON yedek dosyası',
+  'reports.backupBusy': 'Yedek hazırlanıyor…',
 };

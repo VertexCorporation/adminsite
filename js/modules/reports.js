@@ -7,6 +7,7 @@ import { requestReportTask } from '../services/reportsService.js';
 import { monday, addDays, reportViews, reportDepartment, reportDepartments } from './reports/domain.js';
 import { renderReportContent, exportReport } from './reports/render.js';
 import { openReportEditor } from './reports/editor.js';
+import { downloadReportBackup, openReportRestore } from './reports/backup.js';
 const t = (key) => __('reports.' + key);
 let expandedDepartment = '',
   selectedDepartment = '',
@@ -91,6 +92,8 @@ export function initReportsModule() {
   document.getElementById('reports-new-entry').onclick = () => openReportEditor('entries');
   document.getElementById('reports-new-task').onclick = () => openReportEditor('tasks');
   document.getElementById('reports-export').onclick = () => exportReport(reportsStore.value);
+  document.getElementById('reports-backup').onclick = () => downloadReportBackup(reportsStore.value);
+  document.getElementById('reports-restore').onclick = () => openReportRestore(reportsStore.value);
   document.getElementById('reports-content').onclick = async (event) => {
     const button = event.target.closest('button');
     if (!button) return;

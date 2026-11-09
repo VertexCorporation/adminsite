@@ -10,7 +10,7 @@ async function call(name, data, token) {
   assertAccess(token);
   return response.data;
 }
-export async function getReportWeek(department, weekStart, token = captureSession()) {
+export async function getReportWeek(department, weekStart, token = captureSession(), backup = false) {
   let result,
     cursors = {};
   const members = new Map(),
@@ -18,9 +18,10 @@ export async function getReportWeek(department, weekStart, token = captureSessio
     tasks = new Map(),
     openTasks = new Map();
   do {
-    const data = await call('getReportWorkspace', { department, weekStart, cursors }, token);
+    const data = await call('getReportWorkspace', { department, weekStart, cursors, backup }, token);
     if (
       data.schemaVersion !== 2 ||
+      (backup && data.backup !== true) ||
       data.department !== department ||
       !Array.isArray(data.entries) ||
       !Array.isArray(data.tasks) ||
@@ -49,3 +50,5 @@ export const saveReportEntry = (data, token) => call('saveReportEntry', data, to
 export const saveReportTask = (data, token) => call('saveReportTask', data, token);
 export const deleteReportItem = (data, token) => call('deleteReportItem', data, token);
 export const requestReportTask = (data, token) => call('requestReportTask', data, token);
+
+export const getReportBackup = (department, token) => getReportWeek(department, undefined, token, true);

@@ -59,5 +59,25 @@ export default {
   'reports.weekTasks': 'Tasks for this week',
   'reports.weekMetricsHint':
     'Task counts use creation and completion dates within the selected week. Completion dates in historical imports may use the last update date.',
-  'reports.fixedPolicy': 'Members read their own department; Core and department leaders edit.',
+  'reports.fixedPolicy': 'Members edit their own daily entries; Core and department leaders manage department records.',
+  'reports.dataMenu': 'Download / restore',
+  'reports.backup': 'Download department JSON backup',
+  'reports.restore': 'Restore JSON backup',
+  'reports.ownAccess': 'You can view department reports and add or edit your own daily entries.',
+  'reports.backupHint':
+    'The JSON backup includes daily entries and tasks across all weeks for this department. Names come from applications.',
+  'reports.restoreHint':
+    'Choose a JSON backup for this department. Records are merged: the same person/date entry and task ID are updated. Existing records absent from the file are kept.',
+  'reports.restorePreview': '{entries} daily entries and {tasks} tasks will be restored.',
+  'reports.restoreConfirm': 'Restore previewed records',
+  'reports.backupInvalid': 'The JSON backup is invalid, unsupported, or exceeds 10 MB.',
+  'reports.backupDepartment': 'This backup belongs to another department. Open that department and try again.',
+  'reports.backupMember':
+    'A person in the backup could not be safely matched to an application or historical member. No records were imported.',
+  'reports.restoreProgress': '{done} / {total} records saved to the server.',
+  'reports.restoreFailed':
+    'Restore stopped. {done} / {total} records were saved. Refresh the current data and select the file again.',
+  'reports.restored': 'JSON backup restored to the server.',
+  'reports.backupFile': 'JSON backup file',
+  'reports.backupBusy': 'Preparing backup…',
 };

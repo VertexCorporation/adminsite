@@ -23,7 +23,7 @@ function entryRows(data, canEdit) {
     data.entries
       .map(
         (entry) =>
-          `<article class="report-record"><header><strong>${esc(entry.personName || t('unknownMember'))}</strong><span>${esc(label(entry.date))} · ${esc(status(entry.status))}</span></header><h4>${esc(entry.project)}</h4><p class="report-copy">${esc(entry.summary)}</p>${entry.next ? `<p class="report-copy report-next">${esc(entry.next)}</p>` : ''}${evidenceLink(entry.link)}${entry.source ? `<p class="form-hint">${esc(entry.source)}</p>` : ''}${canEdit ? `<button type="button" class="chrome-btn-outline" data-report-edit-entry="${esc(entry.id)}">${esc(__('common.edit'))}</button>` : ''}</article>`,
+          `<article class="report-record"><header><strong>${esc(entry.personName || t('unknownMember'))}</strong><span>${esc(label(entry.date))} · ${esc(status(entry.status))}</span></header><h4>${esc(entry.project)}</h4><p class="report-copy">${esc(entry.summary)}</p>${entry.next ? `<p class="report-copy report-next">${esc(entry.next)}</p>` : ''}${evidenceLink(entry.link)}${entry.source ? `<p class="form-hint">${esc(entry.source)}</p>` : ''}${canEdit || (data.ownMemberId && entry.memberId === data.ownMemberId) ? `<button type="button" class="chrome-btn-outline" data-report-edit-entry="${esc(entry.id)}">${esc(__('common.edit'))}</button>` : ''}</article>`,
       )
       .join('') || `<p class="state-block">${esc(t('emptyEntries'))}</p>`
   );
@@ -66,9 +66,15 @@ export function renderReportContent(state) {
   document.getElementById('reports-week').value = state.weekStart;
   document.getElementById('reports-view-title').textContent = t('view.' + state.view);
   const canEdit = state.data?.canEdit === true;
-  document.getElementById('reports-new-entry').hidden = !canEdit;
+  document.getElementById('reports-new-entry').hidden = !(canEdit || state.data?.ownMemberId);
   document.getElementById('reports-new-task').hidden = !canEdit;
-  document.getElementById('reports-access-note').textContent = t(canEdit ? 'editAccess' : 'readAccess');
+  document.getElementById('reports-restore').hidden = !canEdit;
+  document.getElementById('reports-backup').disabled = !state.data || state.loading;
+  document.getElementById('reports-restore').disabled = !state.data || state.loading;
+  document.getElementById('reports-export').disabled = !state.data || state.loading;
+  document.getElementById('reports-access-note').textContent = t(
+    canEdit ? 'editAccess' : state.data?.ownMemberId ? 'ownAccess' : 'readAccess',
+  );
   host.setAttribute('aria-busy', String(state.loading));
   if (state.loading) {
     host.innerHTML = `<p class="state-block">${esc(__('common.loading'))}</p>`;

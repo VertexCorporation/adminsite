@@ -330,3 +330,124 @@ test('report menu places own department first, sorts the rest and uses Senatus f
     h.close();
   }
 });
+
+test('members can add and edit only their own entries; tasks, deletion and restore stay restricted', async () => {
+  const h = harness(reportHTML);
+  try {
+    authorize(await h.load('js/core/session.js'), 'uid_1');
+    const data = {
+      ...workspace(),
+      canEdit: false,
+      ownMemberId: 'uid_1',
+      members: [
+        { id: 'uid_1', name: 'Applicant' },
+        { id: 'other', name: 'Other' },
+      ],
+      entries: [
+        { id: 'own', memberId: 'uid_1', date: '2026-11-02', status: 'done', summary: 'Own' },
+        { id: 'other', memberId: 'other', date: '2026-11-02', status: 'done', summary: 'Other' },
+      ],
+    };
+    const state = { department: 'Array', weekStart: '2026-11-02', view: 'daily', data };
+    const { reportsStore } = await h.load('js/stores/reportsStore.js');
+    reportsStore.value = state;
+    const render = await h.load('js/modules/reports/render.js');
+    render.renderReportContent(state);
+    assert.equal(h.document.getElementById('reports-new-entry').hidden, false);
+    assert.equal(h.document.getElementById('reports-new-task').hidden, true);
+    assert.equal(h.document.getElementById('reports-restore').hidden, true);
+    assert.equal(h.document.querySelectorAll('[data-report-edit-entry]').length, 1);
+    const editor = await h.load('js/modules/reports/editor.js');
+    editor.openReportEditor('tasks');
+    assert.equal(h.document.querySelector('.report-editor'), null);
+    editor.openReportEditor('entries', data.entries[1]);
+    assert.equal(h.document.querySelector('.report-editor'), null);
+    editor.openReportEditor('entries', data.entries[0]);
+    assert.equal(h.document.querySelectorAll('.report-editor [name=memberId] option').length, 1);
+    assert.equal(h.document.querySelector('.report-editor .chrome-btn-danger'), null);
+  } finally {
+    h.close();
+  }
+});
+
+test('JSON backup restores all weeks, preserves task dates, uses current revisions and rejects cross-department or unknown members', async () => {
+  const h = harness();
+  try {
+    const backup = await h.load('js/modules/reports/backupData.js');
+    const current = {
+      ...workspace(),
+      entries: [
+        { id: 'e', memberId: 'uid_1', date: '2026-10-05', status: 'done', summary: 'Old', revision: 7, deleted: true },
+      ],
+      tasks: [
+        {
+          id: 'task_1',
+          title: 'Task',
+          project: 'Console',
+          status: 'done',
+          priority: 'normal',
+          assignees: ['uid_1'],
+          createdDate: '2026-10-01',
+          completedDate: '2026-10-08',
+          revision: 4,
+        },
+      ],
+    };
+    const exported = backup.createBackup(current);
+    assert.equal(exported.entries.length, 0);
+    assert.equal(exported.tasks.length, 1);
+    assert.equal(exported.tasks[0].revision, undefined);
+    const raw = {
+      ...exported,
+      entries: [{ memberId: 'uid_1', date: '2026-10-05', status: 'done', summary: 'Restored' }],
+    };
+    const plan = await backup.planRestore(raw, current);
+    assert.equal(plan[0].expectedRevision, 7);
+    assert.equal(plan[1].expectedRevision, 4);
+    assert.equal(plan[1].input.createdDate, '2026-10-01');
+    await assert.rejects(
+      backup.planRestore({ ...raw, department: 'Pulse' }, current),
+      (e) => e.backupCode === 'backupDepartment',
+    );
+    await assert.rejects(
+      backup.planRestore({ ...raw, entries: [{ ...raw.entries[0], memberId: 'unknown' }] }, current),
+      (e) => e.backupCode === 'backupMember',
+    );
+    await assert.rejects(
+      backup.planRestore({ ...raw, entries: [raw.entries[0], raw.entries[0]] }, current),
+      (e) => e.backupCode === 'backupInvalid',
+    );
+    await assert.rejects(
+      backup.planRestore({ ...raw, entries: [{ ...raw.entries[0], link: 'javascript:alert(1)' }] }, current),
+      (e) => e.backupCode === 'backupInvalid',
+    );
+    await assert.rejects(
+      backup.planRestore({ ...raw, entries: [{ ...raw.entries[0], date: '2026-02-30' }] }, current),
+      (e) => e.backupCode === 'backupInvalid',
+    );
+  } finally {
+    h.close();
+  }
+});
+test('legacy v5 config maps unambiguous names, aliases Core to Senatus and rejects ambiguous identities', async () => {
+  const h = harness();
+  try {
+    const backup = await h.load('js/modules/reports/backupData.js');
+    const raw = {
+      version: 5,
+      department: 'Core',
+      team: ['Person'],
+      records: [{ person: 'Person', date: '2026-11-02', status: 'done', summary: 'Legacy' }],
+      tasks: [],
+    };
+    const current = { ...workspace('Senatus') };
+    const plan = await backup.planRestore(raw, current);
+    assert.equal(plan[0].input.memberId, 'uid_1');
+    await assert.rejects(
+      backup.planRestore(raw, { ...current, members: [...current.members, { id: 'duplicate', name: 'Person' }] }),
+      (e) => e.backupCode === 'backupMember',
+    );
+  } finally {
+    h.close();
+  }
+});
