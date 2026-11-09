@@ -210,7 +210,7 @@ test('member navigation contains only assigned departments and nested report vie
     h.document.dispatchEvent(
       new h.window.CustomEvent('vertex:workspace', { detail: { keys: ['reports.workspace'], action: 'Array:weekly' } }),
     );
-    assert.equal(h.document.getElementById('report-nav-Array').hidden, false);
+    assert.equal(h.document.getElementById('report-nav-Array').inert, false);
     await new Promise(setImmediate);
     await new Promise(setImmediate);
     const selected = h.document.querySelector('[data-nav-action="Array:weekly"]');
@@ -221,7 +221,7 @@ test('member navigation contains only assigned departments and nested report vie
     assert.equal(selected.textContent, 'Weekly report');
     assert.equal(h.document.querySelector('[aria-current="page"]'), selected);
     assert.equal(h.document.querySelector('[data-nav-selected]'), selected);
-    assert.equal(h.document.getElementById('report-nav-Array').hidden, false);
+    assert.equal(h.document.getElementById('report-nav-Array').inert, false);
     lang.setLang('tr');
     assert.equal(selected.textContent, 'Haftalık rapor');
     assert.equal(h.document.querySelector('[aria-current="page"]'), selected);

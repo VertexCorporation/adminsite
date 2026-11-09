@@ -8,7 +8,8 @@ import { monday, addDays, reportViews } from './reports/domain.js';
 import { renderReportContent, exportReport } from './reports/render.js';
 import { openReportEditor } from './reports/editor.js';
 const t = (key) => __('reports.' + key);
-let selectedDepartment = '',
+let expandedDepartment = '',
+  selectedDepartment = '',
   selectedView = 'overview',
   week = monday();
 function renderNavigation() {
@@ -18,13 +19,28 @@ function renderNavigation() {
   host.innerHTML = departments
     .map(
       (department) =>
-        `<div class="report-department-group"><button type="button" class="sidebar-sub-btn report-department-toggle" data-nav-panel="reports.workspace" data-nav-action="${department}:overview" data-report-department="${department}" aria-expanded="${department === selectedDepartment}" aria-controls="report-nav-${department}">${esc(t('departmentTitle').replace('{department}', department))}</button><div class="report-section-list" id="report-nav-${department}" ${department === selectedDepartment ? '' : 'hidden'}>${reportViews.map((view) => `<button type="button" class="sidebar-sub-btn" data-nav-panel="reports.workspace" data-nav-action="${department}:${view}">${esc(t('view.' + view))}</button>`).join('')}</div></div>`,
+        `<div class="report-department-group"><button type="button" class="sidebar-sub-btn report-department-toggle" data-nav-panel="reports.workspace" data-nav-action="${department}:overview" data-report-department="${department}" aria-expanded="${department === expandedDepartment}" aria-controls="report-nav-${department}">${esc(t('departmentTitle').replace('{department}', department))}</button><div class="report-section-list" id="report-nav-${department}" ${department === expandedDepartment ? '' : 'inert'}><div class="report-section-clip"><div class="report-section-inner">${reportViews.map((view) => `<button type="button" class="sidebar-sub-btn" data-nav-panel="reports.workspace" data-nav-action="${department}:${view}">${esc(t('view.' + view))}</button>`).join('')}</div></div></div></div>`,
     )
     .join('');
   host.closest('.nav-module').hidden = !departments.length;
 }
+function expandDepartment(department) {
+  expandedDepartment = department;
+  document.querySelectorAll('.report-department-toggle').forEach((button) => {
+    const open = button.dataset.reportDepartment === department;
+    button.setAttribute('aria-expanded', String(open));
+    document.getElementById('report-nav-' + button.dataset.reportDepartment).inert = !open;
+  });
+}
 export function initReportsModule() {
   renderNavigation();
+  document.getElementById('nav-sub-reports').addEventListener('click', (event) => {
+    const toggle = event.target.closest('[data-report-department]');
+    if (!toggle || toggle.getAttribute('aria-expanded') !== 'true') return;
+    event.preventDefault();
+    event.stopPropagation();
+    expandDepartment('');
+  });
   reportsStore.subscribe(() => renderReportContent(reportsStore.value));
   onSessionReset(() => {
     const action = selectedDepartment + ':' + selectedView;
@@ -37,6 +53,7 @@ export function initReportsModule() {
     });
   });
   document.addEventListener('vertex:access-changed', () => {
+    expandedDepartment = '';
     selectedDepartment = '';
     selectedView = 'overview';
     renderNavigation();
@@ -60,11 +77,7 @@ export function initReportsModule() {
     const changed = selectedDepartment !== department;
     selectedDepartment = department;
     selectedView = view;
-    document.querySelectorAll('.report-department-toggle').forEach((button) => {
-      const open = button.dataset.reportDepartment === department;
-      button.setAttribute('aria-expanded', String(open));
-      document.getElementById('report-nav-' + button.dataset.reportDepartment).hidden = !open;
-    });
+    expandDepartment(department);
     if (changed || !reportsStore.value) void loadReportWeek(department, week, view);
     else selectReportView(view);
   });

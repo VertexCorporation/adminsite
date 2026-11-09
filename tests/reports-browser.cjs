@@ -20,6 +20,23 @@ const server=http.createServer((request,response)=>{
   await page.locator('#reports-content[aria-busy="false"]').waitFor();assert.equal(await department.getAttribute('aria-expanded'),'true');
   assert.equal(await page.locator('#report-nav-Array button').count(),5);assert.equal(await page.locator('iframe').count(),0);
   if(access==='core')assert.equal(await page.locator('[data-report-department]').count(),10);else assert.equal(await page.locator('[data-report-department]').count(),1);
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('#report-nav-Array')).opacity==='1');
+  const bounds=await page.evaluate(()=>{
+    const toggle=document.querySelector('[data-report-department="Array"]');
+    const list=document.querySelector('#report-nav-Array');
+    const child=list.querySelector('button');
+    const host=document.querySelector('#nav-sub-reports .sidebar-submenu-inner');
+    return {toggle:toggle.getBoundingClientRect().toJSON(),child:child.getBoundingClientRect().toJSON(),host:host.getBoundingClientRect().toJSON(),padding:parseFloat(getComputedStyle(host).paddingRight),transition:getComputedStyle(list).transitionProperty};
+  });
+  assert(Math.abs(bounds.toggle.right-(bounds.host.right-bounds.padding))<1);
+  assert(Math.abs(bounds.child.right-bounds.toggle.right)<1);
+  assert(bounds.child.left>bounds.toggle.left,'keep the indented guide line');
+  assert(bounds.transition.includes('grid-template-rows'));
+  await department.click();assert.equal(await department.getAttribute('aria-expanded'),'false');
+  assert.equal(await page.locator('#report-nav-Array').evaluate(el=>el.inert),true);
+  await page.waitForFunction(()=>document.querySelector('#report-nav-Array').getBoundingClientRect().height<1);
+  await department.click();
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('#report-nav-Array')).opacity==='1');
   const field=page.locator('#reports-week');assert.equal(await field.isEnabled(),true);await field.fill('2026-11-02');await field.dispatchEvent('change');
   await page.locator('[data-nav-action="Array:weekly"]').click();await page.locator('.report-stats').waitFor();
   const nextLang=lang==='en'?'tr':'en';
