@@ -1,20 +1,21 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const css = fs.readFileSync(path.join(root, 'css/layout.css'), 'utf8');
+const html = readConsoleSource('index.html');
+const css = readConsoleSource('css/layout.css');
 
 test('verification cards use full-width fallback spans', () => {
   for (const id of ['team-log-manager', 'team-cards-manager', 'manual-verify-manager']) {
-    assert.match(html, new RegExp('<div class="panel-card col-span-12" id="' + id + '"'));
+    const {JSDOM}=require('jsdom');const dom=new JSDOM(html);assert(dom.window.document.getElementById(id).classList.contains('col-span-12'));dom.window.close();
   }
 });
 
 test('verification workspace overrides dynamic adaptive columns only in its section', () => {
-  assert.match(css, /#tab-system\[data-active-section="verification"\] > \.grid-layout\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\);/);
-  assert.match(css, /#tab-system\[data-active-section="verification"\] > \.grid-layout > \.panel-card:not\(\[hidden\]\)/);
-  assert.match(css, /grid-column:\s*1 \/ -1 !important;/);
+  assert.match(css, /#tab-system\[data-active-section\s*=\s*["']verification["']\] > \.grid-layout\s*\s*\{\s*\s*grid-template-columns\s*:\s*\s*minmax\s*\(\s*0\s*,\s* 1fr\s*\)\s*\s*;\s*/);
+  assert.match(css, /#tab-system\[data-active-section\s*=\s*["']verification["']\] > \.grid-layout > \.panel-card\s*:\s*not\s*\(\s*\[hidden\]\s*\)\s*/);
+  assert.match(css, /grid-column\s*:\s*\s*1 \/ -1 !important\s*;\s*/);
 });

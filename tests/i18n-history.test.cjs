@@ -1,8 +1,8 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
-test('historical immutable bundles do not require retired translations in the current dictionary',t=>{
-  const root=path.resolve(__dirname,'..'),releases=path.join(root,'assets/releases');
+test('disposable build artifacts do not require retired translations in the current dictionary',t=>{
+  const root=path.resolve(__dirname,'..'),releases=path.join(root,'dist');
   fs.mkdirSync(releases,{recursive:true});
   const fixture=fs.mkdtempSync(path.join(releases,'i18n-history-'));
   t.after(()=>fs.rmSync(fixture,{recursive:true,force:true}));

@@ -1,0 +1,274 @@
+/* ---------- System alt bölümleri ---------- */
+.system-subsections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: var(--content-max);
+}
+.system-subsection-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--fs-section-title);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.system-subsection-title .icon {
+  color: var(--text-muted);
+}
+.system-subsection-desc {
+  margin-top: var(--space-1);
+  margin-bottom: var(--space-3);
+  font-size: var(--fs-secondary);
+  color: var(--text-secondary);
+}
+
+/* Takım kaydı */
+.team-log-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+.team-entry-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.team-entry-list .team-entry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-secondary);
+}
+.team-add-row {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.team-add-row input {
+  flex: 1;
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+.team-add-row input:focus {
+  outline: none;
+  border-color: var(--border-strong);
+}
+.team-add-row button {
+  width: var(--control-height);
+  height: var(--control-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+.team-add-row button:hover {
+  background: var(--bg-hover);
+}
+
+.chat-composer-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  justify-content: space-between;
+}
+.chat-task-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-metadata);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.chat-task-toggle input {
+  accent-color: var(--action-primary);
+}
+
+@media (max-width: 1024px) {
+  .chat-layout {
+    grid-template-columns: 1fr;
+  }
+  .chat-messages {
+    height: 380px;
+  }
+}
+
+.contributor-row > * {
+  min-width: 0;
+}
+.contributor-cell-name {
+  text-align: left;
+}
+.panel-readonly input,
+.panel-readonly select,
+.panel-readonly textarea,
+.panel-readonly button[type='submit'],
+.panel-readonly .write-only {
+  pointer-events: none;
+}
+.dept-perms-table {
+  overflow-x: auto;
+}
+.system-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+#dept-perms-manager .panel-menu-pop {
+  width: 100%;
+  padding: 16px;
+}
+.profile-details .detail-row,
+.profile-details > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  gap: 12px;
+  overflow-wrap: anywhere;
+}
+.filter-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.contributor-edit-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+}
+
+.contributor-row {
+  min-height: 56px;
+  padding: 4px 0;
+}
+@media (max-width: 1023px) {
+  .contributor-row {
+    padding: 12px 0;
+  }
+}
+
+.panel-readonly
+  :is(
+    .edit-btn,
+    .delete-btn,
+    .block-btn,
+    .edit-series-desc-btn,
+    .cancel-task-btn,
+    .dept-user-edit,
+    .write-only,
+    button[type='submit']
+  ) {
+  display: none !important;
+}
+.model-item,
+.article-item,
+.task-item,
+.dept-user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.item-details,
+.variant-details,
+.task-details,
+.dept-user-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.item-title,
+.model-title,
+.task-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.model-id-label,
+.task-time,
+.task-target,
+.sub-dates,
+.dept-user-main > span {
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.item-actions,
+.series-actions,
+.task-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.item-actions button,
+.series-actions button,
+.task-actions button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface);
+}
+.item-actions button:hover,
+.series-actions button:hover,
+.task-actions button:hover {
+  background: var(--bg-hover);
+}
+.producer-group,
+.series-group {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.producer-group summary,
+.series-group summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.details-content {
+  padding: 8px 0 8px 12px;
+}
+.model-type-badge,
+.dept-badge {
+  font-size: 11px;
+  background: var(--bg-hover);
+  border-radius: 6px;
+  padding: 2px 6px;
+  width: fit-content;
+}
+@media (max-width: 720px) {
+  .model-item,
+  .article-item,
+  .task-item,
+  .dept-user-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .item-actions button,
+  .series-actions button,
+  .task-actions button {
+    min-height: 44px;
+  }
+  .details-content {
+    padding-left: 8px;
+  }
+}

@@ -1,0 +1,208 @@
+/* ---------- Uygulama kabuğu ---------- */
+#admin-panel {
+  display: none;
+  min-height: 100vh;
+  background: var(--bg-app);
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-rows: var(--topbar-height) 1fr;
+  grid-template-areas:
+    'sidebar topbar'
+    'sidebar main';
+  min-height: 100vh;
+}
+
+/* ---------- Sidebar ---------- */
+.app-sidebar {
+  grid-area: sidebar;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 40;
+}
+
+.sidebar-brand {
+  height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  flex-shrink: 0;
+}
+.sidebar-brand .brand-symbol {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+.sidebar-brand-title {
+  font-size: var(--fs-component-title);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+}
+.sidebar-brand-title span {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sidebar-group-label {
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: var(--space-3) var(--space-3) var(--space-1);
+}
+
+/* Navigasyon düğmeleri (eski .dock-btn sınıf adı korunur) */
+.sidebar-nav .dock-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 0 var(--space-3);
+  height: 42px;
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  font-size: var(--fs-component-title);
+  font-weight: 500;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
+  position: relative;
+}
+.sidebar-nav .dock-btn .icon {
+  flex-shrink: 0;
+}
+.sidebar-nav .dock-btn:hover {
+  background: var(--bg-nav-hover);
+  color: var(--text-primary);
+}
+.sidebar-nav .dock-btn.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.sidebar-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-3);
+}
+
+/* ---------- Topbar ---------- */
+.app-header {
+  grid-area: topbar;
+  height: var(--topbar-height);
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-5);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1;
+}
+.topbar-page-title {
+  font-size: var(--fs-section-title);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* Mobil menü düğmesi (yalnızca <1024px görünür) */
+#nav-toggle {
+  display: none;
+}
+
+/* ---------- Ana içerik ---------- */
+.app-main {
+  grid-area: main;
+  min-width: 0;
+  padding: var(--space-5) var(--content-pad-x) var(--space-7);
+}
+
+.tab-panel {
+  display: none;
+}
+.tab-panel.active {
+  display: block;
+}
+
+.panel-section-title {
+  max-width: var(--content-max);
+  margin-bottom: var(--space-5);
+}
+.panel-section-title h2 {
+  font-size: var(--fs-page-title);
+  font-weight: 600;
+}
+.panel-section-title p {
+  margin-top: var(--space-1);
+  font-size: var(--fs-secondary);
+  color: var(--text-secondary);
+}
+
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--space-4);
+  max-width: var(--content-max);
+}
+
+.col-span-4 {
+  grid-column: span 4;
+}
+.col-span-5 {
+  grid-column: span 5;
+}
+.col-span-6 {
+  grid-column: span 6;
+}
+.col-span-7 {
+  grid-column: span 7;
+}
+.col-span-8 {
+  grid-column: span 8;
+}
+.col-span-12 {
+  grid-column: span 12;
+}

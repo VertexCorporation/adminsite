@@ -1,0 +1,201 @@
+<div class="tab-panel" id="tab-system">
+  <div class="panel-section-title">
+    <h2 data-i18n="system.title">&amp;</h2>
+    <p data-i18n="system.desc"></p>
+  </div>
+
+  <div class="grid-layout">
+    <!-- Ekip Kartları ve Profil Yönetimi (Madde 8, 9, 10) -->
+    <div class="panel-card col-span-6" id="dept-users-manager" data-panel="system.deptUsers">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="groups"></i>
+          <h3 data-i18n="dept.users_title"></h3>
+        </div>
+        <button type="button" id="refresh-dept-users-btn" class="btn-refresh" data-i18n-title="dept.refresh" title="">
+          <i class="" data-icon="refresh"></i>
+          <span data-i18n="dept.refresh"></span>
+        </button>
+      </div>
+      <div class="search-input-field">
+        <i class="search-icon" data-icon="search"></i>
+        <input
+          type="search"
+          id="dept-users-search"
+          data-i18n-placeholder="dept.search"
+          placeholder=""
+          aria-label=""
+          data-i18n-aria-label="console.ui.searchDepartmentUsers"
+        />
+      </div>
+      <div id="dept-users-list" class="dept-users-list" aria-live="polite"></div>
+    </div>
+    <div class="panel-card col-span-6" id="dept-assign-manager" data-panel="system.deptAssign">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="person_add"></i>
+          <h3 data-i18n="dept.assign_title"></h3>
+        </div>
+      </div>
+      <p class="intro-description" data-i18n="dept.assign_desc"></p>
+      <form id="dept-assign-form" class="form-stack" style="margin-top: 10px">
+        <div class="form-group-field">
+          <label for="dept-user-email" data-i18n="dept.assign_email"></label>
+          <input
+            type="email"
+            id="dept-user-email"
+            data-i18n-placeholder="dept.email_placeholder"
+            placeholder=""
+            required=""
+          />
+        </div>
+        <div class="form-group-field">
+          <span class="field-label" id="dept-options-label" data-i18n="dept.assign_dept"></span>
+          <div id="dept-options" class="dept-options" role="group" aria-labelledby="dept-options-label"></div>
+          <span class="form-field-info" data-i18n="dept.select_hint"></span>
+        </div>
+        <button type="submit" class="chrome-btn-accent">
+          <i class="" data-icon="assignment_ind"></i>
+          <span data-i18n="dept.assign_btn"></span>
+        </button>
+      </form>
+    </div>
+    <div class="panel-card col-span-12" id="dept-perms-manager" data-panel="system.deptPerms">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="admin_panel_settings"></i>
+          <h3 data-i18n="dept.title"></h3>
+        </div>
+      </div>
+      <p class="intro-description" data-i18n="perms.desc"></p>
+      <div id="dept-permissions-container" class="scrollable-list-box" style="max-height: none; overflow-x: auto"></div>
+    </div>
+    <!-- GCS Backup Status -->
+    <div class="panel-card col-span-6" id="gcs-backup-status" data-panel="system.serverStatus">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="cloud_done"></i>
+          <h3 data-i18n="system.gcs_backup"></h3>
+        </div>
+        <button
+          type="button"
+          class="icon-action-btn"
+          id="refresh-backup-btn"
+          title=""
+          data-i18n-title="console.ui.check"
+        >
+          <i class="" data-icon="refresh"></i>
+        </button>
+      </div>
+      <p class="intro-description" id="gcs-backup-desc" data-i18n="system.backup_unknown"></p>
+      <div class="status-action-box" style="margin-top: 12px">
+        <span class="status-badge" id="gcs-backup-badge" data-i18n="system.backup_configured"></span>
+        <span id="gcs-backup-timestamp" style="font-size: var(--fs-metadata); color: var(--text-muted)"></span>
+      </div>
+    </div>
+
+    <!-- Katılımcı Doğrulama (Manuel) -->
+    <div class="panel-card col-span-12" id="manual-verify-manager" data-panel="system.manualVerify">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="verified_user"></i>
+          <h3 data-i18n="system.verify_user"></h3>
+        </div>
+      </div>
+      <p class="intro-description" data-i18n="system.verify_desc"></p>
+      <form id="verify-user-form" class="form-stack" style="margin-top: 10px">
+        <div class="form-group-field">
+          <label for="verify-user-id" data-i18n="system.verify_id"></label>
+          <input
+            type="text"
+            id="verify-user-id"
+            placeholder=""
+            required=""
+            data-i18n-placeholder="console.ui.eGUserExampleCom"
+          />
+        </div>
+        <button type="submit" class="chrome-btn-outline"><span data-i18n="system.verify_btn">&amp;</span></button>
+      </form>
+    </div>
+
+    <!-- Sunucu Durumu -->
+    <div class="panel-card col-span-6" id="server-status-manager" data-panel="system.serverStatus">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="dns"></i>
+          <h3 data-i18n="system.maintenance"></h3>
+        </div>
+      </div>
+      <p class="intro-description" data-i18n="system.maintenance_desc"></p>
+
+      <div class="status-action-box">
+        <div id="maintenance-status-indicator" class="indicator-group">
+          <span class="status-dot"></span>
+          <span class="status-text" data-i18n="system.checking"></span>
+        </div>
+        <button id="maintenance-action-btn" class="chrome-btn-outline">
+          <span data-i18n="system.loading_btn"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Atıflar Sayfası Güncelleme -->
+    <div class="panel-card col-span-6" id="attributions-manager" data-panel="system.attributions">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="sync"></i>
+          <h3 data-i18n="system.attributions"></h3>
+        </div>
+      </div>
+      <p class="intro-description" data-i18n="system.attributions_desc"></p>
+
+      <div class="status-action-box">
+        <div id="attributions-status-indicator" class="indicator-group">
+          <span class="status-dot status-synced"></span>
+          <span class="status-text" data-i18n="system.attributions_synced"></span>
+        </div>
+        <button id="attributions-action-btn" class="chrome-btn-outline" disabled="">
+          <span data-i18n="system.attributions_btn"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Veri Dışa Aktar -->
+    <div class="panel-card col-span-12" id="data-exporter-manager" data-panel="system.exporter">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="download"></i>
+          <h3 data-i18n="system.export"></h3>
+        </div>
+      </div>
+      <p class="intro-description" data-i18n="system.export_desc"></p>
+
+      <div class="form-stack">
+        <div class="flex-row">
+          <div class="form-group-field flex-grow">
+            <label for="export-data-type" data-i18n="system.export_type"></label>
+            <select id="export-data-type">
+              <option value="contributors" data-i18n="system.export_contributors"></option>
+              <option value="manualModels" data-i18n="system.export_manual_models"></option>
+              <option value="allModels" data-i18n="system.export_all_models"></option>
+              <option value="articles" data-i18n="system.export_articles"></option>
+            </select>
+          </div>
+
+          <div class="form-group-field flex-grow">
+            <label for="export-format" data-i18n="system.export_format"></label>
+            <select id="export-format">
+              <option value="json" data-i18n="system.export_json"></option>
+              <option value="csv" data-i18n="system.export_csv"></option>
+            </select>
+          </div>
+        </div>
+
+        <button type="button" id="export-data-btn" class="chrome-btn-accent" style="margin-top: 10px">
+          <i class="" data-icon="download_for_offline"></i>
+          <span data-i18n="system.export_btn"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

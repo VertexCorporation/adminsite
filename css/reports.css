@@ -1,0 +1,103 @@
+/* Reports own their content layout; shared controls/surfaces live in css/ui. */
+.reports-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+}
+.reports-toolbar .form-group-field {
+  margin: 0;
+}
+.report-section-list {
+  margin-inline-start: 16px;
+  border-inline-start: 1px solid var(--border-subtle);
+  padding-inline-start: 8px;
+}
+.report-section-list[hidden] {
+  display: none;
+}
+.report-department-toggle {
+  font-weight: 600;
+}
+.report-table-scroll {
+  overflow: auto;
+  max-width: 100%;
+}
+.report-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.report-matrix th,
+.report-matrix td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: start;
+  white-space: nowrap;
+}
+.report-matrix th:first-child {
+  position: sticky;
+  inset-inline-start: 0;
+  background: var(--bg-surface);
+}
+.report-status {
+  display: inline-block;
+  border-radius: 6px;
+  padding: 4px 6px;
+  background: var(--bg-elevated);
+}
+.report-status[data-status='done'] {
+  color: var(--status-success);
+}
+.report-status[data-status='noreport'] {
+  color: var(--text-muted);
+}
+.report-record {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.report-record header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+}
+.report-record header span,
+.report-next {
+  color: var(--text-secondary);
+}
+.report-record h4 {
+  margin: 12px 0 6px;
+}
+.report-record a {
+  display: inline-block;
+  margin-inline-end: 12px;
+  color: var(--text-primary);
+}
+.report-copy {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.report-person {
+  margin-block-end: 24px;
+}
+.report-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-block: 16px;
+}
+.report-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+.report-stats strong {
+  font-size: 28px;
+}
+.report-editor select[multiple] {
+  min-height: 120px;
+}

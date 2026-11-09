@@ -1,3 +1,4 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -5,9 +6,9 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const people = fs.readFileSync(path.join(root, 'js/modules/people.js'), 'utf8');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const implementation = people.match(/export function initPeopleModule\(\)\{[\s\S]*?\n\}/)?.[0];
-assert.ok(implementation, 'Expected legacy directory initializer');
+const html = readConsoleSource('index.html');
+const {functionSource}=require('./helpers/source-ast.cjs');
+const implementation=functionSource(people,'initPeopleModule');
 
 function bootWith(elements) {
   const notices = [];

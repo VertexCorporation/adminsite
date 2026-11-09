@@ -1,0 +1,304 @@
+<div class="tab-panel" id="tab-users">
+  <div class="panel-section-title">
+    <h2 data-i18n="catalog.users"></h2>
+  </div>
+  <div class="grid-layout">
+    <section class="panel-card col-span-12" data-panel="users.beacons">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i data-icon="group_work"></i>
+          <h3 data-i18n="beacons.title"></h3>
+        </div>
+        <button id="beacon-admin-refresh" type="button" class="btn-refresh">
+          <i data-icon="refresh"></i>
+          <span data-i18n="contributors.refresh"></span>
+        </button>
+      </div>
+      <div class="scroll-chips-row filter-chips" id="beacon-admin-filters">
+        <button
+          type="button"
+          class="filter-chip active"
+          data-beacon-filter="all"
+          aria-pressed="true"
+          data-i18n="beacons.all"
+        ></button>
+        <button
+          type="button"
+          class="filter-chip"
+          data-beacon-filter="pending"
+          aria-pressed="false"
+          data-i18n="beacons.pending"
+        ></button>
+        <button
+          type="button"
+          class="filter-chip"
+          data-beacon-filter="approved"
+          aria-pressed="false"
+          data-i18n="beacons.approved"
+        ></button>
+        <button
+          type="button"
+          class="filter-chip"
+          data-beacon-filter="rejected"
+          aria-pressed="false"
+          data-i18n="beacons.rejected"
+        ></button>
+        <button
+          type="button"
+          class="filter-chip"
+          data-beacon-filter="suspended"
+          aria-pressed="false"
+          data-i18n="beacons.suspended"
+        ></button>
+      </div>
+      <div class="contributor-search-toolbar">
+        <div class="search-input-field">
+          <i class="search-icon" data-icon="search"></i>
+          <input
+            type="search"
+            id="beacon-admin-search"
+            data-i18n-placeholder="beacons.search"
+            placeholder=""
+            aria-label=""
+            data-i18n-aria-label="users.ui.searchBeaconApplications"
+          />
+        </div>
+      </div>
+      <div id="beacon-admin-list" class="scrollable-list-box" aria-live="polite"></div>
+      <button
+        id="beacon-admin-next"
+        type="button"
+        class="chrome-btn-outline"
+        data-i18n="beacons.more"
+        hidden=""
+      ></button>
+      <div class="card-title-row" style="margin-top: 32px">
+        <div class="title-details">
+          <i data-icon="group_work"></i>
+          <h3 data-i18n="beacons.organizations"></h3>
+        </div>
+      </div>
+      <p class="text-muted" data-i18n="beacons.org_hint"></p>
+      <div id="beacon-organizations-list" class="scrollable-list-box" aria-live="polite"></div>
+    </section>
+    <section class="panel-card col-span-12" data-panel="users.directory">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i data-icon="users-group"></i>
+          <h3 data-i18n="catalog.directory"></h3>
+        </div>
+        <button type="button" id="directory-refresh" class="btn-refresh">
+          <i data-icon="refresh"></i>
+          <span data-i18n="common.refresh"></span>
+        </button>
+      </div>
+      <p class="intro-description" data-i18n="catalog.directory_desc"></p>
+      <form id="directory-search-form" class="catalog-search">
+        <div class="form-group-field flex-grow">
+          <label for="directory-search" data-i18n="catalog.search"></label>
+          <input
+            type="search"
+            id="directory-search"
+            maxlength="254"
+            autocomplete="off"
+            data-i18n-placeholder="catalog.search"
+            placeholder=""
+          />
+        </div>
+        <button type="submit" class="chrome-btn-outline" data-i18n="common.search"></button>
+      </form>
+      <div id="directory-list" aria-live="polite"></div>
+      <div class="catalog-pagination">
+        <button
+          type="button"
+          class="chrome-btn-outline"
+          id="directory-previous"
+          disabled=""
+          data-i18n="catalog.previous"
+        ></button>
+        <span id="directory-page" role="status"></span>
+        <button
+          type="button"
+          class="chrome-btn-outline"
+          id="directory-next"
+          disabled=""
+          data-i18n="catalog.next"
+        ></button>
+      </div>
+    </section>
+
+    <section class="panel-card col-span-12" data-panel="users.status">
+      <div class="card-title-row">
+        <h3 data-i18n="catalog.status"></h3>
+      </div>
+      <p class="intro-description" data-i18n="catalog.status_desc"></p>
+      <form id="account-status-form" class="catalog-search">
+        <div class="form-group-field flex-grow">
+          <label for="account-status-search" data-i18n="catalog.search"></label>
+          <input type="search" id="account-status-search" maxlength="254" required="" autocomplete="off" />
+        </div>
+        <button class="chrome-btn-outline" data-i18n="deleteAccount.search"></button>
+      </form>
+      <div id="account-status-result" aria-live="polite"></div>
+      <section class="people-drawer-section" id="customer-account-manager">
+        <h3 data-i18n="customer.title"></h3>
+        <p class="intro-description" data-i18n="customer.intro"></p>
+        <form id="customer-account-form" class="form-stack">
+          <div class="form-group-field">
+            <label for="customer-email" data-i18n="customer.email"></label>
+            <input id="customer-email" name="email" type="email" required="" maxlength="254" autocomplete="off" />
+          </div>
+          <div class="form-group-field">
+            <label for="customer-name" data-i18n="customer.name"></label>
+            <input id="customer-name" name="displayName" maxlength="128" autocomplete="off" />
+          </div>
+          <label class="checkbox-label">
+            <input name="grant" type="checkbox" />
+            <span data-i18n="customer.grant"></span>
+          </label>
+          <div id="customer-grant-options" hidden="">
+            <div class="form-group-field">
+              <label for="customer-tier" data-i18n="customer.subscription"></label>
+              <select id="customer-tier" name="tier">
+                <option value="free" data-i18n="users.ui.free"></option>
+                <option value="plus" selected="" data-i18n="users.ui.plus"></option>
+                <option value="pro" data-i18n="users.ui.pro"></option>
+                <option value="ultra" data-i18n="users.ui.ultra"></option>
+              </select>
+            </div>
+            <div class="form-group-field">
+              <label for="customer-duration" data-i18n="customer.duration"></label>
+              <select id="customer-duration" name="duration">
+                <option value="7" data-i18n="customer.days7"></option>
+                <option value="30" data-i18n="customer.days30"></option>
+                <option value="90" data-i18n="customer.days90"></option>
+                <option value="custom" data-i18n="customer.custom"></option>
+              </select>
+            </div>
+            <div id="customer-custom-expiry" class="form-group-field" hidden="">
+              <label for="customer-expiry" data-i18n="customer.customLocal"></label>
+              <input id="customer-expiry" name="expiresAt" type="datetime-local" />
+            </div>
+          </div>
+          <label class="checkbox-label">
+            <input name="sendInvite" type="checkbox" checked="" />
+            <span data-i18n="customer.sendInvite"></span>
+          </label>
+          <p class="form-hint" data-i18n="customer.timing"></p>
+          <button type="submit" class="chrome-btn-outline" data-i18n="customer.submit"></button>
+        </form>
+        <p id="customer-account-status" role="status" aria-live="polite"></p>
+        <ul id="customer-account-results" aria-live="polite"></ul>
+      </section>
+      <section class="people-drawer-section" id="password-reset-manager">
+        <div class="card-title-row">
+          <h3 data-i18n="resetAccount.title"></h3>
+        </div>
+        <p class="intro-description" data-i18n="resetAccount.intro"></p>
+        <form id="password-reset-form" class="form-stack">
+          <div class="form-group-field">
+            <label for="password-reset-emails" data-i18n="resetAccount.emails"></label>
+            <textarea
+              id="password-reset-emails"
+              rows="5"
+              maxlength="51000"
+              required=""
+              placeholder=""
+              autocomplete="off"
+              spellcheck="false"
+              data-i18n-placeholder="users.ui.userExampleCom"
+            ></textarea>
+            <p class="form-hint" data-i18n="resetAccount.hint"></p>
+          </div>
+          <button
+            id="password-reset-submit"
+            type="submit"
+            class="chrome-btn-outline"
+            data-i18n="resetAccount.send"
+          ></button>
+        </form>
+        <p id="password-reset-status" role="status" aria-live="polite"></p>
+        <ul id="password-reset-results"></ul>
+      </section>
+    </section>
+    <section class="panel-card col-span-12" data-panel="users.statistics">
+      <div class="card-title-row">
+        <h3 data-i18n="catalog.statistics"></h3>
+        <button type="button" class="btn-refresh" id="directory-statistics-refresh">
+          <i data-icon="refresh"></i>
+          <span data-i18n="common.refresh"></span>
+        </button>
+      </div>
+      <div id="directory-statistics" aria-live="polite"></div>
+    </section>
+    <section class="panel-card col-span-8" data-panel="users.deleteAccount">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i data-icon="person_remove"></i>
+          <h3 data-i18n="deleteAccount.title"></h3>
+        </div>
+      </div>
+      <p class="intro-description" data-i18n="deleteAccount.intro"></p>
+      <form id="account-deletion-search-form" class="form-stack">
+        <div class="form-group-field">
+          <label for="account-deletion-email" data-i18n="deleteAccount.email_label"></label>
+          <input
+            type="email"
+            id="account-deletion-email"
+            required=""
+            maxlength="254"
+            autocomplete="off"
+            placeholder=""
+            data-i18n-placeholder="users.ui.userExampleCom"
+          />
+        </div>
+        <button
+          type="submit"
+          id="account-deletion-search-button"
+          class="chrome-btn-outline"
+          data-i18n="deleteAccount.search"
+        ></button>
+      </form>
+      <div id="account-deletion-summary" class="people-drawer-section" hidden="">
+        <h4 data-i18n="deleteAccount.review_title"></h4>
+        <dl class="profile-details">
+          <div>
+            <dt data-i18n="deleteAccount.name_label"></dt>
+            <dd id="account-deletion-name-output"></dd>
+          </div>
+          <div>
+            <dt data-i18n="deleteAccount.email_label"></dt>
+            <dd id="account-deletion-email-output"></dd>
+          </div>
+          <div>
+            <dt><span data-i18n="accountdeletion.ui.uid"></span></dt>
+            <dd id="account-deletion-uid-output"></dd>
+          </div>
+        </dl>
+        <label class="account-deletion-consent">
+          <input id="account-deletion-verified" type="checkbox" />
+          <span data-i18n="deleteAccount.verified"></span>
+        </label>
+        <div class="form-group-field">
+          <label for="account-deletion-confirm-email" data-i18n="deleteAccount.confirm_label"></label>
+          <input
+            type="email"
+            id="account-deletion-confirm-email"
+            maxlength="254"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+        <button
+          type="button"
+          id="account-deletion-submit"
+          class="chrome-btn-primary"
+          disabled=""
+          data-i18n="deleteAccount.action"
+        ></button>
+      </div>
+      <p class="form-hint" data-i18n="deleteAccount.scope_notice"></p>
+      <p id="account-deletion-status" role="status" aria-live="polite"></p>
+    </section>
+  </div>
+</div>

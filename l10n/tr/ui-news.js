@@ -1,0 +1,16 @@
+export default {
+  'news.ui.chooseAJpegPngOrWebpImage': 'JPEG, PNG veya WebP görsel seçin.',
+  'news.ui.couldNotObtainAnImageUploadUrl': 'Görsel yükleme bağlantısı alınamadı.',
+  'news.ui.coverImageUploadFailed': 'Kapak görseli yüklenemedi.',
+  'news.ui.editing': 'Düzenleniyor: ',
+  'news.ui.loadingRevisions': 'Sürümler yükleniyor…',
+  'news.ui.noPriorRevisions': 'Henüz önceki sürüm yok.',
+  'news.ui.noSummaryAdded': 'Özet eklenmemiş.',
+  'news.ui.published': 'Yayında',
+  'news.ui.references': 'kaynak',
+  'news.ui.restore': 'Geri yükle',
+  'news.ui.restoreRevision': 'Sürümü geri yükle',
+  'news.ui.revisionHistory': 'Sürüm geçmişi',
+  'news.ui.revisionRestored': 'Sürüm geri yüklendi.',
+  'news.ui.updated': 'Güncellendi: ',
+};

@@ -6,7 +6,7 @@ const html='<html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" h
 const server=http.createServer((req,res)=>{
  const u=new URL(req.url,'http://localhost');
  if(u.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}
- if(!/^\/(js|css)\//.test(u.pathname)){res.writeHead(404);res.end();return;}
+ if(!/^\/(js|css|l10n)\//.test(u.pathname)){res.writeHead(404);res.end();return;}
  const target=path.resolve(root,'.'+u.pathname);
  if(!target.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}
  fs.readFile(target,(error,bytes)=>{

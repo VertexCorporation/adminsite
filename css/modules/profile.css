@@ -1,0 +1,144 @@
+/* ---------- Profil ---------- */
+.profile-card .profile-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+.profile-avatar-ring {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+.profile-heading-info h3 {
+  font-size: var(--fs-section-title);
+}
+.profile-heading-info p {
+  font-size: var(--fs-metadata);
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+}
+.profile-details > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-secondary);
+}
+.profile-details > div:last-child {
+  border-bottom: none;
+}
+.profile-details dt {
+  color: var(--text-muted);
+  font-size: var(--fs-metadata);
+}
+.profile-details dd {
+  color: var(--text-primary);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.profile-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+.profile-copy-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.profile-perms {
+  display: flex;
+  flex-direction: column;
+}
+.profile-perms .perm-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-secondary);
+}
+.profile-perms .perm-summary-row:last-child {
+  border-bottom: none;
+}
+.profile-perms .perm-summary-row span:first-child {
+  color: var(--text-secondary);
+}
+
+/* ---------- Doğrulama anahtarı (verify toggle) ---------- */
+.verify-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.verify-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.verify-switch .slider {
+  width: 34px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-strong);
+  position: relative;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
+  display: block;
+}
+.verify-switch .slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  transition:
+    transform var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
+}
+.verify-switch input:checked + .slider {
+  background: var(--status-success-soft);
+  border-color: var(--status-success);
+}
+.verify-switch input:checked + .slider::before {
+  transform: translateX(14px);
+  background: var(--status-success);
+}
+.verify-status-text {
+  font-size: var(--fs-metadata);
+  font-weight: 500;
+  margin-top: var(--space-1);
+}
+.verify-status-text.unverified {
+  color: var(--text-muted);
+}
+.verify-status-text.verified {
+  color: var(--status-success);
+}

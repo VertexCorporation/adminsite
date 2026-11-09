@@ -1,0 +1,31 @@
+<div class="tab-panel reports-panel" id="tab-reports">
+  <div class="panel-section-title"><h2 id="reports-title" data-i18n="catalog.reports"></h2></div>
+  <section class="panel-card" data-panel="reports.workspace">
+    <div class="reports-toolbar">
+      <button type="button" id="reports-prev-week" class="chrome-btn-outline" data-i18n="reports.previousWeek"></button>
+      <label class="form-group-field">
+        <span data-i18n="reports.week"></span>
+        <input type="date" id="reports-week" />
+      </label>
+      <button type="button" id="reports-next-week" class="chrome-btn-outline" data-i18n="reports.nextWeek"></button>
+      <button
+        type="button"
+        id="reports-new-entry"
+        class="chrome-btn-primary"
+        data-i18n="reports.newEntry"
+        hidden=""
+      ></button>
+      <button
+        type="button"
+        id="reports-new-task"
+        class="chrome-btn-primary"
+        data-i18n="reports.newTask"
+        hidden=""
+      ></button>
+      <button type="button" id="reports-export" class="chrome-btn-outline" data-i18n="reports.export"></button>
+    </div>
+    <p id="reports-access-note" class="form-hint"></p>
+    <h3 id="reports-view-title"></h3>
+    <div id="reports-content" aria-live="polite"></div>
+  </section>
+</div>

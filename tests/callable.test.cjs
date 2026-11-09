@@ -1,3 +1,4 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 'use strict';
 const test=require('node:test');
 const assert=require('node:assert/strict');
@@ -65,10 +66,10 @@ test('malformed successful payload fails safely',async()=>{
 
 test('department preconditions retain actionable, localized error explanations',()=>{
   const ui=fs.readFileSync('js/utils/ui.js','utf8');
-  const lang=fs.readFileSync('js/lang.js','utf8');
+  const lang=readConsoleSource('js/lang.js');
   assert(ui.includes("import { __, getLang } from '../lang.js';"));
   for(const reason of ['personnel-rollout-pending','personnel-membership-review','personnel-version-conflict'])
     assert(ui.includes(reason),reason);
   for(const key of ['errors.personnel_rollout','errors.personnel_membership','errors.personnel_stale'])
-    assert.equal(lang.split("'"+key+"'").length,3,key+' must be translated to both languages');
+    assert.equal((lang.match(new RegExp(JSON.stringify(key)+':', 'g'))||[]).length,2,key+' must be translated to both languages');
 });

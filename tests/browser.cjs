@@ -10,7 +10,7 @@ const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=tru
 let failMembership=false,failAdmin=false,failContributorReadOnce=0,failChatReadOnce=0;let adminRoster=[{uid:'admin',email:'admin@example.invalid'},{uid:'other-admin',email:'other@example.invalid'}];
 const person={membership:{status:'matched',uid:'auth-person',isVertex:true},id:'person',name:'Example Participant',email:'person@example.invalid',language:'en',hasVerified:false,createdAt:{_seconds:1767272400},department:'Core',interviewDate:'2026-10-10',about:'Local test fixture'};
 const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet'},constancy:{en:'Constancy',tr:'Metanet'},nobility:{en:'Nobility',tr:'Azamet'},majesty:{en:'Majesty',tr:'Asalet'}};
-const page=await browser.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|\[AUTH\] Login failed auth\/(?:invalid-credential|too-many-requests|network-request-failed)|Fixture unavailable|Mock delivery outcome uncertain|Fixture permission rejection|Fixture verification unavailable|Fixture maintenance unavailable|400 \(Bad Request\)|functions\/failed-precondition|\[CERTIFICATES\]|\[CONSOLE_OPERATION\] \{operation: firebase\.callable, function: (?:getVertexContributors|sendTargetedNotification|toggleContributorVerification|getServerStatus|saveDepartmentPermissions), code: functions\/(?:unavailable|internal), category: (?:transport|server)/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
+const page=await browser.newPage();page.on('response',response=>{if(response.status()===404)console.error('MISSING_RESOURCE',response.url());});page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|\[AUTH\] Login failed auth\/(?:invalid-credential|too-many-requests|network-request-failed)|Fixture unavailable|Mock delivery outcome uncertain|Fixture permission rejection|Fixture verification unavailable|Fixture maintenance unavailable|400 \(Bad Request\)|functions\/failed-precondition|\[CERTIFICATES\]|\[CONSOLE_OPERATION\] \{operation: firebase\.callable, function: (?:getVertexContributors|sendTargetedNotification|toggleContributorVerification|getServerStatus|saveDepartmentPermissions), code: functions\/(?:unavailable|internal), category: (?:transport|server)/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
 if(process.env.VERTEX_TRACE)await page.context().tracing.start({screenshots:true,snapshots:true,sources:true});
 await page.addInitScript(()=>{
  localStorage.setItem('siteLang','en');
@@ -31,7 +31,7 @@ await page.addInitScript(()=>{
  const collection=name=>name==='news'?newsChain:name==='config'?{...chain,doc:id=>id==='departmentPermissions'?configDoc:chain}:chain;
  const user={uid:'admin',email:'admin@example.invalid',displayName:'Local Admin',getIdTokenResult:async()=>({claims:window.__testClaims || {admin:true}}),getIdToken:async()=>'test-only',updateProfile:async()=>{}};
  const listeners=[];const auth={currentUser:user,onAuthStateChanged:fn=>{listeners.push(fn);setTimeout(()=>fn(user),10);return ()=>{};},signOut:async()=>{auth.currentUser=null;listeners.forEach(fn=>fn(null));},signInWithEmailAndPassword:async()=>{if(window.__testAuthError)throw Object.assign(new Error('Private authentication detail'),{code:window.__testAuthError});auth.currentUser=user;listeners.forEach(fn=>fn(user));}};
- window.firebase={apps:[],initializeApp:()=>{},auth:()=>auth,firestore:()=>({collection}),storage:()=>({}),functions:()=>({}),appCheck:()=>({activate:()=>{},getToken:async()=>({token:'fixture-app-check'})}),app:()=>({functions:()=>({httpsCallable:(name)=>async data=>{
+ window.firebase={apps:[],initializeApp:()=>window.firebase.apps.push({}),auth:()=>auth,firestore:()=>({collection}),storage:()=>({}),functions:()=>({}),appCheck:()=>({activate:()=>{},getToken:async()=>({token:'fixture-app-check'})}),app:()=>({functions:()=>({httpsCallable:(name)=>async data=>{
    if(name==='getMyConsoleAccess'){
      // A real callable resolves CURRENT server-owned membership on every
      // authentication change. The synthetic fixture follows the test's
@@ -69,6 +69,7 @@ await page.route('**/*',async route=>{
   if(name==='getserverstatus'&&failMaintenance)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture maintenance unavailable'}})});
   if(name==='togglecontributorverification'&&failVerify)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture verification unavailable'}})});
   let result={};
+  if(name==='getreportworkspace'){const department=route.request().postDataJSON()?.data?.department||'Core';result={schemaVersion:2,department,weekStart:route.request().postDataJSON()?.data?.weekStart,canEdit:true,members:[],entries:[],tasks:[],openTasks:[],availableDepartments:[department],cursors:{entries:null,tasks:null,open:null}};}
   if(name==='togglecontributorverification'){
     const request=route.request().postDataJSON().data;
     const target=(people||[person]).find(p=>p.id===request.contributorId);
@@ -342,9 +343,10 @@ people=Array.from({length:85},(_,i)=>({
   ...person,id:'filter-fixture-'+i,name:'Applicant '+i,
   email:'applicant'+i+'@example.invalid',hasVerified:i%2===0
 }));
-await page.evaluate(fixtures=>{
- window.__savedContributors=window.loadedContributors;
- window.loadedContributors=fixtures;
+await page.evaluate(async fixtures=>{
+ const {contributorsStore}=await import('/js/stores/areaStore.js');
+ window.__savedContributors=contributorsStore.value;
+ contributorsStore.value=fixtures;
  window.filterContributors('all');
 },people);
 await waitCrossfade();
@@ -371,8 +373,9 @@ assert.equal(await page.locator('.contributor-table-rows > .contributor-row').co
 assert.equal(await page.evaluate(()=>window.__filterPaints),1);
 contributorDelay=0;
 people=null;
-await page.evaluate(()=>{
- window.loadedContributors=window.__savedContributors;
+await page.evaluate(async()=>{
+ const {contributorsStore}=await import('/js/stores/areaStore.js');
+ contributorsStore.value=window.__savedContributors;
  delete window.__savedContributors;
  window.filterContributors('all');
 });
@@ -519,7 +522,7 @@ await selectTab('contributors');
  await page.locator('#contributor-search').fill('Example Participant');
  await page.waitForSelector('.contributor-row');
  assert.equal(await page.locator('.contributor-row').count(),1);
- assert.equal(await page.evaluate(()=>Object.hasOwn(window.loadedContributors[0],'email') && window.loadedContributors[0].email!==undefined),false);
+ assert.equal(await page.evaluate(async()=>{const rows=(await import('/js/stores/areaStore.js')).contributorsStore.value;return Object.hasOwn(rows[0],'email') && rows[0].email!==undefined;}),false);
  await page.locator('#contributor-search').fill('');
  await page.locator('[data-details]').click();
  assert.equal(await page.locator('.vx-drawer-body').innerText().then(s=>s.includes('person@example.invalid')),false);

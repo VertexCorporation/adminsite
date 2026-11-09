@@ -1,0 +1,361 @@
+<div class="tab-panel" id="tab-publications">
+  <div class="panel-section-title">
+    <h2 data-i18n="catalog.publications"></h2>
+  </div>
+  <div class="grid-layout">
+    <!-- Haber Editörü -->
+    <div id="news-creator" class="panel-card col-span-7" data-panel="news.editor">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="post_add"></i>
+          <h3 data-i18n="news.form_title"></h3>
+        </div>
+      </div>
+
+      <form id="news-form" class="form-scrollable-container">
+        <!-- Türkçe İçerik -->
+        <div class="form-block-group">
+          <span class="block-title" data-i18n="news.tr_section"></span>
+          <div class="form-group-field">
+            <label for="title-tr" data-i18n="news.tr_title"></label>
+            <input type="text" id="title-tr" data-i18n-placeholder="news.tr_title_ph" placeholder="" required="" />
+          </div>
+          <div class="form-group-field">
+            <label for="summary-tr" data-i18n="news.tr_summary"></label>
+            <textarea
+              id="summary-tr"
+              data-i18n-placeholder="news.tr_summary_ph"
+              placeholder=""
+              rows="2"
+              required=""
+            ></textarea>
+          </div>
+          <div class="form-group-field">
+            <label for="content-tr" data-i18n="news.tr_content"></label>
+            <textarea
+              id="content-tr"
+              data-i18n-placeholder="news.tr_content_ph"
+              placeholder=""
+              rows="5"
+              required=""
+            ></textarea>
+          </div>
+          <div class="form-group-field">
+            <label for="cover-image-tr" data-i18n="news.tr_cover"></label>
+            <input type="file" id="cover-image-tr" accept="image/*" required="" />
+          </div>
+        </div>
+
+        <!-- İngilizce İçerik -->
+        <div class="form-block-group">
+          <span class="block-title" data-i18n="news.en_section"></span>
+          <div class="form-group-field">
+            <label for="title-en" data-i18n="news.en_title"></label>
+            <input type="text" id="title-en" data-i18n-placeholder="news.en_title_ph" placeholder="" required="" />
+          </div>
+          <div class="form-group-field">
+            <label for="summary-en" data-i18n="news.en_summary"></label>
+            <textarea
+              id="summary-en"
+              data-i18n-placeholder="news.en_summary_ph"
+              placeholder=""
+              rows="2"
+              required=""
+            ></textarea>
+          </div>
+          <div class="form-group-field">
+            <label for="content-en" data-i18n="news.en_content"></label>
+            <textarea
+              id="content-en"
+              data-i18n-placeholder="news.en_content_ph"
+              placeholder=""
+              rows="5"
+              required=""
+            ></textarea>
+          </div>
+          <div class="form-group-field">
+            <label for="cover-image-en" data-i18n="news.en_cover"></label>
+            <input type="file" id="cover-image-en" accept="image/*" required="" />
+          </div>
+        </div>
+
+        <!-- Etiketler -->
+        <div class="form-block-group">
+          <span class="block-title" data-i18n="news.meta_section">&amp;</span>
+          <div class="form-group-field">
+            <label for="tags" data-i18n="news.tags"></label>
+            <input type="text" id="tags" data-i18n-placeholder="news.tags_ph" placeholder="" />
+          </div>
+          <div class="form-group-field">
+            <label for="references" data-i18n="news.references"></label>
+            <textarea id="references" data-i18n-placeholder="news.references_ph" placeholder="" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="form-submit-row">
+          <button type="submit" id="submit-btn" class="chrome-btn-accent">
+            <span data-i18n="news.publish_btn"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Yayınlanmış Makaleler -->
+    <div id="news-manager" class="panel-card col-span-5" data-panel="news.published">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="article"></i>
+          <h3 data-i18n="news.active_articles"></h3>
+        </div>
+      </div>
+      <div id="articles-list-container" class="scrollable-list-box">
+        <p class="form-hint" style="text-align: center; padding: 2rem" data-i18n="news.no_articles"></p>
+      </div>
+    </div>
+
+    <section class="panel-card col-span-12" data-panel="events.list">
+      <div class="card-title-row events-section-header">
+        <div class="title-details">
+          <h3 data-i18n="panel.events.list"></h3>
+        </div>
+        <button
+          type="button"
+          id="events-refresh"
+          class="btn-refresh"
+          title=""
+          data-i18n-title="contributors.refresh"
+          aria-label=""
+          data-i18n-aria-label="common.refresh"
+        >
+          <i data-icon="refresh" aria-hidden="true"></i>
+          <span data-i18n="contributors.refresh"></span>
+        </button>
+      </div>
+      <div id="events-list" aria-live="polite"></div>
+    </section>
+    <section class="panel-card col-span-12" data-panel="events.editor">
+      <div class="card-title-row">
+        <div class="title-details">
+          <h3 data-i18n="panel.events.editor"></h3>
+        </div>
+      </div>
+      <form id="events-editor">
+        <div id="events-fields" class="form-grid"></div>
+        <div class="form-group-field event-review-control">
+          <label id="events-review-label">
+            <input type="checkbox" name="dateReviewed" />
+            <span data-i18n="publications.ui.dateDiscrepancyResolvedAgainstTheSource"></span>
+          </label>
+        </div>
+        <div class="form-submit-row events-editor-actions">
+          <button type="button" id="events-preview" data-read-action="" class="chrome-btn-outline">
+            <span data-i18n="people.preview"></span>
+          </button>
+          <button type="submit" id="events-editor-submit" class="chrome-btn-primary">
+            <span data-i18n="common.save"></span>
+          </button>
+          <button type="button" id="events-new" class="chrome-btn-outline">
+            <span data-i18n="events.ui.new"></span>
+          </button>
+        </div>
+      </form>
+      <div id="events-preview-content" hidden=""></div>
+    </section>
+    <section class="panel-card col-span-12" data-panel="events.registrations">
+      <div class="card-title-row">
+        <div class="title-details">
+          <h3 data-i18n="panel.events.registrations"></h3>
+        </div>
+      </div>
+      <div class="event-registration-controls">
+        <div class="form-group-field">
+          <label for="events-registration-search"><span data-i18n="publications.ui.eventId"></span></label>
+          <input id="events-registration-search" />
+        </div>
+        <button type="button" id="events-load-registrations" class="btn-refresh">
+          <span data-i18n="events.ui.loadRegistrations"></span>
+        </button>
+      </div>
+      <div id="events-registrations" aria-live="polite"></div>
+    </section>
+
+    <!-- Bildirim Gönderici Form -->
+    <div id="notification-sender" class="panel-card col-span-7" data-panel="notifications.sender">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="campaign"></i>
+          <h3 data-i18n="notif.form_title"></h3>
+        </div>
+      </div>
+
+      <form id="notification-form" class="form-scrollable-container">
+        <div class="form-block-group">
+          <span class="block-title" data-i18n="notif.template_section">&amp;</span>
+          <div class="form-group-field">
+            <label for="notification-template-selector" data-i18n="notif.template_label"></label>
+            <select id="notification-template-selector" data-i18n-options="true">
+              <option value="" data-i18n="notif.template_none"></option>
+              <optgroup data-i18n="template.group.system" label="Sistem &amp; Teklifler">
+                <option value="newModel" data-i18n="template.newModel"></option>
+                <option value="newFeature" data-i18n="template.newFeature"></option>
+                <option value="upsellFeature" data-i18n="template.upsellFeature"></option>
+                <option value="appUpdate" data-i18n="template.appUpdate"></option>
+                <option value="rateApp" data-i18n="template.rateApp"></option>
+                <option value="referral" data-i18n="template.referral"></option>
+                <option value="socialMedia" data-i18n="template.socialMedia"></option>
+              </optgroup>
+              <optgroup data-i18n="template.group.engagement" label="Kullanıcı Etkileşimi">
+                <option value="comeback" data-i18n="template.comeback"></option>
+                <option value="longTimeNoSee" data-i18n="template.longTimeNoSee"></option>
+                <option value="howAreYou" data-i18n="template.howAreYou"></option>
+                <option value="goodMorning" data-i18n="template.goodMorning"></option>
+                <option value="goodNight" data-i18n="template.goodNight"></option>
+              </optgroup>
+              <optgroup data-i18n="template.group.fun" label="Eğlenceli &amp; Şakalar">
+                <option value="randomFact" data-i18n="template.randomFact"></option>
+                <option value="showerThought" data-i18n="template.showerThought"></option>
+                <option value="fortuneCookie" data-i18n="template.fortuneCookie"></option>
+                <option value="hackerJoke" data-i18n="template.hackerJoke"></option>
+                <option value="pirate" data-i18n="template.pirate"></option>
+                <option value="trollAnime" data-i18n="template.trollAnime"></option>
+                <option value="trollAiRebellion" data-i18n="template.trollAiRebellion"></option>
+                <option value="singularity" data-i18n="template.singularity"></option>
+                <option value="detectiveCase" data-i18n="template.detectiveCase"></option>
+                <option value="originStory" data-i18n="template.originStory"></option>
+                <option value="rejectionStory" data-i18n="template.rejectionStory"></option>
+                <option value="cooking" data-i18n="template.cooking"></option>
+                <option value="existential" data-i18n="template.existential"></option>
+                <option value="openSource" data-i18n="template.openSource"></option>
+              </optgroup>
+              <optgroup data-i18n="template.group.tech" label="Teknik Detaylar">
+                <option value="offlineReady" data-i18n="template.offlineReady"></option>
+                <option value="customModel" data-i18n="template.customModel"></option>
+                <option value="dynamicChat" data-i18n="template.dynamicChat"></option>
+                <option value="ggufSupport" data-i18n="template.ggufSupport"></option>
+                <option value="themeCustomization" data-i18n="template.themeCustomization"></option>
+                <option value="homeworkHelper" data-i18n="template.homeworkHelper"></option>
+                <option value="lowBattery" data-i18n="template.lowBattery"></option>
+              </optgroup>
+              <optgroup data-i18n="template.group.special" label="Özel Günler">
+                <option value="newYear" data-i18n="template.newYear"></option>
+                <option value="valentinesDay" data-i18n="template.valentinesDay"></option>
+                <option value="ataturkRemembrance" data-i18n="template.ataturkRemembrance"></option>
+                <option value="mothersDay" data-i18n="template.mothersDay"></option>
+                <option value="fathersDay" data-i18n="template.fathersDay"></option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="flex-row">
+            <div class="form-group-field flex-grow">
+              <label for="notification-title-key" data-i18n="notif.title_key"></label>
+              <input
+                type="text"
+                id="notification-title-key"
+                data-i18n-placeholder="notif.title_key_ph"
+                placeholder=""
+              />
+            </div>
+            <div class="form-group-field flex-grow">
+              <label for="notification-body-key" data-i18n="notif.body_key"></label>
+              <input type="text" id="notification-body-key" data-i18n-placeholder="notif.body_key_ph" placeholder="" />
+            </div>
+          </div>
+          <div class="form-group-field">
+            <label for="notification-data-payload" data-i18n="notif.data_payload"></label>
+            <textarea
+              id="notification-data-payload"
+              data-i18n-placeholder="notif.data_payload_ph"
+              placeholder=""
+              rows="1"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="form-block-group">
+          <span class="block-title" data-i18n="notif.fallback_section"></span>
+          <div class="form-group-field">
+            <label for="notification-title" data-i18n="notif.fallback_title"></label>
+            <input type="text" id="notification-title" data-i18n-placeholder="notif.fallback_title_ph" placeholder="" />
+          </div>
+          <div class="form-group-field">
+            <label for="notification-body" data-i18n="notif.fallback_body"></label>
+            <textarea
+              id="notification-body"
+              data-i18n-placeholder="notif.fallback_body_ph"
+              placeholder=""
+              rows="2"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="form-block-group">
+          <span class="block-title" data-i18n="notif.targeting"></span>
+          <div class="form-group-field">
+            <label for="notification-target-type" data-i18n="notif.target_label"></label>
+            <select id="notification-target-type" required="">
+              <option value="" disabled="" selected="" data-i18n="notif.target_placeholder"></option>
+              <option value="ALL_USERS" data-i18n="notif.target_all"></option>
+              <option value="SINGLE_USER" data-i18n="notif.target_single"></option>
+              <option value="SUBSCRIPTION_LEVEL" data-i18n="notif.target_level"></option>
+            </select>
+          </div>
+
+          <div id="target-specific-inputs" class="conditional-block">
+            <div id="target-uid-input" class="form-group-field" style="display: none">
+              <label for="notification-target-uid" data-i18n="notif.uid_label"></label>
+              <input type="text" id="notification-target-uid" data-i18n-placeholder="notif.uid_ph" placeholder="" />
+            </div>
+            <div id="target-level-input" class="form-group-field" style="display: none">
+              <label for="notification-target-level" data-i18n="notif.level_label"></label>
+              <select id="notification-target-level">
+                <option value="0" data-i18n="notif.level0"></option>
+                <option value="1" data-i18n="notif.level1"></option>
+                <option value="2" data-i18n="notif.level2"></option>
+                <option value="3" data-i18n="notif.level3"></option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-block-group">
+          <span class="block-title" data-i18n="notif.mode"></span>
+          <div class="chrome-switch-row" style="justify-content: flex-start; gap: 10px">
+            <span class="switch-label-text" data-i18n="notif.send_now"></span>
+            <label class="chrome-switch">
+              <input type="checkbox" id="notification-schedule-switch" />
+              <span class="slider"></span>
+            </label>
+            <span class="switch-label-text" data-i18n="notif.schedule"></span>
+          </div>
+
+          <div id="schedule-datetime-picker" class="conditional-block" style="display: none; margin-top: 10px">
+            <div class="form-group-field">
+              <label for="notification-schedule-time" data-i18n="notif.datetime"></label>
+              <input type="datetime-local" id="notification-schedule-time" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-submit-row">
+          <button type="submit" id="submit-notification-btn" class="chrome-btn-accent">
+            <span data-i18n="notif.submit_btn"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Zamanlanmış Görevler Listesi -->
+    <div id="scheduled-tasks-manager" class="panel-card col-span-5" data-panel="notifications.scheduled">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="calendar_month"></i>
+          <h3 data-i18n="notif.scheduled_title"></h3>
+        </div>
+      </div>
+      <div id="scheduled-tasks-list-container" class="scrollable-list-box">
+        <p class="form-hint" style="text-align: center; padding: 2rem" data-i18n="notif.no_scheduled"></p>
+      </div>
+    </div>
+  </div>
+</div>

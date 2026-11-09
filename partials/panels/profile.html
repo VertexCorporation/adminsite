@@ -1,0 +1,69 @@
+<div class="tab-panel" id="tab-profile">
+  <div class="panel-section-title">
+    <h2 data-i18n="profile.title"></h2>
+    <p data-i18n="profile.desc"></p>
+  </div>
+  <div class="grid-layout">
+    <div class="panel-card col-span-6 profile-card">
+      <div class="profile-heading">
+        <div class="profile-avatar-ring">
+          <i class="profile-avatar-icon" data-icon="person"></i>
+        </div>
+        <div class="profile-heading-info">
+          <h3 id="profile-name">—</h3>
+          <p id="profile-email">—</p>
+        </div>
+        <button
+          type="button"
+          id="profile-menu-btn"
+          class="panel-menu-btn"
+          style="display: inline-flex"
+          title=""
+          data-i18n-title="profile.menu_btn"
+        >
+          <i class="" data-icon="apps"></i>
+        </button>
+        <div id="profile-menu-pop" class="panel-menu-pop profile-menu-pop" style="display: none"></div>
+      </div>
+      <form id="profile-form" class="form-stack">
+        <div class="form-group-field">
+          <label for="profile-display-name" data-i18n="profile.display_name"></label>
+          <input id="profile-display-name" type="text" maxlength="80" autocomplete="name" />
+        </div>
+        <button type="submit" class="chrome-btn-accent">
+          <i class="" data-icon="save"></i>
+          <span data-i18n="profile.save"></span>
+        </button>
+      </form>
+    </div>
+    <div class="panel-card col-span-6 profile-card">
+      <div class="card-title-row">
+        <div class="title-details">
+          <i class="" data-icon="verified_user"></i>
+          <h3 data-i18n="profile.access"></h3>
+        </div>
+      </div>
+      <dl class="profile-details">
+        <div>
+          <dt data-i18n="profile.role"></dt>
+          <dd id="profile-role">—</dd>
+        </div>
+        <div>
+          <dt data-i18n="profile.departments"></dt>
+          <dd id="profile-departments">—</dd>
+        </div>
+        <div>
+          <dt data-i18n="profile.uid"></dt>
+          <dd>
+            <span id="profile-uid">—</span>
+            <button type="button" id="copy-uid-btn" class="profile-copy-btn" title="" data-i18n-title="console.ui.copy">
+              <i class="" data-icon="content_copy"></i>
+            </button>
+          </dd>
+        </div>
+      </dl>
+      <div class="panel-menu-section-title" style="margin-top: 16px" data-i18n="profile.access"></div>
+      <div id="profile-perms" class="profile-perms"></div>
+    </div>
+  </div>
+</div>

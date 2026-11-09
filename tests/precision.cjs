@@ -61,7 +61,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   assert.equal(await page.locator('[data-permission-panel]').count(),0);
   assert.equal(await page.locator('#permission-save-status,.permission-history-trigger').count(),0);
   const categories=await page.locator('.dept-perms-header .dept-perm-th').allTextContents();
-  assert.deepEqual(categories,['Users','Origin','Applicants','Services','Publications','Subscriptions','Stage','System']);
+  assert.deepEqual(categories,['Users','Origin','Applicants','Services','Publications','Subscriptions','Stage','Reports','System']);
   assert.equal(await page.locator('[data-dept=Core][data-category=contributors]').isDisabled(),true);
   assert.equal(await page.locator('[data-dept=Senatus][data-category=users]').isDisabled(),true);
   await capture('permissions-1440-dark');
@@ -74,7 +74,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   await page.waitForFunction(()=>document.querySelector('#dept-permissions-container')?.dataset.saveState==='failed');
   assert.equal(await applications.getAttribute('data-level'),before);
   failPermissions(false);
-  note('Eight-category grid, Core locks, invisible save state and failed draft rollback');
+  note('Nine-category grid, Core locks, invisible save state and failed draft rollback');
   await page.locator('[data-screen-dept=Senatus][data-screen-category=publications]').click();
   assert.equal(await page.locator('.permission-screen-row').count(),7);
   await page.locator('[data-screen-id=news-editor]').click();

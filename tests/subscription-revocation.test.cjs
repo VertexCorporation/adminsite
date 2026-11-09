@@ -5,9 +5,9 @@ const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../js/modules/subscriptions.js'), 'utf8');
 
 test('subscription revocation relies on server-derived canRemove and fails closed', () => {
-  assert.match(source, /canRemove: sub\.canRemove === true/);
-  assert.match(source, /sub\.canRemove === true \? /);
-  assert.match(source, /if \(!entry \|\| entry\.canRemove !== true\)/);
-  assert.doesNotMatch(source, /sub\.source !== 'vertex'/);
-  assert.match(source, /danger:true/);
+  assert.match(source, /canRemove\s*:\s* sub\.canRemove \s*===\s* true/);
+  assert.match(source, /sub\.canRemove \s*===\s* true \? /);
+  assert.match(source, /if \s*\(\s*!entry \|\| entry\.canRemove !\s*==\s* true\s*\)\s*/);
+  assert.doesNotMatch(source, /sub\.source !\s*==\s* 'vertex'/);
+  assert.match(source, /danger\s*:\s*true/);
 });

@@ -1,0 +1,28 @@
+name: console build artifact
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths: ['js/**', 'css/**', 'l10n/**', 'partials/**', 'scripts/**', 'index.html', 'customer-activate.html', 'package*.json', '.github/workflows/console-build.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run verify:release
+      - name: Source checkout stays unchanged
+        run: git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        with:
+          name: console-dist
+          path: dist/
+          retention-days: 7

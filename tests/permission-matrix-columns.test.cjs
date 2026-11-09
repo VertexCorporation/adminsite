@@ -1,20 +1,21 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 'use strict';
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const roles=fs.readFileSync('js/modules/roles.js','utf8');
-const css=fs.readFileSync('css/modules.css','utf8');
-const html=fs.readFileSync('index.html','utf8');
+const css=readConsoleSource('css/modules.css');
+const html=readConsoleSource('index.html');
 const source=fs.readFileSync('js/core/permissionCatalog.js','utf8');
 const catalog=()=>import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
-test('permission editor matches all eight sidebar categories and every current screen',async()=>{
+test('permission editor matches all current sidebar categories and every current screen',async()=>{
  const {PERMISSION_CATEGORIES:categories}=await catalog();
- assert.deepEqual(categories.map(c=>c.id),['users','origin','contributors','models','publications','subscriptions','scene','system']);
+ assert.deepEqual(categories.map(c=>c.id),['users','origin','contributors','models','publications','subscriptions','scene','reports','system']);
  const scopes=new Set(categories.flatMap(c=>c.screens.flatMap(s=>s.scopes)));
- const nav=[...html.matchAll(/data-nav-panel="([^"]+)"/g)].flatMap(m=>m[1].split(','));
+ const nav=[...html.matchAll(/data-nav-panel\s*=\s*"([^"]+)"/g)].flatMap(m=>m[1].split(','));
  assert.deepEqual([...scopes].sort(),[...new Set(nav)].sort());
- assert.match(roles,/PERMISSION_CATEGORIES\.forEach\(category=>/);
- assert.match(css,/repeat\(var\(--permission-module-count, 7\),minmax\(108px,1fr\)\)/);
+ assert.match(roles,/PERMISSION_CATEGORIES\.forEach\s*\(\s*\(?category\)?\s*=>\s*/);
+ assert.match(css,/repeat\s*\(\s*var\s*\(\s*--permission-module-count\s*,\s* 7\s*\)\s*\s*,\s*minmax\s*\(\s*108px\s*,\s*1fr\s*\)\s*\s*\)\s*/);
  assert.doesNotMatch(roles,/permission-workspace|permission-history-trigger|permission-save-status|CONTENT_OPTIONS|showPermissionHistory/);
 });
 test('cleanup is idempotent, removes obsolete settings and preserves denials',async()=>{

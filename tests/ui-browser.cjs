@@ -39,7 +39,7 @@ const fixture = [
 const server = http.createServer((req,res)=>{
  const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
  if(pathname==='/'){res.setHeader('Content-Type','text/html');res.end(fixture);return;}
- if(!/^\/(css|js)\//.test(pathname)){res.writeHead(404);res.end();return;}
+ if(!/^\/(css|js|l10n)\//.test(pathname)){res.writeHead(404);res.end();return;}
  const target=path.resolve(root,'.'+pathname);
  if(!target.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}
  fs.readFile(target,(err,data)=>{

@@ -1,3 +1,4 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 function fixture(options={}){
@@ -27,7 +28,7 @@ test('ambiguous callable errors retain request identity; revoked Core cannot sub
  const f=fixture();f.fields.get('email').value='user@example.com';f.fail(true);await f.submit();f.fail(false);await f.submit();assert.equal(f.calls[1].data.requestId,f.calls[3].data.requestId);f.revoke();await f.submit();assert.equal(f.calls.length,4);
 });
 test('form labels resolve in both languages and reuse existing themed controls',()=>{
- const html=fs.readFileSync('index.html','utf8'),section=html.split('id="customer-account-manager"')[1].split('id="password-reset-manager"')[0];
+ const html=readConsoleSource('index.html'),section=html.split('id="customer-account-manager"')[1].split('id="password-reset-manager"')[0];
  for(const id of ['customer-email','customer-name','customer-tier','customer-duration','customer-expiry'])assert(section.includes('for="'+id+'"'));
  assert(section.includes('class="chrome-btn-outline"'));assert(section.includes('role="status"'));assert(!/style=|#[a-f0-9]{6}/i.test(section));
 });

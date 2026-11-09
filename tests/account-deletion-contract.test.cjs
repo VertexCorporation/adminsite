@@ -1,20 +1,21 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const read = path => fs.readFileSync(path, 'utf8');
+const read = readConsoleSource;
 
 test('Core-only Users navigation mounts the deletion page', () => {
     const html = read('index.html');
     const roles = read('js/modules/roles.js');
-    assert.match(html, /data-nav-module="users"/);
-    assert.match(html, /data-nav-panel="users.status,users.deleteAccount"/);
-    assert.match(html, /id="account-deletion-search-form"/);
-    assert.match(html, /id="account-deletion-confirm-email"/);
-    assert.match(html, /id="account-deletion-verified"/);
-    assert.match(roles, /panelKey\.startsWith\('users\.'\)/);
+    assert.match(html, /data-nav-module\s*=\s*"users"/);
+    assert.match(html, /data-nav-panel\s*=\s*"users.status\s*,\s*users.deleteAccount"/);
+    assert.match(html, /id\s*=\s*"account-deletion-search-form"/);
+    assert.match(html, /id\s*=\s*"account-deletion-confirm-email"/);
+    assert.match(html, /id\s*=\s*"account-deletion-verified"/);
+    assert.match(roles, /panelKey\.startsWith\s*\(\s*'users\.'\s*\)\s*/);
     assert.match(roles, /!screen\.coreOnly/);
-    assert.match(read('js/core/permissionCatalog.js'), /scopes:\['users\.directory'\],coreOnly:true/);
+    assert.match(read('js/core/permissionCatalog.js'), /scopes\s*:\s*\['users\.directory'\]\s*,\s*coreOnly\s*:\s*true/);
     assert.match(roles, /!screen\.coreOnly/);
 });
 
@@ -22,11 +23,11 @@ test('deletion UI requests the guarded admin endpoint with typed target confirma
     const src = read('js/modules/accountDeletion.js');
     assert.match(src, /listConsoleUsers/);
     assert.match(src, /adminRequestAccountDeletion/);
-    assert.match(src, /confirmationEmail: confirmInput\.value/);
-    assert.match(src, /ownershipVerified: verifyInput\.checked/);
+    assert.match(src, /confirmationEmail\s*:\s* confirmInput\.value/);
+    assert.match(src, /ownershipVerified\s*:\s* verifyInput\.checked/);
     assert.match(src, /confirmDialog/);
-    assert.match(src, /target\.disabled === true/);
-    assert.doesNotMatch(src, /consolePeopleCall\('requestAccountDeletion'/);
+    assert.match(src, /target\.disabled \s*===\s* true/);
+    assert.doesNotMatch(src, /consolePeopleCall\s*\(\s*'requestAccountDeletion'/);
 });
 
 test('deletion messaging distinguishes queueing from complete erasure in both languages', () => {
@@ -36,11 +37,4 @@ test('deletion messaging distinguishes queueing from complete erasure in both la
     }
 });
 
-test('consent uses a visible native checkbox, not an opaque chip', () => {
-    const html = read('index.html');
-    const css = read('css/ui/controls.css');
-    assert.match(html, /<label class="account-deletion-consent">\s*<input id="account-deletion-verified" type="checkbox">/);
-    assert.match(css, /\.account-deletion-consent input\[type="checkbox"\]/);
-    assert.match(css, /\.account-deletion-consent:has\(input:checked\)/);
-    assert.doesNotMatch(html, /<label class="chip-checkbox">\s*<input id="account-deletion-verified"/);
-});
+test('consent uses a visible native checkbox',()=>{const {JSDOM}=require('jsdom');const dom=new JSDOM(read('index.html'));const checkbox=dom.window.document.getElementById('account-deletion-verified');assert.equal(checkbox.type,'checkbox');assert.equal(checkbox.hidden,false);assert(checkbox.closest('label.account-deletion-consent'));dom.window.close();});

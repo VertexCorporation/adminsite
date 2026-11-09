@@ -1,3 +1,4 @@
+const {readConsoleSource} = require('./helpers/console-source.cjs');
 'use strict';
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
@@ -5,11 +6,10 @@ const fs=require('node:fs');
 const path=require('node:path');
 
 const root=path.resolve(__dirname,'..');
-const strings=fs.readFileSync(path.join(root,'js/lang.js'),'utf8');
-const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-const boundary=strings.indexOf('\n  en: {');
-assert(boundary>0,'Turkish and English translation sections should both exist');
-const dictionaries=[strings.slice(0,boundary),strings.slice(boundary)];
+const strings=readConsoleSource('js/lang.js');
+const html=readConsoleSource('index.html');
+const {LANG}=require('./i18n-audit.cjs');
+const dictionaries=[LANG.tr,LANG.en];
 const expected={
  'catalog.users':['Kullanıcılar','Users'],
  'catalog.contributors':['Adaylar','Applicants'],
@@ -24,9 +24,7 @@ for(const [key,values] of Object.entries(expected)){
  test('sidebar '+key+' is translated consistently',()=>{
   assert(html.includes('data-i18n="'+key+'"'),'sidebar must use translation key '+key);
   dictionaries.forEach((dict,lang)=>{
-   const line=dict.split('\n').filter(s=>s.includes('"'+key+'":'));
-   assert.equal(line.length,1,'exactly one '+key+' translation in '+['tr','en'][lang]);
-   assert.equal(line[0].trim(),JSON.stringify(key)+': '+JSON.stringify(values[lang])+',');
+   assert.equal(dict[key],values[lang]);
   });
  });
 }
@@ -35,7 +33,7 @@ test('every sidebar key is backed by TR and EN translations',()=>{
  assert(keys.length>=15,'expected all sidebar subnavigation actions');
  for(const key of keys){
   for(const dict of dictionaries){
-   assert(dict.includes(JSON.stringify(key)+':')||dict.includes("'"+key+"':"),'missing sidebar translation '+key);
+   assert(Object.hasOwn(dict,key),'missing sidebar translation '+key);
   }
  }
 });

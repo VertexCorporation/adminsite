@@ -10,7 +10,12 @@
   Cache-Control: no-cache
 /css/*
   Cache-Control: no-cache
-/assets/releases/*
+/assets/runtime/*
   Cache-Control: public, max-age=31536000, immutable
 /assets/vertex-konsol-og.png
   Cache-Control: public, max-age=3600
+
+/l10n/*
+  Cache-Control: no-cache
+/partials/*
+  Cache-Control: no-cache
