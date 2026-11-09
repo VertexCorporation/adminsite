@@ -19,6 +19,9 @@
 .reports-toolbar-main {
   gap: 20px;
 }
+.reports-week-field {
+  margin: 0;
+}
 .reports-week-controls input {
   width: 160px;
   min-height: 40px;
