@@ -2,7 +2,7 @@ import { __, showToast, userErrorMessage } from '../../utils/ui.js';
 import { openModal, closeModal } from '../../ui/surfaces.js';
 import { captureSession, sessionIsCurrent } from '../../core/session.js';
 import { getReportBackup, saveReportEntry, saveReportTask } from '../../services/reportsService.js';
-import { loadReportWeek } from '../../stores/reportsStore.js';
+import { loadReportWeek, reportsStore } from '../../stores/reportsStore.js';
 import { createBackup, planRestore } from './backupData.js';
 const t = (key) => __('reports.' + key);
 const counts = (key, done, total) => t(key).replace('{done}', done).replace('{total}', total);
@@ -133,7 +133,9 @@ export function openReportRestore(state) {
       pending = false;
       file.disabled = false;
       file.value = '';
-      if (sessionIsCurrent(token)) await loadReportWeek(state.department, state.weekStart, state.view);
+      const current = reportsStore.value;
+      if (sessionIsCurrent(token) && current?.department === state.department && current.weekStart === state.weekStart)
+        await loadReportWeek(state.department, state.weekStart, current.view);
     }
   };
 }

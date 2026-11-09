@@ -487,3 +487,53 @@ test('empty JSON backup is valid and legacy task IDs map to the existing migrate
     h.close();
   }
 });
+
+test('closing a restore stops remaining writes and cannot reopen a department after navigation', async () => {
+  let release,
+    writes = 0,
+    reloads = 0;
+  const state = { department: 'Array', weekStart: '2026-11-02', view: 'daily', data: workspace() };
+  const store = { value: state };
+  const h = harness(reportHTML, {
+    'js/services/reportsService.js': {
+      getReportBackup: async () => workspace(),
+      saveReportEntry: async () => {
+        writes++;
+        await new Promise((resolve) => (release = resolve));
+      },
+      saveReportTask: async () => {},
+    },
+    'js/stores/reportsStore.js': { reportsStore: store, loadReportWeek: async () => reloads++ },
+  });
+  try {
+    authorize(await h.load('js/core/session.js'));
+    const backup = await h.load('js/modules/reports/backup.js');
+    backup.openReportRestore(state);
+    const file = h.document.querySelector('.vx-modal input[type=file]');
+    const raw = {
+      app: 'vertex-console-reports',
+      version: 2,
+      department: 'Array',
+      entries: [
+        { memberId: 'uid_1', date: '2026-11-02', status: 'done', summary: 'First' },
+        { memberId: 'uid_1', date: '2026-11-03', status: 'done', summary: 'Second' },
+      ],
+      tasks: [],
+    };
+    Object.defineProperty(file, 'files', { value: [{ size: 1000, text: async () => JSON.stringify(raw) }] });
+    await file.onchange();
+    const save = h.document.querySelector('.vx-modal [data-i18n="reports.restoreConfirm"]');
+    assert.equal(save.disabled, false);
+    const pending = save.onclick();
+    assert.equal(writes, 1);
+    const { closeModal } = await h.load('js/ui/surfaces.js');
+    closeModal();
+    store.value = { ...state, department: 'Pulse' };
+    release();
+    await pending;
+    assert.equal(writes, 1);
+    assert.equal(reloads, 0);
+  } finally {
+    h.close();
+  }
+});
