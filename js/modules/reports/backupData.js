@@ -155,6 +155,5 @@ export async function planRestore(raw, current) {
     seen.add(task.id);
     operations.push({ kind: 'tasks', input: task, expectedRevision: existingTasks.get(task.id)?.revision || 0 });
   }
-  if (!operations.length) fail();
   return operations;
 }

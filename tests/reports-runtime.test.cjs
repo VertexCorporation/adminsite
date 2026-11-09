@@ -451,3 +451,39 @@ test('legacy v5 config maps unambiguous names, aliases Core to Senatus and rejec
     h.close();
   }
 });
+
+test('empty JSON backup is valid and legacy task IDs map to the existing migrated documents', async () => {
+  const h = harness();
+  try {
+    h.window.TextEncoder = TextEncoder;
+    Object.defineProperty(h.window.crypto, 'subtle', { value: require('node:crypto').webcrypto.subtle });
+    const backup = await h.load('js/modules/reports/backupData.js');
+    const current = workspace();
+    assert.equal((await backup.planRestore(backup.createBackup(current), current)).length, 0);
+    const taskId = require('node:crypto').createHash('sha256').update('old_task').digest('hex');
+    const raw = {
+      version: 5,
+      department: 'Array',
+      team: ['Person'],
+      records: [],
+      tasks: [
+        {
+          id: 'old_task',
+          title: 'Old task',
+          project: 'Console',
+          status: 'done',
+          priority: 'normal',
+          assignees: ['Person'],
+          created: '2026-10-01',
+          updated: '2026-10-08',
+        },
+      ],
+    };
+    const plan = await backup.planRestore(raw, { ...current, tasks: [{ id: taskId, revision: 3 }] });
+    assert.equal(plan[0].input.id, taskId);
+    assert.equal(plan[0].expectedRevision, 3);
+    assert.equal(plan[0].input.completedDate, '2026-10-08');
+  } finally {
+    h.close();
+  }
+});
