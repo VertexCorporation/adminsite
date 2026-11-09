@@ -501,7 +501,7 @@ export function initShell() {
   initTopbarMenus();
   initCommandPalette();
   onLangChange(() => {
-    syncTopbarTitle();
+    queueMicrotask(syncTopbarTitle);
     updateThemeButton();
     if (document.querySelector('.language-popover.is-open,.theme-popover.is-open'))
       closePopover({ restoreFocus: false });

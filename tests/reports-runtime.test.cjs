@@ -207,6 +207,18 @@ test('member navigation contains only assigned departments and nested report vie
     assert.equal(h.document.getElementById('report-nav-Array').hidden, false);
     await new Promise(setImmediate);
     await new Promise(setImmediate);
+    const selected = h.document.querySelector('[data-nav-action="Array:weekly"]');
+    selected.setAttribute('data-nav-selected', '');
+    selected.setAttribute('aria-current', 'page');
+    const lang = await h.load('js/lang.js');
+    lang.setLang('en');
+    assert.equal(selected.textContent, 'Weekly report');
+    assert.equal(h.document.querySelector('[aria-current="page"]'), selected);
+    assert.equal(h.document.querySelector('[data-nav-selected]'), selected);
+    assert.equal(h.document.getElementById('report-nav-Array').hidden, false);
+    lang.setLang('tr');
+    assert.equal(selected.textContent, 'Haftalık rapor');
+    assert.equal(h.document.querySelector('[aria-current="page"]'), selected);
   } finally {
     h.close();
   }

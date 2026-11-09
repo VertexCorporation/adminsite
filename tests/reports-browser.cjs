@@ -22,6 +22,14 @@ const server=http.createServer((request,response)=>{
   if(access==='core')assert.equal(await page.locator('[data-report-department]').count(),10);else assert.equal(await page.locator('[data-report-department]').count(),1);
   const field=page.locator('#reports-week');assert.equal(await field.isEnabled(),true);await field.fill('2026-11-02');await field.dispatchEvent('change');
   await page.locator('[data-nav-action="Array:weekly"]').click();await page.locator('.report-stats').waitFor();
+  const nextLang=lang==='en'?'tr':'en';
+  await page.locator('#lang-toggle-btn').click();
+  await page.locator(`[data-language="${nextLang}"]`).click();
+  const weeklyLabel=nextLang==='en'?'Weekly report':'Haftalık rapor';
+  await page.waitForFunction(label=>document.querySelector('.topbar-page-title').textContent===label,weeklyLabel);
+  assert.equal(await page.locator('[data-nav-action="Array:weekly"]').getAttribute('aria-current'),'page');
+  assert.equal(await page.locator('#reports-week').inputValue(),'2026-11-02');
+  assert.equal(await department.getAttribute('aria-expanded'),'true');
   assert.equal(await page.locator('#reports-new-task').isVisible(),access!=='member');
   if(access!=='member'){await page.locator('#reports-new-task').click();await page.locator('.report-editor [name="title"]').fill('Browser task');await page.locator('.report-editor [name="project"]').fill('Console');await page.locator('.report-editor [type="submit"]').click();await page.locator('.vx-modal').waitFor({state:'detached'});}
   assert.deepEqual(errors,[]);await page.close();console.log('Reports browser:',access,lang);

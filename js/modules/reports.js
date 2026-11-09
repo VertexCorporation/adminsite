@@ -32,7 +32,12 @@ export function initReportsModule() {
     renderNavigation();
   });
   onLangChange(() => {
-    renderNavigation();
+    document.querySelectorAll('#nav-sub-reports [data-nav-action]').forEach((button) => {
+      const [department, view] = button.dataset.navAction.split(':');
+      button.textContent = button.hasAttribute('data-report-department')
+        ? t('departmentTitle').replace('{department}', department)
+        : t('view.' + view);
+    });
     renderReportContent(reportsStore.value);
   });
   document.addEventListener('vertex:workspace', (event) => {
