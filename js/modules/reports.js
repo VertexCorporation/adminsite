@@ -36,7 +36,7 @@ export function initReportsModule() {
   renderNavigation();
   document.getElementById('nav-sub-reports').addEventListener('click', (event) => {
     const toggle = event.target.closest('[data-report-department]');
-    if (!toggle || toggle.getAttribute('aria-expanded') !== 'true') return;
+    if (!event.isTrusted || !toggle || toggle.getAttribute('aria-expanded') !== 'true') return;
     event.preventDefault();
     event.stopPropagation();
     expandDepartment('');

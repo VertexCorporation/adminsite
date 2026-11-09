@@ -16,7 +16,7 @@ const server=http.createServer((request,response)=>{
   const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',error=>errors.push(error.message));await page.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
   await page.goto(base+'/?access='+access+'&lang='+lang);await page.locator('#app-loader').waitFor({state:'detached'});
   await page.locator('.dock-btn[data-target="tab-reports"]').click();
-  const department=page.locator('[data-report-department="Array"]');await department.click();
+  const department=page.locator('[data-report-department="Array"]');if(await department.getAttribute('aria-expanded')!=='true')await department.click();
   await page.locator('#reports-content[aria-busy="false"]').waitFor();assert.equal(await department.getAttribute('aria-expanded'),'true');
   assert.equal(await page.locator('#report-nav-Array button').count(),5);assert.equal(await page.locator('iframe').count(),0);
   if(access==='core')assert.equal(await page.locator('[data-report-department]').count(),10);else assert.equal(await page.locator('[data-report-department]').count(),1);
