@@ -23,7 +23,7 @@ function entryRows(data, canEdit) {
     data.entries
       .map(
         (entry) =>
-          `<article class="report-record"><header><strong>${esc(entry.personName)}</strong><span>${esc(label(entry.date))} · ${esc(status(entry.status))}</span></header><h4>${esc(entry.project)}</h4><p class="report-copy">${esc(entry.summary)}</p>${entry.next ? `<p class="report-copy report-next">${esc(entry.next)}</p>` : ''}${evidenceLink(entry.link)}${entry.source ? `<p class="form-hint">${esc(entry.source)}</p>` : ''}${canEdit ? `<button type="button" class="chrome-btn-outline" data-report-edit-entry="${esc(entry.id)}">${esc(__('common.edit'))}</button>` : ''}</article>`,
+          `<article class="report-record"><header><strong>${esc(entry.personName || t('unknownMember'))}</strong><span>${esc(label(entry.date))} · ${esc(status(entry.status))}</span></header><h4>${esc(entry.project)}</h4><p class="report-copy">${esc(entry.summary)}</p>${entry.next ? `<p class="report-copy report-next">${esc(entry.next)}</p>` : ''}${evidenceLink(entry.link)}${entry.source ? `<p class="form-hint">${esc(entry.source)}</p>` : ''}${canEdit ? `<button type="button" class="chrome-btn-outline" data-report-edit-entry="${esc(entry.id)}">${esc(__('common.edit'))}</button>` : ''}</article>`,
       )
       .join('') || `<p class="state-block">${esc(t('emptyEntries'))}</p>`
   );
@@ -34,7 +34,7 @@ function overview(data, week) {
   return `<div class="report-table-scroll"><table class="report-matrix"><thead><tr><th>${esc(t('person'))}</th>${dates.map((day) => `<th>${esc(label(day))}</th>`).join('')}</tr></thead><tbody>${data.members
     .map(
       (member) =>
-        `<tr><th>${esc(member.name)}</th>${dates
+        `<tr><th>${esc(member.name || t('unknownMember'))}</th>${dates
           .map((day) => {
             const entry = records.get(member.id + '|' + day);
             return `<td><span class="report-status" data-status="${esc(entry?.status || 'missing')}">${esc(member.joinedAt && day < member.joinedAt ? t('beforeJoining') : status(entry?.status || 'missing'))}</span></td>`;
@@ -45,7 +45,7 @@ function overview(data, week) {
 }
 function tasks(data, canEdit) {
   const all = [...new Map([...data.tasks, ...data.openTasks].map((task) => [task.id, task])).values()],
-    members = new Map(data.members.map((member) => [member.id, member.name]));
+    members = new Map(data.members.map((member) => [member.id, member.name || t('unknownMember')]));
   return (
     all
       .map(
@@ -86,7 +86,7 @@ export function renderReportContent(state) {
     host.innerHTML = data.members
       .map(
         (member) =>
-          `<section class="report-person"><h3>${esc(member.name)}</h3>${entryRows({ ...data, entries: data.entries.filter((entry) => entry.memberId === member.id) }, canEdit)}</section>`,
+          `<section class="report-person"><h3>${esc(member.name || t('unknownMember'))}</h3>${entryRows({ ...data, entries: data.entries.filter((entry) => entry.memberId === member.id) }, canEdit)}</section>`,
       )
       .join('');
   if (state.view === 'tasks')
@@ -117,7 +117,7 @@ export function exportReport(state) {
   const entries = summary.entries.map((entry) =>
     [
       entry.date,
-      entry.personName,
+      entry.personName || t('unknownMember'),
       status(entry.status),
       entry.project,
       entry.summary,

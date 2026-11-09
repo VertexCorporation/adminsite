@@ -335,6 +335,8 @@ function initNavigation() {
   const restoreRoute = () => {
     const params = new URLSearchParams(location.search);
     const route = history.state?.vertexRoute || { panel: params.get('panel'), action: params.get('view') || '' };
+    if (route.panel === 'reports.workspace' && route.action.startsWith('Core:'))
+      route.action = route.action.replace(/^Core:/, 'Senatus:');
     if (route.panel === 'contributors.users') route.panel = 'users.directory';
     if (['contributors.vertexStatus', 'users.status', 'users.deleteAccount'].includes(route.panel))
       route.panel = 'users.status,users.deleteAccount';

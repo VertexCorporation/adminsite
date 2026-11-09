@@ -1,3 +1,17 @@
+export function reportDepartment(department) {
+  return department === 'Core' ? 'Senatus' : department;
+}
+export function reportDepartments(access, catalog) {
+  const own = reportDepartment(access.primaryDepartment || access.departments[0]);
+  const available = [...new Set((access.isCore ? catalog : access.departments).map(reportDepartment))];
+  return available
+    .filter((department) => catalog.includes(department) && department !== 'Core')
+    .sort((a, b) => {
+      if (a === own) return -1;
+      if (b === own) return 1;
+      return a.localeCompare(b, 'tr');
+    });
+}
 export function today() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Istanbul',

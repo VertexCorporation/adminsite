@@ -4,7 +4,7 @@ import { __, onLangChange, escapeHTML as esc, showToast, userErrorMessage } from
 import { captureSession, onSessionReset } from '../core/session.js';
 import { reportsStore, loadReportWeek, selectReportView } from '../stores/reportsStore.js';
 import { requestReportTask } from '../services/reportsService.js';
-import { monday, addDays, reportViews } from './reports/domain.js';
+import { monday, addDays, reportViews, reportDepartment, reportDepartments } from './reports/domain.js';
 import { renderReportContent, exportReport } from './reports/render.js';
 import { openReportEditor } from './reports/editor.js';
 const t = (key) => __('reports.' + key);
@@ -14,7 +14,7 @@ let expandedDepartment = '',
   week = monday();
 function renderNavigation() {
   const access = getCurrentUserAccess(),
-    departments = access.isCore ? PERMISSION_DEPARTMENTS : access.departments;
+    departments = reportDepartments(access, PERMISSION_DEPARTMENTS);
   const host = document.querySelector('#nav-sub-reports .sidebar-submenu-inner');
   host.innerHTML = departments
     .map(
@@ -69,10 +69,10 @@ export function initReportsModule() {
   });
   document.addEventListener('vertex:workspace', (event) => {
     if (!event.detail?.keys?.includes('reports.workspace')) return;
-    const [department, view = 'overview'] = String(event.detail.action || '').split(':');
+    const [requested, view = 'overview'] = String(event.detail.action || '').split(':');
+    const department = reportDepartment(requested);
     const access = getCurrentUserAccess();
-    if (!PERMISSION_DEPARTMENTS.includes(department) || (!access.isCore && !access.departments.includes(department)))
-      return;
+    if (!reportDepartments(access, PERMISSION_DEPARTMENTS).includes(department)) return;
     if (!reportViews.includes(view)) return;
     const changed = selectedDepartment !== department;
     selectedDepartment = department;

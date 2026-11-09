@@ -19,7 +19,7 @@ const server=http.createServer((request,response)=>{
   const department=page.locator('[data-report-department="Array"]');if(await department.getAttribute('aria-expanded')!=='true')await department.click();
   await page.locator('#reports-content[aria-busy="false"]').waitFor();assert.equal(await department.getAttribute('aria-expanded'),'true');
   assert.equal(await page.locator('#report-nav-Array button').count(),5);assert.equal(await page.locator('iframe').count(),0);
-  if(access==='core')assert.equal(await page.locator('[data-report-department]').count(),10);else assert.equal(await page.locator('[data-report-department]').count(),1);
+  if(access==='core'){assert.equal(await page.locator('[data-report-department]').count(),9);assert.deepEqual(await page.locator('[data-report-department]').evaluateAll(els=>els.map(el=>el.dataset.reportDepartment)),['Senatus','Aero','Array','Catalyst','Chroma','Curia','Envoy','Pulse','Tensor']);}else assert.equal(await page.locator('[data-report-department]').count(),1);
   await page.waitForFunction(()=>getComputedStyle(document.querySelector('#report-nav-Array')).opacity==='1');
   const bounds=await page.evaluate(()=>{
     const toggle=document.querySelector('[data-report-department="Array"]');
@@ -53,6 +53,7 @@ const server=http.createServer((request,response)=>{
   await page.locator('#reports-content[aria-busy="false"]').waitFor({timeout:10000});
   assert.equal(await page.locator('[data-nav-action="Array:weekly"]').getAttribute('aria-current'),'page');
   assert.equal(await page.locator('.report-stats').count(),1);
+  if(access==='core'){await page.goto(base+'/?access=core&lang='+nextLang+'&panel=reports.workspace&view=Core:weekly');await page.locator('#app-loader').waitFor({state:'detached'});await page.locator('#reports-content[aria-busy="false"]').waitFor();assert.equal(await page.locator('[data-nav-action="Senatus:weekly"]').getAttribute('aria-current'),'page');}
   assert.deepEqual(errors,[]);await page.close();console.log('Reports browser:',access,lang);
  }}finally{await browser.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});

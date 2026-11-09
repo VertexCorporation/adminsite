@@ -302,3 +302,31 @@ test('clearing the report calendar selects the current week without an invalid-d
     h.close();
   }
 });
+
+test('report menu places own department first, sorts the rest and uses Senatus for Core', async () => {
+  const h = harness();
+  try {
+    const { reportDepartments } = await h.load('js/modules/reports/domain.js');
+    const catalog = ['Tensor', 'Curia', 'Core', 'Senatus', 'Pulse', 'Chroma', 'Catalyst', 'Envoy', 'Aero', 'Array'];
+    assert.deepEqual(Array.from(reportDepartments({ isCore: true, departments: ['Core'] }, catalog)), [
+      'Senatus',
+      'Aero',
+      'Array',
+      'Catalyst',
+      'Chroma',
+      'Curia',
+      'Envoy',
+      'Pulse',
+      'Tensor',
+    ]);
+    assert.deepEqual(
+      Array.from(reportDepartments({ isCore: false, departments: ['Pulse', 'Array', 'Aero'] }, catalog)),
+      ['Pulse', 'Aero', 'Array'],
+    );
+    assert.deepEqual(Array.from(reportDepartments({ isCore: false, departments: ['Senatus', 'Core'] }, catalog)), [
+      'Senatus',
+    ]);
+  } finally {
+    h.close();
+  }
+});

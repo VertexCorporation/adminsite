@@ -81,7 +81,7 @@ export function openReportEditor(kind, entity) {
       form,
       'memberId',
       'reports.person',
-      state.data.members.map((member) => [member.id, member.name]),
+      state.data.members.map((member) => [member.id, member.name || t('unknownMember')]),
       entity?.memberId,
     );
     person.required = true;
@@ -123,7 +123,7 @@ export function openReportEditor(kind, entity) {
       form,
       'assignees',
       'reports.assignees',
-      state.data.members.map((member) => [member.id, member.name]),
+      state.data.members.map((member) => [member.id, member.name || t('unknownMember')]),
     );
     assignees.multiple = true;
     for (const option of assignees.options) option.selected = entity?.assignees?.includes(option.value) || false;
