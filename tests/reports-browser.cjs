@@ -32,6 +32,10 @@ const server=http.createServer((request,response)=>{
   assert.equal(await department.getAttribute('aria-expanded'),'true');
   assert.equal(await page.locator('#reports-new-task').isVisible(),access!=='member');
   if(access!=='member'){await page.locator('#reports-new-task').click();await page.locator('.report-editor [name="title"]').fill('Browser task');await page.locator('.report-editor [name="project"]').fill('Console');await page.locator('.report-editor [type="submit"]').click();await page.locator('.vx-modal').waitFor({state:'detached'});}
+  await page.reload();await page.locator('#app-loader').waitFor({state:'detached'});
+  await page.locator('#reports-content[aria-busy="false"]').waitFor({timeout:10000});
+  assert.equal(await page.locator('[data-nav-action="Array:weekly"]').getAttribute('aria-current'),'page');
+  assert.equal(await page.locator('.report-stats').count(),1);
   assert.deepEqual(errors,[]);await page.close();console.log('Reports browser:',access,lang);
  }}finally{await browser.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});

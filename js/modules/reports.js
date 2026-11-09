@@ -1,7 +1,7 @@
 import { getCurrentUserAccess } from './roles.js';
 import { PERMISSION_DEPARTMENTS } from '../core/permissionCatalog.js';
 import { __, onLangChange, escapeHTML as esc, showToast, userErrorMessage } from '../utils/ui.js';
-import { captureSession } from '../core/session.js';
+import { captureSession, onSessionReset } from '../core/session.js';
 import { reportsStore, loadReportWeek, selectReportView } from '../stores/reportsStore.js';
 import { requestReportTask } from '../services/reportsService.js';
 import { monday, addDays, reportViews } from './reports/domain.js';
@@ -26,6 +26,16 @@ function renderNavigation() {
 export function initReportsModule() {
   renderNavigation();
   reportsStore.subscribe(() => renderReportContent(reportsStore.value));
+  onSessionReset(() => {
+    const action = selectedDepartment + ':' + selectedView;
+    queueMicrotask(() => {
+      if (!document.querySelector('#tab-reports.active')) return;
+      const destination = [...document.querySelectorAll('#nav-sub-reports [data-nav-action]')].find(
+        (button) => button.dataset.navAction === action && !button.hidden,
+      );
+      destination?.click();
+    });
+  });
   document.addEventListener('vertex:access-changed', () => {
     selectedDepartment = '';
     selectedView = 'overview';

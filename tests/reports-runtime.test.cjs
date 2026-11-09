@@ -190,9 +190,15 @@ test('report rendering localizes both languages, escapes content and obeys serve
 });
 test('member navigation contains only assigned departments and nested report views', async () => {
   const nav = '<div class="nav-module"><div id="nav-sub-reports"><div class="sidebar-submenu-inner"></div></div></div>';
-  const h = harness(nav + reportHTML, {
+  let calls = 0;
+  const h = harness('<div id="tab-reports" class="active">' + nav + reportHTML + '</div>', {
     'js/modules/roles.js': { getCurrentUserAccess: () => ({ isCore: false, departments: ['Array'] }) },
-    'js/core/firebase.js': { consolePeopleCall: async () => ({ data: workspace() }) },
+    'js/core/firebase.js': {
+      consolePeopleCall: async () => {
+        calls++;
+        return { data: workspace() };
+      },
+    },
   });
   try {
     authorize(await h.load('js/core/session.js'));
@@ -219,6 +225,24 @@ test('member navigation contains only assigned departments and nested report vie
     lang.setLang('tr');
     assert.equal(selected.textContent, 'Haftalık rapor');
     assert.equal(h.document.querySelector('[aria-current="page"]'), selected);
+    h.document.querySelector('#nav-sub-reports').addEventListener('click', (event) => {
+      const action = event.target.dataset.navAction;
+      if (action)
+        h.document.dispatchEvent(
+          new h.window.CustomEvent('vertex:workspace', {
+            detail: { keys: ['reports.workspace'], action },
+          }),
+        );
+    });
+    const before = calls;
+    const session = await h.load('js/core/session.js');
+    session.updateSession({ uid: 'viewer', isCore: true, departments: ['Core'], permissionsRevision: 2 });
+    await new Promise(setImmediate);
+    await new Promise(setImmediate);
+    assert.equal(calls, before + 1);
+    const store = await h.load('js/stores/reportsStore.js');
+    assert.equal(store.reportsStore.value.view, 'weekly');
+    assert.equal(store.reportsStore.value.weekStart, '2026-11-02');
   } finally {
     h.close();
   }
