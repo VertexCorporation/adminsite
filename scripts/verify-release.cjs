@@ -15,6 +15,12 @@ for (const file of files) {
   if (!fs.readFileSync(path.join(root, file)).equals(fs.readFileSync(path.join(out, manifest.prefix, file))))
     throw Error('Stale release asset: ' + file);
 }
+if (
+  !fs
+    .readFileSync(path.join(root, 'firebase-config.json'))
+    .equals(fs.readFileSync(path.join(out, 'firebase-config.json')))
+)
+  throw Error('Missing or stale root startup configuration');
 for (const file of ['index.html', 'customer-activate.html']) {
   const html = fs.readFileSync(path.join(out, file), 'utf8');
   if (!html.includes(`name="vertex-release" content="${release}"`)) throw Error('Wrong HTML release');

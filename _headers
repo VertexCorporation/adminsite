@@ -19,3 +19,6 @@
   Cache-Control: no-cache
 /partials/*
   Cache-Control: no-cache
+
+/firebase-config.json
+  Cache-Control: no-cache

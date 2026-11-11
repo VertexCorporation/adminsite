@@ -20,7 +20,14 @@ for (const file of files) {
   fs.mkdirSync(path.dirname(target), { recursive: true });
   fs.copyFileSync(path.join(root, file), target);
 }
-for (const name of ['assets', '_headers', '_redirects', 'favicon.png', 'customer-activate.html']) {
+for (const name of [
+  'assets',
+  '_headers',
+  '_redirects',
+  'favicon.png',
+  'customer-activate.html',
+  'firebase-config.json',
+]) {
   const source = path.join(root, name);
   if (fs.existsSync(source))
     fs.cpSync(source, path.join(out, name), {
