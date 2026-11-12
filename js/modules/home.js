@@ -4,8 +4,19 @@ import { displayDepartmentName } from '../utils/departments.js';
 import { getEffectivePanelLevel, isPanelAdmin } from './roles.js';
 import { icon } from '../utils/icons.js';
 
-const MODULE_IDS = ['users', 'origin', 'contributors', 'models', 'publications', 'subscriptions', 'scene', 'system'];
+const MODULE_IDS = [
+  'users',
+  'origin',
+  'contributors',
+  'models',
+  'publications',
+  'subscriptions',
+  'scene',
+  'legal',
+  'system',
+];
 const ICONS = {
+  legal: 'article',
   origin: 'crown',
   users: 'users-group',
   publications: 'news',
@@ -134,6 +145,7 @@ function copy() {
     modulesLead: __('homeCopy.modulesLead'),
     noModules: __('homeCopy.noModules'),
     modules: {
+      legal: [__('legal.title'), __('legal.description')],
       contributors: [__('homeCopy.modules.contributors.0'), __('homeCopy.modules.contributors.1')],
       models: [__('homeCopy.modules.models.0'), __('homeCopy.modules.models.1')],
       news: [__('homeCopy.modules.news.0'), __('homeCopy.modules.news.1')],

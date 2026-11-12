@@ -1,3 +1,4 @@
+import legal from './tr/legal.js';
 import common from './tr/common.js';
 import models from './tr/models.js';
 import people from './tr/people.js';
@@ -31,6 +32,7 @@ import uiTeam from './tr/ui-team.js';
 import uiUsers from './tr/ui-users.js';
 
 export default Object.freeze({
+  ...legal,
   ...common,
   ...models,
   ...people,

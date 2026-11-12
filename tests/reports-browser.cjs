@@ -18,7 +18,7 @@ const server=http.createServer((request,response)=>{
   await page.locator('.dock-btn[data-target="tab-reports"]').click();
   const department=page.locator('[data-report-department="Array"]');if(await department.getAttribute('aria-expanded')!=='true')await department.click();
   await page.locator('#reports-content[aria-busy="false"]').waitFor();assert.equal(await department.getAttribute('aria-expanded'),'true');
-  assert.equal(await page.locator('#report-nav-Array button').count(),5);assert.equal(await page.locator('iframe').count(),0);
+  assert.equal(await page.locator('#report-nav-Array button').count(),5);assert.equal(await page.locator('#tab-reports iframe').count(),0);
   if(access==='core'){assert.equal(await page.locator('[data-report-department]').count(),9);assert.deepEqual(await page.locator('[data-report-department]').evaluateAll(els=>els.map(el=>el.dataset.reportDepartment)),['Senatus','Aero','Array','Catalyst','Chroma','Curia','Envoy','Pulse','Tensor']);}else assert.equal(await page.locator('[data-report-department]').count(),1);
   await page.waitForFunction(()=>getComputedStyle(document.querySelector('#report-nav-Array')).opacity==='1');
   const bounds=await page.evaluate(()=>{

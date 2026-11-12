@@ -81,6 +81,11 @@ export const PERMISSION_CATEGORIES = [
     screens: [{ id: 'workspace', key: 'reports.workspace', scopes: ['reports.workspace'] }],
   },
   {
+    id: 'legal',
+    key: 'legal.title',
+    screens: [{ id: 'documents', key: 'legal.documents', scopes: ['legal.documents'], coreOnly: true }],
+  },
+  {
     id: 'system',
     key: 'catalog.system',
     screens: [

@@ -61,9 +61,10 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   assert.equal(await page.locator('[data-permission-panel]').count(),0);
   assert.equal(await page.locator('#permission-save-status,.permission-history-trigger').count(),0);
   const categories=await page.locator('.dept-perms-header .dept-perm-th').allTextContents();
-  assert.deepEqual(categories,['Users','Origin','Applicants','Services','Publications','Subscriptions','Stage','Reports','System']);
+  assert.deepEqual(categories,['Users','Origin','Applicants','Services','Publications','Subscriptions','Stage','Reports','Legal','System']);
   assert.equal(await page.locator('[data-dept=Core][data-category=contributors]').isDisabled(),true);
   assert.equal(await page.locator('[data-dept=Senatus][data-category=users]').isDisabled(),true);
+  assert.equal(await page.locator('[data-dept=Senatus][data-category=legal]').isDisabled(),true);
   await capture('permissions-1440-dark');
   const applications=page.locator('[data-dept=Senatus][data-category=contributors]');
   await applications.click();
@@ -74,7 +75,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   await page.waitForFunction(()=>document.querySelector('#dept-permissions-container')?.dataset.saveState==='failed');
   assert.equal(await applications.getAttribute('data-level'),before);
   failPermissions(false);
-  note('Nine-category grid, Core locks, invisible save state and failed draft rollback');
+  note('Ten-category grid, Core locks, invisible save state and failed draft rollback');
   await page.locator('[data-screen-dept=Senatus][data-screen-category=publications]').click();
   assert.equal(await page.locator('.permission-screen-row').count(),7);
   await page.locator('[data-screen-id=news-editor]').click();
@@ -95,7 +96,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   await page.waitForFunction(()=>document.querySelector('#dept-permissions-container')?.dataset.saveState==='saved');
   const all=payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments.Senatus.panels;
   assert.equal(all['news.editor'],'read');assert.equal(all['system.teamLog'],'read');
-  assert.equal(all['system.deptPerms'],'none');assert.equal(all['users.directory'],'none');
+  assert.equal(all['legal.documents'],'none');assert.equal(all['system.deptPerms'],'none');assert.equal(all['users.directory'],'none');
   assert.equal(Object.keys(all).some(key=>key.endsWith('.*')),false);
   note('Screen overrides use current pages; category presets are left aligned and cannot grant Core-only scopes');
   for(const key of ['permissions','departments','verification','server','export']) {

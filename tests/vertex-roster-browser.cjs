@@ -13,12 +13,14 @@ const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet
 const page=await browser.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|\[AUTH\] Login failed auth\/(?:invalid-credential|too-many-requests|network-request-failed)|Fixture unavailable|Mock delivery outcome uncertain|Fixture permission rejection|Fixture verification unavailable|Fixture maintenance unavailable|400 \(Bad Request\)|functions\/failed-precondition|\[CERTIFICATES\]/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
 if(process.env.VERTEX_TRACE)await page.context().tracing.start({screenshots:true,snapshots:true,sources:true});
 await page.addInitScript(()=>{
+ if (window === window.top) {
  localStorage.setItem('siteLang','en');
  const snapshot={docs:[],empty:true,exists:false,data:()=>({}),forEach:()=>{}};
  const chain={orderBy:()=>chain,where:()=>chain,limit:()=>chain,doc:()=>chain,get:async()=>snapshot,onSnapshot:fn=>{setTimeout(()=>fn(snapshot),0);return ()=>{};}};
  const user={uid:'admin',email:'admin@example.invalid',displayName:'Local Admin',getIdTokenResult:async()=>({claims:window.__testClaims || {admin:true}}),getIdToken:async()=>'test-only',updateProfile:async()=>{}};
  const listeners=[];const auth={currentUser:user,onAuthStateChanged:fn=>{listeners.push(fn);setTimeout(()=>fn(user),10);return ()=>{};},signOut:async()=>{auth.currentUser=null;listeners.forEach(fn=>fn(null));},signInWithEmailAndPassword:async()=>{if(window.__testAuthError)throw Object.assign(new Error('Private authentication detail'),{code:window.__testAuthError});auth.currentUser=user;listeners.forEach(fn=>fn(user));}};
  window.firebase={apps:[],initializeApp:()=>{},auth:()=>auth,firestore:()=>({collection:()=>chain}),storage:()=>({}),functions:()=>({}),appCheck:()=>({activate:()=>{},getToken:async()=>({token:'fixture-app-check'})}),app:()=>({functions:()=>({httpsCallable:()=>async()=>({data:{}})})})};
+ }
 });
 await page.route('**/*',async route=>{
  const url=new URL(route.request().url());
