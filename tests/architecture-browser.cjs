@@ -36,7 +36,8 @@ const server = http.createServer((req, res) => {
             await page.goto(base + '/?lang=' + lang);
             await page.locator('#app-loader').waitFor({state: 'detached'});
             assert.equal(await page.locator('template[data-fragment]').count(), 0);
-            assert.equal(await page.locator('.tab-panel').count(), 12);
+            assert.equal(await page.locator('.tab-panel').count(), 13);
+            assert.equal(await page.locator('#tab-legal [data-panel="legal.documents"]').count(), 1);
             assert.equal(await page.locator('html').getAttribute('lang'), lang);
             await page.locator('.dock-btn[data-target="tab-models"]').click();
             await page.locator('#manual-models-list-container .model-item').waitFor();
