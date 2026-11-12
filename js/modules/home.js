@@ -4,7 +4,17 @@ import { displayDepartmentName } from '../utils/departments.js';
 import { getEffectivePanelLevel, isPanelAdmin } from './roles.js';
 import { icon } from '../utils/icons.js';
 
-const MODULE_IDS = ['users', 'origin', 'contributors', 'models', 'publications', 'subscriptions', 'scene', 'legal', 'system'];
+const MODULE_IDS = [
+  'users',
+  'origin',
+  'contributors',
+  'models',
+  'publications',
+  'subscriptions',
+  'scene',
+  'legal',
+  'system',
+];
 const ICONS = {
   legal: 'article',
   origin: 'crown',
