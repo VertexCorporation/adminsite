@@ -1,3 +1,4 @@
+import { getEffectivePanelLevel } from './roles.js';
 import { legalCall } from '../services/legalService.js';
 import { captureSession, sessionIsCurrent, onSessionReset } from '../core/session.js';
 import { __, onLangChange, userErrorMessage } from '../utils/ui.js';
@@ -10,6 +11,7 @@ let documents = [],
   serial = 0,
   cursor = null;
 const el = (name) => document.getElementById('legal-' + name);
+const canEdit = () => getEffectivePanelLevel('legal.documents') === 'write';
 const dirty = () =>
   current &&
   (el('title').value !== (current.draft || current.published).title ||
@@ -21,12 +23,12 @@ function status(key, error = false) {
 function lock(value) {
   busy = value;
   for (const name of ['save', 'publish', 'refresh', 'title', 'html', 'note'])
-    el(name).disabled = value || (!current && name !== 'refresh');
+    el(name).disabled = value || (!current && name !== 'refresh') || (name !== 'refresh' && !canEdit());
   el('publish').disabled ||= !current?.draft || dirty();
   el('history')
     .querySelectorAll('button')
     .forEach((button) => {
-      button.disabled = value;
+      button.disabled = value || !canEdit();
     });
 }
 function preview(html) {
@@ -144,7 +146,7 @@ async function refresh() {
   }
 }
 async function mutate(action, extra = {}) {
-  if (!current || busy) return;
+  if (!current || busy || !canEdit()) return;
   if (action === 'publish') {
     if (dirty() || !el('note').value.trim()) {
       status('legal.publishHelp', true);
@@ -157,7 +159,7 @@ async function mutate(action, extra = {}) {
     !(await confirmDialog(() => ({ title: __('legal.restore'), body: __('legal.restoreConfirm') })))
   )
     return;
-  if (!current || busy) return;
+  if (!current || busy || !canEdit()) return;
   const token = captureSession(),
     id = current.id;
   lock(true);
@@ -205,7 +207,7 @@ async function loadHistory(more) {
       button.type = 'button';
       button.className = 'chrome-btn-outline';
       button.textContent = __('legal.restore');
-      button.disabled = busy;
+      button.disabled = busy || !canEdit();
       button.onclick = () => mutate('restore', { version: version.version });
       row.append(label, button);
       el('history').append(row);

@@ -95,7 +95,6 @@ export function getEffectivePanelLevel(panelKey) {
   if (currentUser.isAdmin) return 'write';
   if (panelKey === 'reports.workspace') return currentUser.departments.length ? 'read' : 'none';
   if (
-    panelKey.startsWith('legal.') ||
     panelKey.startsWith('origin.') ||
     panelKey === 'models.origin' ||
     panelKey.startsWith('users.') ||

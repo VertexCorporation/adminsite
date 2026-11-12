@@ -83,7 +83,7 @@ export const PERMISSION_CATEGORIES = [
   {
     id: 'legal',
     key: 'legal.title',
-    screens: [{ id: 'documents', key: 'legal.documents', scopes: ['legal.documents'], coreOnly: true }],
+    screens: [{ id: 'documents', key: 'legal.documents', scopes: ['legal.documents'] }],
   },
   {
     id: 'system',

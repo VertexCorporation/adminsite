@@ -4,10 +4,11 @@ const {harness}=require('./helpers/module-harness.cjs');
 const {JSDOM}=require('jsdom');
 const tick=()=>new Promise(r=>setTimeout(r,0));
 const published={title:'Current legal text',html:'<h1>Current legal text</h1><p>Published clauses.</p>',version:0};
-function fixture(){
+function fixture(level="write"){
  let reset,access=true,state={id:'vertex-terms--tr',product:'vertex',locale:'tr',kind:'terms',revision:0,version:0,title:published.title,published:{...published},draft:null,sources:[{repository:'vertexite',path:'tr/hizmet-sartlari.html',url:'https://vertexishere.com/tr/hizmet-sartlari'}]};
  const calls=[];
  const h=harness(fs.readFileSync('partials/panels/legal.html','utf8'),{
+  'js/modules/roles.js':{getEffectivePanelLevel:()=>level},
   'js/core/firebase.js':{consolePeopleCall:async(name,data)=>{
    calls.push({name,data});assert.equal(name,'manageLegalDocuments');
    if(data.action==='list')return {data:{schemaVersion:1,documents:[state]}};
@@ -52,4 +53,18 @@ test('public reader keeps the exact source text and shows fallback notice on net
  w.fetch=async()=>{if(fail)throw Error('offline');return {ok:true,json:async()=>({schemaVersion:1,id:'another-id',html:'<h1>Wrong</h1>',version:1,hash:'a'.repeat(64)})};};
  try{w.eval(fs.readFileSync('scripts/legal/public-reader.js','utf8'));await tick();assert.equal(w.document.querySelector('[data-legal-document]').innerHTML,'<p>Original clauses</p>');assert.equal(w.document.querySelector('[data-legal-document]').dataset.legalFallback,'true');assert.match(w.document.querySelector('[role=status]').textContent,/ulaşılamadı/);}finally{w.close();}
  }
+});
+
+test('read-only legal access keeps document navigation and previews available while blocking mutations',async()=>{
+ const h=fixture('read');try{
+  const mod=await h.load('js/modules/legal.js');mod.initLegalModule();
+  h.document.dispatchEvent(new h.window.CustomEvent('vertex:workspace',{detail:{keys:['legal.documents']}}));await tick();
+  h.document.querySelector('#legal-list button').click();await tick();await tick();
+  for(const name of ['title','html','note','save','publish'])assert.equal(h.document.getElementById('legal-'+name).disabled,true,name);
+  assert.equal(h.document.querySelector('#legal-list button').disabled,false);
+  assert.equal(h.document.getElementById('legal-preview-published').disabled,false);
+  assert.equal(h.document.querySelector('#legal-history button').disabled,true);
+  h.document.getElementById('legal-save').dispatchEvent(new h.window.Event('click'));await tick();
+  assert(!h.calls.some(c=>['save','publish','restore'].includes(c.data.action)));
+ }finally{h.close();}
 });
