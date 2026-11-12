@@ -47,6 +47,7 @@ import { initTeamCardsPanel, loadTeamCards } from './modules/teamCards.js';
 import { updateGridVisibleCounts, initAdaptiveGrids } from './modules/views.js';
 import { initUserMenu } from './modules/userMenu.js';
 import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
+import { initLegalModule } from './modules/legal.js';
 import { initReportsModule } from './modules/reports.js';
 
 /**
@@ -92,6 +93,7 @@ export function startApp(firebaseConfig) {
     ['home', initHomeModule],
     ['system-sections', initSystemSections],
     ['reports', initReportsModule],
+    ['legal', initLegalModule],
     ['icons', initIcons],
     ['adaptive-grid', initAdaptiveGrids],
   ];

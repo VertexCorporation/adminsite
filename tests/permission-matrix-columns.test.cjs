@@ -10,7 +10,7 @@ const source=fs.readFileSync('js/core/permissionCatalog.js','utf8');
 const catalog=()=>import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 test('permission editor matches all current sidebar categories and every current screen',async()=>{
  const {PERMISSION_CATEGORIES:categories}=await catalog();
- assert.deepEqual(categories.map(c=>c.id),['users','origin','contributors','models','publications','subscriptions','scene','reports','system']);
+ assert.deepEqual(categories.map(c=>c.id),['users','origin','contributors','models','publications','subscriptions','scene','reports','legal','system']);
  const scopes=new Set(categories.flatMap(c=>c.screens.flatMap(s=>s.scopes)));
  const nav=[...html.matchAll(/data-nav-panel\s*=\s*"([^"]+)"/g)].flatMap(m=>m[1].split(','));
  assert.deepEqual([...scopes].sort(),[...new Set(nav)].sort());

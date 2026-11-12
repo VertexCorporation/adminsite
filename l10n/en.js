@@ -1,3 +1,4 @@
+import legal from './en/legal.js';
 import common from './en/common.js';
 import models from './en/models.js';
 import people from './en/people.js';
@@ -31,6 +32,7 @@ import uiTeam from './en/ui-team.js';
 import uiUsers from './en/ui-users.js';
 
 export default Object.freeze({
+  ...legal,
   ...common,
   ...models,
   ...people,
