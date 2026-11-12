@@ -55,3 +55,10 @@ test('custom category levels and screen edits cannot modify Core-only scopes',as
 
 
 test('Origin operations and finance are Core-only in every department',async()=>{const m=await catalog();const screens=[...m.PERMISSION_CATEGORIES.find(c=>c.id==='origin').screens,m.PERMISSION_CATEGORIES.find(c=>c.id==='models').screens.find(s=>s.id==='origin-finance')];for(const screen of screens){assert.equal(screen.coreOnly,true);for(const department of m.PERMISSION_DEPARTMENTS.filter(d=>d!=='Core'))assert.equal(m.screenPermissionLevel({[department]:{panels:Object.fromEntries(screen.scopes.map(s=>[s,'write']))}},department,screen),'none');}});
+
+test('Legal is configurable in the permission matrix and preserves Curia read-only visibility',async()=>{
+ const {PERMISSION_CATEGORIES:categories,normalizeScreenPermissions,screenPermissionLevel}=await catalog();
+ const screen=categories.find(c=>c.id==='legal').screens[0];assert.notEqual(screen.coreOnly,true);
+ const matrix=normalizeScreenPermissions({Curia:{panels:{'legal.documents':'read'}},Senatus:{panels:{'legal.documents':'none'}}});
+ assert.equal(screenPermissionLevel(matrix,'Curia',screen),'read');assert.equal(screenPermissionLevel(matrix,'Senatus',screen),'none');assert.equal(screenPermissionLevel(matrix,'Core',screen),'write');
+});

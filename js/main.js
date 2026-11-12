@@ -503,7 +503,7 @@ function applyPanelGate(isAdmin) {
     } else {
       el.style.display = '';
       // Salt-okunur kartlar: içerik görünür, düzenleme öğeleri CSS ile gizli.
-      const managedByFeature = el.dataset.panel === 'reports.workspace';
+      const managedByFeature = ['reports.workspace', 'legal.documents'].includes(el.dataset.panel);
       el.classList.toggle('panel-readonly', level !== 'write' && !managedByFeature);
       if (level !== 'write' && !managedByFeature) disableReadOnlyControls(el);
     }
