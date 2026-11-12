@@ -13,6 +13,7 @@ const types={merit:{en:'Merit',tr:'Liyakat'},tenacity:{en:'Tenacity',tr:'Dirayet
 const page=await browser.newPage();page.on('response',response=>{if(response.status()===404)console.error('MISSING_RESOURCE',response.url());});page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR:',e.message);});page.on('console',m=>{if(m.type()==='error'){if(!/503|500|\[AUTH\] Login failed auth\/(?:invalid-credential|too-many-requests|network-request-failed)|Fixture unavailable|Mock delivery outcome uncertain|Fixture permission rejection|Fixture verification unavailable|Fixture maintenance unavailable|400 \(Bad Request\)|functions\/failed-precondition|\[CERTIFICATES\]|\[CONSOLE_OPERATION\] \{operation: firebase\.callable, function: (?:getVertexContributors|sendTargetedNotification|toggleContributorVerification|getServerStatus|saveDepartmentPermissions), code: functions\/(?:unavailable|internal), category: (?:transport|server)/.test(m.text()))consoleErrors.push(m.text());console.error('CONSOLE:',m.text());}});page.setDefaultTimeout(12000);
 if(process.env.VERTEX_TRACE)await page.context().tracing.start({screenshots:true,snapshots:true,sources:true});
 await page.addInitScript(()=>{
+ if (window === window.top) {
  localStorage.setItem('siteLang','en');
  const snapshot={docs:[],empty:true,exists:false,data:()=>({}),forEach:()=>{}};
  // Seed a real policy fixture; production never invents write permissions.
@@ -53,6 +54,7 @@ await page.addInitScript(()=>{
    }
    return {data:payload.result};
  }})})};
+ }
 });
 await page.route('**/*',async route=>{
  const url=new URL(route.request().url());
