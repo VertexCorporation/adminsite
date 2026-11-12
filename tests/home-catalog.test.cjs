@@ -11,3 +11,15 @@ test('home renders all sixteen technology assets and four products in TR and EN'
 test('department guidance follows assigned departments and logout clears private identity',async()=>{
  const h=homeHarness();try{const home=await h.load('js/modules/home.js');home.initHomeModule();home.updateHome({displayName:'Private Name'},false,['Array']);const text=h.document.getElementById('home-root').textContent;assert(text.includes('Array'));assert(!text.includes('Senatus'));home.updateHome(null,false,[]);assert(!h.document.getElementById('home-root').textContent.includes('Private Name'));}finally{h.close();}
 });
+
+test('Core home renders every authorized module including Legal without breaking sign-in',async()=>{
+ const navigation=fs.readFileSync('partials/navigation.html','utf8');
+ const h=harness(navigation+html,{'js/modules/roles.js':{getEffectivePanelLevel:()=> 'write',isPanelAdmin:()=>true}});
+ try{const home=await h.load('js/modules/home.js'),lang=await h.load('js/lang.js');home.initHomeModule();
+  for(const locale of ['en','tr']){lang.setLang(locale);home.updateHome({displayName:'Core User'},true,['Core']);
+   const names=[...h.document.querySelectorAll('.home-module-name')].map(n=>n.textContent);
+   assert(names.includes(locale==='tr'?'Hukuk':'Legal'));assert.equal(names.length,9);
+   assert(h.document.querySelector('.home-title').textContent.includes('Core'));
+  }
+ }finally{h.close();}
+});

@@ -145,6 +145,7 @@ function copy() {
     modulesLead: __('homeCopy.modulesLead'),
     noModules: __('homeCopy.noModules'),
     modules: {
+      legal: [__('legal.title'), __('legal.description')],
       contributors: [__('homeCopy.modules.contributors.0'), __('homeCopy.modules.contributors.1')],
       models: [__('homeCopy.modules.models.0'), __('homeCopy.modules.models.1')],
       news: [__('homeCopy.modules.news.0'), __('homeCopy.modules.news.1')],
