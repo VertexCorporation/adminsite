@@ -40,6 +40,11 @@ const server=http.createServer((req,res)=>{
   for(const width of [390,768,1460])for(const theme of ['light','dark']){
    await page.setViewportSize({width,height:1000});await page.evaluate(t=>document.documentElement.dataset.theme=t,theme);
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),width+' '+theme);
+   for(const selector of ['#legal-product','#legal-locale']){
+    await page.locator(selector).focus();
+    const style=await page.locator(selector).evaluate(el=>{const s=getComputedStyle(el);return {appearance:s.appearance,padding:parseFloat(s.paddingInlineEnd),image:s.backgroundImage,position:s.backgroundPosition};});
+    assert.equal(style.appearance,'none');assert(style.padding>=44);assert.notEqual(style.image,'none');assert(style.position.includes('16px'));
+   }
    await page.screenshot({path:'/tmp/legal-workspace-'+width+'-'+theme+'.png',fullPage:true});
   }
   assert.deepEqual(errors,[]);console.log('PASS grouped navigation, console language, one-call opening, Markdown preview, lazy history and 6 responsive theme layouts');
