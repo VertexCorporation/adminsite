@@ -7,6 +7,9 @@
 // gerçek "filled" sürümü bulunan ikonlarda kullanılır (ör. award).
 
 const PATHS = {
+  'file-analytics':
+    '<path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /><path d="M9 17l0 -5" /><path d="M12 17l0 -1" /><path d="M15 17l0 -3" />',
+
   crown: '\n  <path d="M12 6l4 6l5 -4l-2 10h-14l-2 -10l5 4l4 -6" />\n',
   'users-group':
     '\n  <path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />\n  <path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1" />\n  <path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />\n  <path d="M17 10h2a2 2 0 0 1 2 2v1" />\n  <path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />\n  <path d="M3 13v-1a2 2 0 0 1 2 -2h2" />\n',

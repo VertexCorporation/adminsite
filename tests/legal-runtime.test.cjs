@@ -55,7 +55,7 @@ test('language picker stays inside one document, follows console language and au
 });
 test('shimmer replaces loading copy and late results cannot repopulate a logged-out session',async()=>{
  let release;const gate=new Promise(r=>release=r);const h=fixture('write',{defer:async(_name,data)=>{if(data.action==='catalog')await gate;}});try{
- const mod=await h.load('js/modules/legal.js');mod.initLegalModule();h.document.dispatchEvent(new h.window.CustomEvent('vertex:workspace',{detail:{keys:['legal.documents']}}));await tick();assert(h.document.querySelector('#legal-list .skeleton'));assert.equal(h.document.getElementById('legal-status').textContent,'');h.reset();release();await tick();await tick();assert.equal(h.document.getElementById('legal-list').children.length,0);assert.equal(h.document.getElementById('legal-detail').hidden,true);
+ const mod=await h.load('js/modules/legal.js');mod.initLegalModule();h.document.dispatchEvent(new h.window.CustomEvent('vertex:workspace',{detail:{keys:['legal.documents']}}));await tick();assert(h.document.querySelector('#legal-list .skeleton'));assert.equal(h.document.getElementById('legal-detail-skeleton').hidden,false);assert.equal(h.document.getElementById('legal-status').textContent,'');h.reset();release();await tick();await tick();assert.equal(h.document.getElementById('legal-list').children.length,0);assert.equal(h.document.getElementById('legal-detail').hidden,true);
  }finally{release();h.close();}
 });
 test('READ retains navigation/preview and blocks saving, publishing and persistent translation',async()=>{

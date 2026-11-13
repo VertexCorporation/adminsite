@@ -3,7 +3,7 @@ export default {
   'legal.search': 'Search documents',
   'legal.product': 'Product',
   'legal.locale': 'Language',
-  'legal.documents': 'Legal documents',
+  'legal.documents': 'Legal Documents',
   'legal.documentTitle': 'Document title',
   'legal.html': 'Document text (HTML)',
   'legal.save': 'Save draft',
