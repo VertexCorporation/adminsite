@@ -62,3 +62,11 @@ test('Legal is configurable in the permission matrix and preserves Curia read-on
  const matrix=normalizeScreenPermissions({Curia:{panels:{'legal.documents':'read'}},Senatus:{panels:{'legal.documents':'none'}}});
  assert.equal(screenPermissionLevel(matrix,'Curia',screen),'read');assert.equal(screenPermissionLevel(matrix,'Senatus',screen),'none');assert.equal(screenPermissionLevel(matrix,'Core',screen),'write');
 });
+test('Legal cannot be opened for another department through wildcards, presets or explicit writes',async()=>{
+ const m=await catalog(),screen=m.PERMISSION_CATEGORIES.find(c=>c.id==='legal').screens[0];
+ for(const dept of m.PERMISSION_DEPARTMENTS.filter(d=>!['Core','Curia'].includes(d))){
+  const matrix=m.normalizeScreenPermissions({[dept]:{panels:{'legal.*':'write','legal.documents':'write'}}});
+  assert.equal(matrix[dept].panels['legal.documents'],'none');
+  m.setScreenPermission(matrix,dept,screen,'write');assert.equal(m.screenPermissionLevel(matrix,dept,screen),'none');
+ }
+});

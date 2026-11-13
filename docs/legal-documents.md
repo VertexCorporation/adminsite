@@ -69,3 +69,12 @@ A request has 1–15 distinct targets, at most four provider requests in flight,
 Separate transactional budgets use Europe/Istanbul days: per user 5 batches/minute, 25/day and 600,000 input code points/day; globally 100 batches/day and 2,000,000 code points/day. Accepted attempts consume budget even on provider failure. Quota documents have no client write path. No changes to biography quotas or deployment are required.
 
 Deploy only `manageLegalDocuments`, `getPublicLegalDocument` and `translateLegalDocument` through the selected-functions workflow, then deploy the console. Curia READ / Core WRITE remains unchanged. No existing policy is automatically published or rewritten by this rollout. Existing published language baselines appear immediately; missing locale previews are translated on demand, and full translation refreshes happen after saving a source.
+
+
+## Sensitive-area refinement (14 November 2026)
+
+Legal visibility now has an explicit Curia/Core membership boundary in both the runtime permission resolver and the console. Matrix wildcards, presets and permission-history restoration cannot grant this area to other departments. Curia retains configurable READ/WRITE within that boundary; live Core keeps administrative authority. Deploy manageLegalDocuments, translateLegalDocument, saveDepartmentPermissions and restoreDepartmentPermissions for the gate and normalization change. Existing direct Firestore legal-document access stays denied.
+
+The editor selects the requested document immediately, permits a newer read selection while an older read is pending, and rejects stale responses. The shared read cache deduplicates concurrent requests, retains at most 32 records for two minutes, uses session-specific keys and clears on logout/access changes and mutations. No persistent browser storage is used. History and read-only translation previews participate in the cache. Refresh bypasses it.
+
+Document/product labels use a vertical bar. The machine-preview status is plain text without a pill border. Disclosure arrows and body heights animate together, including a resize observer for asynchronously arriving history content. Preview switching uses sandboxed iframe double buffering so the old content remains visible until the new preview has loaded, then crossfades. Rapid transitions and logout cancel pending preview layers. Published history cards expose confirmed restore-as-draft actions for editors; restore does not publish automatically.

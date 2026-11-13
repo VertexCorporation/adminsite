@@ -64,7 +64,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   assert.deepEqual(categories,['Users','Origin','Applicants','Services','Publications','Subscriptions','Stage','Reports','Legal','System']);
   assert.equal(await page.locator('[data-dept=Core][data-category=contributors]').isDisabled(),true);
   assert.equal(await page.locator('[data-dept=Senatus][data-category=users]').isDisabled(),true);
-  assert.equal(await page.locator('[data-dept=Senatus][data-category=legal]').isDisabled(),false);
+  assert.equal(await page.locator('[data-dept=Senatus][data-category=legal]').isDisabled(),true);
   await capture('permissions-1440-dark');
   const applications=page.locator('[data-dept=Senatus][data-category=contributors]');
   await applications.click();
@@ -96,7 +96,7 @@ module.exports = async function precisionQA({page, selectTab, note, payloads, ca
   await page.waitForFunction(()=>document.querySelector('#dept-permissions-container')?.dataset.saveState==='saved');
   const all=payloads.filter(item=>item.name==='savedepartmentpermissions').at(-1).data.departments.Senatus.panels;
   assert.equal(all['news.editor'],'read');assert.equal(all['system.teamLog'],'read');
-  assert.equal(all['legal.documents'],'read');assert.equal(all['system.deptPerms'],'none');assert.equal(all['users.directory'],'none');
+  assert.equal(all['legal.documents'],'none');assert.equal(all['system.deptPerms'],'none');assert.equal(all['users.directory'],'none');
   assert.equal(Object.keys(all).some(key=>key.endsWith('.*')),false);
   note('Screen overrides use current pages; category presets are left aligned and cannot grant Core-only scopes');
   for(const key of ['permissions','departments','verification','server','export']) {

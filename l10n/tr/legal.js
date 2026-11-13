@@ -63,4 +63,8 @@ export default {
   'legal.kind.terms': 'Hizmet şartları',
   'legal.kind.team-contract': 'Ekip sözleşmesi',
   'legal.kind.doctrine': 'Vertex doktrini',
+  'legal.historyHelp':
+    'Bir sürümü geri getirmek, bu dildeki metni taslak olarak hazırlar. İnceleyip kaydettikten sonra ayrıca yayımlayabilirsiniz.',
+  'legal.noHistory': 'Bu dilde henüz yayımlanmış bir sürüm bulunmuyor.',
+  'legal.restricted': 'Bu alan yalnızca Curia ve Core üyelerine açıktır.',
 };

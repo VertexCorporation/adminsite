@@ -7,6 +7,7 @@ const published={title:'Current legal text',html:'<h1>Current legal text</h1><p>
 function fixture(level='write',options={}){
  let reset,access=true,lang='tr',languageChange;
  const states=new Map(['tr','en'].map(locale=>['vertex-terms--'+locale,{id:'vertex-terms--'+locale,groupId:'vertex-terms',product:'vertex',locale,kind:'terms',revision:0,version:0,published:{...published,markdown:'# Current legal text\n\nPublished clauses.'},draft:null,sources:[]}]));
+ if(options.multiple)states.set('cortex-privacy--tr',{...structuredClone(states.get('vertex-terms--tr')),id:'cortex-privacy--tr',groupId:'cortex-privacy',product:'cortex',kind:'privacy',published:{...published,title:'Cortex policy',markdown:'# Cortex policy'}});
  const calls=[],getState=id=>states.get(id)||{id,groupId:'vertex-terms',product:'vertex',kind:'terms',locale:id.split('--')[1],revision:0,version:0,published:null,draft:null,missing:true,sources:[]};
  const h=harness(fs.readFileSync('partials/panels/legal.html','utf8'),{
   'js/modules/roles.js':{getEffectivePanelLevel:()=>level},
@@ -14,7 +15,7 @@ function fixture(level='write',options={}){
    calls.push({name,data});if(options.defer)await options.defer(name,data);
    if(name==='translateLegalDocument')return {data:{translations:Object.fromEntries(data.targetLangs.map(locale=>[locale,{title:'Translated '+locale,markdown:'# Translation '+locale+'\n\nTranslated clauses.',html:'<h1>Translation '+locale+'</h1>',origin:'machine',translation:{sourceId:data.id}}])),failed:{},skipped:{}}};
    assert.equal(name,'manageLegalDocuments');
-   if(data.action==='catalog')return {data:{schemaVersion:2,documents:[{id:'vertex-terms',product:'vertex',kind:'terms',languages:['tr','en','de'].map(locale=>({id:'vertex-terms--'+locale,locale,available:locale!=='de',title:published.title}))}]}};
+   if(data.action==='catalog')return {data:{schemaVersion:2,documents:[{id:'vertex-terms',product:'vertex',kind:'terms',languages:['tr','en','de'].map(locale=>({id:'vertex-terms--'+locale,locale,available:locale!=='de',title:published.title}))},...(options.multiple?[{id:'cortex-privacy',product:'cortex',kind:'privacy',languages:[{id:'cortex-privacy--tr',locale:'tr',available:true}]}]:[])]}};
    const state=getState(data.id);
    if(data.action==='get')return {data:structuredClone(state)};
    if(data.action==='history')return {data:{versions:[],baseline:{version:0,note:'baseline'},nextCursor:null}};
@@ -31,6 +32,20 @@ function fixture(level='write',options={}){
  return {...h,calls,reset:()=>{access=false;reset();},state:()=>states.get('vertex-terms--tr'),language:value=>{lang=value;languageChange();}};
 }
 async function open(h){const mod=await h.load('js/modules/legal.js');mod.initLegalModule();h.document.dispatchEvent(new h.window.CustomEvent('vertex:workspace',{detail:{keys:['legal.documents']}}));for(let i=0;i<6;i++)await tick();}
+test('selection highlights immediately during loading and a slower previous request cannot replace the chosen document',async()=>{
+ let release;const gate=new Promise(r=>release=r);
+ const h=fixture('write',{multiple:true,defer:async(_name,data)=>{if(data.action==='get'&&data.id==='cortex-privacy--tr')await gate;}});
+ try{
+  await open(h);const buttons=h.document.querySelectorAll('#legal-list > button');assert.equal(buttons.length,2);
+  buttons[1].click();await tick();assert.equal(buttons[1].getAttribute('aria-pressed'),'true');assert.equal(buttons[0].getAttribute('aria-pressed'),'false');assert.equal(h.document.getElementById('legal-detail-skeleton').hidden,false);
+  buttons[0].click();await tick();await tick();release();await tick();await tick();
+  assert.equal(h.document.getElementById('legal-title').value,published.title);assert.equal(buttons[0].getAttribute('aria-pressed'),'true');
+  assert.equal(h.calls.filter(c=>c.data.action==='get'&&c.data.id==='vertex-terms--tr').length,1);
+ }finally{release();h.close();}
+});
+test('published history restores the selected language version through a confirmed draft operation',async()=>{
+ const h=fixture();try{await open(h);h.document.querySelector('#legal-history-section summary').click();await tick();await tick();const button=h.document.querySelector('#legal-history button');assert(button);button.click();for(let i=0;i<5;i++)await tick();const restore=h.calls.find(c=>c.data.action==='restore');assert.equal(restore.data.id,'vertex-terms--tr');assert.equal(restore.data.version,0);assert(!h.calls.some(c=>c.data.action==='publish'));}finally{h.close();}
+});
 test('grouped Markdown editor defaults to console language, saves then translates private drafts, lazy-loads history and clears session',async()=>{
  const h=fixture();try{
   await open(h);const get=id=>h.document.getElementById('legal-'+id);

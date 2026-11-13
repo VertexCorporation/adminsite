@@ -51,7 +51,7 @@ function levelFor(dept, panelKey) {
 function bestLevel(panelKey, deptList) {
   // READ is additive; WRITE requires every assigned department to allow it.
   const assigned = [...new Set(deptList || [])];
-  if (!assigned.length) return 'none';
+  if (!assigned.length || (panelKey === 'legal.documents' && !assigned.includes('Curia'))) return 'none';
   let anyRead = false,
     allWrite = true;
   for (const dept of assigned) {
@@ -301,13 +301,19 @@ function renderMatrixTable() {
             : 'read'
           : categoryPermissionLevel(departmentPermissions, dept.id, category);
       const locked =
-        category.id === 'reports' || dept.id === 'Core' || category.screens.every((screen) => screen.coreOnly);
+        category.id === 'reports' ||
+        dept.id === 'Core' ||
+        category.screens.every(
+          (screen) => screen.coreOnly || (screen.allowedDepartments && !screen.allowedDepartments.includes(dept.id)),
+        );
       const title =
-        category.id === 'reports'
-          ? __('reports.fixedPolicy')
-          : locked
-            ? __('people.admin_only')
-            : __('perms.cycle_hint');
+        category.id === 'legal' && dept.id !== 'Curia'
+          ? __('legal.restricted')
+          : category.id === 'reports'
+            ? __('reports.fixedPolicy')
+            : locked
+              ? __('people.admin_only')
+              : __('perms.cycle_hint');
       html += `<span class="perm-cell" role="cell" data-module-label="${__(category.key)}"><span class="permission-category-control"><button type="button" class="perm-cycle ${LEVEL_CLASS[level] || 'perm-mixed'}" data-dept="${dept.id}" data-category="${category.id}" data-level="${level}" ${locked ? 'disabled' : ''} aria-label="${__(dept.nameKey)} · ${__(category.key)}: ${levelLabel(level)}" title="${escapeText(title)}">${level === 'mixed' ? icon('adjustments', { size: 14 }) + '<span>' + __('perms.level_mixed') + '</span>' : cycleIcon(level)}</button>${!locked && category.screens.filter((screen) => !screen.coreOnly).length > 1 ? `<button type="button" class="permission-screens-trigger" data-screen-dept="${dept.id}" data-screen-category="${category.id}" aria-haspopup="dialog" aria-label="${__(dept.nameKey)} · ${__(category.key)} · ${__('perms.screens')}">${icon('chevron-down', { size: 14 })}</button>` : ''}</span></span>`;
     });
     html += `<span role="cell">${dept.id === 'Core' ? '' : `<button type="button" class="icon-action-btn perm-presets-trigger" data-preset-dept="${dept.id}" aria-haspopup="dialog" aria-label="${__(dept.nameKey)} · ${__('common.actions')}">${icon('dots')}</button>`}</span></div>`;

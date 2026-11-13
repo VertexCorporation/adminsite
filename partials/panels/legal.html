@@ -77,12 +77,15 @@
                   data-i18n="legal.previewPublished"
                 ></button>
               </div>
-              <iframe
-                id="legal-preview"
-                sandbox=""
-                referrerpolicy="no-referrer"
-                data-i18n-title="legal.preview"
-              ></iframe>
+              <div class="legal-preview-stage">
+                <iframe
+                  class="legal-preview-frame"
+                  id="legal-preview"
+                  sandbox=""
+                  referrerpolicy="no-referrer"
+                  data-i18n-title="legal.preview"
+                ></iframe>
+              </div>
             </div>
           </div>
           <div class="legal-publication">
@@ -92,6 +95,7 @@
           </div>
           <details id="legal-history-section">
             <summary data-i18n="legal.history"></summary>
+            <p class="legal-hint" data-i18n="legal.historyHelp"></p>
             <div id="legal-history"></div>
             <button id="legal-more" type="button" class="chrome-btn-outline" hidden="" data-i18n="legal.more"></button>
           </details>
