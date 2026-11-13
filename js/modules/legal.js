@@ -300,7 +300,8 @@ async function mutate(action, extra = {}) {
     id = current.id;
   lock(true);
   status('');
-  el('save').classList.add('legal-working');
+  const working = action === 'translate' ? 'translate' : action === 'publish' ? 'publish' : 'save';
+  el(working).classList.add('legal-working');
   try {
     if (action !== 'translate') {
       await legalCall(
@@ -350,7 +351,7 @@ async function mutate(action, extra = {}) {
     if (sessionIsCurrent(token)) {
       lock(false);
       renderList();
-      el('save').classList.remove('legal-working');
+      el(working).classList.remove('legal-working');
     }
   }
 }
@@ -467,7 +468,7 @@ export function initLegalModule() {
     loaded = busy = historyBusy = historyLoaded = false;
     el('list').replaceChildren();
     el('list').removeAttribute('aria-busy');
-    el('save').classList.remove('legal-working');
+    for (const name of ['save', 'publish', 'translate']) el(name).classList.remove('legal-working');
     el('translation-info').removeAttribute('aria-busy');
     setDetailLoading(false);
     el('preview').removeAttribute('srcdoc');
