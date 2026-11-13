@@ -3,6 +3,7 @@ import { legalCall } from '../services/legalService.js';
 import { renderLegalMarkdown } from '../services/legalMarkdown.js';
 import { captureSession, sessionIsCurrent, onSessionReset } from '../core/session.js';
 import { __, getLang, onLangChange, userErrorMessage } from '../utils/ui.js';
+import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from '../ui/surfaces.js';
 let documents = [],
   current = null,
@@ -13,18 +14,23 @@ let documents = [],
   historyLoaded = false,
   historyBusy = false;
 const cache = new Map();
+let listSignature = null;
 const el = (name) => document.getElementById('legal-' + name);
 const canEdit = () => getEffectivePanelLevel('legal.documents') === 'write';
 const content = () => current?.draft || current?.published;
 const dirty = () =>
   !!current && (el('title').value !== (content()?.title || '') || el('html').value !== (content()?.markdown || ''));
 const group = () => documents.find((row) => row.id === current?.groupId);
-const label = (row) => __('legal.kind.' + row.kind) + ' · ' + row.product.replaceAll('-', ' ');
+const titleCase = (text) =>
+  text.replace(/(^|\s)(\p{L})/gu, (_, space, letter) => space + letter.toLocaleUpperCase(getLang()));
+const productName = (product) => titleCase(product.replaceAll('-', ' '));
+const label = (row) => titleCase(__('legal.kind.' + row.kind)) + ' · ' + productName(row.product);
 function status(key, error = false) {
   el('status').textContent = key ? __(key) : '';
   el('status').dataset.error = String(error);
 }
 function skeleton(target, lines = 4) {
+  if (target === 'list') listSignature = null;
   el(target).replaceChildren();
   for (let i = 0; i < lines; i++) {
     const line = document.createElement('div');
@@ -55,9 +61,14 @@ function lock(value) {
     });
 }
 function setDetailLoading(value) {
-  el('detail-skeleton').hidden = !value;
-  el('detail').hidden = value || !current;
-  el('detail-skeleton').setAttribute('aria-busy', String(value));
+  const paint = () => {
+    el('detail-skeleton').hidden = !value;
+    el('detail').hidden = value || !current;
+    el('detail-skeleton').setAttribute('aria-busy', String(value));
+  };
+  if (!value && current && !el('detail-skeleton').hidden)
+    crossfade(el('detail').parentElement, paint, { duration: 240, preserveHeight: false });
+  else paint();
 }
 function preview(html) {
   el('preview').srcdoc =
@@ -83,37 +94,57 @@ function renderList() {
       (!el('product').value || row.product === el('product').value) &&
       [label(row), row.id, ...row.languages.map((l) => l.title)].join(' ').toLocaleLowerCase().includes(search),
   );
-  el('list').replaceChildren();
-  el('list').removeAttribute('aria-busy');
-  for (const row of rows) {
-    const button = document.createElement('button'),
-      title = document.createElement('strong'),
-      sub = document.createElement('span');
-    button.type = 'button';
-    title.textContent = label(row);
-    const drafts = row.languages.filter((l) => l.hasDraft).length;
-    sub.textContent =
-      row.languages.filter((l) => l.available).length +
-      ' ' +
-      __('legal.languages') +
-      (drafts ? ' · ' + drafts + ' ' + __('legal.draft') : '');
-    button.append(title, sub);
-    button.setAttribute('aria-pressed', String(current?.groupId === row.id));
-    button.disabled = busy;
-    button.onclick = () => selectDocument(row.id + '--' + getLang());
-    el('list').append(button);
+  const signature =
+    JSON.stringify(
+      rows.map((row) => [row.id, label(row), row.languages.map((lang) => [lang.available, lang.hasDraft])]),
+    ) +
+    __('legal.empty') +
+    __('legal.languages') +
+    __('legal.draft');
+  if (signature !== listSignature) {
+    const paint = () => {
+      el('list').replaceChildren();
+      el('list').removeAttribute('aria-busy');
+      for (const row of rows) {
+        const button = document.createElement('button'),
+          title = document.createElement('strong'),
+          sub = document.createElement('span');
+        button.type = 'button';
+        button.dataset.documentGroup = row.id;
+        title.textContent = label(row);
+        const drafts = row.languages.filter((l) => l.hasDraft).length;
+        sub.textContent =
+          row.languages.filter((l) => l.available).length +
+          ' ' +
+          __('legal.languages') +
+          (drafts ? ' · ' + drafts + ' ' + __('legal.draft') : '');
+        button.append(title, sub);
+        button.setAttribute('aria-pressed', String(current?.groupId === row.id));
+        button.disabled = busy;
+        button.onclick = () => selectDocument(row.id + '--' + getLang());
+        el('list').append(button);
+      }
+      if (!rows.length) {
+        const p = document.createElement('p');
+        p.textContent = __('legal.empty');
+        el('list').append(p);
+      }
+    };
+    if (el('list').querySelector('.skeleton')) crossfade(el('list'), paint, { duration: 240, preserveHeight: false });
+    else paint();
+    listSignature = signature;
   }
-  if (!rows.length) {
-    const p = document.createElement('p');
-    p.textContent = __('legal.empty');
-    el('list').append(p);
+  for (const button of el('list').querySelectorAll(':scope > button')) {
+    button.setAttribute('aria-pressed', String(current?.groupId === button.dataset.documentGroup));
+    button.disabled = busy;
   }
 }
+
 function filters() {
   const selected = el('product').value;
   el('product').replaceChildren(new Option(__('legal.all'), ''));
   for (const value of [...new Set(documents.map((row) => row.product))].sort())
-    el('product').add(new Option(value.replaceAll('-', ' '), value));
+    el('product').add(new Option(productName(value), value));
   el('product').value = selected;
 }
 function renderDetail() {
@@ -214,6 +245,7 @@ async function refresh() {
   lock(true);
   status('');
   skeleton('list', 8);
+  setDetailLoading(true);
   try {
     const result = await legalCall(
       'catalog',
@@ -234,6 +266,7 @@ async function refresh() {
     if (sessionIsCurrent(token)) {
       showError(error);
       el('list').replaceChildren();
+      setDetailLoading(false);
     }
   } finally {
     if (sessionIsCurrent(token)) {
@@ -461,6 +494,7 @@ export function initLegalModule() {
   });
   onSessionReset(() => {
     ++serial;
+    listSignature = null;
     clearTimeout(timer);
     cache.clear();
     documents = [];

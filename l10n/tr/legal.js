@@ -3,7 +3,7 @@ export default {
   'legal.search': 'Belge ara',
   'legal.product': 'Ürün',
   'legal.locale': 'Dil',
-  'legal.documents': 'Hukuki belgeler',
+  'legal.documents': 'Hukuki Belgeler',
   'legal.documentTitle': 'Belge başlığı',
   'legal.html': 'Belge metni (HTML)',
   'legal.save': 'Taslağı kaydet',
