@@ -1,8 +1,14 @@
 import { getEffectivePanelLevel } from './roles.js';
-import { legalCall } from '../services/legalService.js';
+import { legalCall, clearLegalCache, peekLegalDocument } from '../services/legalService.js';
 import { renderLegalMarkdown } from '../services/legalMarkdown.js';
 import { captureSession, sessionIsCurrent, onSessionReset } from '../core/session.js';
 import { __, getLang, onLangChange, userErrorMessage } from '../utils/ui.js';
+import {
+  showLegalPreview,
+  mountLegalDisclosures,
+  resetLegalPresentation,
+  closeLegalHistory,
+} from './legalPresentation.js';
 import { crossfade } from '../ui/transition.js';
 import { confirmDialog } from '../ui/surfaces.js';
 let documents = [],
@@ -13,7 +19,8 @@ let documents = [],
   cursor = null,
   historyLoaded = false,
   historyBusy = false;
-const cache = new Map();
+let pendingId = null,
+  mutating = false;
 let listSignature = null;
 const el = (name) => document.getElementById('legal-' + name);
 const canEdit = () => getEffectivePanelLevel('legal.documents') === 'write';
@@ -24,7 +31,7 @@ const group = () => documents.find((row) => row.id === current?.groupId);
 const titleCase = (text) =>
   text.replace(/(^|\s)(\p{L})/gu, (_, space, letter) => space + letter.toLocaleUpperCase(getLang()));
 const productName = (product) => titleCase(product.replaceAll('-', ' '));
-const label = (row) => titleCase(__('legal.kind.' + row.kind)) + ' · ' + productName(row.product);
+const label = (row) => titleCase(__('legal.kind.' + row.kind)) + ' | ' + productName(row.product);
 function status(key, error = false) {
   el('status').textContent = key ? __(key) : '';
   el('status').dataset.error = String(error);
@@ -70,15 +77,17 @@ function setDetailLoading(value) {
     crossfade(el('detail').parentElement, paint, { duration: 240, preserveHeight: false });
   else paint();
 }
-function preview(html) {
-  el('preview').srcdoc =
+function preview(html, animate = false) {
+  showLegalPreview(
     '<!doctype html><html lang="' +
-    (current?.locale || 'en') +
-    '" dir="' +
-    (current?.locale === 'ar' ? 'rtl' : 'ltr') +
-    '"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><style>body{font:16px/1.8 system-ui;padding:24px;overflow-wrap:anywhere;color:#202329;max-width:76ch;margin:auto}h1{font-size:26px}h2{font-size:22px}a{color:#2455a6}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:8px}blockquote{border-inline-start:3px solid #bbb;margin:16px 0;padding-inline-start:16px}</style>' +
-    (html || '') +
-    '</html>';
+      (current?.locale || 'en') +
+      '" dir="' +
+      (current?.locale === 'ar' ? 'rtl' : 'ltr') +
+      '"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><style>body{font:16px/1.8 system-ui;padding:24px;overflow-wrap:anywhere;color:#202329;max-width:76ch;margin:auto}h1{font-size:26px}h2{font-size:22px}a{color:#2455a6}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:8px}blockquote{border-inline-start:3px solid #bbb;margin:16px 0;padding-inline-start:16px}</style>' +
+      (html || '') +
+      '</html>',
+    animate,
+  );
 }
 function languageName(locale) {
   try {
@@ -119,8 +128,8 @@ function renderList() {
           __('legal.languages') +
           (drafts ? ' · ' + drafts + ' ' + __('legal.draft') : '');
         button.append(title, sub);
-        button.setAttribute('aria-pressed', String(current?.groupId === row.id));
-        button.disabled = busy;
+        button.setAttribute('aria-pressed', String((pendingId?.split('--')[0] || current?.groupId) === row.id));
+        button.disabled = mutating;
         button.onclick = () => selectDocument(row.id + '--' + getLang());
         el('list').append(button);
       }
@@ -135,8 +144,11 @@ function renderList() {
     listSignature = signature;
   }
   for (const button of el('list').querySelectorAll(':scope > button')) {
-    button.setAttribute('aria-pressed', String(current?.groupId === button.dataset.documentGroup));
-    button.disabled = busy;
+    button.setAttribute(
+      'aria-pressed',
+      String((pendingId?.split('--')[0] || current?.groupId) === button.dataset.documentGroup),
+    );
+    button.disabled = mutating;
   }
 }
 
@@ -188,16 +200,18 @@ async function mayDiscard() {
   return !dirty() || (await confirmDialog(() => ({ title: __('legal.discardTitle'), body: __('legal.discardBody') })));
 }
 async function selectDocument(id, approved = false, force = false) {
-  if (busy || (!approved && !(await mayDiscard()))) return false;
+  if (mutating || (!approved && !(await mayDiscard()))) return false;
   const request = ++serial,
     token = captureSession(),
     valid = () => request === serial && sessionIsCurrent(token);
+  const cached = !force && peekLegalDocument(id, token);
+  pendingId = id;
   lock(true);
+  renderList();
   status('');
-  setDetailLoading(true);
+  if (!cached || cached.missing) setDetailLoading(true);
   try {
-    let result =
-      !force && cache.get(id)?.expires > Date.now() ? cache.get(id).value : await legalCall('get', { id }, token);
+    let result = cached || (await legalCall('get', { id }, token));
     if (!valid()) return false;
     if (result.missing) {
       const row = documents.find((d) => d.id === result.groupId);
@@ -217,11 +231,11 @@ async function selectDocument(id, approved = false, force = false) {
     }
     if (!valid()) return false;
     current = result;
-    cache.set(id, { value: result, expires: Date.now() + 30000 });
+
     cursor = null;
     historyLoaded = false;
     historyBusy = false;
-    el('history-section').open = false;
+    closeLegalHistory();
     el('history').replaceChildren();
     el('more').hidden = true;
     renderDetail();
@@ -233,6 +247,7 @@ async function selectDocument(id, approved = false, force = false) {
     return false;
   } finally {
     if (valid()) {
+      pendingId = null;
       setDetailLoading(false);
       lock(false);
       renderList();
@@ -244,6 +259,7 @@ async function refresh() {
   const token = captureSession();
   lock(true);
   status('');
+  clearLegalCache();
   skeleton('list', 8);
   setDetailLoading(true);
   try {
@@ -256,8 +272,7 @@ async function refresh() {
     if (result.schemaVersion !== 2 || !Array.isArray(result.documents)) throw new Error('LEGAL_INVALID_RESPONSE');
     documents = result.documents;
     loaded = true;
-    cache.clear();
-    if (result.selected) cache.set(result.selected.id, { value: result.selected, expires: Date.now() + 30000 });
+
     filters();
     lock(false);
     renderList();
@@ -294,7 +309,6 @@ async function translateOthers(token) {
       token,
     );
     if (!sessionIsCurrent(token) || current?.id !== source.id) return;
-    cache.clear();
     for (const lang of row.languages)
       if (result.translations[lang.locale]) {
         lang.hasDraft = true;
@@ -331,6 +345,7 @@ async function mutate(action, extra = {}) {
   if (!current || busy || !canEdit()) return;
   const token = captureSession(),
     id = current.id;
+  mutating = true;
   lock(true);
   status('');
   const working = action === 'translate' ? 'translate' : action === 'publish' ? 'publish' : 'save';
@@ -360,9 +375,8 @@ async function mutate(action, extra = {}) {
           title: content()?.title,
           revision: current.revision,
         });
-      cache.delete(id);
       historyLoaded = false;
-      el('history-section').open = false;
+      closeLegalHistory();
       renderDetail();
       lock(true);
       renderList();
@@ -382,6 +396,7 @@ async function mutate(action, extra = {}) {
     if (sessionIsCurrent(token)) showError(error);
   } finally {
     if (sessionIsCurrent(token)) {
+      mutating = false;
       lock(false);
       renderList();
       el(working).classList.remove('legal-working');
@@ -389,7 +404,11 @@ async function mutate(action, extra = {}) {
   }
 }
 async function loadHistory(more) {
-  if (!current || current.ephemeral || historyBusy || (!more && historyLoaded)) return;
+  if (!current || historyBusy || (!more && historyLoaded)) return;
+  if (current.ephemeral) {
+    el('history').textContent = __('legal.noHistory');
+    return;
+  }
   const id = current.id,
     request = serial,
     token = captureSession();
@@ -399,27 +418,36 @@ async function loadHistory(more) {
   try {
     const data = await legalCall('history', { id, ...(more ? { after: cursor } : {}) }, token);
     if (!sessionIsCurrent(token) || request !== serial || current?.id !== id) return;
-    if (!more) el('history').replaceChildren();
-    for (const version of [...data.versions, ...(!data.nextCursor && data.baseline ? [data.baseline] : [])]) {
-      const row = document.createElement('div'),
-        label = document.createElement('span'),
-        button = document.createElement('button');
-      label.textContent =
-        __('legal.version') +
-        ' ' +
-        version.version +
-        ' · ' +
-        (version.publishedAt || __('legal.baseline')) +
-        ' · ' +
-        version.note;
-      button.type = 'button';
-      button.className = 'chrome-btn-outline';
-      button.textContent = __('legal.restore');
-      button.disabled = busy || !canEdit();
-      button.onclick = () => mutate('restore', { version: version.version });
-      row.append(label, button);
-      el('history').append(row);
-    }
+    const paint = () => {
+      if (!more) el('history').replaceChildren();
+      for (const version of [...data.versions, ...(!data.nextCursor && data.baseline ? [data.baseline] : [])]) {
+        const row = document.createElement('div'),
+          copy = document.createElement('div'),
+          title = document.createElement('strong'),
+          note = document.createElement('p'),
+          button = document.createElement('button');
+        row.className = 'legal-history-card';
+        copy.className = 'legal-history-copy';
+        title.textContent =
+          __('legal.version') +
+          ' ' +
+          version.version +
+          ' | ' +
+          (version.publishedAt ? new Date(version.publishedAt).toLocaleString(getLang()) : __('legal.baseline'));
+        note.textContent = version.note;
+        copy.append(title, note);
+        button.type = 'button';
+        button.className = 'chrome-btn-outline';
+        button.textContent = __('legal.restore');
+        button.disabled = busy || !canEdit();
+        button.onclick = () => mutate('restore', { version: version.version });
+        row.append(copy, button);
+        el('history').append(row);
+      }
+      if (!el('history').children.length) el('history').textContent = __('legal.noHistory');
+    };
+    if (!more) crossfade(el('history'), paint, { duration: 240, preserveHeight: false });
+    else paint();
     historyLoaded = true;
     cursor = data.nextCursor;
     el('more').hidden = !cursor;
@@ -456,6 +484,7 @@ function format(kind) {
 }
 export function initLegalModule() {
   if (!el('list')) return;
+  mountLegalDisclosures();
   el('search').addEventListener('input', renderList);
   el('product').addEventListener('change', renderList);
   el('locale').addEventListener('change', async () => {
@@ -466,8 +495,8 @@ export function initLegalModule() {
   el('save').onclick = () => mutate('save');
   el('publish').onclick = () => mutate('publish');
   el('translate').onclick = () => mutate('translate');
-  el('preview-draft').onclick = () => preview(renderLegalMarkdown(el('html').value));
-  el('preview-published').onclick = () => current?.published && preview(current.published.html);
+  el('preview-draft').onclick = () => preview(renderLegalMarkdown(el('html').value), true);
+  el('preview-published').onclick = () => current?.published && preview(current.published.html, true);
   el('more').onclick = () => loadHistory(true);
   el('history-section').addEventListener('toggle', () => {
     if (el('history-section').open) void loadHistory(false);
@@ -478,7 +507,7 @@ export function initLegalModule() {
       lock(busy);
       clearTimeout(timer);
       timer = setTimeout(() => {
-        if (current && !busy) preview(renderLegalMarkdown(el('html').value));
+        if (current && !busy) preview(renderLegalMarkdown(el('html').value), true);
       }, 200);
     });
   document.querySelectorAll('[data-legal-format]').forEach((button) => {
@@ -495,8 +524,11 @@ export function initLegalModule() {
   onSessionReset(() => {
     ++serial;
     listSignature = null;
+    pendingId = null;
+    mutating = false;
+    resetLegalPresentation();
     clearTimeout(timer);
-    cache.clear();
+    clearLegalCache();
     documents = [];
     current = null;
     loaded = busy = historyBusy = historyLoaded = false;

@@ -95,9 +95,8 @@
 }
 .legal-badge {
   display: inline-block;
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 4px 10px;
+  padding: 4px 0;
+  opacity: 0.65;
   font-size: 12px;
 }
 #legal-meta {
@@ -185,11 +184,21 @@
 .legal-preview-tabs {
   margin-top: 14px;
 }
-#legal-preview {
-  width: 100%;
+.legal-preview-stage {
+  position: relative;
   height: 590px;
+  isolation: isolate;
   border: 1px solid var(--border-color);
   border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
+.legal-preview-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
   background: white;
 }
 .legal-publication {
@@ -210,13 +219,66 @@
   min-width: 160px;
 }
 #legal-detail details {
-  border-top: 1px solid var(--border-color);
-  padding: 16px 0;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-block: 12px;
+  overflow: hidden;
 }
 #legal-detail summary {
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+}
+#legal-detail summary::-webkit-details-marker {
+  display: none;
+}
+#legal-detail summary::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-inline-end: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  flex: none;
+  margin-inline: 4px;
+}
+#legal-detail .is-expanded > summary::after {
+  transform: rotate(225deg);
+}
+.legal-disclosure-body {
+  overflow: hidden;
+  padding-inline: 18px;
+}
+.legal-disclosure-body > :last-child {
+  margin-bottom: 18px;
+}
+.legal-history-card {
+  padding: 14px;
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+.legal-history-copy {
+  flex: 1;
+  min-width: 160px;
+}
+.legal-history-copy strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+}
+.legal-history-copy p {
+  margin-top: 6px;
+  opacity: 0.7;
+  font-size: 13px;
+  overflow-wrap: anywhere;
 }
 .legal-sources {
   overflow-wrap: anywhere;
@@ -225,7 +287,7 @@
   font-size: 12px;
   margin-top: 16px;
 }
-#legal-history > div {
+#legal-history > .legal-history-card {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -294,7 +356,7 @@
   .legal-editor-grid {
     grid-template-columns: 1fr;
   }
-  #legal-preview {
+  .legal-preview-stage {
     height: 440px;
   }
 }

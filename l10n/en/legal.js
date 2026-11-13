@@ -63,4 +63,7 @@ export default {
   'legal.kind.terms': 'Terms of service',
   'legal.kind.team-contract': 'Team agreement',
   'legal.kind.doctrine': 'Vertex doctrine',
+  'legal.historyHelp': 'Restoring a version prepares a draft in this language. Review it before publishing separately.',
+  'legal.noHistory': 'No version has been published in this language yet.',
+  'legal.restricted': 'This area is restricted to Curia and Core members.',
 };

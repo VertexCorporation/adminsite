@@ -83,7 +83,7 @@ export const PERMISSION_CATEGORIES = [
   {
     id: 'legal',
     key: 'legal.title',
-    screens: [{ id: 'documents', key: 'legal.documents', scopes: ['legal.documents'] }],
+    screens: [{ id: 'documents', key: 'legal.documents', scopes: ['legal.documents'], allowedDepartments: ['Curia'] }],
   },
   {
     id: 'system',
@@ -137,7 +137,11 @@ export function normalizeScreenPermissions(raw) {
         let level = screen.scopes
           .map((scope) => legacyScopeLevel(entry, scope))
           .reduce((a, b) => (rank[a] < rank[b] ? a : b), 'write');
-        if (screen.coreOnly && dept !== 'Core') level = 'none';
+        if (
+          dept !== 'Core' &&
+          (screen.coreOnly || (screen.allowedDepartments && !screen.allowedDepartments.includes(dept)))
+        )
+          level = 'none';
         if (
           dept !== 'Core' &&
           screen.scopes.some((scope) => Array.isArray(entry?.hiddenFields?.[scope]) && entry.hiddenFields[scope].length)
@@ -153,7 +157,7 @@ export function normalizeScreenPermissions(raw) {
 
 export function screenPermissionLevel(departments, dept, screen) {
   if (dept === 'Core') return 'write';
-  if (screen.coreOnly) return 'none';
+  if (screen.coreOnly || (screen.allowedDepartments && !screen.allowedDepartments.includes(dept))) return 'none';
   return screen.scopes
     .map((scope) => legacyScopeLevel(departments?.[dept], scope))
     .reduce((a, b) => (rank[a] < rank[b] ? a : b), 'write');
@@ -167,7 +171,13 @@ export function categoryPermissionLevel(departments, dept, category) {
 }
 
 export function setScreenPermission(departments, dept, screen, level) {
-  if (dept === 'Core' || screen.coreOnly || !PERMISSION_LEVELS.includes(level)) return;
+  if (
+    dept === 'Core' ||
+    screen.coreOnly ||
+    (screen.allowedDepartments && !screen.allowedDepartments.includes(dept)) ||
+    !PERMISSION_LEVELS.includes(level)
+  )
+    return;
   const entry = (departments[dept] ||= { panels: {} });
   for (const scope of screen.scopes) entry.panels[scope] = level;
 }
