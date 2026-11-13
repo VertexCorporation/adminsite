@@ -39,6 +39,7 @@ jobs:
       - run: node tests/reports-browser.cjs
       - run: node tests/ui-browser.cjs
       - run: node tests/catalog-browser.cjs
+      - run: node tests/legal-browser.cjs
       - run: node tests/list-refresh-browser.cjs
       - name: Full legacy application browser regression
         run: npm run test:browser

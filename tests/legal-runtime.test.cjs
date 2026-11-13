@@ -4,42 +4,64 @@ const {harness}=require('./helpers/module-harness.cjs');
 const {JSDOM}=require('jsdom');
 const tick=()=>new Promise(r=>setTimeout(r,0));
 const published={title:'Current legal text',html:'<h1>Current legal text</h1><p>Published clauses.</p>',version:0};
-function fixture(level="write"){
- let reset,access=true,state={id:'vertex-terms--tr',product:'vertex',locale:'tr',kind:'terms',revision:0,version:0,title:published.title,published:{...published},draft:null,sources:[{repository:'vertexite',path:'tr/hizmet-sartlari.html',url:'https://vertexishere.com/tr/hizmet-sartlari'}]};
- const calls=[];
+function fixture(level='write',options={}){
+ let reset,access=true,lang='tr',languageChange;
+ const states=new Map(['tr','en'].map(locale=>['vertex-terms--'+locale,{id:'vertex-terms--'+locale,groupId:'vertex-terms',product:'vertex',locale,kind:'terms',revision:0,version:0,published:{...published,markdown:'# Current legal text\n\nPublished clauses.'},draft:null,sources:[]}]));
+ const calls=[],getState=id=>states.get(id)||{id,groupId:'vertex-terms',product:'vertex',kind:'terms',locale:id.split('--')[1],revision:0,version:0,published:null,draft:null,missing:true,sources:[]};
  const h=harness(fs.readFileSync('partials/panels/legal.html','utf8'),{
   'js/modules/roles.js':{getEffectivePanelLevel:()=>level},
   'js/core/firebase.js':{consolePeopleCall:async(name,data)=>{
-   calls.push({name,data});assert.equal(name,'manageLegalDocuments');
-   if(data.action==='list')return {data:{schemaVersion:1,documents:[state]}};
+   calls.push({name,data});if(options.defer)await options.defer(name,data);
+   if(name==='translateLegalDocument')return {data:{translations:Object.fromEntries(data.targetLangs.map(locale=>[locale,{title:'Translated '+locale,markdown:'# Translation '+locale+'\n\nTranslated clauses.',html:'<h1>Translation '+locale+'</h1>',origin:'machine',translation:{sourceId:data.id}}])),failed:{},skipped:{}}};
+   assert.equal(name,'manageLegalDocuments');
+   if(data.action==='catalog')return {data:{schemaVersion:2,documents:[{id:'vertex-terms',product:'vertex',kind:'terms',languages:['tr','en','de'].map(locale=>({id:'vertex-terms--'+locale,locale,available:locale!=='de',title:published.title}))}]}};
+   const state=getState(data.id);
    if(data.action==='get')return {data:structuredClone(state)};
    if(data.action==='history')return {data:{versions:[],baseline:{version:0,note:'baseline'},nextCursor:null}};
    if(data.expectedRevision!==state.revision)throw Object.assign(new Error('conflict'),{code:'functions/aborted'});
    state.revision++;
-   if(data.action==='save'){state.draft={title:data.title,html:data.html};state.hasDraft=true;}
+   if(data.action==='save'){state.draft={title:data.title,markdown:data.markdown,html:'<h1>Draft change</h1>'};state.hasDraft=true;state.missing=false;states.set(data.id,state);}
    if(data.action==='publish'){state.published=state.draft;state.draft=null;state.hasDraft=false;state.version++;}
    return {data:{revision:state.revision,version:state.version}};
   }},
   'js/core/session.js':{captureSession:()=>({uid:'core'}),sessionIsCurrent:()=>access,canReadArea:()=>access,onSessionReset:cb=>{reset=cb;}},
-  'js/utils/ui.js':{__:k=>k,onLangChange:()=>{},userErrorMessage:e=>e.message},
+  'js/utils/ui.js':{__:k=>k,getLang:()=>lang,onLangChange:cb=>{languageChange=cb;},userErrorMessage:e=>e.message},
   'js/ui/surfaces.js':{confirmDialog:async()=>true},
  });
- return {...h,calls,reset:()=>{access=false;reset();},state:()=>state};
+ return {...h,calls,reset:()=>{access=false;reset();},state:()=>states.get('vertex-terms--tr'),language:value=>{lang=value;languageChange();}};
 }
-test('legal workspace loads lazily, saves drafts, requires save before publication, previews published text and clears session data',async()=>{
+async function open(h){const mod=await h.load('js/modules/legal.js');mod.initLegalModule();h.document.dispatchEvent(new h.window.CustomEvent('vertex:workspace',{detail:{keys:['legal.documents']}}));for(let i=0;i<6;i++)await tick();}
+test('grouped Markdown editor defaults to console language, saves then translates private drafts, lazy-loads history and clears session',async()=>{
  const h=fixture();try{
-  const mod=await h.load('js/modules/legal.js');mod.initLegalModule();assert.equal(h.calls.length,0);
-  h.document.dispatchEvent(new h.window.CustomEvent('vertex:workspace',{detail:{keys:['legal.documents']}}));await tick();
-  h.document.querySelector('#legal-list button').click();await tick();await tick();
-  const get=id=>h.document.getElementById('legal-'+id);
-  assert.equal(get('detail').hidden,false);assert.equal(get('publish').disabled,true);
-  assert.equal(get('sources').querySelector('a').hostname,'vertexishere.com');
-  get('html').value='<h1>Draft change</h1>';get('html').dispatchEvent(new h.window.Event('input'));
-  get('save').click();await tick();await tick();assert.equal(h.state().draft.html,'<h1>Draft change</h1>');assert.equal(h.state().published.html,published.html);
+  await open(h);const get=id=>h.document.getElementById('legal-'+id);
+  assert.equal(get('list').querySelectorAll('button').length,1);assert.equal(get('locale').value,'tr');assert(!h.calls.some(c=>c.data.action==='history'));
+  assert.equal(get('detail').hidden,false);assert.equal(get('publish').disabled,true);assert.doesNotMatch(get('html').value,/<h1>/);
+  get('html').value='# Draft change\n\n**Bold legal clause**';get('html').dispatchEvent(new h.window.Event('input'));
+  get('preview-draft').click();assert.match(get('preview').srcdoc,/<strong>Bold legal clause<\/strong>/);
+  get('save').click();for(let i=0;i<6;i++)await tick();
+  const saved=h.calls.find(c=>c.data.action==='save');assert.equal(saved.data.markdown,'# Draft change\n\n**Bold legal clause**');assert.equal(saved.data.html,undefined);
+  assert(h.calls.some(c=>c.name==='translateLegalDocument'&&c.data.persist===true));assert.equal(h.state().published.html,published.html);
   get('preview-published').click();assert.match(get('preview').srcdoc,/Published clauses/);assert.equal(get('preview').getAttribute('sandbox'),'');
-  get('note').value='Reviewed';get('publish').click();await tick();await tick();assert.equal(h.state().version,1);
-  assert.equal(h.state().draft,null);assert.equal(h.calls.filter(c=>c.data.action==='publish').length,1);
+  get('history-section').open=true;await tick();await tick();assert(h.calls.some(c=>c.data.action==='history'));
+  get('note').value='Reviewed';get('publish').click();for(let i=0;i<4;i++)await tick();assert.equal(h.state().version,1);
   h.reset();assert.equal(get('html').value,'');assert.equal(get('detail').hidden,true);assert.equal(get('list').children.length,0);assert.equal(get('preview').hasAttribute('srcdoc'),false);
+ }finally{h.close();}
+});
+test('language picker stays inside one document, follows console language and automatically previews a missing translation',async()=>{
+ const h=fixture();try{await open(h);const select=h.document.getElementById('legal-locale');select.value='en';select.dispatchEvent(new h.window.Event('change'));for(let i=0;i<4;i++)await tick();assert.equal(select.value,'en');assert.equal(h.document.querySelectorAll('#legal-list button').length,1);
+ h.language('tr');for(let i=0;i<4;i++)await tick();assert.equal(select.value,'tr');
+ select.value='de';select.dispatchEvent(new h.window.Event('change'));for(let i=0;i<6;i++)await tick();assert.equal(select.value,'de');assert.match(h.document.getElementById('legal-html').value,/Translation de/);assert.equal(h.document.getElementById('legal-publish').disabled,true);assert(h.calls.some(c=>c.name==='translateLegalDocument'&&c.data.persist===false));
+ }finally{h.close();}
+});
+test('shimmer replaces loading copy and late results cannot repopulate a logged-out session',async()=>{
+ let release;const gate=new Promise(r=>release=r);const h=fixture('write',{defer:async(_name,data)=>{if(data.action==='catalog')await gate;}});try{
+ const mod=await h.load('js/modules/legal.js');mod.initLegalModule();h.document.dispatchEvent(new h.window.CustomEvent('vertex:workspace',{detail:{keys:['legal.documents']}}));await tick();assert(h.document.querySelector('#legal-list .skeleton'));assert.equal(h.document.getElementById('legal-status').textContent,'');h.reset();release();await tick();await tick();assert.equal(h.document.getElementById('legal-list').children.length,0);assert.equal(h.document.getElementById('legal-detail').hidden,true);
+ }finally{release();h.close();}
+});
+test('READ retains navigation/preview and blocks saving, publishing and persistent translation',async()=>{
+ const h=fixture('read');try{await open(h);for(const name of ['title','html','note','save','publish','translate'])assert.equal(h.document.getElementById('legal-'+name).disabled,true,name);
+ assert.equal(h.document.getElementById('legal-locale').disabled,false);assert.equal(h.document.getElementById('legal-preview-draft').disabled,false);
+ h.document.getElementById('legal-save').dispatchEvent(new h.window.Event('click'));h.document.getElementById('legal-translate').dispatchEvent(new h.window.Event('click'));await tick();assert(!h.calls.some(c=>['save','publish','restore'].includes(c.data.action)||c.data.persist));
  }finally{h.close();}
 });
 test('public reader sanitizes remote content and exposes publication version without executing active content',async()=>{
@@ -55,16 +77,3 @@ test('public reader keeps the exact source text and shows fallback notice on net
  }
 });
 
-test('read-only legal access keeps document navigation and previews available while blocking mutations',async()=>{
- const h=fixture('read');try{
-  const mod=await h.load('js/modules/legal.js');mod.initLegalModule();
-  h.document.dispatchEvent(new h.window.CustomEvent('vertex:workspace',{detail:{keys:['legal.documents']}}));await tick();
-  h.document.querySelector('#legal-list button').click();await tick();await tick();
-  for(const name of ['title','html','note','save','publish'])assert.equal(h.document.getElementById('legal-'+name).disabled,true,name);
-  assert.equal(h.document.querySelector('#legal-list button').disabled,false);
-  assert.equal(h.document.getElementById('legal-preview-published').disabled,false);
-  assert.equal(h.document.querySelector('#legal-history button').disabled,true);
-  h.document.getElementById('legal-save').dispatchEvent(new h.window.Event('click'));await tick();
-  assert(!h.calls.some(c=>['save','publish','restore'].includes(c.data.action)));
- }finally{h.close();}
-});

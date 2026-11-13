@@ -15,7 +15,9 @@
     "check:localization": "node scripts/check-localization.cjs"
   },
   "devDependencies": {
+    "esbuild": "0.27.0",
     "jsdom": "27.0.1",
+    "markdown-it": "15.0.0",
     "playwright": "1.62.1",
     "prettier": "3.9.10"
   }

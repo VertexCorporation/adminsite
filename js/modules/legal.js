@@ -1,56 +1,106 @@
 import { getEffectivePanelLevel } from './roles.js';
 import { legalCall } from '../services/legalService.js';
+import { renderLegalMarkdown } from '../services/legalMarkdown.js';
 import { captureSession, sessionIsCurrent, onSessionReset } from '../core/session.js';
-import { __, onLangChange, userErrorMessage } from '../utils/ui.js';
+import { __, getLang, onLangChange, userErrorMessage } from '../utils/ui.js';
 import { confirmDialog } from '../ui/surfaces.js';
 let documents = [],
   current = null,
   loaded = false,
-  loading = false,
   busy = false,
   serial = 0,
-  cursor = null;
+  cursor = null,
+  historyLoaded = false,
+  historyBusy = false;
+const cache = new Map();
 const el = (name) => document.getElementById('legal-' + name);
 const canEdit = () => getEffectivePanelLevel('legal.documents') === 'write';
+const content = () => current?.draft || current?.published;
 const dirty = () =>
-  current &&
-  (el('title').value !== (current.draft || current.published).title ||
-    el('html').value !== (current.draft || current.published).html);
+  !!current && (el('title').value !== (content()?.title || '') || el('html').value !== (content()?.markdown || ''));
+const group = () => documents.find((row) => row.id === current?.groupId);
+const label = (row) => __('legal.kind.' + row.kind) + ' · ' + row.product.replaceAll('-', ' ');
 function status(key, error = false) {
-  el('status').textContent = __(key);
+  el('status').textContent = key ? __(key) : '';
   el('status').dataset.error = String(error);
+}
+function skeleton(target, lines = 4) {
+  el(target).replaceChildren();
+  for (let i = 0; i < lines; i++) {
+    const line = document.createElement('div');
+    line.className = 'skeleton legal-skeleton-line';
+    line.setAttribute('aria-hidden', 'true');
+    el(target).append(line);
+  }
+  el(target).setAttribute('aria-busy', 'true');
 }
 function lock(value) {
   busy = value;
-  for (const name of ['save', 'publish', 'refresh', 'title', 'html', 'note'])
-    el(name).disabled = value || (!current && name !== 'refresh') || (name !== 'refresh' && !canEdit());
-  el('publish').disabled ||= !current?.draft || dirty();
+  el('detail').setAttribute('aria-busy', String(value));
+  for (const name of ['save', 'publish', 'translate', 'title', 'html', 'note', 'auto-translate'])
+    el(name).disabled = value || !current || !canEdit();
+  el('refresh').disabled = value;
+  el('locale').disabled = value || !current;
+  el('publish').disabled ||= !current?.draft || current?.ephemeral || dirty();
+  el('translate').disabled ||= dirty() || current?.ephemeral;
+  el('preview-published').disabled = value || !current?.published;
+  el('preview-draft').disabled = value || !current;
+  document.querySelectorAll('[data-legal-format]').forEach((button) => {
+    button.disabled = value || !current || !canEdit();
+  });
   el('history')
     .querySelectorAll('button')
     .forEach((button) => {
       button.disabled = value || !canEdit();
     });
 }
+function setDetailLoading(value) {
+  el('detail-skeleton').hidden = !value;
+  el('detail').hidden = value || !current;
+  el('detail-skeleton').setAttribute('aria-busy', String(value));
+}
 function preview(html) {
   el('preview').srcdoc =
-    '<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><style>body{font:16px/1.7 system-ui;padding:22px;overflow-wrap:anywhere;color:#202329}h1{font-size:26px}a{color:#2455a6}table{max-width:100%} .doctrine-text-container{white-space:pre-line}</style>' +
-    html;
+    '<!doctype html><html lang="' +
+    (current?.locale || 'en') +
+    '" dir="' +
+    (current?.locale === 'ar' ? 'rtl' : 'ltr') +
+    '"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><style>body{font:16px/1.8 system-ui;padding:24px;overflow-wrap:anywhere;color:#202329;max-width:76ch;margin:auto}h1{font-size:26px}h2{font-size:22px}a{color:#2455a6}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:8px}blockquote{border-inline-start:3px solid #bbb;margin:16px 0;padding-inline-start:16px}</style>' +
+    (html || '') +
+    '</html>';
+}
+function languageName(locale) {
+  try {
+    return new Intl.DisplayNames([getLang()], { type: 'language' }).of(locale);
+  } catch {
+    return locale.toUpperCase();
+  }
 }
 function renderList() {
   const search = el('search').value.trim().toLocaleLowerCase();
   const rows = documents.filter(
     (row) =>
       (!el('product').value || row.product === el('product').value) &&
-      (!el('locale').value || row.locale === el('locale').value) &&
-      [row.title, row.id].join(' ').toLocaleLowerCase().includes(search),
+      [label(row), row.id, ...row.languages.map((l) => l.title)].join(' ').toLocaleLowerCase().includes(search),
   );
   el('list').replaceChildren();
+  el('list').removeAttribute('aria-busy');
   for (const row of rows) {
-    const button = document.createElement('button');
+    const button = document.createElement('button'),
+      title = document.createElement('strong'),
+      sub = document.createElement('span');
     button.type = 'button';
-    button.textContent = `${row.title} · ${row.locale.toUpperCase()}${row.hasDraft ? ' · ' + __('legal.draft') : ''}`;
-    button.setAttribute('aria-pressed', String(current?.id === row.id));
-    button.onclick = () => selectDocument(row.id);
+    title.textContent = label(row);
+    const drafts = row.languages.filter((l) => l.hasDraft).length;
+    sub.textContent =
+      row.languages.filter((l) => l.available).length +
+      ' ' +
+      __('legal.languages') +
+      (drafts ? ' · ' + drafts + ' ' + __('legal.draft') : '');
+    button.append(title, sub);
+    button.setAttribute('aria-pressed', String(current?.groupId === row.id));
+    button.disabled = busy;
+    button.onclick = () => selectDocument(row.id + '--' + getLang());
     el('list').append(button);
   }
   if (!rows.length) {
@@ -60,27 +110,35 @@ function renderList() {
   }
 }
 function filters() {
-  for (const [name, field] of [
-    ['product', 'product'],
-    ['locale', 'locale'],
-  ]) {
-    const selected = el(name).value;
-    el(name).replaceChildren(new Option(__('legal.all'), ''));
-    for (const value of [...new Set(documents.map((row) => row[field]))].sort()) el(name).add(new Option(value, value));
-    el(name).value = selected;
-  }
+  const selected = el('product').value;
+  el('product').replaceChildren(new Option(__('legal.all'), ''));
+  for (const value of [...new Set(documents.map((row) => row.product))].sort())
+    el('product').add(new Option(value.replaceAll('-', ' '), value));
+  el('product').value = selected;
 }
 function renderDetail() {
-  el('detail').hidden = !current;
+  setDetailLoading(false);
   if (!current) return;
-  const content = current.draft || current.published;
-  el('title').value = content.title;
-  el('html').value = content.html;
+  const value = content();
+  el('title').value = value?.title || '';
+  el('html').value = value?.markdown || '';
   el('note').value = '';
-  el('meta').textContent =
-    `${current.id} · ${__('legal.version')} ${current.version} · ${current.hasDraft ? __('legal.draft') : __('legal.published')}`;
+  el('html').dir = current.locale === 'ar' ? 'rtl' : 'auto';
+  el('document-heading').textContent = label(group() || current);
+  el('state').textContent = __(
+    current.ephemeral ? 'legal.machinePreview' : current.draft ? 'legal.draft' : 'legal.published',
+  );
+  el('meta').textContent = languageName(current.locale) + ' · ' + __('legal.version') + ' ' + current.version;
+  el('translation-info').hidden = !value?.translation;
+  el('translation-info').textContent = __('legal.machineHelp');
+  el('locale').replaceChildren();
+  for (const lang of group()?.languages || [])
+    el('locale').add(
+      new Option(languageName(lang.locale) + (lang.hasDraft ? ' · ' + __('legal.draft') : ''), lang.locale),
+    );
+  el('locale').value = current.locale;
   el('sources').replaceChildren();
-  for (const source of current.sources) {
+  for (const source of current.sources || []) {
     const a = document.createElement('a');
     a.textContent = source.repository + '/' + source.path;
     a.href = source.url;
@@ -88,72 +146,150 @@ function renderDetail() {
     a.rel = 'noopener noreferrer';
     el('sources').append(a);
   }
-  preview(content.html);
+  preview(value?.html);
   lock(false);
-}
-async function selectDocument(id, discardApproved = false) {
-  if (busy) return;
-  if (
-    !discardApproved &&
-    dirty() &&
-    !(await confirmDialog(() => ({ title: __('legal.discardTitle'), body: __('legal.discardBody') })))
-  )
-    return;
-  const request = ++serial,
-    token = captureSession();
-  lock(true);
-  status('legal.loading');
-  try {
-    const result = await legalCall('get', { id }, token);
-    if (request !== serial || !sessionIsCurrent(token)) return;
-    current = result;
-    renderDetail();
-    renderList();
-    el('history').replaceChildren();
-    cursor = null;
-    status('legal.ready');
-    await loadHistory(false);
-  } catch (error) {
-    if (request === serial && sessionIsCurrent(token)) showError(error);
-  } finally {
-    if (request === serial && sessionIsCurrent(token)) lock(false);
-  }
 }
 function showError(error) {
   el('status').textContent = error.code === 'functions/aborted' ? __('legal.conflict') : userErrorMessage(error);
   el('status').dataset.error = 'true';
 }
-async function refresh() {
-  if (busy || loading) return;
-  if (dirty() && !(await confirmDialog(() => ({ title: __('legal.discardTitle'), body: __('legal.discardBody') }))))
-    return;
-  const token = captureSession();
-  loading = true;
-  status('legal.loading');
+async function mayDiscard() {
+  return !dirty() || (await confirmDialog(() => ({ title: __('legal.discardTitle'), body: __('legal.discardBody') })));
+}
+async function selectDocument(id, approved = false, force = false) {
+  if (busy || (!approved && !(await mayDiscard()))) return false;
+  const request = ++serial,
+    token = captureSession(),
+    valid = () => request === serial && sessionIsCurrent(token);
+  lock(true);
+  status('');
+  setDetailLoading(true);
   try {
-    const result = await legalCall('list', {}, token);
-    if (result.schemaVersion !== 1 || !Array.isArray(result.documents)) throw new Error('LEGAL_INVALID_RESPONSE');
+    let result =
+      !force && cache.get(id)?.expires > Date.now() ? cache.get(id).value : await legalCall('get', { id }, token);
+    if (!valid()) return false;
+    if (result.missing) {
+      const row = documents.find((d) => d.id === result.groupId);
+      const source =
+        row.languages.find((l) => l.locale === 'en' && l.available) || row.languages.find((l) => l.available);
+      if (!source) throw new Error(__('legal.noSource'));
+      const original = await legalCall('get', { id: source.id }, token);
+      if (!valid()) return false;
+      const translated = await legalCall(
+        'translate',
+        { id: source.id, expectedRevision: original.revision, targetLangs: [result.locale], persist: false },
+        token,
+      );
+      if (!valid()) return false;
+      if (!translated.translations[result.locale]) throw new Error(__('legal.translationFailed'));
+      result = { ...result, draft: translated.translations[result.locale], ephemeral: true };
+    }
+    if (!valid()) return false;
+    current = result;
+    cache.set(id, { value: result, expires: Date.now() + 30000 });
+    cursor = null;
+    historyLoaded = false;
+    historyBusy = false;
+    el('history-section').open = false;
+    el('history').replaceChildren();
+    el('more').hidden = true;
+    renderDetail();
+    renderList();
+    status('');
+    return true;
+  } catch (error) {
+    if (valid()) showError(error);
+    return false;
+  } finally {
+    if (valid()) {
+      setDetailLoading(false);
+      lock(false);
+      renderList();
+    }
+  }
+}
+async function refresh() {
+  if (busy || !(await mayDiscard())) return;
+  const token = captureSession();
+  lock(true);
+  status('');
+  skeleton('list', 8);
+  try {
+    const result = await legalCall(
+      'catalog',
+      { locale: getLang(), ...(current ? { selectedId: current.id } : {}) },
+      token,
+    );
+    if (!sessionIsCurrent(token)) return;
+    if (result.schemaVersion !== 2 || !Array.isArray(result.documents)) throw new Error('LEGAL_INVALID_RESPONSE');
     documents = result.documents;
     loaded = true;
+    cache.clear();
+    if (result.selected) cache.set(result.selected.id, { value: result.selected, expires: Date.now() + 30000 });
     filters();
+    lock(false);
     renderList();
-    status('legal.ready');
-    if (current) await selectDocument(current.id, true);
+    if (current || documents.length) await selectDocument(current?.id || documents[0].id + '--' + getLang(), true);
   } catch (error) {
-    if (sessionIsCurrent(token)) showError(error);
+    if (sessionIsCurrent(token)) {
+      showError(error);
+      el('list').replaceChildren();
+    }
   } finally {
-    loading = false;
+    if (sessionIsCurrent(token)) {
+      el('list').removeAttribute('aria-busy');
+      lock(false);
+    }
+  }
+}
+async function translateOthers(token) {
+  const source = current,
+    row = group();
+  el('translation-info').hidden = false;
+  el('translation-info').textContent = '';
+  el('translation-info').classList.add('skeleton');
+  el('translation-info').setAttribute('aria-busy', 'true');
+  try {
+    const result = await legalCall(
+      'translate',
+      {
+        id: source.id,
+        expectedRevision: source.revision,
+        targetLangs: row.languages.map((l) => l.locale).filter((l) => l !== source.locale),
+        persist: true,
+      },
+      token,
+    );
+    if (!sessionIsCurrent(token) || current?.id !== source.id) return;
+    cache.clear();
+    for (const lang of row.languages)
+      if (result.translations[lang.locale]) {
+        lang.hasDraft = true;
+        lang.available = true;
+        lang.origin = 'machine';
+      }
+    el('translation-info').textContent = Object.keys(result.failed).length
+      ? __('legal.partialTranslation')
+      : __('legal.translated');
+    renderList();
+  } finally {
+    if (sessionIsCurrent(token)) {
+      el('translation-info').classList.remove('skeleton');
+      el('translation-info').removeAttribute('aria-busy');
+    }
   }
 }
 async function mutate(action, extra = {}) {
   if (!current || busy || !canEdit()) return;
-  if (action === 'publish') {
-    if (dirty() || !el('note').value.trim()) {
-      status('legal.publishHelp', true);
-      return;
-    }
-    if (!(await confirmDialog(() => ({ title: __('legal.publish'), body: __('legal.publishConfirm') })))) return;
+  if (action === 'publish' && (dirty() || !el('note').value.trim())) {
+    status('legal.publishHelp', true);
+    return;
   }
+  if (
+    action === 'publish' &&
+    !(await confirmDialog(() => ({ title: __('legal.publish'), body: __('legal.publishConfirm') })))
+  )
+    return;
   if (
     action === 'restore' &&
     !(await confirmDialog(() => ({ title: __('legal.restore'), body: __('legal.restoreConfirm') })))
@@ -163,47 +299,85 @@ async function mutate(action, extra = {}) {
   const token = captureSession(),
     id = current.id;
   lock(true);
-  status('legal.saving');
+  status('');
+  el('save').classList.add('legal-working');
   try {
-    await legalCall(
-      action,
-      {
-        id,
-        expectedRevision: current.revision,
-        title: el('title').value,
-        html: el('html').value,
-        note: el('note').value,
-        ...extra,
-      },
-      token,
-    );
-    current = await legalCall('get', { id }, token);
-    documents = documents.map((row) => (row.id === id ? current : row));
-    renderDetail();
-    renderList();
-    el('history').replaceChildren();
-    cursor = null;
-    await loadHistory(false);
-    status('legal.saved');
+    if (action !== 'translate') {
+      await legalCall(
+        action,
+        {
+          id,
+          expectedRevision: current.revision,
+          title: el('title').value,
+          markdown: el('html').value,
+          note: el('note').value,
+          ...extra,
+        },
+        token,
+      );
+      if (!sessionIsCurrent(token)) return;
+      current = await legalCall('get', { id }, token);
+      if (!sessionIsCurrent(token)) return;
+      const lang = group()?.languages.find((l) => l.id === id);
+      if (lang)
+        Object.assign(lang, {
+          available: true,
+          hasDraft: !!current.draft,
+          title: content()?.title,
+          revision: current.revision,
+        });
+      cache.delete(id);
+      historyLoaded = false;
+      el('history-section').open = false;
+      renderDetail();
+      lock(true);
+      renderList();
+      status('legal.saved');
+    }
+    if (action === 'translate' || (action === 'save' && el('auto-translate').checked)) {
+      try {
+        await translateOthers(token);
+      } catch (error) {
+        if (sessionIsCurrent(token)) {
+          el('translation-info').textContent = __('legal.savedTranslationFailed') + ' ' + userErrorMessage(error);
+          status('legal.saved', true);
+        }
+      }
+    }
   } catch (error) {
     if (sessionIsCurrent(token)) showError(error);
   } finally {
-    if (sessionIsCurrent(token)) lock(false);
+    if (sessionIsCurrent(token)) {
+      lock(false);
+      renderList();
+      el('save').classList.remove('legal-working');
+    }
   }
 }
 async function loadHistory(more) {
-  if (!current) return;
+  if (!current || current.ephemeral || historyBusy || (!more && historyLoaded)) return;
   const id = current.id,
+    request = serial,
     token = captureSession();
+  historyBusy = true;
+  if (!more) skeleton('history', 3);
+  else el('more').classList.add('legal-working');
   try {
     const data = await legalCall('history', { id, ...(more ? { after: cursor } : {}) }, token);
-    if (current?.id !== id) return;
-    const rows = [...data.versions, ...(!data.nextCursor ? [data.baseline] : [])];
-    for (const version of rows) {
+    if (!sessionIsCurrent(token) || request !== serial || current?.id !== id) return;
+    if (!more) el('history').replaceChildren();
+    for (const version of [...data.versions, ...(!data.nextCursor && data.baseline ? [data.baseline] : [])]) {
       const row = document.createElement('div'),
         label = document.createElement('span'),
         button = document.createElement('button');
-      label.textContent = `${__('legal.version')} ${version.version} · ${version.publishedAt || __('legal.baseline')} · ${version.note}`;
+      label.textContent =
+        __('legal.version') +
+        ' ' +
+        version.version +
+        ' · ' +
+        (version.publishedAt || __('legal.baseline')) +
+        ' · ' +
+        version.note;
       button.type = 'button';
       button.className = 'chrome-btn-outline';
       button.textContent = __('legal.restore');
@@ -212,44 +386,95 @@ async function loadHistory(more) {
       row.append(label, button);
       el('history').append(row);
     }
+    historyLoaded = true;
     cursor = data.nextCursor;
     el('more').hidden = !cursor;
   } catch (error) {
-    if (sessionIsCurrent(token)) showError(error);
+    if (sessionIsCurrent(token) && current?.id === id) {
+      el('history').replaceChildren();
+      showError(error);
+    }
+  } finally {
+    if (sessionIsCurrent(token) && request === serial) {
+      historyBusy = false;
+      el('history').removeAttribute('aria-busy');
+      el('more').classList.remove('legal-working');
+    }
   }
+}
+function format(kind) {
+  if (busy || !current || !canEdit()) return;
+  const field = el('html'),
+    start = field.selectionStart,
+    end = field.selectionEnd,
+    selected = field.value.slice(start, end);
+  const value =
+    kind === 'bold'
+      ? '**' + selected + '**'
+      : kind === 'heading'
+        ? '\n## ' + selected
+        : kind === 'list'
+          ? '\n- ' + selected
+          : '[' + selected + '](https://)';
+  field.setRangeText(value, start, end, 'select');
+  field.focus();
+  field.dispatchEvent(new Event('input'));
 }
 export function initLegalModule() {
   if (!el('list')) return;
-  for (const name of ['search', 'product', 'locale'])
-    el(name).addEventListener(name === 'search' ? 'input' : 'change', renderList);
+  el('search').addEventListener('input', renderList);
+  el('product').addEventListener('change', renderList);
+  el('locale').addEventListener('change', async () => {
+    const locale = current?.locale;
+    if (current && !(await selectDocument(current.groupId + '--' + el('locale').value))) el('locale').value = locale;
+  });
   el('refresh').onclick = refresh;
   el('save').onclick = () => mutate('save');
   el('publish').onclick = () => mutate('publish');
-  el('preview-draft').onclick = () => preview(el('html').value);
-  el('preview-published').onclick = () => current && preview(current.published.html);
+  el('translate').onclick = () => mutate('translate');
+  el('preview-draft').onclick = () => preview(renderLegalMarkdown(el('html').value));
+  el('preview-published').onclick = () => current?.published && preview(current.published.html);
   el('more').onclick = () => loadHistory(true);
-  for (const name of ['title', 'html']) el(name).addEventListener('input', () => lock(busy));
+  el('history-section').addEventListener('toggle', () => {
+    if (el('history-section').open) void loadHistory(false);
+  });
+  let timer;
+  for (const name of ['title', 'html'])
+    el(name).addEventListener('input', () => {
+      lock(busy);
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (current && !busy) preview(renderLegalMarkdown(el('html').value));
+      }, 200);
+    });
+  document.querySelectorAll('[data-legal-format]').forEach((button) => {
+    button.onclick = () => format(button.dataset.legalFormat);
+  });
   document.addEventListener('vertex:workspace', (event) => {
-    if (event.detail?.keys?.includes('legal.documents') && !loaded) void refresh();
+    if (event.detail?.keys?.includes('legal.documents') && !loaded && !busy) void refresh();
   });
   onLangChange(() => {
     filters();
     renderList();
+    if (current) void selectDocument(current.groupId + '--' + getLang());
   });
   onSessionReset(() => {
     ++serial;
+    clearTimeout(timer);
+    cache.clear();
     documents = [];
     current = null;
-    loaded = false;
-    busy = false;
-    loading = false;
+    loaded = busy = historyBusy = historyLoaded = false;
     el('list').replaceChildren();
-    el('detail').hidden = true;
+    el('list').removeAttribute('aria-busy');
+    el('save').classList.remove('legal-working');
+    el('translation-info').removeAttribute('aria-busy');
+    setDetailLoading(false);
     el('preview').removeAttribute('srcdoc');
     el('history').replaceChildren();
-    el('html').value = '';
-    el('title').value = '';
-    el('note').value = '';
-    el('status').textContent = '';
+    for (const name of ['html', 'title', 'note']) el(name).value = '';
+    el('translation-info').classList.remove('skeleton');
+    el('translation-info').hidden = true;
+    status('');
   });
 }
