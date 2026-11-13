@@ -1,15 +1,11 @@
 export default {
   'legal.title': 'Hukuk',
-  'legal.description':
-    'Ürün, belge ve dil bazında hukuki metinleri yönetin. Taslaklar yayımlanana kadar sitelerde görünmez.',
   'legal.search': 'Belge ara',
   'legal.product': 'Ürün',
   'legal.locale': 'Dil',
   'legal.documents': 'Hukuki belgeler',
   'legal.documentTitle': 'Belge başlığı',
   'legal.html': 'Belge metni (HTML)',
-  'legal.editHelp':
-    'Başlıkları, paragrafları ve bağlantıları HTML ile düzenleyin. Önizlemeyi kontrol edip taslağı kaydedin. Yayımlama yalnızca seçilen dil sürümünü günceller.',
   'legal.save': 'Taslağı kaydet',
   'legal.previewDraft': 'Taslağı önizle',
   'legal.previewPublished': 'Yayımlananı önizle',
@@ -37,4 +33,34 @@ export default {
   'legal.saving': 'Değişiklik kaydediliyor…',
   'legal.saved': 'Değişiklik kaydedildi.',
   'legal.baseline': 'İçe aktarılan kaynak metin',
+  'legal.eyebrow': 'Vertex hukuk çalışma alanı',
+  'legal.description':
+    'Tek belge, tüm diller. Metni düzenleyin, çevirileri inceleyin ve hazır olan dil sürümünü yayımlayın.',
+  'legal.text': 'Belge metni',
+  'legal.format': 'Metin biçimlendirme',
+  'legal.bold': 'Kalın',
+  'legal.heading': 'Başlık',
+  'legal.list': 'Liste',
+  'legal.link': 'Bağlantı',
+  'legal.editHelp':
+    '**kalın**, ## başlık, - liste ve [bağlantı metni](https://…) kullanabilirsiniz. Önizleme yazarken güncellenir.',
+  'legal.autoTranslate': 'Kaydettikten sonra diğer dillere otomatik çevir',
+  'legal.translationHelp':
+    'Çeviriler özel taslak olarak kalır. Elle düzenlenen dil sürümleri korunur. Yayımlama yalnızca seçili dili etkiler.',
+  'legal.languageHelp': 'Bu dil sürümünü bağımsız olarak düzenleyin.',
+  'legal.languages': 'dil',
+  'legal.translate': 'Çevirileri güncelle',
+  'legal.machinePreview': 'Otomatik çeviri · önizleme',
+  'legal.machineHelp': 'Bu metin otomatik çevrildi. Kaydetmeden veya yayımlamadan önce ifadeleri inceleyin.',
+  'legal.translated': 'Çeviriler taslak olarak güncellendi. Elle düzenlenen diller korundu.',
+  'legal.partialTranslation':
+    'Bazı çeviriler tamamlanamadı veya bu sırada değiştirildi. Tamamlanan taslaklar korundu; kalan diller için Çevirileri güncelle düğmesini kullanın.',
+  'legal.savedTranslationFailed': 'Kaynak taslağınız kaydedildi. Çeviri tamamlanamadı.',
+  'legal.translationFailed': 'Bu çeviriye şu anda ulaşılamıyor. Başka bir dil seçin veya yeniden deneyin.',
+  'legal.noSource': 'Çeviri için kaynak dil bulunamadı.',
+  'legal.sources': 'Bağlı kaynak sayfalar',
+  'legal.kind.privacy': 'Gizlilik politikası',
+  'legal.kind.terms': 'Hizmet şartları',
+  'legal.kind.team-contract': 'Ekip sözleşmesi',
+  'legal.kind.doctrine': 'Vertex doktrini',
 };

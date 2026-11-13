@@ -13,7 +13,7 @@ function sourceFiles(root) {
       files.push(dir + '/' + name);
     }
   }
-  return [...files, 'assets/fonts/ubuntu-medium.ttf', 'firebase-config.json'];
+  return [...files, 'assets/fonts/ubuntu-medium.ttf', 'assets/vendor/legal-markdown.js', 'firebase-config.json'];
 }
 
 module.exports = { sourceFiles };

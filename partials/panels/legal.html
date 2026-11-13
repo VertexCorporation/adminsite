@@ -1,46 +1,105 @@
 <div class="tab-panel legal-panel" id="tab-legal">
   <div class="panel-section-title"><h2 data-i18n="legal.title"></h2></div>
   <section class="panel-card form-group-field" data-panel="legal.documents">
-    <p data-i18n="legal.description"></p>
+    <div class="legal-heading">
+      <div>
+        <p class="legal-eyebrow" data-i18n="legal.eyebrow"></p>
+        <p data-i18n="legal.description"></p>
+      </div>
+      <button id="legal-refresh" type="button" class="chrome-btn-outline" data-i18n="common.refresh"></button>
+    </div>
     <div class="legal-filters">
       <input id="legal-search" type="search" data-i18n-placeholder="legal.search" data-i18n-aria-label="legal.search" />
       <select id="legal-product" data-i18n-aria-label="legal.product"></select>
-      <select id="legal-locale" data-i18n-aria-label="legal.locale"></select>
-      <button id="legal-refresh" type="button" class="chrome-btn-outline" data-i18n="common.refresh"></button>
     </div>
     <p id="legal-status" role="status" aria-live="polite"></p>
     <div class="legal-layout">
-      <div id="legal-list" class="legal-list" data-i18n-aria-label="legal.documents" role="group"></div>
-      <div id="legal-detail" hidden="">
-        <p id="legal-meta"></p>
-        <div id="legal-sources" class="legal-sources"></div>
-        <label for="legal-title" data-i18n="legal.documentTitle"></label>
-        <input id="legal-title" maxlength="200" />
-        <label for="legal-html" data-i18n="legal.html"></label>
-        <textarea id="legal-html" rows="16" spellcheck="false"></textarea>
-        <p data-i18n="legal.editHelp"></p>
-        <div class="legal-actions">
-          <button id="legal-save" type="button" class="chrome-btn-primary" data-i18n="legal.save"></button>
-          <button
-            id="legal-preview-draft"
-            type="button"
-            class="chrome-btn-outline"
-            data-i18n="legal.previewDraft"
-          ></button>
-          <button
-            id="legal-preview-published"
-            type="button"
-            class="chrome-btn-outline"
-            data-i18n="legal.previewPublished"
-          ></button>
+      <nav id="legal-list" class="legal-list" data-i18n-aria-label="legal.documents"></nav>
+      <div class="legal-workspace">
+        <div id="legal-detail-skeleton" class="legal-detail-skeleton" hidden="" aria-hidden="true">
+          <div class="skeleton sk-title"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-editor"></div>
+          <div class="skeleton sk-line"></div>
         </div>
-        <label for="legal-note" data-i18n="legal.note"></label>
-        <input id="legal-note" maxlength="1000" />
-        <button id="legal-publish" type="button" class="chrome-btn-primary" data-i18n="legal.publish"></button>
-        <iframe id="legal-preview" sandbox="" referrerpolicy="no-referrer" data-i18n-title="legal.preview"></iframe>
-        <h3 data-i18n="legal.history"></h3>
-        <div id="legal-history"></div>
-        <button id="legal-more" type="button" class="chrome-btn-outline" hidden="" data-i18n="legal.more"></button>
+        <div id="legal-detail" hidden="">
+          <div class="legal-document-heading">
+            <h3 id="legal-document-heading"></h3>
+            <span id="legal-state" class="legal-badge"></span>
+          </div>
+          <p id="legal-meta"></p>
+          <p id="legal-translation-info" class="legal-notice" hidden=""></p>
+          <div class="legal-language-bar">
+            <label for="legal-locale" data-i18n="legal.locale"></label>
+            <select id="legal-locale"></select>
+            <span data-i18n="legal.languageHelp"></span>
+          </div>
+          <div class="legal-editor-grid">
+            <div class="legal-editor-column">
+              <label for="legal-title" data-i18n="legal.documentTitle"></label>
+              <input id="legal-title" maxlength="200" />
+              <label for="legal-html" data-i18n="legal.text"></label>
+              <div class="legal-format" role="group" data-i18n-aria-label="legal.format">
+                <button type="button" data-legal-format="bold" data-i18n="legal.bold"></button>
+                <button type="button" data-legal-format="heading" data-i18n="legal.heading"></button>
+                <button type="button" data-legal-format="list" data-i18n="legal.list"></button>
+                <button type="button" data-legal-format="link" data-i18n="legal.link"></button>
+              </div>
+              <textarea id="legal-html" rows="18" spellcheck="true" dir="auto"></textarea>
+              <p class="legal-hint" data-i18n="legal.editHelp"></p>
+              <label class="legal-auto">
+                <input id="legal-auto-translate" type="checkbox" checked="" />
+                <span data-i18n="legal.autoTranslate"></span>
+              </label>
+              <p class="legal-hint" data-i18n="legal.translationHelp"></p>
+              <div class="legal-actions">
+                <button id="legal-save" type="button" class="chrome-btn-primary" data-i18n="legal.save"></button>
+                <button
+                  id="legal-translate"
+                  type="button"
+                  class="chrome-btn-outline"
+                  data-i18n="legal.translate"
+                ></button>
+              </div>
+            </div>
+            <div class="legal-preview-column">
+              <div class="legal-actions legal-preview-tabs">
+                <button
+                  id="legal-preview-draft"
+                  type="button"
+                  class="chrome-btn-outline"
+                  data-i18n="legal.previewDraft"
+                ></button>
+                <button
+                  id="legal-preview-published"
+                  type="button"
+                  class="chrome-btn-outline"
+                  data-i18n="legal.previewPublished"
+                ></button>
+              </div>
+              <iframe
+                id="legal-preview"
+                sandbox=""
+                referrerpolicy="no-referrer"
+                data-i18n-title="legal.preview"
+              ></iframe>
+            </div>
+          </div>
+          <div class="legal-publication">
+            <label for="legal-note" data-i18n="legal.note"></label>
+            <input id="legal-note" maxlength="1000" />
+            <button id="legal-publish" type="button" class="chrome-btn-primary" data-i18n="legal.publish"></button>
+          </div>
+          <details id="legal-history-section">
+            <summary data-i18n="legal.history"></summary>
+            <div id="legal-history"></div>
+            <button id="legal-more" type="button" class="chrome-btn-outline" hidden="" data-i18n="legal.more"></button>
+          </details>
+          <details class="legal-source-section">
+            <summary data-i18n="legal.sources"></summary>
+            <div id="legal-sources" class="legal-sources"></div>
+          </details>
+        </div>
       </div>
     </div>
   </section>

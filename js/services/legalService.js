@@ -6,7 +6,10 @@ export async function legalCall(action, data = {}, token = captureSession()) {
       throw Object.assign(new Error('LEGAL_ACCESS_CHANGED'), { code: 'functions/permission-denied' });
   };
   assert();
-  const result = await consolePeopleCall('manageLegalDocuments', { ...data, action });
+  const result = await consolePeopleCall(action === 'translate' ? 'translateLegalDocument' : 'manageLegalDocuments', {
+    ...data,
+    ...(action === 'translate' ? {} : { action }),
+  });
   assert();
   return result.data;
 }

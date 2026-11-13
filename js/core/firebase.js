@@ -126,9 +126,11 @@ function getCallable(name) {
           ? 540000
           : name === 'createConsoleCustomerAccount'
             ? 150000
-            : name === 'translateTeamBiography'
-              ? BIOGRAPHY_TRANSLATION_TIMEOUT_MS
-              : CALLABLE_TIMEOUT_MS,
+            : name === 'translateLegalDocument'
+              ? 120000
+              : name === 'translateTeamBiography'
+                ? BIOGRAPHY_TRANSLATION_TIMEOUT_MS
+                : CALLABLE_TIMEOUT_MS,
     });
     callableCache.set(name, fn);
   }
