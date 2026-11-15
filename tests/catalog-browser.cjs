@@ -85,7 +85,7 @@ assert.equal(await page.locator('#application-role').inputValue(),'moderator');
 await page.locator('#application-role').selectOption('chef');
 await page.locator('#application-role-form button[type="submit"]').click();
 await page.locator('.confirm-ok').click();
-await page.waitForFunction(()=>document.querySelector('#application-role')?.value==='chef'&&document.querySelector('#application-role-form button[type="submit"]')?.disabled);
+await page.waitForFunction(()=>document.querySelector('#application-role')?.value==='chef'&&!document.querySelector('#application-role')?.disabled&&document.querySelector('#application-role-form button[type="submit"]')?.disabled);
 assert.equal(roleUser.role,'chef');
 assert.equal(calls.filter(c=>c.name==='updateconsolepersonnel').at(-1).data.uid,'staff-1');
 await page.keyboard.press('Escape');
