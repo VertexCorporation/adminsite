@@ -1,3 +1,4 @@
+import { mountPersonnelRole } from './personnelRole.js';
 import { createLoadingController, skeletonRows, skeletonListItem, setButtonLoading } from '../utils/loading.js';
 import { displayDepartmentName } from '../utils/departments.js';
 import { consolePeopleCall, getVertexContributorsFn, auth } from '../core/firebase.js';
@@ -187,41 +188,15 @@ async function openUser(summary) {
     const user = (await consolePeopleCall('getConsoleUser', { uid: summary.uid })).data.user;
     if (closed || !body.isConnected) return;
     loader(body).destroy();
-    body.innerHTML = `<div class="people-profile">${rowName(user)}${badge(user.membership)}</div><dl class="people-details">${detailField(__('people.email'), user.email)}${detailField(__('people.created'), date(user.authCreatedAt))}${detailField(__('people.department'), displayDepartmentName(user.department))}${detailField(__('people.role'), user.role ? __('people.role_' + user.role) : null)}${detailField(__('people.subscription'), (user.subscription?.tier || 'free').toUpperCase())}${detailField(__('people.email_status'), __(user.emailVerified ? 'people.verified' : 'people.not_verified'))}${detailField(__('people.link'), __('people.link_' + user.linkStatus))}${detailField(__('people.signin'), user.providers?.join(', '))}</dl><div class="people-drawer-section"><h4>${esc(__('people.application'))}</h4><p class="people-description">${esc(user.contributor ? user.contributor.name : __('people.no_link'))}</p>${user.contributor ? `<button type="button" class="chrome-btn-outline" id="people-open-application">${esc(__('people.view_application'))}</button>` : ''}</div>${user.linkStatus === 'linked' && user.membership === 'active' && deploymentCapabilities.consolePersonnelWrites ? `<form class="form-stack people-drawer-section" id="people-personnel-form"><h4>${esc(__('people.manage_personnel'))}</h4><label for="people-personnel-department">${esc(__('people.department'))}</label><select id="people-personnel-department" required><option value="" disabled ${departments.includes(user.department) ? '' : 'selected'}>${esc(__('people.select_department'))}</option>${departments.map((d) => `<option ${user.department === d ? 'selected' : ''}>${d}</option>`).join('')}</select><label for="people-personnel-role">${esc(__('people.role'))}</label><select id="people-personnel-role">${['member', 'moderator', 'chef'].map((r) => `<option value="${r}" ${user.role === r ? 'selected' : ''}>${esc(__('people.role_' + r))}</option>`).join('')}</select><button class="chrome-btn-outline">${esc(__('people.save_personnel'))}</button></form>` : ''}<div class="people-notice">${esc(__('people.actions_pending'))}</div>`;
-    body.querySelector('#people-personnel-form')?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const button = event.currentTarget.querySelector('button'),
-        department = body.querySelector('#people-personnel-department').value,
-        role = body.querySelector('#people-personnel-role').value;
-      if (
-        !(await confirmDialog(() => ({
-          title: __('people.save_personnel'),
-          body: __('people.personnel_confirm'),
-          rows: [
-            { label: __('people.email'), value: user.email },
-            { label: __('people.department'), value: department },
-            { label: __('people.role'), value: __('people.role_' + role) },
-          ],
-        })))
-      )
-        return;
-      setButtonLoading(button, true);
-      try {
-        await consolePeopleCall('updateConsolePersonnel', {
-          uid: user.uid,
-          department,
-          role,
-          expectedVersion: user.authzVersion || 0,
-        });
-        showToast(() => __('people.saved'), 'success');
+    body.innerHTML = `<div class="people-profile">${rowName(user)}${badge(user.membership)}</div><dl class="people-details">${detailField(__('people.email'), user.email)}${detailField(__('people.created'), date(user.authCreatedAt))}${detailField(__('people.department'), displayDepartmentName(user.department))}${detailField(__('people.role'), user.role ? __('people.role_' + user.role) : null)}${detailField(__('people.subscription'), (user.subscription?.tier || 'free').toUpperCase())}${detailField(__('people.email_status'), __(user.emailVerified ? 'people.verified' : 'people.not_verified'))}${detailField(__('people.link'), __('people.link_' + user.linkStatus))}${detailField(__('people.signin'), user.providers?.join(', '))}</dl><div class="people-drawer-section"><h4>${esc(__('people.application'))}</h4><p class="people-description">${esc(user.contributor ? user.contributor.name : __('people.no_link'))}</p>${user.contributor ? `<button type="button" class="chrome-btn-outline" id="people-open-application">${esc(__('people.view_application'))}</button>` : ''}</div><div class="people-drawer-section" data-personnel-role></div><div class="people-notice">${esc(__('people.actions_pending'))}</div>`;
+    void mountPersonnelRole(body.querySelector('[data-personnel-role]'), {
+      user,
+      prefix: 'people',
+      onSaved: (fresh) => {
         closeDrawer(false);
-        openUser(user);
-        loadConsoleUsers();
-      } catch (error) {
-        showToast(() => userErrorMessage(error), 'error');
-      } finally {
-        if (button.isConnected) setButtonLoading(button, false);
-      }
+        void openUser(fresh);
+        void loadConsoleUsers();
+      },
     });
     body.querySelector('#people-open-application')?.addEventListener('click', () => {
       closeDrawer(false);
@@ -294,6 +269,10 @@ function openApplication(person) {
       host.innerHTML = `<div class="people-profile">${rowName(person)}${badge(membership(person))}</div><dl class="people-details">${detailField(__('people.department'), displayDepartmentName(person.department))}${detailField(__('people.phone'), person.phone)}${detailField(__('people.applied'), date(person.createdAt))}${detailField(__('people.joined'), date(person.joinedAt))}</dl><div class="people-drawer-section"><h4>${esc(__('people.account_link'))}</h4><p class="people-description">${esc(__('people.link_explainer'))}</p><div id="people-account-match"></div>${person.email && deploymentCapabilities.consolePeople ? `<button class="chrome-btn-outline" type="button" id="people-check-account">${esc(__('people.check_account'))}</button>` : ''}</div>${deploymentCapabilities.consoleMembershipWrites ? `<div class="people-drawer-section"><button type="button" id="people-change-membership" class="chrome-btn-outline">${esc(__(person.isVertex === true ? 'people.deactivate' : 'people.activate'))}</button></div>` : ''}<div class="people-notice">${esc(__('people.actions_pending'))}</div>`;
     },
   });
+  const roleHost = document.createElement('section');
+  roleHost.className = 'people-drawer-section';
+  body.append(roleHost);
+  void mountPersonnelRole(roleHost, { application: person, prefix: 'application' });
   body.querySelector('#people-change-membership')?.addEventListener('click', async (event) => {
     const button = event.currentTarget;
     if (button.disabled) return;

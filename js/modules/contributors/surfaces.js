@@ -1,3 +1,4 @@
+import { mountPersonnelRole } from '../personnelRole.js';
 import { contributorsStore } from '../../stores/areaStore.js';
 import { openCertificateEmailTemplates } from '../certificateEmailTemplates.js';
 import { deploymentCapabilities } from '../../core/deployment-capabilities.js';
@@ -271,6 +272,11 @@ export function createContributorSurfaces({
             `<a class="chrome-btn-outline" href="${escapeHTML(person[k])}" target="_blank" rel="noopener noreferrer">${icon('brand-' + k)}${k === 'linkedin' ? 'LinkedIn' : 'GitHub'}</a>`,
         )
         .join('')}</div>`;
+      const roleHost = document.createElement('section');
+      roleHost.className = 'people-drawer-section';
+      roleHost.dataset.personnelRole = '';
+      body.append(roleHost);
+      void mountPersonnelRole(roleHost, { application: person, prefix: 'application' });
       const footer = body.closest('.vx-drawer').querySelector('.vx-drawer-footer');
       if (isPanelAdmin() && person.isVertex === true) {
         const retry = document.createElement('button');
