@@ -1,7 +1,8 @@
 import { registerListRefresh } from '../ui/listRefresh.js';
 import { showLoadError } from '../ui/states.js';
 import { icon } from '../utils/icons.js';
-import { confirmDialog } from './shell.js';
+import { confirmDialog, openDrawer } from './shell.js';
+import { mountPersonnelRole } from './personnelRole.js';
 import { displayDepartmentName } from '../utils/departments.js';
 import { beginPanelLoading, skeletonListItem, skeletonChatMessage, setButtonLoading } from '../utils/loading.js';
 // js/modules/admin.js
@@ -22,7 +23,7 @@ import {
   setUserSubscriptionFn,
   bulkSetUserSubscriptionsFn,
 } from '../core/firebase.js';
-import { DEPARTMENTS, getEffectivePanelLevel } from './roles.js';
+import { DEPARTMENTS, getEffectivePanelLevel, isPanelAdmin } from './roles.js';
 
 // --- Module state for attributions ---
 let attributionsOutOfSync = false;
@@ -145,11 +146,21 @@ function renderDepartmentUsers() {
                 ${user.displayName ? `<span>${sanitizeHTML(user.email || '')}</span>` : ''}
                 <div class="dept-badges">${user.departments.map((id) => `<span class="dept-badge">${sanitizeHTML(displayDepartmentName(id))}</span>`).join('')}</div>
             </div>
+            ${isPanelAdmin() ? `<button type="button" class="dept-user-role chrome-btn-outline" data-role-uid="${sanitizeHTML(user.uid)}">${__('people.role')}</button>` : ''}
             ${getEffectivePanelLevel('system.deptUsers') === 'write' ? `<button type="button" class="dept-user-edit chrome-btn-outline" data-uid="${sanitizeHTML(user.uid)}">${__('dept.edit')}</button>` : ''}
         </div>
     `,
     )
     .join('');
+  container.querySelectorAll('[data-role-uid]').forEach((button) => {
+    button.onclick = () => {
+      if (!isPanelAdmin()) return;
+      const user = departmentUsers.find((row) => row.uid === button.dataset.roleUid);
+      if (!user) return;
+      const host = openDrawer({ title: user.displayName || user.email || __('people.details') });
+      void mountPersonnelRole(host, { uid: user.uid, prefix: 'department' });
+    };
+  });
 }
 
 async function loadDepartmentUsers() {
