@@ -112,6 +112,13 @@ function normalizeCallableError(error) {
       : 'network-unavailable';
   return failed;
 }
+let appCheckActivated = false;
+function ensureAppCheck() {
+  if (appCheckActivated || !appCheck) return;
+  appCheck.activate('6LfPxncrAAAAANROpBb3E7q-gIf52Py-AePSGfJG', true);
+  appCheckActivated = true;
+}
+
 function getCallable(name) {
   if (!functions?.httpsCallable) {
     const err = new Error('Firebase Functions SDK is not initialized.');
@@ -138,6 +145,7 @@ function getCallable(name) {
 }
 async function callCallableOnce(name, data) {
   try {
+    ensureAppCheck();
     const result = await getCallable(name)(data ?? {});
     if (!result || !Object.hasOwn(result, 'data')) {
       const error = new Error('Invalid callable response.');
@@ -209,21 +217,23 @@ function initFirebase(firebaseConfig) {
   appCheck = firebase.appCheck();
   auth = firebase.auth();
   pendingReads.clear();
-  auth.onAuthStateChanged(() => pendingReads.clear());
+  auth.onAuthStateChanged((user) => {
+    pendingReads.clear();
+    if (user) {
+      try {
+        ensureAppCheck();
+      } catch (error) {
+        console.error('[APP_CHECK] Activation failed', error.code);
+      }
+    }
+  });
   db = firebase.firestore();
   storage = firebase.storage();
   functions = firebase.app().functions(firebaseConfig.functionsRegion || 'europe-west1');
 
-  // Activate App Check
-  try {
-    appCheck.activate(
-      '6LfPxncrAAAAANROpBb3E7q-gIf52Py-AePSGfJG', // Site key
-      true,
-    );
-    console.log('[APP_CHECK] Firebase App Check activated successfully.');
-  } catch (error) {
-    console.error('[APP_CHECK] Failed to activate App Check:', error);
-  }
+  // The SDK and server enforcement remain active for every protected call.
+  // A signed-out, idle landing page has no protected data request to attest.
+  if (auth.currentUser) ensureAppCheck();
 
   // Initialize Cloud Functions with the correct region
   callableCache.clear();

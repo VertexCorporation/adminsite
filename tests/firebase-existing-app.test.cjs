@@ -1,19 +1,19 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm');
-function fixture(failure){
- let initializations=0,calls=[],bindings=[];
+function fixture(failure,{signedIn=true,appCheckError}={}){
+ let initializations=0,activations=0,calls=[],bindings=[];
  const user={uid:'fixture'},listeners=[];
- const auth={currentUser:user,onAuthStateChanged:fn=>listeners.push(fn)};
+ const auth={currentUser:signedIn?user:null,onAuthStateChanged:fn=>listeners.push(fn)};
  const functions={httpsCallable:(name,options)=>{bindings.push({name,options});return async data=>{calls.push({name,data});if(failure)throw failure;await Promise.resolve();return {data:{ok:true}};};}};
  const firebase={apps:[{}],initializeApp:()=>initializations++,auth:()=>auth,
-  firestore:()=>({}),storage:()=>({}),appCheck:()=>({activate(){}}),app:()=>({functions:()=>functions})};
+  firestore:()=>({}),storage:()=>({}),appCheck:()=>({activate(){activations++;if(appCheckError)throw appCheckError;}}),app:()=>({functions:()=>functions})};
  const source=fs.readFileSync('js/core/firebase.js','utf8')
   .replace(/^export\s*\{[\s\S]*?\};/m,'').replace(/^export /gm,'');
  const context={firebase,console:{log(){},error(){}},setTimeout};
  vm.runInNewContext(source+'\nthis.api={initFirebase,callable,getAuth:()=>auth};',context);
  context.api.initFirebase({functionsRegion:'europe-west1'});
- return {api:context.api,calls,bindings,auth,get initializations(){return initializations;}};
+ return {api:context.api,calls,bindings,auth,get activations(){return activations;},get initializations(){return initializations;}};
 }
 test('an existing Firebase app still binds the console service handles',async()=>{
  const f=fixture();assert.equal(f.initializations,0);assert.equal(f.api.getAuth(),f.auth);
@@ -40,4 +40,17 @@ test('biography translation allows cold startup without extending other deadline
  const failed=fixture(Object.assign(new Error('Timed out'),{code:'functions/deadline-exceeded'}));
  await assert.rejects(failed.api.callable('translateTeamBiography')({}),{code:'functions/deadline-exceeded'});
  assert.equal(failed.calls.length,1);
+});
+
+test('signed-out SDK setup stays idle, but every first protected call activates App Check',async()=>{
+ const f=fixture(null,{signedIn:false});assert.equal(f.activations,0);
+ await f.api.callable('signInWithPersonnelEmail')({email:'example@example.invalid'});
+ assert.equal(f.activations,1);assert.equal(f.calls.length,1);
+ await f.api.callable('getServerStatus')({});assert.equal(f.activations,1);
+});
+test('App Check activation failure blocks protected requests instead of bypassing attestation',async()=>{
+ const error=Object.assign(new Error('Unavailable'),{code:'app-check/token-error'});
+ const f=fixture(null,{signedIn:false,appCheckError:error});
+ await assert.rejects(f.api.callable('signInWithPersonnelEmail')({}),{code:'functions/failed-precondition'});
+ assert.equal(f.calls.length,0);assert.equal(f.activations,1);
 });

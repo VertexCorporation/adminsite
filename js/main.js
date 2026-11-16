@@ -183,6 +183,13 @@ export function startApp(firebaseConfig) {
     personnelUnsubscribe = null,
     hadAuthorizedSession = false;
   auth.onAuthStateChanged(async (user) => {
+    // A prefetch hint only. Server-owned access is still checked below on
+    // every authenticated session, regardless of this client-side value.
+    try {
+      localStorage.setItem('vertexConsoleSession', user ? 'active' : 'signed-out');
+    } catch {
+      /* Session recovery still works with storage disabled. */
+    }
     updateSession({ uid: null, isCore: false, departments: [] });
     const epoch = ++authEpoch;
     personnelUnsubscribe?.();

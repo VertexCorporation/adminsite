@@ -35,6 +35,7 @@ jobs:
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: node tests/release-startup-browser.cjs
+      - run: node tests/login-landing-browser.cjs
       - run: node tests/architecture-browser.cjs
       - run: node tests/reports-browser.cjs
       - run: node tests/ui-browser.cjs
