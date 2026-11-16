@@ -40,7 +40,9 @@ function loadStyles() {
   if (!template) return Promise.resolve();
   const pending = [...template.content.querySelectorAll('link')].map((source) => {
     const link = source.cloneNode(true);
-    if (link.rel !== 'stylesheet') {
+    // Third-party typography is optional; an unavailable font must never
+    // prevent session recovery or leave the sign-in action waiting.
+    if (link.rel !== 'stylesheet' || new URL(link.href, location.href).origin !== location.origin) {
       document.head.append(link);
       return Promise.resolve();
     }
@@ -61,6 +63,8 @@ function loadStyles() {
   return Promise.all(pending);
 }
 function showFailure() {
+  if (!loader.isConnected) document.body.append(loader);
+  loader.hidden = false;
   if (document.querySelector('[data-startup-retry]')) return;
   document.documentElement.dataset.startupFailed = 'true';
   login.style.display = 'none';

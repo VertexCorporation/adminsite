@@ -21,7 +21,7 @@ const server = http.createServer((req, res) => {
   const browser = await chromium.launch({ headless: true });
   try {
     const base = 'http://127.0.0.1:' + server.address().port;
-    for (const mode of ['email', 'google', 'apple', 'returning']) {
+    for (const mode of ['email', 'google', 'apple', 'returning', 'signed-out-returning', 'hint-only', 'startup-error']) {
       const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
       const page = await context.newPage(), errors = [], sdk = [];
       page.on('pageerror', error => errors.push(error.message));
@@ -31,6 +31,11 @@ const server = http.createServer((req, res) => {
         const auth = firebase.auth();
         if (mode !== 'returning') auth.currentUser = null;
         else localStorage.setItem('siteLang', 'en');
+        if (mode === 'signed-out-returning') {
+          localStorage.setItem('vertexConsoleSession', 'signed-out');
+          localStorage.setItem('siteLang', 'en');
+        }
+        if (mode === 'hint-only') localStorage.setItem('vertexConsoleSession', 'active');
         window.landingTest = { logins: 0, activations: 0 };
         const signIn = auth.signInWithEmailAndPassword.bind(auth);
         auth.signInWithEmailAndPassword = async (...args) => { landingTest.logins++; return signIn(...args); };
@@ -41,23 +46,47 @@ const server = http.createServer((req, res) => {
       }, { fixture, mode });
       await page.route('**/*', route => {
         const url = new URL(route.request().url());
-        if (url.origin === base) return route.continue();
+        if (url.origin === base) {
+          if (mode === 'startup-error' && url.pathname.endsWith('/partials/panels/models.html'))
+            return route.fulfill({ status: 503, body: '' });
+          return route.continue();
+        }
         if (url.hostname === 'www.gstatic.com') return route.fulfill({ contentType: 'text/javascript', body: '' });
         return route.fulfill({ contentType: url.hostname === 'fonts.googleapis.com' ? 'text/css' : 'application/json', body: url.hostname === 'fonts.googleapis.com' ? '' : '{"result":{}}' });
       });
       await page.goto(base);
       await page.waitForFunction(() => document.documentElement.dataset.loginReady === 'true');
+      if (mode === 'hint-only') {
+        await page.locator('#app-loader').waitFor({ state: 'detached' });
+        assert(sdk.length > 0);
+        assert(await page.locator('#login-container').isVisible());
+        assert.equal(await page.locator('#admin-panel').isVisible(), false, 'prefetch hints never grant access');
+        assert.equal(await page.evaluate(() => landingTest.activations), 0);
+        assert.deepEqual(errors, []);
+        await context.close();
+        console.log('PASS client prefetch hint grants no access');
+        continue;
+      }
       if (mode !== 'returning') {
         await page.locator('#app-loader').waitFor({ state: 'detached' });
         await page.waitForTimeout(500);
         assert.equal(sdk.length, 0, 'idle signed-out visit must not load private console SDKs');
         assert.equal(await page.evaluate(() => landingTest.activations), 0);
         assert(await page.locator('#login-container').isVisible());
-        if (mode === 'email') {
+        if (mode === 'email' || mode === 'signed-out-returning' || mode === 'startup-error') {
           await page.locator('#email').fill('example@example.invalid');
           await page.locator('#password').fill('example');
           await page.locator('#login-form').evaluate(form => form.requestSubmit());
         } else await page.locator('#' + mode + '-login-btn').click();
+      }
+      if (mode === 'startup-error') {
+        await page.locator('[data-startup-retry]').waitFor({ state: 'visible' });
+        assert.equal(await page.evaluate(() => landingTest.logins), 0);
+        assert.equal(await page.locator('#admin-panel').isVisible(), false);
+        assert.deepEqual(errors, []);
+        await context.close();
+        console.log('PASS failed warmup exposes retry and never submits credentials');
+        continue;
       }
       await page.waitForFunction(() => document.getElementById('admin-panel').style.display === 'grid');
       assert(sdk.length > 0);
