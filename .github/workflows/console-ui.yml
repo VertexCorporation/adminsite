@@ -41,6 +41,7 @@ jobs:
       - run: node tests/catalog-browser.cjs
       - run: node tests/legal-browser.cjs
       - run: node tests/list-refresh-browser.cjs
+      - run: node tests/fluidity-browser.cjs
       - name: Full legacy application browser regression
         run: npm run test:browser
         env:
