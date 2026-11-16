@@ -47,6 +47,14 @@ export function openPopover(anchor, opts = {}) {
   el.setAttribute('aria-label', anchor.getAttribute('aria-label') || anchor.textContent.trim());
 
   const unbind = [];
+  let positionFrame = null;
+  const schedulePosition = () => {
+    if (positionFrame !== null) return;
+    positionFrame = requestAnimationFrame(() => {
+      positionFrame = null;
+      if (activePopover?.el === el && el.isConnected) position();
+    });
+  };
   const position = () => {
     // Certificate sheets keep their compact mobile layout; utility menus stay anchored.
     if (window.innerWidth <= 720 && el.classList.contains('cert-popover')) {
@@ -67,15 +75,18 @@ export function openPopover(anchor, opts = {}) {
       if (above >= margin) top = above;
       else top = Math.max(margin, vh - ph - margin);
     }
-    el.style.left = `${Math.round(left)}px`;
-    el.style.top = `${Math.round(top)}px`;
-    el.style.transformOrigin = top >= r.bottom ? 'top center' : 'bottom center';
+    const nextLeft = `${Math.round(left)}px`,
+      nextTop = `${Math.round(top)}px`,
+      origin = top >= r.bottom ? 'top center' : 'bottom center';
+    if (el.style.left !== nextLeft) el.style.left = nextLeft;
+    if (el.style.top !== nextTop) el.style.top = nextTop;
+    if (el.style.transformOrigin !== origin) el.style.transformOrigin = origin;
   };
 
   document.body.appendChild(el);
   opts.render?.(el);
   position();
-  requestAnimationFrame(() => {
+  const openFrame = requestAnimationFrame(() => {
     if (activePopover?.el !== el) return;
     el.classList.add('is-open');
     position();
@@ -109,17 +120,25 @@ export function openPopover(anchor, opts = {}) {
   };
   const onScroll = (e) => {
     if (el.contains(e.target)) return;
-    position();
+    schedulePosition();
   };
   document.addEventListener('mousedown', onDocMouseDown);
   document.addEventListener('keydown', onKey, true);
   window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-  window.addEventListener('resize', position);
+  window.addEventListener('resize', schedulePosition, { passive: true });
+  // Async menu content and translations may change height without a scroll
+  // or window resize. Keep the menu anchored and inside the viewport.
+  const resize = new ResizeObserver(schedulePosition);
+  resize.observe(el);
+  resize.observe(anchor);
   unbind.push(() => {
+    cancelAnimationFrame(openFrame);
+    if (positionFrame !== null) cancelAnimationFrame(positionFrame);
+    resize.disconnect();
     document.removeEventListener('mousedown', onDocMouseDown);
     document.removeEventListener('keydown', onKey, true);
     window.removeEventListener('scroll', onScroll, { capture: true, passive: true });
-    window.removeEventListener('resize', position);
+    window.removeEventListener('resize', schedulePosition);
   });
 
   activePopover = { el, anchor, onAfterClose: opts.onAfterClose, unbind };

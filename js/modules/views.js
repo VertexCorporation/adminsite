@@ -38,12 +38,17 @@ export function showWorkspace(tab, keys, action = '') {
 /** Every grid records its actual number of visible panels. */
 export function updateGridVisibleCounts(scope) {
   const root = scope || document;
-  root.querySelectorAll('.grid-layout').forEach((grid) => {
+  // Measure the entire group before writing any columns. Interleaving reads
+  // and writes forces another layout for each grid during a resize.
+  const layouts = [...root.querySelectorAll('.grid-layout')].map((grid) => {
     const visible = [...grid.children].filter((el) => !el.hidden && getComputedStyle(el).display !== 'none').length;
-    grid.dataset.visiblePanels = String(visible);
     const width = grid.getBoundingClientRect().width || window.innerWidth;
     const maximum = Math.max(1, Math.floor((width + 16) / 316));
-    grid.style.setProperty('--panel-columns', String(Math.max(1, Math.min(visible, maximum))));
+    return { grid, visible: String(visible), columns: String(Math.max(1, Math.min(visible, maximum))) };
+  });
+  layouts.forEach(({ grid, visible, columns }) => {
+    if (grid.dataset.visiblePanels !== visible) grid.dataset.visiblePanels = visible;
+    if (grid.style.getPropertyValue('--panel-columns') !== columns) grid.style.setProperty('--panel-columns', columns);
   });
 }
 
@@ -51,8 +56,16 @@ let adaptiveGridsInitialized = false;
 export function initAdaptiveGrids() {
   if (adaptiveGridsInitialized) return;
   adaptiveGridsInitialized = true;
+  let frame = null;
+  const schedule = () => {
+    if (frame !== null) return;
+    frame = requestAnimationFrame(() => {
+      frame = null;
+      updateGridVisibleCounts();
+    });
+  };
+  const observer = new MutationObserver(schedule);
   for (const grid of document.querySelectorAll('.grid-layout')) {
-    const observer = new MutationObserver(() => updateGridVisibleCounts(grid.parentElement || document));
     observer.observe(grid, { childList: true, subtree: false });
     // Attribute watches belong to cards, not grids: computed column writes
     // must never trigger their own observer in an endless render loop.
@@ -62,6 +75,6 @@ export function initAdaptiveGrids() {
         attributeFilter: ['hidden', 'style'],
       });
   }
-  window.addEventListener('resize', () => updateGridVisibleCounts());
+  window.addEventListener('resize', schedule, { passive: true });
   updateGridVisibleCounts();
 }

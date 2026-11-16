@@ -4,6 +4,26 @@ import { reducedMotion } from './motion.js';
 // the outgoing inert image is visual-only and is removed after animation settles.
 const running = new WeakMap();
 
+function retainTableScroll(container) {
+  const positions = ['.contributor-table-rows', '.people-table-wrap'].flatMap((selector) =>
+    [...container.querySelectorAll(selector)].map((node, index) => ({
+      selector,
+      index,
+      top: node.scrollTop,
+      left: node.scrollLeft,
+    })),
+  );
+  return () => {
+    for (const { selector, index, top, left } of positions) {
+      const node = container.querySelectorAll(selector)[index];
+      if (!node) continue;
+      // Native setters clamp short result sets and preserve negative RTL offsets.
+      node.scrollTop = top;
+      node.scrollLeft = left;
+    }
+  };
+}
+
 // Generic lists can contain hundreds of nested elements. Keep the outgoing
 // visual snapshot bounded while the new live content always fades in.
 function boundedClone(node, budget) {
@@ -25,19 +45,16 @@ export function crossfade(container, mutate, { duration = 220, preserveHeight = 
   // outgoing list rendered over the new list.  An incoming-only opacity
   // animation preserves the table geometry and does not clone form controls.
   if (mode === 'enter') {
-    const oldRows = container.querySelector(':scope > .contributor-table-rows');
-    const scrollTop = oldRows?.scrollTop || 0;
-    const scrollLeft = oldRows?.scrollLeft || 0;
+    const restoreScroll = retainTableScroll(container);
     const hadContent = container.childElementCount > 0;
     const previous = container.innerHTML;
     mutate();
-    if (previous === container.innerHTML) return;
+    // Even identical HTML can replace the actual scrollport. Restore before
+    // the no-change/reduced-motion exits, including account-directory tables.
+    restoreScroll();
     container.dispatchEvent(new Event('vertex:list-painted'));
+    if (previous === container.innerHTML) return;
     const rows = container.querySelector(':scope > .contributor-table-rows');
-    if (rows) {
-      rows.scrollTop = Math.min(scrollTop, Math.max(0, rows.scrollHeight - rows.clientHeight));
-      rows.scrollLeft = scrollLeft;
-    }
     const incoming = rows || container;
     if (!hadContent || !incoming.isConnected || reducedMotion() || incoming.getBoundingClientRect().height === 0)
       return;
