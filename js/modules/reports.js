@@ -28,11 +28,13 @@ async function detectGovernanceAccess() {
   const token = captureSession();
   try {
     const result = await consolePeopleCall('getGovernanceAccess', {});
-    if (sessionIsCurrent(token)) {
-      senatusAccess = result.data?.canWriteAudit === true;
-      ceoAccess = result.data?.canReviewLeadership === true;
-      renderNavigation();
-    }
+    if (!sessionIsCurrent(token)) return;
+    const canWriteAudit = result.data?.canWriteAudit === true;
+    const canReviewLeadership = result.data?.canReviewLeadership === true;
+    if (senatusAccess === canWriteAudit && ceoAccess === canReviewLeadership) return;
+    senatusAccess = canWriteAudit;
+    ceoAccess = canReviewLeadership;
+    renderNavigation();
   } catch {
     // Backend authorization, not this navigation, controls access.
   }
