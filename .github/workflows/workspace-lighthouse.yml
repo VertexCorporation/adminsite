@@ -1,0 +1,37 @@
+name: All console workspace audits
+on:
+  pull_request:
+    paths: ['js/**', 'css/**', 'partials/**', 'scripts/**', 'index.html', 'tests/lighthouse-workspaces.cjs', 'tests/helpers/console-audit-fixture.cjs', '.github/workflows/workspace-lighthouse.yml']
+permissions:
+  contents: read
+jobs:
+  workspaces:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [desktop, mobile]
+        lang: [en, tr]
+        theme: [dark, light]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm install --prefix .lighthouse --no-save lighthouse@13.6.0 puppeteer@25.17.0
+      - name: Audit every workspace state
+        run: node tests/lighthouse-workspaces.cjs
+        env:
+          AUDIT_DEVICES: ${{ matrix.device }}
+          AUDIT_LANGS: ${{ matrix.lang }}
+          AUDIT_THEMES: ${{ matrix.theme }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workspaces-${{ matrix.device }}-${{ matrix.lang }}-${{ matrix.theme }}
+          path: test-results/workspaces/
+          retention-days: 14
