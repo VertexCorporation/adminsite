@@ -26,7 +26,7 @@ const server=http.createServer((req,res)=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const base='http://127.0.0.1:'+server.address().port;
   const browser=await puppeteer.launch({...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{}),headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-  const results=[];
+  const results=[],seenFindings=new Set();
   try{
     for(const device of (process.env.AUDIT_DEVICES||'desktop,mobile').split(','))for(const lang of (process.env.AUDIT_LANGS||'en,tr').split(','))for(const theme of (process.env.AUDIT_THEMES||'dark,light').split(',')){
       const page=await browser.newPage();const errors=[];
@@ -55,8 +55,9 @@ const server=http.createServer((req,res)=>{
             return await req.continue();
           }
           if(url.hostname.endsWith('run.app')){
+            if(req.method()==='OPTIONS')return await req.respond({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type','Access-Control-Allow-Methods':'POST, OPTIONS'}});
             const data=JSON.parse(req.postData()||'{}').data||{};
-            return await req.respond({status:200,contentType:'application/json',body:JSON.stringify({result:response(url.hostname.split('-')[0],data)})});
+            return await req.respond({status:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type','Access-Control-Allow-Methods':'POST, OPTIONS'},contentType:'application/json',body:JSON.stringify({result:response(url.hostname.split('-')[0],data)})});
           }
           if(url.hostname==='cortexishere.com')return await req.respond({status:200,contentType:'application/json',body:JSON.stringify(url.pathname==='/models'?{producers:{Vertex:{Series:{Example:model}}}}:{models:[]})});
           if(['www.gstatic.com','fonts.googleapis.com','fonts.gstatic.com'].includes(url.hostname))return await req.continue();
@@ -73,7 +74,7 @@ const server=http.createServer((req,res)=>{
           history.replaceState({vertexRoute:{panel:route.panel,action:route.action}},'','?panel='+encodeURIComponent(route.panel)+'&view='+encodeURIComponent(route.action));
           dispatchEvent(new PopStateEvent('popstate'));
         },route);
-        await page.waitForNetworkIdle({idleTime:100,timeout:15000});
+        await page.waitForFunction(()=>![...document.querySelectorAll('.tab-panel.active [aria-busy=\"true\"]')].some(el=>el.getClientRects().length),{timeout:15000});
         await new Promise(r=>setTimeout(r,250));
         await page.evaluate(()=>document.fonts.ready);
         const elapsed=Math.round(performance.now()-begin);
@@ -84,6 +85,7 @@ const server=http.createServer((req,res)=>{
         const item={device,lang,theme,...route,active,elapsed,scores:Object.fromEntries(Object.entries(lhr.categories).map(([k,v])=>[k,v.score===null?null:Math.round(v.score*100)])),failures,errors:errors.slice(before)};
         results.push(item);fs.writeFileSync(path.join(out,'summary.json'),JSON.stringify({scope:'Built application; synthetic identity and backend fixtures; snapshots do not produce a performance score',routes:routes.length,results},null,2));
         console.log(JSON.stringify({...item,failures:failures.map(f=>f.id)}));
+        for(const failure of failures)for(const row of failure.details?.items||[]){const key=failure.id+JSON.stringify(row);if(!seenFindings.has(key)){seenFindings.add(key);console.log('FINDING',JSON.stringify({device,lang,theme,route,audit:failure.id,item:row}));}}
       }
       fs.writeFileSync(path.join(out,`${device}-${lang}-${theme}.html`),await flow.generateReport());
       await page.close();
