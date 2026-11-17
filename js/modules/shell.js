@@ -174,10 +174,10 @@ function initNavigation() {
       button.classList.add('active');
       refreshNavigation();
     };
-    if (changed && outgoing) animateViewSwitch(outgoing, target, update);
+    if (changed && outgoing && !restoringRoute) animateViewSwitch(outgoing, target, update);
     else {
       update();
-      if (changed) animateViewEntry(target);
+      if (changed && !restoringRoute) animateViewEntry(target);
     }
     if (target.id === 'tab-chat')
       document.dispatchEvent(new CustomEvent('vertex:workspace', { detail: { keys: ['chat.channels'] } }));

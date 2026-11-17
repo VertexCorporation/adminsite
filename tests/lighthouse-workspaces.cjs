@@ -6,6 +6,7 @@ const {authScript,response,model} = require('./helpers/console-audit-fixture.cjs
 const root = path.resolve(__dirname,'..'), dist = path.join(root,'dist');
 const auditRequire = createRequire(path.join(root,'.lighthouse/package.json'));
 const navigationMode=process.env.AUDIT_MODE==='navigation';
+const fixtureInstall='window.__auditRealFirebase=window.firebase;\n'+authScript+'\nwindow.__auditFirestoreFactory=window.firebase.firestore;delete window.firebase.firestore;';
 const out = path.join(root,'test-results',navigationMode?'workspace-navigation':'workspaces');
 fs.mkdirSync(out,{recursive:true});
 const navigation = fs.readFileSync(path.join(root,'partials/navigation.html'),'utf8');
@@ -85,7 +86,7 @@ const server=http.createServer((req,res)=>{
             if(url.pathname.endsWith('/js/core/initializer.js')){
               const file=path.join(dist,url.pathname);
               let source=fs.readFileSync(file,'utf8');
-              if(process.env.AUDIT_REAL_SDK==='1')source=source.includes("const { startApp } = await import('../main.js');")?source.replace("const { startApp } = await import('../main.js');",authScript+"\nconst { startApp } = await import('../main.js');"):source.replace(/((?:const|let|var)\s*\{startApp:[^}]+\}=await import\([^)]*\);)/,match=>authScript+'\n'+match);
+              if(process.env.AUDIT_REAL_SDK==='1')source=source.includes("const { startApp } = await import('../main.js');")?source.replace("const { startApp } = await import('../main.js');",fixtureInstall+"\nconst { startApp } = await import('../main.js');"):source.replace(/((?:const|let|var)\s*\{startApp:[^}]+\}=await import\([^)]*\);)/,match=>fixtureInstall+'\n'+match);
               else source="import {startApp} from '../main.js'; startApp({apiKey:'synthetic-audit'});";
               return await req.respond({status:200,contentType:'text/javascript',body:source});
             }
@@ -97,6 +98,11 @@ const server=http.createServer((req,res)=>{
             return await req.respond({status:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type','Access-Control-Allow-Methods':'POST, OPTIONS'},contentType:'application/json',body:JSON.stringify({result:response(url.hostname.split('-')[0],data)})});
           }
           if(url.hostname==='cortexishere.com')return await req.respond({status:200,headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/json',body:JSON.stringify(url.pathname==='/models'?{producers:{Vertex:{Series:{Example:model}}}}:{models:[]})});
+          if(url.hostname==='www.gstatic.com'&&url.pathname.endsWith('/firebase-firestore-compat.js')&&process.env.AUDIT_REAL_SDK==='1'){
+            const file=path.join(root,'.lighthouse/vendor','firebase-firestore-compat.js');
+            const body=process.env.AUDIT_CACHED_SDK==='1'?fs.readFileSync(file,'utf8'):await (await fetch(url.href)).text();
+            return await req.respond({status:200,contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*','Cache-Control':'public,max-age=31536000'},body:'var __auditSavedFirebase=window.firebase;window.firebase=window.__auditRealFirebase;\n'+body+'\nwindow.firebase=__auditSavedFirebase;window.firebase.firestore=window.__auditFirestoreFactory;'});
+          }
           if(url.hostname==='www.gstatic.com'&&process.env.AUDIT_CACHED_SDK==='1'){const file=path.join(root,'.lighthouse/vendor',path.basename(url.pathname));if(fs.existsSync(file))return await req.respond({status:200,contentType:'text/javascript',headers:{'Cache-Control':'public,max-age=31536000','Access-Control-Allow-Origin':'*'},body:fs.readFileSync(file)});}
           if(['www.gstatic.com','fonts.googleapis.com','fonts.gstatic.com'].includes(url.hostname))return await req.continue();
           return await req.respond({status:200,contentType:'text/plain',body:''});

@@ -628,8 +628,7 @@ function hideBootstrapLoader() {
     document.documentElement.dataset.startupFailed === 'true'
   )
     return;
-  translatePage();
-  loader.classList.add('is-leaving');
-  loader.addEventListener('transitionend', () => loader.remove(), { once: true });
-  setTimeout(() => loader.remove(), window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220);
+  // Bootstrap already translated the mounted HTML. Rewalking every hidden
+  // form here delays the first authorized screen and can reset live controls.
+  loader.remove();
 }
