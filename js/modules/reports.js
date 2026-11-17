@@ -41,10 +41,7 @@ function renderNavigation() {
   const access = getCurrentUserAccess(),
     departments = reportDepartments(access, PERMISSION_DEPARTMENTS);
   const host = document.querySelector('#nav-sub-reports .sidebar-submenu-inner');
-  const special = [
-    ...(ceoAccess ? ['ceo'] : []),
-    ...(senatusAccess ? ['senatus'] : []),
-  ];
+  const special = [...(ceoAccess ? ['ceo'] : []), ...(senatusAccess ? ['senatus'] : [])];
   host.innerHTML =
     special
       .map(
