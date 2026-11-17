@@ -1,6 +1,6 @@
 // Import and bind a feature once per document. Session authorization remains
 // with the existing controllers; this registry only schedules UI code.
-export function createFeatureRegistry(definitions) {
+export function createFeatureRegistry(definitions, { afterInit = () => {} } = {}) {
   const modules = new Map(),
     pending = new Map();
   const get = (id) => {
@@ -10,8 +10,11 @@ export function createFeatureRegistry(definitions) {
     if (!definition) return Promise.reject(new Error('Unknown workspace feature'));
     const request = definition
       .load()
-      .then((module) => {
+      .then(async (module) => {
         module[definition.init]();
+        // Auth listeners installed by an on-demand controller must receive
+        // their initial state before its first read populates the screen.
+        await afterInit();
         modules.set(id, module);
         return module;
       })

@@ -195,16 +195,16 @@ note('Rapid navigation never cycles through intermediate screens');
 await page.locator('.dock-btn[data-target="tab-publications"]').click();
 await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
 const atomicDestination=await page.evaluate(()=>{
- const seen=[];
- const listener=event=>{const keys=event.detail?.keys||[];if(keys.some(k=>k.startsWith('users.')))seen.push(keys.join(','));};
+ const seen=[];window.__atomicWorkspace=seen;
+ const listener=event=>{const keys=event.detail?.keys||[];if(keys.some(k=>k.startsWith('users.'))){seen.push(keys.join(','));document.removeEventListener('vertex:workspace',listener);}};
  document.addEventListener('vertex:workspace',listener);
  document.querySelector('[data-nav-panel="users.status,users.deleteAccount"]').click();
- document.removeEventListener('vertex:workspace',listener);
  const tab=document.getElementById('tab-users');
  return {seen,workspace:tab.dataset.workspace,active:tab.classList.contains('active'),
   nestedGhost:!!tab.querySelector('.grid-layout > .ui-crossfade-ghost')};
 });
-assert.deepEqual(atomicDestination.seen,['users.status,users.deleteAccount'],JSON.stringify(atomicDestination));
+await page.waitForFunction(()=>window.__atomicWorkspace?.length===1);
+assert.deepEqual(await page.evaluate(()=>window.__atomicWorkspace),['users.status,users.deleteAccount'],JSON.stringify(atomicDestination));
 assert.equal(atomicDestination.workspace,'users.status,users.deleteAccount:');
 assert(atomicDestination.active&&!atomicDestination.nestedGhost,JSON.stringify(atomicDestination));
 await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));

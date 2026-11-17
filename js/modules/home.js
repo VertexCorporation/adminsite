@@ -439,10 +439,16 @@ export function updateHome(user, isAdmin, departments) {
           : [],
       }
     : null;
-  renderHome();
+  if (document.getElementById('tab-home')?.classList.contains('active')) renderHome();
 }
 export function initHomeModule() {
   if (initialized) return;
   initialized = true;
-  onLangChange(renderHome);
+  const renderVisibleHome = () => {
+    if (document.getElementById('tab-home')?.classList.contains('active')) renderHome();
+  };
+  onLangChange(renderVisibleHome);
+  document.addEventListener('vertex:workspace', (event) => {
+    if (event.detail?.keys?.includes('home')) renderVisibleHome();
+  });
 }

@@ -4,6 +4,9 @@ on:
     paths: ['js/**', 'css/**', 'partials/**', 'scripts/**', 'index.html', 'tests/lighthouse-workspaces.cjs', 'tests/helpers/console-audit-fixture.cjs', '.github/workflows/workspace-lighthouse.yml']
 permissions:
   contents: read
+concurrency:
+  group: console-workspaces-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   workspaces:
     runs-on: ubuntu-24.04

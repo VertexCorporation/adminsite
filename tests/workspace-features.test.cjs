@@ -21,3 +21,11 @@ test('a failed import can retry without reinitializing successfully loaded sibli
  await assert.rejects(registry.ensure(['users.directory']),/temporary/);
  await registry.ensure(['users.directory']);assert.equal(tries,2);assert.equal(bindings,1);assert.equal(stable,1);
 });
+
+test('first workspace delivery waits for newly registered Auth listeners',async()=>{
+ let release,bindings=0;const wait=new Promise(resolve=>release=resolve);
+ const registry=context.create([{id:'directory',scopes:['users.'],load:async()=>({init(){bindings++;}}),init:'init'}],{afterInit:()=>wait});
+ const pending=registry.ensure(['users.directory']);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(bindings,1);assert.equal(registry.ready(['users.directory']),false);
+ release();await pending;assert.equal(registry.ready(['users.directory']),true);assert.equal(bindings,1);
+});

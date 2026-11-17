@@ -33,7 +33,16 @@ import { initReportsModule } from './modules/reports.js';
 
 import { createFeatureRegistry } from './core/workspace-features.js';
 import { workspaceDefinitions } from './core/workspace-definitions.js';
-const features = createFeatureRegistry(workspaceDefinitions);
+const features = createFeatureRegistry(workspaceDefinitions, {
+  afterInit: () =>
+    new Promise((resolve) => {
+      let unsubscribe;
+      unsubscribe = auth.onAuthStateChanged(() => {
+        queueMicrotask(() => unsubscribe?.());
+        resolve();
+      });
+    }),
+});
 
 const featureMethod =
   (id, method) =>
@@ -275,6 +284,8 @@ export function startApp(firebaseConfig) {
           document.dispatchEvent(new CustomEvent('vertex:departments', { detail: departments }));
         }
 
+        // Commit an authorized deep link before constructing the default Home.
+        document.dispatchEvent(new Event('vertex:restore-route'));
         updateHome(user, isAdmin, departments);
         if (deploymentCapabilities.consolePeople) {
           // The access response may legitimately omit authzVersion. Do not read an undeclared profile.
