@@ -1,4 +1,6 @@
 export default {
+  'subs.already_assigned': 'Bu plan ve bitiş tarihi zaten kayıtlı.',
+  'subs.grant_failed': 'Abonelik kaydedilemedi. Tekrar denemeden önce hesabı ve mevcut planı kontrol edin.',
   'subs.account_missing':
     'Bu e-posta adresiyle bir hesap bulunamadı. Kullanıcının Cortex’e giriş yaptığı adresi kontrol edin.',
   'subs.profile_missing': 'Hesap profili henüz oluşmamış. Kullanıcı Cortex’e giriş yaptıktan sonra tekrar deneyin.',
