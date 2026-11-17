@@ -14,6 +14,7 @@ function response(name, data = {}) {
   switch(name.toLowerCase()) {
     case 'getvertexcontributors': return {contributors:[person],nextCursor:null};
     case 'listconsoleusers': return {indexReady:true,users:[{...person,membership:'active',linkStatus:'linked',contributor:{id:person.id,name:person.name},role:'member',authzVersion:1,emailVerified:true,disabled:false,providers:['password']}],nextCursor:null};
+    case 'getconsoleuser': return {user:{...person,membership:'active',linkStatus:'linked',contributor:{id:person.id,name:person.name},role:'member',authzVersion:1,emailVerified:true,disabled:false,providers:['password']}};
     case 'getconsoleuserstatistics': return {total:120,verified:110,disabled:2};
     case 'getserverstatus': return {isUnderMaintenance:false};
     case 'listconsolechatchannels': return {isAdmin:true,channels:[{id:'general',name:'General',canPost:true,canManage:true,lastMessageSeq:1,lastReadSequence:0,unreadCount:1}]};

@@ -16,6 +16,19 @@ for(const match of navigation.matchAll(/data-nav-panel="([^"]+)"\s+data-nav-acti
 }
 for(const view of ['overview','daily','people','tasks','weekly'])routes.push({panel:'reports.workspace',action:'Array:'+view});
 routes.push({panel:'system.exporter,system.attributions',action:'attributions'});
+routes.push({panel:'profile',action:''});
+const surfaces = [
+  {panel:'home',action:'',surface:'account-menu',selector:'#user-menu-trigger'},
+  {panel:'home',action:'',surface:'language-menu',selector:'#lang-toggle-btn'},
+  {panel:'home',action:'',surface:'theme-menu',selector:'#theme-menu-btn'},
+  {panel:'home',action:'',surface:'mobile-more',selector:'[data-mobile-more]',mobileOnly:true},
+  {panel:'contributors.list',action:'',surface:'contributor-details',selector:'[data-details="audit-person"]'},
+  {panel:'contributors.list',action:'',surface:'certificate-drawer',selector:'.certificate-manage-btn'},
+  {panel:'users.directory',action:'',surface:'user-details',selector:'[data-directory-row]'},
+  {panel:'reports.workspace',action:'Array:weekly',surface:'report-entry-editor',selector:'#reports-new-entry'},
+  {panel:'reports.workspace',action:'Array:weekly',surface:'report-task-editor',selector:'#reports-new-task'},
+  {panel:'legal.documents',action:'',surface:'legal-history',selector:'#legal-history-section summary'},
+];
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
   const file=path.resolve(dist,'.'+(url.pathname==='/'?'/index.html':url.pathname));
@@ -23,6 +36,27 @@ const server=http.createServer((req,res)=>{
   fs.readFile(file,(error,bytes)=>{res.statusCode=error?404:200;res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.json')?'application/json':file.endsWith('.svg')?'image/svg+xml':file.endsWith('.png')?'image/png':'text/html');if(!error&&/\.(js|css|html|json)$/.test(file)){res.setHeader('Content-Encoding','gzip');res.setHeader('Vary','Accept-Encoding');bytes=gzipSync(bytes);}res.end(error?'':bytes);});
 });
 (async()=>{
+  // A cold-load score must not inherit heap/trace pressure from preceding
+  // Lighthouse navigations. Run each destination in its own Chrome process.
+  if(navigationMode&&!process.env.AUDIT_NAV_CHILD){
+    const {spawnSync}=require('node:child_process');const combined=[];
+    for(const device of (process.env.AUDIT_DEVICES||'desktop,mobile').split(',')){
+      const selected=routes.filter((r,index)=>(!process.env.AUDIT_FILTER||(r.panel+':'+r.action).includes(process.env.AUDIT_FILTER))&&(!process.env.AUDIT_SHARDS||index%Number(process.env.AUDIT_SHARDS)===Number(process.env.AUDIT_SHARD)));
+      for(const [index,route] of selected.entries()){
+        const child=spawnSync(process.execPath,[__filename],{stdio:'inherit',env:{...process.env,AUDIT_NAV_CHILD:'1',AUDIT_ROUTE:JSON.stringify(route),AUDIT_DEVICES:device,AUDIT_LANGS:'en',AUDIT_THEMES:'dark',AUDIT_SHARDS:''}});
+        if(child.status!==0)throw Error('Cold navigation failed: '+route.panel+':'+route.action);
+        const summary=JSON.parse(fs.readFileSync(path.join(out,'summary.json'),'utf8'));
+        if(summary.results.length!==1)throw Error('Expected one isolated navigation');
+        combined.push(...summary.results);
+        for(const extension of ['html','json']){
+          const source=path.join(out,extension==='html'?device+'-en-dark.html':device+'-en-dark-0.json');
+          fs.copyFileSync(source,path.join(out,device+'-route-'+index+'.'+extension));
+        }
+      }
+    }
+    fs.writeFileSync(path.join(out,'summary.json'),JSON.stringify({scope:'Isolated cold navigation; real Firebase SDK downloads, synthetic identity/backend; production authentication and service latency excluded',routes:routes.length,results:combined},null,2));
+    return;
+  }
   const {default:puppeteer}=await import(auditRequire.resolve('puppeteer'));
   const {startFlow,desktopConfig}=await import(auditRequire.resolve('lighthouse'));
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -74,31 +108,41 @@ const server=http.createServer((req,res)=>{
       };
       if(!navigationMode){await page.goto(base,{waitUntil:'networkidle0'});await waitReady();}
       const flow=await startFlow(page,{name:`Workspaces ${device} ${lang} ${theme}`,config:device==='desktop'?desktopConfig:undefined,flags:{onlyCategories:navigationMode?['performance','accessibility','best-practices']:['accessibility','best-practices']}});
-      const selected=routes.filter((r,index)=>(!process.env.AUDIT_FILTER||(r.panel+':'+r.action).includes(process.env.AUDIT_FILTER))&&(!process.env.AUDIT_SHARDS||index%Number(process.env.AUDIT_SHARDS)===Number(process.env.AUDIT_SHARD)));
+      const selected=process.env.AUDIT_ROUTE?[JSON.parse(process.env.AUDIT_ROUTE)]:[...routes,...(navigationMode?[]:surfaces)].filter(r=>!r.mobileOnly||device==='mobile').filter((r,index)=>(!process.env.AUDIT_FILTER||(r.panel+':'+r.action+':'+(r.surface||'')).includes(process.env.AUDIT_FILTER))&&(!process.env.AUDIT_SHARDS||index%Number(process.env.AUDIT_SHARDS)===Number(process.env.AUDIT_SHARD)));
       for(const route of selected){
         const begin=performance.now();const before=errors.length;
+        if(!navigationMode){await page.keyboard.press('Escape');await page.keyboard.press('Escape');}
         if(navigationMode){
           await flow.navigate(async()=>{
             await page.goto(base+'/?panel='+encodeURIComponent(route.panel)+'&view='+encodeURIComponent(route.action),{waitUntil:'domcontentloaded'});
             await waitReady();
+            if(route.panel==='profile')await page.evaluate(()=>document.querySelector('.dock-btn[data-target="tab-profile"]').click());
             await new Promise(r=>setTimeout(r,250));
           },{name:route.panel+':'+route.action});
         }else{
         await page.evaluate(route=>{
+          if(route.panel==='profile'){document.querySelector('.dock-btn[data-target="tab-profile"]').click();return;}
           history.replaceState({vertexRoute:{panel:route.panel,action:route.action}},'','?panel='+encodeURIComponent(route.panel)+'&view='+encodeURIComponent(route.action));
           dispatchEvent(new PopStateEvent('popstate'));
         },route);
         await page.waitForFunction(()=>![...document.querySelectorAll('.tab-panel.active [aria-busy=\"true\"]')].some(el=>el.getClientRects().length),{timeout:15000});
         await new Promise(r=>setTimeout(r,250));
         await page.evaluate(()=>document.fonts.ready);
+        if(route.surface){
+          await page.waitForSelector(route.selector,{visible:true});
+          await page.click(route.selector);
+          await new Promise(r=>setTimeout(r,300));
+          await waitReady();
+        }
         }
         const elapsed=Math.round(performance.now()-begin);
         const active=await page.evaluate(()=>({panel:document.querySelector('.tab-panel.active')?.id,workspace:document.querySelector('.tab-panel.active')?.dataset.workspace,theme:document.documentElement.dataset.theme,overflow:document.documentElement.scrollWidth>innerWidth+1}));
-        if(!navigationMode)await flow.snapshot({name:route.panel+':'+route.action});
+        if(!navigationMode)await flow.snapshot({name:route.panel+':'+route.action+(route.surface?':'+route.surface:'')});
         const lhr=(await flow.createFlowResult()).steps.at(-1).lhr;
         fs.writeFileSync(path.join(out,device+'-'+lang+'-'+theme+'-'+results.length+'.json'),JSON.stringify(lhr));
         const failures=Object.values(lhr.audits).filter(a=>a.score!==null&&a.score<1).map(a=>({id:a.id,title:a.title,details:a.details}));
         const metrics=Object.fromEntries(['first-contentful-paint','largest-contentful-paint','total-blocking-time','cumulative-layout-shift','speed-index'].filter(k=>lhr.audits[k]).map(k=>[k,lhr.audits[k].numericValue]));
+        metrics.lcpElement=lhr.audits['lcp-breakdown-insight']?.details?.items?.find(item=>item.type==='node')?.selector;
         const item={device,lang,theme,...route,active,elapsed,scores:Object.fromEntries(Object.entries(lhr.categories).map(([k,v])=>[k,v.score===null?null:Math.round(v.score*100)])),metrics,failures,errors:errors.slice(before)};
         results.push(item);fs.writeFileSync(path.join(out,'summary.json'),JSON.stringify({scope:navigationMode?'Built application cold navigation; real SDK loading, synthetic identity and backend; excludes real authentication/production service latency':'Built application; synthetic identity and backend fixtures; snapshots do not produce a performance score',routes:routes.length,results},null,2));
         console.log(JSON.stringify({...item,failures:failures.map(f=>f.id)}));

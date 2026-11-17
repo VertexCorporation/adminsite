@@ -5,10 +5,8 @@ const fs = require('node:fs'),
 const { sourceFiles } = require('./source-files.cjs');
 const root = path.resolve(__dirname, '..'),
   out = path.join(root, 'dist'),
-  files = sourceFiles(root),
-  hash = crypto.createHash('sha256');
-for (const file of files) hash.update(file).update(fs.readFileSync(path.join(root, file)));
-const release = hash.digest('hex').slice(0, 12),
+  files = sourceFiles(root);
+const release = require('./release-hash.cjs').releaseHash(root, files),
   manifest = JSON.parse(fs.readFileSync(path.join(out, 'release.json'), 'utf8'));
 if (manifest.release !== release) throw Error('Release manifest differs from source');
 for (const file of require('./console-modules.cjs').consoleModules(root)) {

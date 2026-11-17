@@ -7,11 +7,9 @@ const { buildSync } = require('esbuild');
 const root = path.resolve(__dirname, '..'),
   out = path.join(root, 'dist'),
   files = sourceFiles(root);
-const hash = crypto.createHash('sha256');
-for (const file of files) hash.update(file).update(fs.readFileSync(path.join(root, file)));
 if (fs.existsSync(path.join(root, 'assets/releases')))
   throw Error('Archived release snapshots must not be kept in the source checkout');
-const release = hash.digest('hex').slice(0, 12),
+const release = require('./release-hash.cjs').releaseHash(root, files),
   prefix = 'assets/runtime/' + release;
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
