@@ -42,6 +42,7 @@ import {
   getEffectivePanelLevel,
   PERMISSION_CATEGORIES,
 } from './modules/roles.js';
+import { loadScenePersonnel } from './modules/scenePersonnel.js';
 import { initSiteTeamPanel, loadTeam } from './modules/siteTeam.js';
 import { initTeamCardsPanel, loadTeamCards } from './modules/teamCards.js';
 import { updateGridVisibleCounts, initAdaptiveGrids } from './modules/views.js';
@@ -171,6 +172,8 @@ export function startApp(firebaseConfig) {
   });
   document.addEventListener('vertex:workspace', (event) => {
     void loadedWorkspaces.load(event.detail?.keys || []);
+    if (event.detail?.action === 'moderators' && event.detail?.keys?.includes('users.directory'))
+      void loadScenePersonnel();
     if (event.detail?.keys?.includes('system.teamLog')) {
       if (event.detail.action === 'honor') void loadTeam();
       if (event.detail.action === 'chefs') void loadTeamCards();

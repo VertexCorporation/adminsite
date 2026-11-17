@@ -28,6 +28,7 @@ const server = http.createServer((req, res) => {
       page.on('request', request => { if (request.url().includes('www.gstatic.com/firebasejs/')) sdk.push(request.url()); });
       await page.addInitScript(({ fixture, mode }) => {
         eval(fixture);
+        if (window !== window.top) return;
         const auth = firebase.auth();
         if (mode !== 'returning') auth.currentUser = null;
         else localStorage.setItem('siteLang', 'en');

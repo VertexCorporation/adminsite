@@ -109,6 +109,9 @@ const warm = () => {
 const restore = () => {
   void startConsole(true).catch(() => {});
 };
+window.addEventListener('storage', (event) => {
+  if (event.key === 'vertexConsoleSession' && event.newValue === 'active') restore();
+});
 login.addEventListener('focusin', warm, { once: true });
 login.addEventListener('pointerdown', warm, { once: true });
 async function replay(event, target) {

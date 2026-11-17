@@ -128,11 +128,12 @@ function getCallable(name) {
   let fn = callableCache.get(name);
   if (!fn) {
     fn = functions.httpsCallable(name, {
-      timeout:
-        name === 'sendConsolePasswordResets'
-          ? 540000
-          : name === 'createConsoleCustomerAccount'
-            ? 150000
+      timeout: ['sendConsolePasswordResets', 'bulkSetUserSubscriptions'].includes(name)
+        ? 540000
+        : name === 'createConsoleCustomerAccount'
+          ? 150000
+          : ['setUserSubscription', 'removeUserSubscription', 'previewBulkUserSubscriptions'].includes(name)
+            ? 120000
             : name === 'translateLegalDocument'
               ? 120000
               : name === 'translateTeamBiography'

@@ -75,6 +75,19 @@ export function userErrorMessage(error, context = '') {
     .replace('functions/', '')
     .replace('auth/', '');
   const reason = error?.details?.reason;
+  const subscriptionReasons = {
+    'subscription-account-missing': 'subs.account_missing',
+    'subscription-profile-missing': 'subs.profile_missing',
+  };
+  if (subscriptionReasons[reason]) return __(subscriptionReasons[reason]);
+  // Compatibility with deployed subscription endpoints predating reason codes.
+  const subscriptionMessages = {
+    'The user has an active store-managed subscription; it can only end through the store.': 'subs.store_managed',
+    'An active Vertex sponsorship cannot be replaced through promotional grants.': 'subs.vertex_managed',
+    'Anonymous accounts cannot hold subscriptions.': 'subs.anonymous',
+    'User document does not exist.': 'subs.profile_missing',
+  };
+  if (subscriptionMessages[error?.message]) return __(subscriptionMessages[error.message]);
   if (reason === 'personnel-rollout-pending') return __('errors.personnel_rollout');
   if (reason === 'personnel-membership-review') return __('errors.personnel_membership');
   if (reason === 'personnel-version-conflict') return __('errors.personnel_stale');

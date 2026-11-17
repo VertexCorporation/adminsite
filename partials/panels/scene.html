@@ -3,6 +3,20 @@
     <h2 data-i18n="catalog.scene"></h2>
   </div>
   <div class="grid-layout">
+    <section class="panel-card col-span-12" data-panel="users.directory" data-workspace-action="moderators">
+      <h3 data-i18n="team.moderators"></h3>
+      <p class="intro-description" data-i18n="team.moderators_hint"></p>
+      <div class="form-group-field">
+        <label for="scene-personnel-search" data-i18n="people.email"></label>
+        <input
+          id="scene-personnel-search"
+          type="search"
+          autocomplete="off"
+          data-i18n-placeholder="team.personnel_search"
+        />
+      </div>
+      <div id="scene-personnel-list" class="team-list"></div>
+    </section>
     <div class="panel-card col-span-12" id="team-log-manager" data-panel="system.teamLog" data-workspace-action="honor">
       <div class="card-title-row">
         <div class="title-details">
