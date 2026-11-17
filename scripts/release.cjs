@@ -3,6 +3,7 @@ const fs = require('node:fs'),
   path = require('node:path'),
   crypto = require('node:crypto');
 const { sourceFiles } = require('./source-files.cjs');
+const { buildSync } = require('esbuild');
 const root = path.resolve(__dirname, '..'),
   out = path.join(root, 'dist'),
   files = sourceFiles(root);
@@ -38,6 +39,41 @@ for (const name of [
 }
 // Account activation remains a small independent entry point using the same release.
 let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const copy = require('./login-copy.cjs')(root);
+const escape = (value) =>
+  String(value).replace(
+    /[&<>"']/g,
+    (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char],
+  );
+html = html.replace(/(<(title|h1|span)\b[^>]*data-i18n="([^"]+)"[^>]*>)(<\/\2>)/g, (match, open, tag, key, close) =>
+  copy[key] ? open + escape(copy[key]) + close : match,
+);
+html = html.replace(/<(input|div)\b[^>]*>/g, (tag) => {
+  for (const attribute of ['aria-label', 'placeholder']) {
+    const key = tag.match(new RegExp('data-i18n-' + attribute + '="([^"]+)"'))?.[1];
+    if (key && copy[key])
+      tag = tag.replace(new RegExp('(?<![\\w-])' + attribute + '=""'), attribute + '="' + escape(copy[key]) + '"');
+  }
+  return tag;
+});
+const criticalCSS = buildSync({
+  entryPoints: [path.join(root, 'css/login.css')],
+  bundle: true,
+  minify: true,
+  write: false,
+}).outputFiles[0].text;
+// No stylesheet request chain delays the sign-in surface's first paint.
+html = html.replace('<link rel="stylesheet" href="css/login.css" />', `<style>${criticalCSS}</style>`);
+buildSync({
+  entryPoints: [path.join(root, 'js/core/entry.js')],
+  bundle: true,
+  minify: true,
+  format: 'esm',
+  outfile: path.join(out, prefix, 'login-entry.js'),
+  define: { 'import.meta.url': 'entryModuleURL' },
+  banner: { js: "const entryModuleURL = new URL('./js/core/entry.js', import.meta.url).href;" },
+});
+html = html.replace('src="js/core/entry.js"', `src="/${prefix}/login-entry.js"`);
 const imports = {};
 for (const file of files.filter((file) => file.endsWith('.js'))) imports['/' + file] = '/' + prefix + '/' + file;
 const manifest = `<meta name="vertex-release" content="${release}"><script type="importmap">${JSON.stringify({ imports })}</script>`;

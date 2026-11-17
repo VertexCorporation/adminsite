@@ -1,0 +1,41 @@
+name: Console Lighthouse audit
+on:
+  workflow_dispatch:
+    inputs:
+      live:
+        description: Audit the live public sign-in page instead of the build
+        type: boolean
+        default: false
+  pull_request:
+    paths: ['js/**', 'css/**', 'index.html', 'scripts/**', 'tests/lighthouse-console.cjs', '.github/workflows/console-lighthouse.yml']
+permissions:
+  contents: read
+jobs:
+  lighthouse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run verify:release
+      - run: npm install --prefix .lighthouse --no-save lighthouse@13.6.0 puppeteer@25.17.0
+      - name: Three cold runs for each device with standard Lighthouse throttling
+        env:
+          LIVE: ${{ inputs.live }}
+        run: |
+          if [ "$LIVE" = 'true' ]; then
+            node tests/lighthouse-console.cjs --live
+          else
+            node tests/lighthouse-console.cjs
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: console-lighthouse-${{ github.run_id }}
+          path: test-results/lighthouse/
+          retention-days: 14

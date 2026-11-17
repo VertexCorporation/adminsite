@@ -3,7 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const source=fs.readFileSync('js/core/firebase.js','utf8');
 test('SDK callable records operation context without tokens, user data or remote message',async()=>{
  const records=[],privatePayload='PRIVATE_APPLICATION_DATA',privateMessage='PRIVATE_BACKEND_MESSAGE';
- const box={
+ const box={appCheck:{activate(){}},
   functions:{httpsCallable:()=>async()=>{throw Object.assign(new Error(privateMessage),{code:'functions/permission-denied'});}},
   auth:{currentUser:{uid:'PRIVATE_ACCOUNT_ID'}},
   document:{querySelector:()=>({content:'fixture-release'})},

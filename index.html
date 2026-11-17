@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title data-i18n="page.title"></title>
-    <script type="module" src="js/lang.js"></script>
 
     <!-- SEO & Basic Meta -->
     <meta
@@ -45,21 +44,35 @@
     />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180" />
 
-    <!-- Google Fonts & Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/login.css" />
+    <template id="console-styles">
+      <!-- Google Fonts & Icons -->
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet" />
 
-    <!-- Styles -->
-    <link rel="stylesheet" href="css/tokens.css" />
-    <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/layout.css" />
-    <link rel="stylesheet" href="css/components.css" />
-    <link rel="stylesheet" href="css/motion.css" />
-    <link rel="stylesheet" href="css/loading.css" />
-    <link rel="stylesheet" href="css/modules.css" />
-    <link rel="stylesheet" href="css/certificates.css" />
-    <link rel="stylesheet" href="css/layout/interaction.css" />
+      <!-- Styles -->
+      <link rel="stylesheet" href="css/tokens.css" />
+      <link rel="stylesheet" href="css/base.css" />
+      <link rel="stylesheet" href="css/layout.css" />
+      <link rel="stylesheet" href="css/components.css" />
+      <link rel="stylesheet" href="css/motion.css" />
+      <link rel="stylesheet" href="css/loading.css" />
+      <link rel="stylesheet" href="css/modules.css" />
+      <link rel="stylesheet" href="css/certificates.css" />
+      <link rel="stylesheet" href="css/layout/interaction.css" />
+
+      <link rel="stylesheet" href="css/modules/people.css" />
+      <link rel="stylesheet" href="css/home.css" />
+      <link rel="stylesheet" href="css/ui/controls.css" />
+      <link rel="stylesheet" href="css/ui/overlay.css" />
+      <link rel="stylesheet" href="css/ui/toast.css" />
+      <link rel="stylesheet" href="css/ui/scroll.css" />
+      <link rel="stylesheet" href="css/ui/layout.css" />
+      <link rel="stylesheet" href="css/modules/catalog-layout.css" />
+      <link rel="stylesheet" href="css/reports.css" />
+      <link rel="stylesheet" href="css/legal.css" />
+    </template>
 
     <script>
       // Favicons follow the browser preference, independently of the console theme.
@@ -95,21 +108,18 @@
         window.location.replace('https://' + requiredDomain + window.location.pathname + window.location.search);
       }
     </script>
-    <link rel="stylesheet" href="css/modules/people.css" />
-    <link rel="stylesheet" href="css/home.css" />
-    <link rel="stylesheet" href="css/ui/controls.css" />
-    <link rel="stylesheet" href="css/ui/overlay.css" />
-    <link rel="stylesheet" href="css/ui/toast.css" />
-    <link rel="stylesheet" href="css/ui/scroll.css" />
-    <link rel="stylesheet" href="css/ui/layout.css" />
-    <link rel="stylesheet" href="css/modules/catalog-layout.css" />
-    <link rel="stylesheet" href="css/reports.css" />
-    <link rel="stylesheet" href="css/legal.css" />
   </head>
 
   <body>
     <!-- Başlatıcı Yükleme Ekranı -->
-    <div id="app-loader" class="vx-app-loader" role="status" data-i18n-aria-label="common.loading" aria-label="">
+    <div
+      id="app-loader"
+      hidden=""
+      class="vx-app-loader"
+      role="status"
+      data-i18n-aria-label="common.loading"
+      aria-label=""
+    >
       <div class="vx-loader-mark" aria-hidden="true">
         <img class="vx-loader-logo vx-loader-base" src="assets/vertex-logo.svg" alt="" />
         <img class="vx-loader-logo vx-loader-sweep" src="assets/vertex-logo.svg" alt="" />
@@ -142,6 +152,7 @@
               id="email"
               data-i18n-aria-label="login.email"
               data-i18n-placeholder="login.email"
+              aria-label=""
               placeholder=""
               autocomplete="email"
               required=""
@@ -160,6 +171,7 @@
               autocomplete="current-password"
               data-i18n-aria-label="login.password"
               data-i18n-placeholder="login.password"
+              aria-label=""
               placeholder=""
               required=""
             />
@@ -295,6 +307,6 @@
     </div>
 
     <!-- Firebase SDK ve Entegrasyon Modülleri -->
-    <script type="module" src="js/core/bootstrap.js"></script>
+    <script type="module" src="js/core/entry.js"></script>
   </body>
 </html>

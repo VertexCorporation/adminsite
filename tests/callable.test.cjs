@@ -6,7 +6,7 @@ const fs=require('node:fs'),vm=require('node:vm');
 const source=fs.readFileSync('js/core/firebase.js','utf8');
 function harness(handler,{signedIn=true}={}){
  const calls=[],definitions=[];
- const box={
+ const box={appCheck:{activate(){}},
    auth:{currentUser:signedIn?{uid:'test-user'}:null},
    functions:{httpsCallable(name,settings){
      definitions.push({name,settings});
