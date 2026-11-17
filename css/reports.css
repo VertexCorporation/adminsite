@@ -197,3 +197,25 @@
 .report-editor select[multiple] {
   min-height: 120px;
 }
+
+/* Governance: chief submissions, Senatus findings and executive oversight. */
+.report-governance-card {
+  margin-block: 12px;
+}
+.report-governance-card > h3 {
+  margin: 0 0 14px;
+}
+.report-governance-card > h4 {
+  margin-block: 20px 10px;
+}
+.report-governance-card > .chrome-btn-outline {
+  margin-inline-end: 10px;
+  margin-block: 5px;
+}
+.report-governance-card .report-record {
+  margin-block-start: 12px;
+}
+.report-governance-card .report-record > .chrome-btn-outline {
+  margin-inline-end: 8px;
+  margin-block: 6px;
+}
