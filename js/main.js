@@ -32,86 +32,9 @@ import { initUserMenu } from './modules/userMenu.js';
 import { initReportsModule } from './modules/reports.js';
 
 import { createFeatureRegistry } from './core/workspace-features.js';
-const features = createFeatureRegistry([
-  { id: 'beacons', scopes: ['users.beacons'], load: () => import('./modules/beacons.js'), init: 'initBeaconsModule' },
-  {
-    id: 'origin',
-    scopes: ['origin.', 'models.origin', 'subscriptions.assign'],
-    load: () => import('./modules/origin.js'),
-    init: 'initOriginModule',
-  },
-  { id: 'events', scopes: ['events.'], load: () => import('./modules/events.js'), init: 'initEventsModule' },
-  {
-    id: 'directory',
-    scopes: ['users.directory'],
-    load: () => import('./modules/directory.js'),
-    init: 'initDirectoryModule',
-  },
-  {
-    id: 'people',
-    scopes: ['users.', 'contributors.list'],
-    load: () => import('./modules/people.js'),
-    init: 'initPeopleModule',
-  },
-  {
-    id: 'account-deletion',
-    scopes: ['users.'],
-    load: () => import('./modules/accountDeletion.js'),
-    init: 'initAccountDeletionModule',
-  },
-  {
-    id: 'admin',
-    scopes: [
-      'system.serverStatus',
-      'system.deptAssign',
-      'system.deptUsers',
-      'system.manualVerify',
-      'users.status',
-      'users.deleteAccount',
-    ],
-    load: () => import('./modules/admin.js'),
-    init: 'initAdminModule',
-  },
-  {
-    id: 'models',
-    scopes: ['models.library', 'models.manage'],
-    load: () => import('./modules/models.js'),
-    init: 'initModelsModule',
-  },
-  { id: 'news', scopes: ['news.'], load: () => import('./modules/news.js'), init: 'initNewsModule' },
-  {
-    id: 'notifications',
-    scopes: ['notifications.'],
-    load: () => import('./modules/notification.js'),
-    init: 'initNotificationModule',
-  },
-  {
-    id: 'contributors',
-    scopes: ['contributors.list'],
-    load: () => import('./modules/contributors.js'),
-    init: 'initContributorsModule',
-  },
-  {
-    id: 'subscriptions',
-    scopes: ['subscriptions.'],
-    load: () => import('./modules/subscriptions.js'),
-    init: 'initSubscriptionsModule',
-  },
-  { id: 'chat', scopes: ['chat.channels'], load: () => import('./modules/consoleChat.js'), init: 'initConsoleChat' },
-  {
-    id: 'site-team',
-    scopes: ['system.teamLog'],
-    load: () => import('./modules/siteTeam.js'),
-    init: 'initSiteTeamPanel',
-  },
-  {
-    id: 'team-cards',
-    scopes: ['system.teamLog'],
-    load: () => import('./modules/teamCards.js'),
-    init: 'initTeamCardsPanel',
-  },
-  { id: 'legal', scopes: ['legal.documents'], load: () => import('./modules/legal.js'), init: 'initLegalModule' },
-]);
+import { workspaceDefinitions } from './core/workspace-definitions.js';
+const features = createFeatureRegistry(workspaceDefinitions);
+
 const featureMethod =
   (id, method) =>
   async (...args) => {
