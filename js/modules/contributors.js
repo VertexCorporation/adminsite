@@ -296,8 +296,7 @@ async function loadContributors(append = false) {
     const uid = auth.currentUser?.uid;
     if (uid && isPanelAdmin())
       for (const p of contributors) {
-        if (['pending', 'processing'].includes(p.certificateDeliveryStatus))
-          watchContributorVerification(p.id, uid);
+        if (['pending', 'processing'].includes(p.certificateDeliveryStatus)) watchContributorVerification(p.id, uid);
       }
   } catch (error) {
     console.error('[CONTRIBUTORS] Failed to fetch data:', error);
