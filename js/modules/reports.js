@@ -20,7 +20,7 @@ let expandedDepartment = '',
   selectedDepartment = '',
   selectedView = 'overview',
   week = monday(),
-  cooAccess = false,
+  senatusAccess = false,
   ceoAccess = false;
 async function detectGovernanceAccess() {
   const access = getCurrentUserAccess();
@@ -29,7 +29,7 @@ async function detectGovernanceAccess() {
   try {
     const result = await consolePeopleCall('getGovernanceAccess', {});
     if (sessionIsCurrent(token)) {
-      cooAccess = result.data?.isCoo === true;
+      senatusAccess = result.data?.canWriteAudit === true;
       ceoAccess = result.data?.canReviewLeadership === true;
       renderNavigation();
     }
@@ -43,7 +43,7 @@ function renderNavigation() {
   const host = document.querySelector('#nav-sub-reports .sidebar-submenu-inner');
   const special = [
     ...(ceoAccess ? ['ceo'] : []),
-    ...(access.isCore || cooAccess || access.departments.includes('Senatus') ? ['senatus'] : []),
+    ...(senatusAccess ? ['senatus'] : []),
   ];
   host.innerHTML =
     special
@@ -100,7 +100,7 @@ export function initReportsModule() {
     selectedDepartment = '';
     selectedView = 'overview';
     leaveGovernanceView();
-    cooAccess = false;
+    senatusAccess = false;
     ceoAccess = false;
     renderNavigation();
     void detectGovernanceAccess();
@@ -122,8 +122,7 @@ export function initReportsModule() {
     if (!event.detail?.keys?.includes('reports.workspace')) return;
     const [requested, view = 'overview'] = String(event.detail.action || '').split(':');
     if (requested === 'governance' && ['ceo', 'senatus'].includes(view)) {
-      const access = getCurrentUserAccess();
-      if (view === 'ceo' ? !ceoAccess : !(access.isCore || cooAccess || access.departments.includes('Senatus'))) return;
+      if (view === 'ceo' ? !ceoAccess : !senatusAccess) return;
       selectedDepartment = '';
       selectedView = view;
       expandDepartment('');
