@@ -1,4 +1,6 @@
 export default {
+  'subs.already_assigned': 'This plan and expiry are already assigned.',
+  'subs.grant_failed': 'The subscription could not be saved. Check the account and its current plan before retrying.',
   'subs.account_missing': 'No account exists for this email. Check the address used to sign in to Cortex.',
   'subs.profile_missing': 'The account profile is not ready. Ask the user to sign in to Cortex, then try again.',
   'subs.store_managed':
