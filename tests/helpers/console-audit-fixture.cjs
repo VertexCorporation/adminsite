@@ -26,8 +26,11 @@ function response(name, data = {}) {
     case 'listsiteteam': return {staff:[],mods:[],chefs:[],honors:[],cards:[],entries:[],members:[]};
     case 'getweeklystars': return {current:null,history:[]};
     case 'getbackuphealthstatus': return {};
-    case 'listbeaconapplications': return {applications:[],nextCursor:null};
-    case 'manageoriginprogram': return {rows:[],nextCursor:null,models:[],summary:{}};
+    case 'listbeaconapplications': return {applications:[{id:'beacon-1',name:person.name,email:person.email,institution:'Example Institute',institutionType:'university',type:'student',status:'pending',location:'Istanbul'}],nextCursor:null};
+    case 'listbeaconorganizations': return {organizations:[]};
+    case 'listconsoleevents': return {events:[{id:'audit-event',title:'Example event',title_en:'Example event',desc:'Representative event',date:'2026-12-01',timeZone:'Europe/Istanbul',status:'published',revision:1}]};
+    case 'listeventregistrations': return {registrations:[{id:'registration-1',name:person.name,email:person.email,status:'confirmed'}],nextCursor:null};
+    case 'manageoriginprogram': return {rows:[{id:'origin-1',uid:person.uid,name:person.name,email:person.email,tier:'NODE',status:'active',expiresAtMillis:1798761600000}],nextCursor:null,models:[],summary:{}};
     case 'getreportworkspace': return {schemaVersion:2,department:data.department,weekStart:data.weekStart,ownMemberId:'admin',canEdit:true,members:[{id:'admin',name:'Example Person'}],entries:[{id:'entry-1',memberId:'admin',date:'2026-11-16',status:'done',personName:'Example Person',project:'Console',summary:'Representative weekly work',revision:1}],tasks:[{id:'task-1',title:'Example task',memberId:'admin',status:'todo',priority:'normal',assignees:['admin'],description:'Representative work',project:'Console',revision:1}],openTasks:[],availableDepartments:['Array','Senatus'],cursors:{entries:null,tasks:null,open:null}};
     case 'managelegaldocuments': {
       const selected={id:'vertex-privacy--en',groupId:'vertex-privacy',locale:'en',product:'vertex',kind:'privacy',revision:0,version:0,published:{title:'Privacy policy',markdown:'# Privacy policy\n\nRepresentative test document.',html:'<h1>Privacy policy</h1><p>Representative test document.</p>'},draft:null,sources:[]};

@@ -229,7 +229,8 @@ function initFirebase(firebaseConfig) {
     }
   });
   db = firebase.firestore();
-  storage = firebase.storage();
+  // Uploads use signed URLs; the unused Storage SDK is not a startup dependency.
+  storage = typeof firebase.storage === 'function' ? firebase.storage() : null;
   functions = firebase.app().functions(firebaseConfig.functionsRegion || 'europe-west1');
 
   // The SDK and server enforcement remain active for every protected call.

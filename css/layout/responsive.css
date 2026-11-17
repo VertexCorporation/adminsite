@@ -383,7 +383,7 @@
 .brand-info .vertex-wordmark {
   display: flex;
   flex-direction: column;
-  font-family: Ubuntu, sans-serif;
+  font-family: var(--font-sans);
   font-size: 18px;
   font-weight: 500;
   line-height: 1.1;
@@ -396,13 +396,6 @@
   .brand-info .vertex-wordmark {
     font-size: 17px;
   }
-}
-@font-face {
-  font-family: Ubuntu;
-  font-style: normal;
-  font-weight: 500;
-  font-display: optional;
-  src: url('../../assets/fonts/ubuntu-medium.woff') format('woff');
 }
 
 /* Visibility-aware adaptive grid shared across workspaces. */

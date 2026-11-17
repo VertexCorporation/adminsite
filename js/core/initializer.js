@@ -90,7 +90,7 @@ try {
   if (typeof firebase === 'undefined') throw new Error('Firebase core SDK unavailable');
   startupStage = 'sdk-services';
   await Promise.all(
-    ['auth', 'firestore', 'storage', 'functions', 'app-check'].map((service) =>
+    ['auth', 'firestore', 'functions', 'app-check'].map((service) =>
       loadScript(`https://www.gstatic.com/firebasejs/11.0.0/firebase-${service}-compat.js`),
     ),
   );
