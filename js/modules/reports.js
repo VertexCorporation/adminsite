@@ -20,15 +20,17 @@ let expandedDepartment = '',
   selectedDepartment = '',
   selectedView = 'overview',
   week = monday(),
-  cooAccess = false;
-async function detectCooAccess() {
+  cooAccess = false,
+  ceoAccess = false;
+async function detectGovernanceAccess() {
   const access = getCurrentUserAccess();
-  if (!access.departments.length || access.isCore || access.departments.includes('Senatus')) return;
+  if (!access.departments.length) return;
   const token = captureSession();
   try {
     const result = await consolePeopleCall('getGovernanceAccess', {});
-    if (sessionIsCurrent(token) && result.data?.isCoo) {
-      cooAccess = true;
+    if (sessionIsCurrent(token)) {
+      cooAccess = result.data?.isCoo === true;
+      ceoAccess = result.data?.canReviewLeadership === true;
       renderNavigation();
     }
   } catch {
@@ -40,7 +42,7 @@ function renderNavigation() {
     departments = reportDepartments(access, PERMISSION_DEPARTMENTS);
   const host = document.querySelector('#nav-sub-reports .sidebar-submenu-inner');
   const special = [
-    ...(access.isCore ? ['ceo'] : []),
+    ...(ceoAccess ? ['ceo'] : []),
     ...(access.isCore || cooAccess || access.departments.includes('Senatus') ? ['senatus'] : []),
   ];
   host.innerHTML =
@@ -72,7 +74,7 @@ function expandDepartment(department) {
 }
 export function initReportsModule() {
   renderNavigation();
-  void detectCooAccess();
+  void detectGovernanceAccess();
   document.getElementById('nav-sub-reports').addEventListener('click', (event) => {
     const toggle = event.target.closest('[data-report-department]');
     if (!event.isTrusted || !toggle || toggle.getAttribute('aria-expanded') !== 'true') return;
@@ -99,8 +101,9 @@ export function initReportsModule() {
     selectedView = 'overview';
     leaveGovernanceView();
     cooAccess = false;
+    ceoAccess = false;
     renderNavigation();
-    void detectCooAccess();
+    void detectGovernanceAccess();
   });
   onLangChange(() => {
     document.querySelectorAll('#nav-sub-reports [data-nav-action]').forEach((button) => {
@@ -120,7 +123,7 @@ export function initReportsModule() {
     const [requested, view = 'overview'] = String(event.detail.action || '').split(':');
     if (requested === 'governance' && ['ceo', 'senatus'].includes(view)) {
       const access = getCurrentUserAccess();
-      if (!(access.isCore || cooAccess || access.departments.includes('Senatus'))) return;
+      if (view === 'ceo' ? !ceoAccess : !(access.isCore || cooAccess || access.departments.includes('Senatus'))) return;
       selectedDepartment = '';
       selectedView = view;
       expandDepartment('');
