@@ -347,7 +347,7 @@ function showAudit(parent, record, audit, data) {
       : t('pendingReview'),
   );
   line(item, t('reviewNote'), audit.review?.note);
-  if (data.grants.canAudit && (audit.createdBy === data.actor || data.grants.canReviewAudit))
+  if (data.grants.canWriteAudit && (audit.createdBy === data.actor || data.grants.canReviewAudit))
     item.append(button(t('editAudit'), () => auditEditor(record, data.weekStart, audit)));
   if (data.grants.canReviewAudit && audit.createdBy !== data.actor)
     item.append(button(t('reviewAudit'), () => reviewAudit(record, audit)));
@@ -377,7 +377,7 @@ function showRecord(parent, record, data, mode) {
   } else card.append(el('p', t('noChiefReport'), 'form-hint'));
   const audits = record.audits || [];
   card.append(el('h4', t('auditCount') + ': ' + audits.length + (record.auditsTruncated ? '+' : '')));
-  if (data.grants.canAudit) card.append(button(t('addAudit'), () => auditEditor(record, data.weekStart)));
+  if (data.grants.canWriteAudit) card.append(button(t('addAudit'), () => auditEditor(record, data.weekStart)));
   if (data.grants.canAudit)
     card.append(button(t('evidenceFor'), () => showEvidence(record.department, data.weekStart)));
   if (mode === 'senatus' || audits.length) for (const audit of audits) showAudit(card, record, audit, data);
