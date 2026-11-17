@@ -1,12 +1,6 @@
-import { configureSession, updateSession, onSessionReset } from './core/session.js';
-import { initOriginModule } from './modules/origin.js';
-import { initBeaconsModule } from './modules/beacons.js';
+import { configureSession, updateSession, onSessionReset, captureSession, sessionIsCurrent } from './core/session.js';
 import { initApprovedAccountSetup } from './modules/approvedAccountSetup.js';
 import { createWorkspaceLoader } from './utils/workspace-loader.js';
-import { initEventsModule } from './modules/events.js';
-import { initDirectoryModule } from './modules/directory.js';
-import { initPeopleModule } from './modules/people.js';
-import { initAccountDeletionModule } from './modules/accountDeletion.js';
 import { initHomeModule, updateHome } from './modules/home.js';
 import { initScrollEdges } from './utils/scrollEdges.js';
 import { normalizeConsoleAccessResponse } from './utils/console-access.js';
@@ -23,16 +17,6 @@ import * as dom from './utils/dom.js';
 import { userErrorMessage, showToast, __, getLang, setLang, translatePage, onLangChange } from './utils/ui.js';
 
 // Import module initializers
-import { initAdminModule, initializeMaintenanceStatus, refreshDepartmentUsers } from './modules/admin.js';
-import { initModelsModule, fetchFullModelsData } from './modules/models.js';
-import { initNewsModule, listenForArticles, stopListeningForArticles } from './modules/news.js';
-import {
-  initNotificationModule,
-  listenForScheduledTasks,
-  stopListeningForScheduledTasks,
-} from './modules/notification.js';
-import { initContributorsModule, fetchContributorsData, applyChipVisibility } from './modules/contributors.js';
-import { initSubscriptionsModule, refreshSubscriptions } from './modules/subscriptions.js';
 import {
   loadDepartmentPermissions,
   getAccessibleTabs,
@@ -43,13 +27,111 @@ import {
   PERMISSION_CATEGORIES,
 } from './modules/roles.js';
 import { loadScenePersonnel } from './modules/scenePersonnel.js';
-import { initSiteTeamPanel, loadTeam } from './modules/siteTeam.js';
-import { initTeamCardsPanel, loadTeamCards } from './modules/teamCards.js';
 import { updateGridVisibleCounts, initAdaptiveGrids } from './modules/views.js';
 import { initUserMenu } from './modules/userMenu.js';
-import { initConsoleChat, refreshConsoleChat } from './modules/consoleChat.js';
-import { initLegalModule } from './modules/legal.js';
 import { initReportsModule } from './modules/reports.js';
+
+import { createFeatureRegistry } from './core/workspace-features.js';
+const features = createFeatureRegistry([
+  { id: 'beacons', scopes: ['users.beacons'], load: () => import('./modules/beacons.js'), init: 'initBeaconsModule' },
+  {
+    id: 'origin',
+    scopes: ['origin.', 'models.origin', 'subscriptions.assign'],
+    load: () => import('./modules/origin.js'),
+    init: 'initOriginModule',
+  },
+  { id: 'events', scopes: ['events.'], load: () => import('./modules/events.js'), init: 'initEventsModule' },
+  {
+    id: 'directory',
+    scopes: ['users.directory'],
+    load: () => import('./modules/directory.js'),
+    init: 'initDirectoryModule',
+  },
+  {
+    id: 'people',
+    scopes: ['users.', 'contributors.list'],
+    load: () => import('./modules/people.js'),
+    init: 'initPeopleModule',
+  },
+  {
+    id: 'account-deletion',
+    scopes: ['users.'],
+    load: () => import('./modules/accountDeletion.js'),
+    init: 'initAccountDeletionModule',
+  },
+  {
+    id: 'admin',
+    scopes: [
+      'system.serverStatus',
+      'system.deptAssign',
+      'system.deptUsers',
+      'system.manualVerify',
+      'users.status',
+      'users.deleteAccount',
+    ],
+    load: () => import('./modules/admin.js'),
+    init: 'initAdminModule',
+  },
+  {
+    id: 'models',
+    scopes: ['models.library', 'models.manage'],
+    load: () => import('./modules/models.js'),
+    init: 'initModelsModule',
+  },
+  { id: 'news', scopes: ['news.'], load: () => import('./modules/news.js'), init: 'initNewsModule' },
+  {
+    id: 'notifications',
+    scopes: ['notifications.'],
+    load: () => import('./modules/notification.js'),
+    init: 'initNotificationModule',
+  },
+  {
+    id: 'contributors',
+    scopes: ['contributors.list'],
+    load: () => import('./modules/contributors.js'),
+    init: 'initContributorsModule',
+  },
+  {
+    id: 'subscriptions',
+    scopes: ['subscriptions.'],
+    load: () => import('./modules/subscriptions.js'),
+    init: 'initSubscriptionsModule',
+  },
+  { id: 'chat', scopes: ['chat.channels'], load: () => import('./modules/consoleChat.js'), init: 'initConsoleChat' },
+  {
+    id: 'site-team',
+    scopes: ['system.teamLog'],
+    load: () => import('./modules/siteTeam.js'),
+    init: 'initSiteTeamPanel',
+  },
+  {
+    id: 'team-cards',
+    scopes: ['system.teamLog'],
+    load: () => import('./modules/teamCards.js'),
+    init: 'initTeamCardsPanel',
+  },
+  { id: 'legal', scopes: ['legal.documents'], load: () => import('./modules/legal.js'), init: 'initLegalModule' },
+]);
+const featureMethod =
+  (id, method) =>
+  async (...args) => {
+    const token = captureSession();
+    const module = await features.get(id);
+    if (sessionIsCurrent(token)) return module[method](...args);
+  };
+const fetchContributorsData = featureMethod('contributors', 'fetchContributorsData');
+const fetchFullModelsData = featureMethod('models', 'fetchFullModelsData');
+const listenForArticles = featureMethod('news', 'listenForArticles');
+const listenForScheduledTasks = featureMethod('notifications', 'listenForScheduledTasks');
+const refreshSubscriptions = featureMethod('subscriptions', 'refreshSubscriptions');
+const refreshDepartmentUsers = featureMethod('admin', 'refreshDepartmentUsers');
+const initializeMaintenanceStatus = featureMethod('admin', 'initializeMaintenanceStatus');
+const refreshConsoleChat = featureMethod('chat', 'refreshConsoleChat');
+const loadTeam = featureMethod('site-team', 'loadTeam');
+const loadTeamCards = featureMethod('team-cards', 'loadTeamCards');
+const applyChipVisibility = () => features.peek('contributors')?.applyChipVisibility();
+const stopListeningForArticles = () => features.peek('news')?.stopListeningForArticles();
+const stopListeningForScheduledTasks = () => features.peek('notifications')?.stopListeningForScheduledTasks();
 
 /**
  * The main application function.
@@ -73,32 +155,16 @@ export function startApp(firebaseConfig) {
   // Bind independent features without allowing one broken optional module
   // to prevent other workspaces and the central auth listener from starting.
   const featureInitializers = [
-    ['beacons', initBeaconsModule],
-    ['origin', initOriginModule],
-    ['admin', initAdminModule],
-    ['people', initPeopleModule],
-    ['directory', initDirectoryModule],
-    ['account-deletion', initAccountDeletionModule],
     ['approved-account-setup', initApprovedAccountSetup],
-    ['models', initModelsModule],
-    ['news', initNewsModule],
-    ['events', initEventsModule],
-    ['notifications', initNotificationModule],
-    ['contributors', initContributorsModule],
-    ['subscriptions', initSubscriptionsModule],
     ['user-menu', initUserMenu],
-    ['chat', initConsoleChat],
     ['profile', initProfileMenu],
-    ['site-team', initSiteTeamPanel],
-    ['team-cards', initTeamCardsPanel],
     ['home', initHomeModule],
     ['system-sections', initSystemSections],
     ['reports', initReportsModule],
-    ['legal', initLegalModule],
     ['icons', initIcons],
     ['adaptive-grid', initAdaptiveGrids],
   ];
-  // Intentionally not asynchronous: listeners are installed synchronously.
+  // Critical listeners are synchronous; feature controllers bind on first use.
   for (const [name, initialize] of featureInitializers) {
     try {
       initialize();
@@ -170,6 +236,48 @@ export function startApp(firebaseConfig) {
       (key === 'chat.channels' || getEffectivePanelLevel(key) !== 'none'),
     onError: (key, error) => console.error('[WORKSPACE] Load failed', key, error.code || 'unknown'),
   });
+  let preparation = 0;
+  document.addEventListener(
+    'vertex:workspace',
+    (event) => {
+      const keys = event.detail?.keys || [];
+      if (event.detail?.featuresReady) return;
+      const serial = ++preparation;
+      if (features.ready(keys)) return;
+      event.stopImmediatePropagation();
+      const token = captureSession();
+      const panel = document.querySelector('.tab-panel.active');
+      const pending = String(serial);
+      if (panel) {
+        panel.dataset.featurePending = pending;
+        panel.inert = true;
+        panel.setAttribute('aria-busy', 'true');
+      }
+      void features
+        .ensure(keys)
+        .then(() => {
+          if (serial !== preparation || !sessionIsCurrent(token)) return;
+          applyChipVisibility();
+          document.dispatchEvent(
+            new CustomEvent('vertex:workspace', { detail: { ...event.detail, featuresReady: true } }),
+          );
+        })
+        .catch((error) => {
+          if (serial === preparation && sessionIsCurrent(token)) {
+            showToast(__('init.error'), 'error');
+            console.error('[WORKSPACE] Feature initialization failed', error);
+          }
+        })
+        .finally(() => {
+          if (panel?.dataset.featurePending === pending) {
+            delete panel.dataset.featurePending;
+            panel.inert = false;
+            panel.removeAttribute('aria-busy');
+          }
+        });
+    },
+    true,
+  );
   document.addEventListener('vertex:workspace', (event) => {
     void loadedWorkspaces.load(event.detail?.keys || []);
     if (event.detail?.action === 'moderators' && event.detail?.keys?.includes('users.directory'))
@@ -474,21 +582,7 @@ function applyTabFilter(allowedTabs) {
     firstPanel.classList.add('active');
   }
 
-  if (allowedTabs.includes('contributors')) {
-    fetchContributorsData();
-  }
-  if (allowedTabs.includes('subscriptions')) {
-    refreshSubscriptions();
-  }
-  if (allowedTabs.includes('models')) {
-    fetchFullModelsData();
-  }
-  if (allowedTabs.includes('news')) {
-    listenForArticles();
-  }
-  if (allowedTabs.includes('notifications')) {
-    listenForScheduledTasks();
-  }
+  // Each authorized workspace fetches on entry through loadedWorkspaces.
 }
 
 /**

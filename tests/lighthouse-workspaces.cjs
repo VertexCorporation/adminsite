@@ -104,13 +104,13 @@ const server=http.createServer((req,res)=>{
       });
       const waitReady=async()=>{
         await page.waitForFunction(()=>document.querySelector('#admin-panel')?.style.display==='grid',{timeout:60000}).catch(async error=>{console.error('STARTUP',JSON.stringify(await page.evaluate(()=>({stage:document.documentElement.dataset.startupStage,failed:document.documentElement.dataset.startupFailed,text:document.body.innerText.slice(0,600)}))));throw error;});
-        await page.waitForFunction(()=>![...document.querySelectorAll('.tab-panel.active [aria-busy="true"]')].some(el=>el.getClientRects().length),{timeout:15000});
+        await page.waitForFunction(()=>![...document.querySelectorAll('.tab-panel.active[aria-busy="true"], .tab-panel.active [aria-busy="true"]')].some(el=>el.getClientRects().length),{timeout:15000});
       };
       if(!navigationMode){await page.goto(base,{waitUntil:'networkidle0'});await waitReady();}
       const flow=await startFlow(page,{name:`Workspaces ${device} ${lang} ${theme}`,config:device==='desktop'?desktopConfig:undefined,flags:{onlyCategories:navigationMode?['performance','accessibility','best-practices']:['accessibility','best-practices']}});
       const selected=process.env.AUDIT_ROUTE?[JSON.parse(process.env.AUDIT_ROUTE)]:[...routes,...(navigationMode?[]:surfaces)].filter(r=>!r.mobileOnly||device==='mobile').filter((r,index)=>(!process.env.AUDIT_FILTER||(r.panel+':'+r.action+':'+(r.surface||'')).includes(process.env.AUDIT_FILTER))&&(!process.env.AUDIT_SHARDS||index%Number(process.env.AUDIT_SHARDS)===Number(process.env.AUDIT_SHARD)));
       for(const route of selected){
-        const begin=performance.now();const before=errors.length;
+        const begin=performance.now();const before=errors.length;let readyMs=null;
         if(!navigationMode){await page.keyboard.press('Escape');await page.keyboard.press('Escape');}
         if(navigationMode){
           await flow.navigate(async()=>{
@@ -118,6 +118,8 @@ const server=http.createServer((req,res)=>{
             await waitReady();
             if(route.panel==='profile')await page.evaluate(()=>document.querySelector('.dock-btn[data-target="tab-profile"]').click());
             await new Promise(r=>setTimeout(r,250));
+            await waitReady();
+            readyMs=await page.evaluate(()=>performance.now());
           },{name:route.panel+':'+route.action});
         }else{
         await page.evaluate(route=>{
@@ -143,7 +145,7 @@ const server=http.createServer((req,res)=>{
         const failures=Object.values(lhr.audits).filter(a=>a.score!==null&&a.score<1).map(a=>({id:a.id,title:a.title,details:a.details}));
         const metrics=Object.fromEntries(['first-contentful-paint','largest-contentful-paint','total-blocking-time','cumulative-layout-shift','speed-index'].filter(k=>lhr.audits[k]).map(k=>[k,lhr.audits[k].numericValue]));
         metrics.lcpElement=lhr.audits['lcp-breakdown-insight']?.details?.items?.find(item=>item.type==='node')?.selector;
-        const item={device,lang,theme,...route,active,elapsed,scores:Object.fromEntries(Object.entries(lhr.categories).map(([k,v])=>[k,v.score===null?null:Math.round(v.score*100)])),metrics,failures,errors:errors.slice(before)};
+        const item={device,lang,theme,...route,active,elapsed,readyMs,scores:Object.fromEntries(Object.entries(lhr.categories).map(([k,v])=>[k,v.score===null?null:Math.round(v.score*100)])),metrics,failures,errors:errors.slice(before)};
         results.push(item);fs.writeFileSync(path.join(out,'summary.json'),JSON.stringify({scope:navigationMode?'Built application cold navigation; real SDK loading, synthetic identity and backend; excludes real authentication/production service latency':'Built application; synthetic identity and backend fixtures; snapshots do not produce a performance score',routes:routes.length,results},null,2));
         console.log(JSON.stringify({...item,failures:failures.map(f=>f.id)}));
         for(const failure of failures)for(const row of (Array.isArray(failure.details?.items)?failure.details.items:[])){const key=failure.id+row.node?.selector+row.node?.explanation;if(!seenFindings.has(key)){seenFindings.add(key);console.log('FINDING',JSON.stringify({device,lang,theme,route,audit:failure.id,item:row}));}}
