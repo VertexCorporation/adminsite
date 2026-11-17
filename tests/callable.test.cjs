@@ -73,3 +73,11 @@ test('department preconditions retain actionable, localized error explanations',
   for(const key of ['errors.personnel_rollout','errors.personnel_membership','errors.personnel_stale'])
     assert.equal((lang.match(new RegExp(JSON.stringify(key)+':', 'g'))||[]).length,2,key+' must be translated to both languages');
 });
+
+test('subscription deadlines allow cold starts and bulk processing without retrying writes',async()=>{
+ const h=harness(async()=>({data:{success:true}}));
+ for(const [name,timeout] of [['setUserSubscription',120000],['removeUserSubscription',120000],['bulkSetUserSubscriptions',540000]]){
+  await h.call(name,{});assert.equal(h.definitions.find(d=>d.name===name).settings.timeout,timeout);
+ }
+ assert.equal(h.calls.length,3);
+});

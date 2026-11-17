@@ -1,4 +1,10 @@
 export default {
+  'team.moderators': 'Moderatör yönetimi',
+  'team.moderators_hint':
+    'Güncel moderatörleri görüntüleyin veya bir üyeyi e-posta adresiyle bulun. Rol değişiklikleri sitedeki ekip ve moderatör listelerine otomatik yansır.',
+  'team.personnel_search': 'Üyenin tam e-posta adresi veya UID',
+  'team.personnel_empty': 'Aktif moderatör bulunamadı. Bir üyeyi e-posta adresiyle arayabilirsiniz.',
+
   'customer.activationLanguage': 'Dil',
   'customer.activationTitle': 'Cortex hesabınız hazır.',
   'customer.activationIntro':

@@ -1,4 +1,12 @@
 export default {
+  'subs.account_missing': 'No account exists for this email. Check the address used to sign in to Cortex.',
+  'subs.profile_missing': 'The account profile is not ready. Ask the user to sign in to Cortex, then try again.',
+  'subs.store_managed':
+    'This account has an active App Store or Google Play subscription. A promotional grant cannot replace it.',
+  'subs.vertex_managed':
+    'This account has active Vertex sponsorship. Manage the entitlement through the sponsorship process.',
+  'subs.anonymous': 'Guest accounts cannot receive subscriptions. The user must sign in first.',
+
   'subscriptions.ui.bulkSubscriptionPreview': 'Bulk subscription preview',
   'subscriptions.ui.edge': 'EDGE',
   'subscriptions.ui.graph': 'GRAPH',

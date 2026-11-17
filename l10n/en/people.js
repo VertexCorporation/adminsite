@@ -1,4 +1,10 @@
 export default {
+  'team.moderators': 'Moderator management',
+  'team.moderators_hint':
+    'View current moderators or find a member by email. Role changes automatically appear in the public personnel and moderator lists.',
+  'team.personnel_search': 'Member’s full email address or UID',
+  'team.personnel_empty': 'No active moderators found. Search for a member by email.',
+
   'customer.activationLanguage': 'Language',
   'customer.activationTitle': 'Your Cortex account is ready.',
   'customer.activationIntro': 'Set your own password. Then sign in to the Cortex app using your email address.',
