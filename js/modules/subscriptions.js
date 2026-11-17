@@ -183,11 +183,13 @@ async function handleAssignSubmit(e) {
   }
 
   const btn = document.getElementById('assign-subscription-btn');
+  if (btn.disabled) return;
   setButtonLoading(btn, true);
 
   try {
     const data = await grantPremium({ email, displayName, tier, expiresAt: expiresAt.toISOString() });
-    showToast(() => __('subs.assign_success'), 'success');
+    if (data?.success !== true) throw new Error('Unconfirmed subscription response');
+    showToast(() => __(data.unchanged ? 'subs.already_assigned' : 'subs.assign_success'), 'success');
     dom.subscriptionForm.reset();
     resetDefaultDates();
     await loadSubscriptions();
@@ -265,7 +267,7 @@ function renderBulkResult(data) {
             <div class="dept-user-row">
                 <div class="dept-user-main">
                     <strong>${sanitizeHTML(item.email)}</strong>
-                    <span>${sanitizeHTML(item.reason)}</span>
+                    <span>${sanitizeHTML(userErrorMessage({ message: item.reason, details: { reason: item.reasonCode } }))}</span>
                 </div>
             </div>`,
       )
