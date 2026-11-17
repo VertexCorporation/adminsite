@@ -1,4 +1,8 @@
 export default {
+  'contributors.ui.membershipNotActive': 'Aktif üyelik yok',
+  'contributors.ui.activateAndSend': 'Vertex’e Al ve Sertifika Gönder',
+  'contributors.ui.activeCertificateNeedsReview':
+    'Üyelik aktif. Sertifika durumunu Sertifika Yönetimi’nden kontrol edin.',
   'contributors.ui.additionalAccountEmail': 'Ek hesap e-postası',
   'contributors.ui.contributor': 'Katılımcı',
   'contributors.ui.emailDeliveryRequiresReviewNoDuplicateEmail':

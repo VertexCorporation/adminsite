@@ -3,6 +3,7 @@ import { contributorsStore } from '../../stores/areaStore.js';
 import { openCertificateEmailTemplates } from '../certificateEmailTemplates.js';
 import { deploymentCapabilities } from '../../core/deployment-capabilities.js';
 import { changedContributorFields } from '../../utils/contributor-edit.js';
+import { isActiveContributor } from '../../utils/contributor-state.js';
 import { displayDepartmentName, canonicalDepartment } from '../../utils/departments.js';
 import { icon } from '../../utils/icons.js';
 import { openDrawer, closeDrawer, confirmDialog, openPopover, closePopover } from '../shell.js';
@@ -12,7 +13,6 @@ import { openCertificates } from '../certificates.js';
 import { showToast, userErrorMessage, __, onLangChange, escapeHTML } from '../../utils/ui.js';
 import {
   getVertexContributorsFn,
-  toggleContributorVerificationFn,
   deleteVertexContributorFn,
   updateContributorApplicationFn,
   setContributorVertexStatusFn,
@@ -242,7 +242,7 @@ export function createContributorSurfaces({
         ],
         [
           'contributors.col_status',
-          person.hasVerified ? __('contributors.verified_label') : __('contributors.unverified_label'),
+          isActiveContributor(person) ? __('contributors.vertex_active') : __('contributors.ui.membershipNotActive'),
         ],
         [
           'contributors.delivery_label',
@@ -317,77 +317,7 @@ export function createContributorSurfaces({
         openPopover(e.currentTarget, {
           className: 'contributor-actions-popover',
           render(menu) {
-            menu.innerHTML = `<div class="menu-list"><button class="menu-item" data-verify ${person.hasVerified && ['pending', 'processing'].includes(person.certificateDeliveryStatus) ? 'disabled' : ''}>${icon('check')}${person.hasVerified ? __('contributors.unverify') : __('contributors.verify')}</button><button class="menu-item" data-delete>${icon('trash')}${__('contributors.delete_action')}</button></div>`;
-            menu.querySelector('[data-verify]').onclick = async () => {
-              if (
-                pending ||
-                !isPanelAdmin() ||
-                (person.hasVerified && ['pending', 'processing'].includes(person.certificateDeliveryStatus))
-              )
-                return;
-              pending = true;
-              closePopover();
-              paint();
-              const next = !person.hasVerified;
-              try {
-                const { data } = await toggleContributorVerificationFn({ contributorId: person.id, hasVerified: next });
-                const status = data?.status;
-                if (['verified', 'unverified'].includes(status)) {
-                  person.hasVerified = status === 'verified';
-                  showToast(() => __('contributors.verify_updated'), 'success');
-                } else {
-                  if (
-                    next &&
-                    !['pending', 'processing', 'succeeded', 'legacy', 'uncertain', 'failed', 'revoked'].includes(status)
-                  )
-                    throw Object.assign(new Error('Unconfirmed certificate response'), { code: 'functions/internal' });
-                  if (next && ['uncertain', 'failed', 'revoked'].includes(status)) {
-                    person.hasVerified = false;
-                    person.certificateDeliveryStatus = status;
-                    showToast(() => __('contributors.delivery_failed'), 'error');
-                  } else if (next) {
-                    // The server saved hasVerified=true with the issuance ledger.
-                    person.hasVerified = true;
-                    person.emailSent = status === 'succeeded';
-                    person.certificateDeliveryStatus =
-                      status === 'succeeded' ? 'succeeded' : status === 'legacy' ? 'legacy' : 'pending';
-                    showToast(
-                      () =>
-                        __(
-                          status === 'succeeded'
-                            ? 'contributors.delivery_succeeded'
-                            : status === 'legacy'
-                              ? 'contributors.delivery_unconfirmed'
-                              : 'contributors.delivery_pending',
-                        ),
-                      status === 'succeeded' ? 'success' : 'info',
-                    );
-                    if (['pending', 'processing'].includes(status))
-                      watchContributorVerification(person.id, auth.currentUser?.uid);
-                  } else {
-                    person.hasVerified = false;
-                    person.certificateDeliveryStatus = 'revoked';
-                    showToast(() => __('contributors.verify_updated'), 'success');
-                  }
-                }
-                const list = contributorsStore.value || [];
-                const cached = list.find((p) => p.id === person.id);
-                if (cached && cached !== person)
-                  Object.assign(cached, {
-                    hasVerified: person.hasVerified,
-                    emailSent: person.emailSent,
-                    certificateDeliveryStatus: person.certificateDeliveryStatus,
-                  });
-                if (list.length) renderContributors(list);
-                document.dispatchEvent(new CustomEvent('vertex:contributor-updated', { detail: { person } }));
-                void fetchContributorsData();
-              } catch (error) {
-                showToast(() => userErrorMessage(error), 'error');
-              } finally {
-                pending = false;
-                paint();
-              }
-            };
+            menu.innerHTML = `<div class="menu-list"><button class="menu-item" data-delete>${icon('trash')}${__('contributors.delete_action')}</button></div>`;
             menu.querySelector('[data-delete]').onclick = async () => {
               if (pending || !isPanelAdmin()) return;
               closePopover();
@@ -450,6 +380,7 @@ export function createContributorSurfaces({
       const confirmed = await confirmDialog(() => ({
         title: __('subnav.vertex_status'),
         warning: __('contributors.vertex_confirm'),
+        ...(person.isVertex === true ? {} : { confirmLabel: __('contributors.ui.activateAndSend') }),
         rows: [
           { label: __('contributors.field_email'), value: escapeHTML(person.email) },
           { label: __('contributors.ui.contributor'), value: escapeHTML(person.id) },
@@ -470,6 +401,20 @@ export function createContributorSurfaces({
         person.membership.isVertex = data.isVertex;
       }
       if (data.joinedAtSet) person.joinedAt = new Date();
+      if (data.isVertex && data.certificateDeliveryStatus) {
+        const status = data.certificateDeliveryStatus;
+        person.hasVerified = true;
+        person.certificateDeliveryStatus = status;
+        if (status === 'succeeded') {
+          person.emailSent = true;
+          showToast(() => __('contributors.delivery_succeeded'), 'success');
+        } else if (['pending', 'processing'].includes(status)) {
+          watchContributorVerification(person.id, auth.currentUser?.uid);
+          showToast(() => __('contributors.delivery_pending'), 'info');
+        } else {
+          showToast(() => __('contributors.ui.activeCertificateNeedsReview'), 'info');
+        }
+      }
       if (data.isVertex && data.accountSetupStatus) {
         const ready = ['sent', 'existing-account', 'ownership-required'].includes(data.accountSetupStatus);
         showToast(
@@ -487,7 +432,7 @@ export function createContributorSurfaces({
           ready ? 'success' : 'error',
         );
       } else showToast(() => __(data.isVertex ? 'system.vertex_enabled' : 'system.vertex_disabled'), 'success');
-      renderContributors(contributorsStore.value || []);
+      document.dispatchEvent(new CustomEvent('vertex:contributor-updated', { detail: { person } }));
     } catch (error) {
       showToast(() => userErrorMessage(error), 'error');
     } finally {

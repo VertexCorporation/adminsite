@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-module.exports=async({page,selectTab,note,calls,payloads,setPeople,person,failMaintenance,failVerify})=>{
+module.exports=async({page,selectTab,note,calls,payloads,setPeople,person,failMaintenance,failMembership})=>{
  const count=name=>calls.filter(n=>n===name).length;
  const waitCrossfade=()=>page.waitForFunction(()=>!document.querySelector('.ui-crossfade-ghost'));
  const locale=async lang=>page.evaluate(async lang=>(await import('/js/lang.js')).setLang(lang),lang);
@@ -13,17 +13,25 @@ module.exports=async({page,selectTab,note,calls,payloads,setPeople,person,failMa
  for(const lang of ['tr','en']){await locale(lang);const alignment=await page.evaluate(()=>{const pill=document.querySelector('.contributor-cell-status');const range=document.createRange();range.selectNodeContents(pill);const text=range.getBoundingClientRect(),box=pill.getBoundingClientRect(),head=document.querySelector('.contributor-table-head>span:nth-child(4)').getBoundingClientRect();return {textOffset:Math.abs(text.x+text.width/2-box.x-box.width/2),axisOffset:Math.abs(box.x+box.width/2-head.x-head.width/2)};});assert(alignment.textOffset<1,JSON.stringify(alignment));assert(alignment.axisOffset<1,JSON.stringify(alignment));}
  note('Biography search and measured status text/header centering in TR/EN');
  await locale('tr');await page.locator('#lang-toggle-btn').click();assert.equal(await page.locator('.language-popover.is-open [data-language=en]').innerText(),'İngilizce');await page.locator('.language-popover.is-open [data-language=en]').click();assert.equal(await page.locator('#lang-indicator').innerText(),'English');await page.locator('#lang-toggle-btn').click();assert.equal(await page.locator('.language-popover.is-open [data-language=tr]').innerText(),'Turkish');await page.keyboard.press('Escape');
- // Verification scenario uses a fresh eligible contributor and a mocked
- // completed delivery. Real pending/processing certificate states remain locked.
- setPeople([{...person,hasVerified:false,certificateDeliveryStatus:null}]);
+ setPeople([{...person,isVertex:false,membership:{...person.membership,isVertex:false},hasVerified:false,certificateDeliveryStatus:null}]);
  await page.evaluate(async()=>{await (await import('/js/modules/contributors.js')).fetchContributorsData();});
  await waitCrossfade();
  await page.locator('[data-details]').click();assert.equal(await page.locator('.vx-drawer details,.vx-drawer input[type=checkbox]').count(),0);
- await page.locator('[data-more]').click();await page.locator('[data-verify]').click();await page.waitForTimeout(200);assert.equal(count('togglecontributorverification'),1);assert.equal(payloads.find(p=>p.name==='togglecontributorverification').data.hasVerified,true);assert((await page.locator('.detail-list').innerText()).includes('Verified'));
- failVerify(true);await page.locator('[data-more]').click();await page.locator('[data-verify]').click();await page.waitForTimeout(200);assert((await page.locator('.detail-list').innerText()).includes('Verified'));failVerify(false);
+ await page.locator('[data-more]').click();assert.equal(await page.locator('[data-verify]').count(),0);
+ await page.keyboard.press('Escape');await closeDrawer();
+ const beforeActivation=count('setcontributorvertexstatus');
+ failMembership(true);await page.locator('[data-membership]').click();await page.locator('.confirm-ok').click();
+ await page.waitForFunction(()=>!document.querySelector('[data-membership]')?.disabled);
+ assert.equal(await page.locator('.contributor-row.is-verified').count(),0);failMembership(false);
+ await page.locator('[data-membership]').click();await page.locator('.confirm-ok').click();
+ await page.waitForSelector('.contributor-row.is-verified');
+ assert.equal(count('setcontributorvertexstatus'),beforeActivation+2);
+ assert.equal(payloads.filter(p=>p.name==='setcontributorvertexstatus').at(-1).data.isVertex,true);
+ assert.equal(count('togglecontributorverification'),0);
+ await page.locator('[data-details]').click();
  const beforeDelete=count('deletevertexcontributor');await page.locator('[data-more]').click();await page.locator('[data-delete]').click();assert.equal(count('deletevertexcontributor'),beforeDelete);await page.locator('.confirm-cancel').click();await page.waitForTimeout(210);
  await page.locator('[data-more]').click();await page.locator('[data-delete]').click();await page.locator('.confirm-ok').click();await page.waitForTimeout(300);assert.equal(count('deletevertexcontributor'),beforeDelete+1);
- note('Drawer toolbar, verified server result, failed verification rollback and explicit deletion (mock)');
+ note('One activation action, failed activation preserves status, and explicit deletion (mock)');
  setPeople([{...person,department:'aero'},{...person,id:'second',name:'Second Participant',email:'second@example.invalid',department:'scout'}]);await page.evaluate(async()=>{await(await import('/js/modules/contributors.js')).fetchContributorsData();});await waitCrossfade();
  assert.deepEqual(await page.locator('.contributor-cell-dept').allTextContents(),['Aero','Scout']);
  // Certificate management stays on each applicant after removal of the

@@ -5,7 +5,7 @@ const server=http.createServer((req,res)=>{const p=path.join(root,decodeURICompo
 (async()=>{
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await (process.env.VERTEX_BROWSER==='webkit'?webkit:chromium).launch({...(process.env.VERTEX_BROWSER!=='webkit'&&process.env.CHROME_PATH ? {executablePath:process.env.CHROME_PATH} : {}),headless:true});
-const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=true,history=[],people=null,contributorDelay=0,failContributors=false,failNotification=false; let joiningDate=null,failPermissionSave=false,failMaintenance=false,maintenanceState=false,failVerify=false;
+const errors=[],consoleErrors=[],calls=[],payloads=[]; let verificationValid=true,history=[],people=null,contributorDelay=0,failContributors=false,failNotification=false; let joiningDate=null,failPermissionSave=false,failMaintenance=false,maintenanceState=false;
 
 let failMembership=false,failAdmin=false,failContributorReadOnce=0,failChatReadOnce=0;let adminRoster=[{uid:'admin',email:'admin@example.invalid'},{uid:'other-admin',email:'other@example.invalid'}];
 const person={membership:{status:'matched',uid:'auth-person',isVertex:true},id:'person',name:'Example Participant',email:'person@example.invalid',language:'en',hasVerified:false,createdAt:{_seconds:1767272400},department:'Core',interviewDate:'2026-10-10',about:'Local test fixture'};
@@ -69,15 +69,20 @@ await page.route('**/*',async route=>{
   const name=url.hostname.split('-')[0];calls.push(name);payloads.push({name,data:route.request().postDataJSON()?.data});
   if(name==='sendtargetednotification' && failNotification)return route.fulfill({status:500,contentType:'application/json',body:JSON.stringify({error:{status:'INTERNAL',message:'Mock delivery outcome uncertain'}})});
   if(name==='getserverstatus'&&failMaintenance)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture maintenance unavailable'}})});
-  if(name==='togglecontributorverification'&&failVerify)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture verification unavailable'}})});
   let result={};
   if(name==='getreportworkspace'){const department=route.request().postDataJSON()?.data?.department||'Core';result={schemaVersion:2,department,weekStart:route.request().postDataJSON()?.data?.weekStart,canEdit:true,members:[],entries:[],tasks:[],openTasks:[],availableDepartments:[department],cursors:{entries:null,tasks:null,open:null}};}
-  if(name==='togglecontributorverification'){
-    const request=route.request().postDataJSON().data;
-    const target=(people||[person]).find(p=>p.id===request.contributorId);
-    if(target){target.hasVerified=request.hasVerified;target.certificateDeliveryStatus=request.hasVerified?'succeeded':'revoked';}
-    result={hasVerified:request.hasVerified,status:request.hasVerified?'succeeded':'revoked'};
+  if(name==='setcontributorvertexstatus'){
+    if(failMembership)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{status:'UNAVAILABLE',message:'Fixture unavailable'}})});
+    const input=route.request().postDataJSON().data;
+    const target=(people||[person]).find(p=>p.id===input.contributorId);
+    if(target){
+      target.isVertex=input.isVertex;
+      if(target.membership)target.membership.isVertex=input.isVertex;
+      if(input.isVertex)Object.assign(target,{hasVerified:true,emailSent:true,certificateDeliveryStatus:'succeeded'});
+    }
+    result={isVertex:input.isVertex,...(input.isVertex?{certificateDeliveryStatus:'succeeded',accountSetupStatus:'sent'}:{})};
   }
+  if(name==='setusersubscription')result={success:true};
   if(name==='listconsoleusers') {
     const searched=String(route.request().postDataJSON()?.data?.search||'').toLowerCase();
     result={users:searched==='delete-fixture@example.invalid'?
@@ -102,7 +107,7 @@ await page.route('**/*',async route=>{
       const active=p.membership?.isVertex===true||p.isVertex===true;
       const year=Number(p.birthYear||String(p.birthDate||'').slice(0,4))||null;
       const accepted=({
-        all:true,vertex:active,verified:p.hasVerified===true,unverified:p.hasVerified!==true,
+        all:true,vertex:active,inactive:!active,verified:p.hasVerified===true,unverified:p.hasVerified!==true,
         'age-14-15':year!==null&&year>=thisYear-15&&year<=thisYear-14,
         'age-16-17':year!==null&&year>=thisYear-17&&year<=thisYear-16,
         'age-18':year!==null&&year<=thisYear-18,
@@ -336,14 +341,14 @@ await page.locator('.edit-contributor-btn').first().hover();assert.equal(await p
 const waitCrossfade = async () => {await page.waitForTimeout(400);await page.waitForFunction(() => !document.querySelector('.ui-crossfade-ghost') && document.getElementById('contributors-list-container').getAttribute('aria-busy')!=='true');};
 await page.locator('#contributor-search').fill('nobody');await page.evaluate(()=>window.searchContributorsLocal());await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);
 await page.locator('#contributor-search').fill('Example');await page.evaluate(()=>window.filterContributors('interview'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),1);
-await page.evaluate(()=>window.filterContributors('verified'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
+await page.evaluate(()=>window.filterContributors('inactive'));await waitCrossfade();assert.equal(await page.locator('.contributor-row').count(),0);await page.evaluate(()=>window.filterContributors('all'));note('Combined search and filters');
 await waitCrossfade();
 // Real contributor renderer: switching between populated chips must animate,
 // not just the single-row fixture used in the historic regression.
 await page.locator('#contributor-search').fill('');
 people=Array.from({length:85},(_,i)=>({
   ...person,id:'filter-fixture-'+i,name:'Applicant '+i,
-  email:'applicant'+i+'@example.invalid',hasVerified:i%2===0
+  email:'applicant'+i+'@example.invalid',isVertex:i%2===0,membership:{...person.membership,isVertex:i%2===0}
 }));
 await page.evaluate(async fixtures=>{
  const {contributorsStore}=await import('/js/stores/areaStore.js');
@@ -356,7 +361,7 @@ const listTopBefore=await page.locator('#contributors-list-container').evaluate(
 contributorDelay=200;
 const filterTransition=await page.evaluate(()=>{
  window.__filterPaints=0;document.getElementById('contributors-list-container').addEventListener('vertex:list-painted',()=>window.__filterPaints++,{once:true});
- window.filterContributors('verified');
+ window.filterContributors('vertex');
  const host=document.getElementById('contributors-list-container');
  return {top:host.getBoundingClientRect().top,ghost:!!host.querySelector('.ui-crossfade-ghost'),
   newRows:host.querySelector(':scope > .contributor-table-rows')?.children.length,
@@ -369,7 +374,7 @@ assert.equal(filterTransition.newRows,85);
 assert.equal(filterTransition.animating,false);
 assert(filterTransition.height>=460,JSON.stringify(filterTransition));
 assert.equal(await page.locator('#contributors-list-container').evaluate(el=>el.style.minHeight),'');
-assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="verified"]').getAttribute('aria-pressed'),'true');
+assert.equal(await page.locator('#tab-contributors .filter-chip[data-filter="vertex"]').getAttribute('aria-pressed'),'true');
 await waitCrossfade();
 assert.equal(await page.locator('.contributor-table-rows > .contributor-row').count(),43);
 assert.equal(await page.evaluate(()=>window.__filterPaints),1);
@@ -497,7 +502,7 @@ await selectTab('contributors');
 await page.emulateMedia({reducedMotion:'reduce'});
 if(process.env.VERTEX_STABILIZATION_ONLY)await require('./stabilization.cjs')({page,selectTab,note,calls,payloads,person,setPeople:value=>{people=value;},failMembership:value=>{failMembership=value;},failAdmin:value=>{failAdmin=value;},setAdmins:value=>{adminRoster=value;},setContributorDelay:value=>{contributorDelay=value;},failContributors:value=>{failContributors=value;},setHistory:value=>{history=value;}});
 if(process.env.VERTEX_COMPLETE_ONLY)await require('./complete-polish.cjs')({page,selectTab,note,calls,payloads,person,setPeople:value=>{people=value;},failMembership:value=>{failMembership=value;},failAdmin:value=>{failAdmin=value;},setAdmins:value=>{adminRoster=value;},setContributorDelay:value=>{contributorDelay=value;},failContributors:value=>{failContributors=value;},setHistory:value=>{history=value;}});
-if(!process.env.VERTEX_COMPLETE_ONLY&&!process.env.VERTEX_STABILIZATION_ONLY)await require('./final-polish.cjs')({page,selectTab,note,calls,payloads,setPeople:value=>{people=value;},person,failMaintenance:value=>{failMaintenance=value;},failVerify:value=>{failVerify=value;}});
+if(!process.env.VERTEX_COMPLETE_ONLY&&!process.env.VERTEX_STABILIZATION_ONLY)await require('./final-polish.cjs')({page,selectTab,note,calls,payloads,setPeople:value=>{people=value;},person,failMaintenance:value=>{failMaintenance=value;},failMembership:value=>{failMembership=value;}});
 if(!process.env.VERTEX_COMPLETE_ONLY&&!process.env.VERTEX_STABILIZATION_ONLY)await require('./precision.cjs')({page,selectTab,note,payloads,calls,failPermissions:value=>{failPermissionSave=value;}});
 await selectTab('contributors');
 // Role presentation uses the same masked DTO contract as the backend.

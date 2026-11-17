@@ -78,6 +78,10 @@ export function userErrorMessage(error, context = '') {
   const subscriptionReasons = {
     'subscription-account-missing': 'subs.account_missing',
     'subscription-profile-missing': 'subs.profile_missing',
+    'subscription-anonymous': 'subs.anonymous',
+    'subscription-store-managed': 'subs.store_managed',
+    'subscription-vertex-managed': 'subs.vertex_managed',
+    'subscription-grant-failed': 'subs.grant_failed',
   };
   if (subscriptionReasons[reason]) return __(subscriptionReasons[reason]);
   // Compatibility with deployed subscription endpoints predating reason codes.

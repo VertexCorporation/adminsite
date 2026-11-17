@@ -1,4 +1,8 @@
 export default {
+  'contributors.ui.membershipNotActive': 'No active membership',
+  'contributors.ui.activateAndSend': 'Activate membership and send certificate',
+  'contributors.ui.activeCertificateNeedsReview':
+    'Membership is active. Check the certificate status in Certificate Management.',
   'contributors.ui.additionalAccountEmail': 'Additional account email',
   'contributors.ui.contributor': 'Contributor',
   'contributors.ui.emailDeliveryRequiresReviewNoDuplicateEmail':
