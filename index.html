@@ -46,12 +46,7 @@
 
     <link rel="stylesheet" href="css/login.css" />
     <template id="console-styles">
-      <!-- Google Fonts & Icons -->
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet" />
-
-      <!-- Styles -->
+      <link rel="stylesheet" href="css/fonts.css" />
       <link rel="stylesheet" href="css/tokens.css" />
       <link rel="stylesheet" href="css/base.css" />
       <link rel="stylesheet" href="css/layout.css" />
@@ -248,8 +243,7 @@
             class="topbar-select-btn"
             aria-haspopup="dialog"
             data-i18n-title="language.select"
-            aria-label=""
-            data-i18n-aria-label="language.select"
+            aria-labelledby="lang-indicator"
           >
             <i data-icon="language"></i>
             <span id="lang-indicator"><span data-i18n="language.tr"></span></span>
@@ -264,7 +258,7 @@
             <i data-icon="sun"></i>
             <span class="topbar-select-label"></span>
           </button>
-          <button id="logout-btn" class="btn-sign-out">
+          <button id="logout-btn" class="btn-sign-out" aria-label="" data-i18n-aria-label="header.logout">
             <i class="" data-icon="logout"></i>
             <span data-i18n="header.logout"></span>
           </button>

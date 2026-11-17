@@ -4,12 +4,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-function harness(respond) {
+function harness(respond, fragmentPath = null) {
     const mounted = [], requests = [];
     const slots = ['navigation', 'panels/models'].map(name => ({
         dataset: {fragment: name}, replaceWith(content) {mounted.push(content.html);}
     }));
     const document = {
+        querySelector: () => fragmentPath ? {content: fragmentPath} : null,
         querySelectorAll: () => slots,
         createElement: () => ({
             set innerHTML(html) {
@@ -21,7 +22,7 @@ function harness(respond) {
     const source = fs.readFileSync('js/core/htmlFragments.js', 'utf8')
         .replace('import.meta.url', JSON.stringify('https://fixture.invalid/assets/releases/release/js/core/htmlFragments.js'))
         .replace('export async function', 'async function');
-    const context = {URL, AbortController, document, setTimeout, clearTimeout,
+    const context = {location: {href:'https://fixture.invalid/'}, URL, AbortController, document, setTimeout, clearTimeout,
         fetch: async (url, options) => {requests.push({url: String(url), signal: options.signal});return respond(String(url));}};
     vm.runInNewContext(source + '\nglobalThis.load = loadHtmlFragments;', context);
     return {load: context.load, mounted, requests, slots};
@@ -47,4 +48,10 @@ test('empty or executable fragments are rejected before mounting any workspace',
         await assert.rejects(h.load(), /Invalid HTML fragment/);
         assert.deepEqual(h.mounted, []);
     }
+});
+
+test('compiled chunks use the release fragment root declared by their HTML', async () => {
+    const h = harness(async () => ({ok:true,text:async()=>'<div>Workspace</div>'}), '/assets/runtime/current/partials/');
+    await h.load();
+    assert(h.requests.every(request=>request.url.startsWith('https://fixture.invalid/assets/runtime/current/partials/')));
 });

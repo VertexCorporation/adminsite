@@ -1,6 +1,6 @@
 {
-  "dictionaryKeys": 1659,
-  "staticReferences": 1140,
+  "dictionaryKeys": 1754,
+  "staticReferences": 1195,
   "missing": [],
   "dynamicReferences": [
     {
@@ -85,21 +85,6 @@
     },
     {
       "file": "js/modules/directory.js",
-      "expression": "__('people.role_' +",
-      "prefix": "people.role_"
-    },
-    {
-      "file": "js/modules/directory.js",
-      "expression": "__('people.role_' +",
-      "prefix": "people.role_"
-    },
-    {
-      "file": "js/modules/directory.js",
-      "expression": "__('people.role_' +",
-      "prefix": "people.role_"
-    },
-    {
-      "file": "js/modules/directory.js",
       "expression": "__('people.' +",
       "prefix": "people."
     },
@@ -122,6 +107,11 @@
       "file": "js/modules/home.js",
       "expression": "__('guidance.' +",
       "prefix": "guidance."
+    },
+    {
+      "file": "js/modules/legal.js",
+      "expression": "__('legal.kind.' +",
+      "prefix": "legal.kind."
     },
     {
       "file": "js/modules/manualApplication.js",
@@ -165,16 +155,6 @@
     },
     {
       "file": "js/modules/people.js",
-      "expression": "__('people.role_' +",
-      "prefix": "people.role_"
-    },
-    {
-      "file": "js/modules/people.js",
-      "expression": "__('people.role_' +",
-      "prefix": "people.role_"
-    },
-    {
-      "file": "js/modules/people.js",
       "expression": "__('people.preview_' +",
       "prefix": "people.preview_"
     },
@@ -182,6 +162,26 @@
       "file": "js/modules/people.js",
       "expression": "__('people.preview_' +",
       "prefix": "people.preview_"
+    },
+    {
+      "file": "js/modules/personnelRole.js",
+      "expression": "__('people.role_' +",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "js/modules/personnelRole.js",
+      "expression": "__('people.role_' +",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "js/modules/personnelRole.js",
+      "expression": "__('people.role_' +",
+      "prefix": "people.role_"
+    },
+    {
+      "file": "js/modules/reports/backup.js",
+      "expression": "__('reports.' +",
+      "prefix": "reports."
     },
     {
       "file": "js/modules/reports/editor.js",
@@ -212,6 +212,11 @@
       "file": "js/modules/roles.js",
       "expression": "__('perms.preset_' +",
       "prefix": "perms.preset_"
+    },
+    {
+      "file": "js/modules/scenePersonnel.js",
+      "expression": "__('people.role_' +",
+      "prefix": "people.role_"
     },
     {
       "file": "js/modules/system.js",
@@ -306,6 +311,10 @@
     "events.ui.otherLanguagesJsonLanguageCodes",
     "events.ui.registrationsLoadedMoreAvailable",
     "events.ui.registrationsLoaded",
+    "legal.machinePreview",
+    "legal.published",
+    "legal.publishHelp",
+    "legal.saved",
     "models.cleanup_pending",
     "models.deleted",
     "notification.ui.fcmAcceptedTokensAndRejectedDeviceDisplay",
@@ -313,6 +322,16 @@
     "people.not_verified",
     "people.deactivate",
     "people.activate",
+    "catalog.role_core_only",
+    "catalog.role_preparing",
+    "catalog.role_link_required",
+    "catalog.role_disabled",
+    "catalog.role_inactive",
+    "catalog.role_unavailable",
+    "catalog.role_load_failed",
+    "reports.restoreHint",
+    "reports.backupFile",
+    "reports.restoreConfirm",
     "reports.person",
     "reports.statusLabel",
     "reports.project",
@@ -343,6 +362,11 @@
     "subs.badge_active",
     "team.ui.translationsAddedReviewAndSave",
     "weekly_stars.default_title",
+    "subs.account_missing",
+    "subs.profile_missing",
+    "subs.store_managed",
+    "subs.vertex_managed",
+    "subs.anonymous",
     "cert.delivery_expansion_disabled",
     "cert.delivery_contract_mismatch",
     "cert.delivery_webhook_missing",
@@ -428,6 +452,10 @@
     "auth.login_failed",
     "auth.enter_credentials",
     "auth.try_again",
+    "legal.html",
+    "legal.loading",
+    "legal.ready",
+    "legal.saving",
     "models.loading",
     "deleteAccount.description",
     "team.cards",

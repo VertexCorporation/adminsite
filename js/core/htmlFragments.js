@@ -1,5 +1,6 @@
 // Resolve against this module so HTML and JavaScript always share a release.
-const fragmentRoot = new URL('../../partials/', import.meta.url);
+const fragmentPath = document.querySelector('meta[name="vertex-fragments"]')?.content;
+const fragmentRoot = fragmentPath ? new URL(fragmentPath, location.href) : new URL('../../partials/', import.meta.url);
 
 export async function loadHtmlFragments(root = document) {
   const slots = [...root.querySelectorAll('template[data-fragment]')];

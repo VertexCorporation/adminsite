@@ -35,3 +35,36 @@ jobs:
           name: workspaces-${{ matrix.device }}-${{ matrix.lang }}-${{ matrix.theme }}
           path: test-results/workspaces/
           retention-days: 14
+  navigation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [desktop, mobile]
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm install --prefix .lighthouse --no-save lighthouse@13.6.0 puppeteer@25.17.0
+      - name: Cold navigation with real security SDK loading and synthetic service data
+        run: node tests/lighthouse-workspaces.cjs
+        env:
+          AUDIT_MODE: navigation
+          AUDIT_REAL_SDK: '1'
+          AUDIT_DEVICES: ${{ matrix.device }}
+          AUDIT_LANGS: en
+          AUDIT_THEMES: dark
+          AUDIT_SHARD: ${{ matrix.shard }}
+          AUDIT_SHARDS: '4'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: navigation-${{ matrix.device }}-${{ matrix.shard }}
+          path: test-results/workspace-navigation/
+          retention-days: 14

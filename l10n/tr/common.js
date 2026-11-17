@@ -365,6 +365,7 @@ export default {
   'chat.select_hint': 'Bir kanal seçin.',
   'chat.readonly': 'Bu kanalda yalnızca yöneticiler yazabilir.',
   'chat.open_all': 'Tüm departmanlara açık',
+  'chat.send': 'Mesaj gönder',
   'chat.placeholder': 'Mesaj yazın — @Departman veya @mail ile etiketleyin',
   'chat.as_task': 'Görev/Sorun',
   'chat.task_open': 'Açık',

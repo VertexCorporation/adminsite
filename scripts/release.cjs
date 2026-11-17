@@ -39,6 +39,20 @@ for (const name of [
 }
 // Account activation remains a small independent entry point using the same release.
 let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const consoleCSS = require('./console-styles.cjs').consoleStyles(root, html);
+fs.writeFileSync(path.join(out, prefix, 'console.css'), consoleCSS);
+const compiled = {};
+for (const file of require('./console-modules.cjs').consoleModules(root)) {
+  const relative = path.relative(path.join(root, 'compiled'), file.path);
+  const target = path.join(out, prefix, 'compiled', relative);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, file.contents);
+  compiled['compiled/' + relative] = crypto.createHash('sha256').update(file.contents).digest('hex');
+}
+html = html.replace(/(<template id="console-styles">)([\s\S]*?)(<\/template>)/, (_, open, content, close) => {
+  const optional = content.replace(/<link rel="stylesheet" href="css\/[^\"]+"\s*\/>/g, '');
+  return open + optional + `<link rel="stylesheet" href="/${prefix}/console.css" />` + close;
+});
 const copy = require('./login-copy.cjs')(root);
 const escape = (value) =>
   String(value).replace(
@@ -76,7 +90,7 @@ buildSync({
 html = html.replace('src="js/core/entry.js"', `src="/${prefix}/login-entry.js"`);
 const imports = {};
 for (const file of files.filter((file) => file.endsWith('.js'))) imports['/' + file] = '/' + prefix + '/' + file;
-const manifest = `<meta name="vertex-release" content="${release}"><script type="importmap">${JSON.stringify({ imports })}</script>`;
+const manifest = `<meta name="vertex-release" content="${release}"><meta name="vertex-bootstrap" content="/${prefix}/compiled/js/core/bootstrap.js"><meta name="vertex-fragments" content="/${prefix}/partials/"><script type="importmap">${JSON.stringify({ imports })}</script>`;
 html = html
   .replace('</head>', manifest + '</head>')
   .replace(/(src|href)="((?:js|css)\/[^"?]+)(?:\?[^" ]*)?"/g, (_, attr, file) => `${attr}="${prefix}/${file}"`);
@@ -86,5 +100,5 @@ activation = activation
   .replace('</head>', manifest + '</head>')
   .replace(/(src|href)="((?:js|css)\/[^"?]+)(?:\?[^" ]*)?"/g, (_, attr, file) => `${attr}="${prefix}/${file}"`);
 fs.writeFileSync(path.join(out, 'customer-activate.html'), activation);
-fs.writeFileSync(path.join(out, 'release.json'), JSON.stringify({ release, files, prefix }, null, 2) + '\n');
+fs.writeFileSync(path.join(out, 'release.json'), JSON.stringify({ release, files, prefix, compiled }, null, 2) + '\n');
 console.log('Built release ' + release + ' in dist/');

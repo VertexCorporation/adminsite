@@ -78,7 +78,7 @@
   height: auto;
   align-self: start;
 }
-:where(.panel-card) :is(.panel-header h3, .card-title-row h3) {
+:where(.panel-card) :is(.panel-header h3, .card-title-row h2, .card-title-row h3) {
   font-size: var(--fs-section-title);
   line-height: var(--lh-tight);
   font-weight: 600;
@@ -186,7 +186,7 @@
   min-width: 0;
 }
 :where(.panel-card, .vx-drawer, .vx-modal)
-  :is(.panel-header h3, .card-title-row h3, .vx-drawer-title, .vx-modal-title) {
+  :is(.panel-header h3, .card-title-row h2, .card-title-row h3, .vx-drawer-title, .vx-modal-title) {
   font-size: var(--fs-section-title);
   line-height: var(--lh-tight);
   font-weight: 600;

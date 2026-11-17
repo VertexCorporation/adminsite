@@ -11,6 +11,22 @@ for (const file of files) hash.update(file).update(fs.readFileSync(path.join(roo
 const release = hash.digest('hex').slice(0, 12),
   manifest = JSON.parse(fs.readFileSync(path.join(out, 'release.json'), 'utf8'));
 if (manifest.release !== release) throw Error('Release manifest differs from source');
+for (const file of require('./console-modules.cjs').consoleModules(root)) {
+  const relative = 'compiled/' + path.relative(path.join(root, 'compiled'), file.path);
+  const expected = crypto.createHash('sha256').update(file.contents).digest('hex');
+  const actual = crypto
+    .createHash('sha256')
+    .update(fs.readFileSync(path.join(out, manifest.prefix, relative)))
+    .digest('hex');
+  if (actual !== expected || manifest.compiled?.[relative] !== expected)
+    throw Error('Stale compiled module: ' + relative);
+}
+const consoleCSS = require('./console-styles.cjs').consoleStyles(
+  root,
+  fs.readFileSync(path.join(root, 'index.html'), 'utf8'),
+);
+if (fs.readFileSync(path.join(out, manifest.prefix, 'console.css'), 'utf8') !== consoleCSS)
+  throw Error('Stale console stylesheet bundle');
 for (const file of files) {
   if (!fs.readFileSync(path.join(root, file)).equals(fs.readFileSync(path.join(out, manifest.prefix, file))))
     throw Error('Stale release asset: ' + file);

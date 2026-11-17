@@ -25,7 +25,7 @@ function renderIdentity() {
   const name = sanitizeHTML(user.displayName || user.email || '—');
   const email = sanitizeHTML(user.email || '—');
   const face = sanitizeHTML(initialsOf(user.displayName || user.email));
-  root.innerHTML = `<button type="button" id="user-menu-trigger" class="user-menu-trigger" aria-haspopup="dialog" aria-expanded="false" aria-label="${__('nav.profile')}"><span class="user-menu-face">${face}</span><span class="user-menu-name">${name}</span><i class="user-menu-chevron" data-icon="keyboard_arrow_down"></i></button>`;
+  root.innerHTML = `<button type="button" id="user-menu-trigger" class="user-menu-trigger" aria-haspopup="dialog" aria-expanded="false" aria-label="${face} ${name} — ${__('nav.profile')}"><span class="user-menu-face" aria-hidden="true">${face}</span><span class="user-menu-name">${name}</span><i class="user-menu-chevron" data-icon="keyboard_arrow_down"></i></button>`;
   const trigger = root.querySelector('button');
   trigger.onclick = () =>
     openPopover(trigger, {
