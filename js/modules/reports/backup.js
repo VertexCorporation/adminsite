@@ -7,7 +7,7 @@ import { createBackup, planRestore } from './backupData.js';
 const t = (key) => __('reports.' + key);
 const counts = (key, done, total) => t(key).replace('{done}', done).replace('{total}', total);
 export async function downloadReportBackup(state) {
-  if (!state?.data) return;
+  if (!state?.data?.canEdit) return;
   const token = captureSession(),
     button = document.getElementById('reports-backup');
   button.disabled = true;

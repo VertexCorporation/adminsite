@@ -18,12 +18,36 @@ function evidenceLink(value) {
   }
   return `<a href="${esc(value)}" target="_blank" rel="noopener noreferrer">${esc(t('evidence'))}</a>`;
 }
+function reviewControls(entry, data, canEdit) {
+  const review = (data.entryReviews || []).find((row) => row.id === entry.id);
+  const current = review && review.entryRevision === entry.revision;
+  const label = review
+    ? current
+      ? t(review.decision === 'approved' ? 'approved' : 'changesRequested')
+      : t('staleReview')
+    : t('pendingReview');
+  return (
+    '<p class="form-hint">' +
+    esc(t('reviewDecision')) +
+    ': ' +
+    esc(label) +
+    '</p>' +
+    (review?.note ? '<p class="form-hint">' + esc(review.note) + '</p>' : '') +
+    (canEdit
+      ? '<button type="button" class="chrome-btn-outline" data-report-review-entry="' +
+        esc(entry.id) +
+        '">' +
+        esc(t('reviewEntry')) +
+        '</button>'
+      : '')
+  );
+}
 function entryRows(data, canEdit) {
   return (
     data.entries
       .map(
         (entry) =>
-          `<article class="report-record"><header><strong>${esc(entry.personName || t('unknownMember'))}</strong><span>${esc(label(entry.date))} · ${esc(status(entry.status))}</span></header><h4>${esc(entry.project)}</h4><p class="report-copy">${esc(entry.summary)}</p>${entry.next ? `<p class="report-copy report-next">${esc(entry.next)}</p>` : ''}${evidenceLink(entry.link)}${entry.source ? `<p class="form-hint">${esc(entry.source)}</p>` : ''}${canEdit || (data.ownMemberId && entry.memberId === data.ownMemberId) ? `<button type="button" class="chrome-btn-outline" data-report-edit-entry="${esc(entry.id)}">${esc(__('common.edit'))}</button>` : ''}</article>`,
+          `<article class="report-record"><header><strong>${esc(entry.personName || t('unknownMember'))}</strong><span>${esc(label(entry.date))} · ${esc(status(entry.status))}</span></header><h4>${esc(entry.project)}</h4><p class="report-copy">${esc(entry.summary)}</p>${entry.next ? `<p class="report-copy report-next">${esc(entry.next)}</p>` : ''}${evidenceLink(entry.link)}${reviewControls(entry, data, canEdit)}${entry.source ? `<p class="form-hint">${esc(entry.source)}</p>` : ''}${canEdit || (data.ownMemberId && entry.memberId === data.ownMemberId) ? `<button type="button" class="chrome-btn-outline" data-report-edit-entry="${esc(entry.id)}">${esc(__('common.edit'))}</button>` : ''}</article>`,
       )
       .join('') || `<p class="state-block">${esc(t('emptyEntries'))}</p>`
   );
@@ -68,8 +92,10 @@ export function renderReportContent(state) {
   const canEdit = state.data?.canEdit === true;
   document.getElementById('reports-new-entry').hidden = !(canEdit || state.data?.ownMemberId);
   document.getElementById('reports-new-task').hidden = !canEdit;
+  document.getElementById('reports-chief-report').hidden = !state.data?.canSubmitLeadership || state.view !== 'weekly';
+  document.getElementById('reports-backup').hidden = !canEdit;
   document.getElementById('reports-restore').hidden = !canEdit;
-  document.getElementById('reports-backup').disabled = !state.data || state.loading;
+  document.getElementById('reports-backup').disabled = !state.data || !canEdit || state.loading;
   document.getElementById('reports-restore').disabled = !state.data || state.loading;
   document.getElementById('reports-export').disabled = !state.data || state.loading;
   document.getElementById('reports-access-note').textContent = t(

@@ -16,7 +16,8 @@ export async function getReportWeek(department, weekStart, token = captureSessio
   const members = new Map(),
     entries = new Map(),
     tasks = new Map(),
-    openTasks = new Map();
+    openTasks = new Map(),
+    entryReviews = new Map();
   do {
     const data = await call('getReportWorkspace', { department, weekStart, cursors, backup }, token);
     if (
@@ -34,6 +35,7 @@ export async function getReportWeek(department, weekStart, token = captureSessio
       [data.entries, entries],
       [data.tasks, tasks],
       [data.openTasks || [], openTasks],
+      [data.entryReviews || [], entryReviews],
     ])
       for (const row of rows) target.set(row.id, row);
     cursors = Object.fromEntries(Object.entries(data.cursors || {}).map(([key, value]) => [key, value || false]));
@@ -44,6 +46,7 @@ export async function getReportWeek(department, weekStart, token = captureSessio
     entries: [...entries.values()],
     tasks: [...tasks.values()],
     openTasks: [...openTasks.values()],
+    entryReviews: [...entryReviews.values()],
   };
 }
 export const saveReportEntry = (data, token) => call('saveReportEntry', data, token);
