@@ -2,6 +2,8 @@ import { auth, consolePeopleCall } from '../core/firebase.js';
 import { isPanelAdmin } from './roles.js';
 import { __, userErrorMessage } from '../utils/ui.js';
 
+const deliveryStatuses = ['sent', 'uncertain', 'failed', 'disabled', 'not-found', 'preparing', 'sending', 'prepared'];
+
 export function initPasswordResetModule() {
   const form = document.getElementById('password-reset-form');
   if (!form) return;
@@ -43,18 +45,18 @@ export function initPasswordResetModule() {
     results.replaceChildren();
     try {
       const { data } = await consolePeopleCall('sendConsolePasswordResets', { emails: emails.join('\n'), requestId });
+      if (!Array.isArray(data?.rows) || !Number.isInteger(data.accepted)) {
+        throw Object.assign(new Error('Invalid password reset response'), { code: 'functions/internal' });
+      }
       status.textContent = __('resetAccount.complete').replace('{count}', String(data.accepted || 0));
-      for (const row of data.rows || []) {
+      for (const row of data.rows) {
         const item = document.createElement('li');
+        const state = deliveryStatuses.includes(row.status) ? row.status : 'uncertain';
         item.textContent =
           row.email +
           ' — ' +
-          __(
-            'resetAccount.' +
-              (['sent', 'uncertain', 'failed', 'disabled', 'not-found', 'preparing', 'sending'].includes(row.status)
-                ? row.status
-                : 'uncertain'),
-          );
+          __('resetAccount.' + state) +
+          (row.status === 'sent' && row.delivery === 'firebase' ? ' · ' + __('resetAccount.firebaseDelivery') : '');
         results.append(item);
       }
     } catch (error) {
