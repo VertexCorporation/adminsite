@@ -1,4 +1,9 @@
 export default {
+  'contributors.ui.linkedEmail':
+    'The primary email belongs to the linked account. Its corporate address, if assigned, appears as the additional email.',
+  'contributors.ui.linkedDepartment': 'Change the linked account’s department in Personnel Management.',
+  'contributors.ui.emailConflict': 'Another application already uses this email address.',
+  'contributors.ui.emailCoreOnly': 'Only Core can change the application email.',
   'contributors.ui.additionalAccountEmail': 'Additional account email',
   'contributors.ui.contributor': 'Contributor',
   'contributors.ui.emailDeliveryRequiresReviewNoDuplicateEmail':
