@@ -44,6 +44,8 @@ export function createContributorSurfaces({
       titleKey: 'contributors.edit_title',
       footerHTML: `<button type="submit" form="contributor-editor-form" class="chrome-btn-primary"><span data-i18n="contributors.save_btn">${__('contributors.save_btn')}</span></button><button type="button" class="chrome-btn-outline ce-cancel-btn"><span data-i18n="contributors.cancel_btn">${__('contributors.cancel_btn')}</span></button>`,
     });
+    const linked = contributor.linkedAccount === true;
+    const emailLocked = linked || !isPanelAdmin();
     const originalDepartment = canonicalDepartment(contributor.department, DEPARTMENTS);
     const deptOptions = [...new Set(['', ...DEPARTMENTS.map((d) => d.id), originalDepartment])]
       .map(
@@ -54,12 +56,13 @@ export function createContributorSurfaces({
     const langOptions = [...new Set([contributor.language || 'en', 'tr', 'en'])]
       .map(
         (code) =>
-          `<option value="${code}" ${contributor.language === code ? 'selected' : ''}>${code === 'tr' ? __('language.tr') : code === 'en' ? __('language.en') : escapeHTML(code)}</option>`,
+          `<option value="${escapeHTML(code)}" ${contributor.language === code ? 'selected' : ''}>${code === 'tr' ? __('language.tr') : code === 'en' ? __('language.en') : escapeHTML(code)}</option>`,
       )
       .join('');
 
     card.innerHTML = `
-        <form id="contributor-editor-form" class="contributor-edit-form form-stack">
+        <form id="contributor-editor-form" class="contributor-edit-form form-stack" novalidate>
+            <p class="form-hint" data-contributor-edit-error role="alert" hidden></p>
             <div class="contributor-edit-grid">
                 <div class="form-group-field">
                     <label for="ce-name" data-i18n="contributors.field_name">${__('contributors.field_name')}</label>
@@ -67,7 +70,8 @@ export function createContributorSurfaces({
                 </div>
                 <div class="form-group-field">
                     <label for="ce-email" data-i18n="contributors.field_email">${__('contributors.field_email')}</label>
-                    <input type="email" id="ce-email" value="${escapeHTML(contributor.email || '')}">
+                    <input type="email" id="ce-email" value="${escapeHTML(contributor.email || '')}" ${emailLocked ? 'readonly' : ''}>
+                    ${linked ? `<span class="form-hint">${escapeHTML(__('contributors.ui.linkedEmail'))}</span>` : ''}
                 </div>
                 ${contributor.additionalEmail ? `<div class="form-group-field"><label for="ce-additional-email">${__('contributors.ui.additionalAccountEmail')}</label><input type="email" id="ce-additional-email" value="${escapeHTML(contributor.additionalEmail)}" readonly></div>` : ''}
                 <div class="form-group-field">
@@ -80,7 +84,8 @@ export function createContributorSurfaces({
                 </div>
                 <div class="form-group-field">
                     <label for="ce-dept" data-i18n="contributors.field_department">${__('contributors.field_department')}</label>
-                    <select id="ce-dept">${deptOptions}</select>
+                    <select id="ce-dept" ${linked ? 'disabled' : ''}>${deptOptions}</select>
+                    ${linked ? `<span class="form-hint">${escapeHTML(__('contributors.ui.linkedDepartment'))}</span>` : ''}
                 </div>
                 <div class="form-group-field">
                     <label for="ce-lang" data-i18n="contributors.field_language">${__('contributors.field_language')}</label>
@@ -122,14 +127,17 @@ export function createContributorSurfaces({
 
       // Submit the actual delta, not every field from the edit form.
       const drawer = card.closest('.vx-drawer');
+      const errorHint = card.querySelector('[data-contributor-edit-error]');
+      errorHint.hidden = true;
+      errorHint.textContent = '';
       const updates = changedContributorFields(
         contributor,
         {
           name: card.querySelector('#ce-name').value,
-          email: card.querySelector('#ce-email').value,
+          email: emailLocked ? contributor.email : card.querySelector('#ce-email').value,
           phone: card.querySelector('#ce-phone').value,
           birthDate: card.querySelector('#ce-birth-date').value,
-          department: card.querySelector('#ce-dept').value,
+          department: linked ? originalDepartment : card.querySelector('#ce-dept').value,
           language: card.querySelector('#ce-lang').value,
           linkedin: card.querySelector('#ce-linkedin').value,
           github: card.querySelector('#ce-github').value,
@@ -165,8 +173,9 @@ export function createContributorSurfaces({
         showToast(() => __('contributors.edit_updated'), 'success');
         void fetchContributorsData();
       } catch (error) {
-        console.error('[CONTRIBUTORS] Edit failed:', error);
-        showToast(() => userErrorMessage(error), 'error');
+        console.error('[CONTRIBUTORS] Edit failed:', error.code || 'unknown');
+        errorHint.textContent = userErrorMessage(error);
+        errorHint.hidden = false;
       } finally {
         if (submitBtn.isConnected) setButtonLoading(submitBtn, false);
       }

@@ -88,6 +88,10 @@ export function userErrorMessage(error, context = '') {
     'User document does not exist.': 'subs.profile_missing',
   };
   if (subscriptionMessages[error?.message]) return __(subscriptionMessages[error.message]);
+  if (reason === 'contributor-linked-email') return __('contributors.ui.linkedEmail');
+  if (reason === 'contributor-linked-department') return __('contributors.ui.linkedDepartment');
+  if (reason === 'contributor-email-conflict') return __('contributors.ui.emailConflict');
+  if (reason === 'contributor-core-required') return __('contributors.ui.emailCoreOnly');
   if (reason === 'personnel-rollout-pending') return __('errors.personnel_rollout');
   if (reason === 'personnel-membership-review') return __('errors.personnel_membership');
   if (reason === 'personnel-version-conflict') return __('errors.personnel_stale');
