@@ -48,3 +48,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Editor controls become usable once the deferred field editor is mounted. */
+#events-editor:not(:has(#events-fields > *)) .events-editor-actions {
+  visibility: hidden;
+}

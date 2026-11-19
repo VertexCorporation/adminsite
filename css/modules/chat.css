@@ -111,3 +111,11 @@
   border-color: var(--border-strong);
   box-shadow: var(--focus-ring);
 }
+
+/* Reserve the initial channel rows and description while their reads settle. */
+.chat-channel-list {
+  min-height: 96px;
+}
+#chat-channel-desc {
+  min-height: 1.5em;
+}

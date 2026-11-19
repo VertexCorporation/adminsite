@@ -7,11 +7,9 @@ const { buildSync } = require('esbuild');
 const root = path.resolve(__dirname, '..'),
   out = path.join(root, 'dist'),
   files = sourceFiles(root);
-const hash = crypto.createHash('sha256');
-for (const file of files) hash.update(file).update(fs.readFileSync(path.join(root, file)));
 if (fs.existsSync(path.join(root, 'assets/releases')))
   throw Error('Archived release snapshots must not be kept in the source checkout');
-const release = hash.digest('hex').slice(0, 12),
+const release = require('./release-hash.cjs').releaseHash(root, files),
   prefix = 'assets/runtime/' + release;
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
@@ -39,6 +37,21 @@ for (const name of [
 }
 // Account activation remains a small independent entry point using the same release.
 let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const consoleCSS = require('./console-styles.cjs').consoleStyles(root, html);
+fs.writeFileSync(path.join(out, prefix, 'console.css'), consoleCSS);
+const compiled = {};
+const modules = require('./console-modules.cjs').consoleModules(root);
+for (const file of modules) {
+  const relative = path.relative(path.join(root, 'compiled'), file.path);
+  const target = path.join(out, prefix, 'compiled', relative);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, file.contents);
+  compiled['compiled/' + relative] = crypto.createHash('sha256').update(file.contents).digest('hex');
+}
+html = html.replace(/(<template id="console-styles">)([\s\S]*?)(<\/template>)/, (_, open, content, close) => {
+  const optional = content.replace(/<link rel="stylesheet" href="css\/[^\"]+"\s*\/>/g, '');
+  return open + optional + `<link rel="stylesheet" href="/${prefix}/console.css" />` + close;
+});
 const copy = require('./login-copy.cjs')(root);
 const escape = (value) =>
   String(value).replace(
@@ -76,15 +89,23 @@ buildSync({
 html = html.replace('src="js/core/entry.js"', `src="/${prefix}/login-entry.js"`);
 const imports = {};
 for (const file of files.filter((file) => file.endsWith('.js'))) imports['/' + file] = '/' + prefix + '/' + file;
-const manifest = `<meta name="vertex-release" content="${release}"><script type="importmap">${JSON.stringify({ imports })}</script>`;
+const preloadURLs = modules.preloads.map((file) => '/' + prefix + '/' + file);
+const manifest = `<meta name="vertex-preloads" content='${JSON.stringify(preloadURLs)}'><meta name="vertex-release" content="${release}"><meta name="vertex-bootstrap" content="/${prefix}/compiled/js/core/bootstrap.js"><meta name="vertex-fragments" content="/${prefix}/partials/"><script type="importmap">${JSON.stringify({ imports })}</script>`;
 html = html
   .replace('</head>', manifest + '</head>')
   .replace(/(src|href)="((?:js|css)\/[^"?]+)(?:\?[^" ]*)?"/g, (_, attr, file) => `${attr}="${prefix}/${file}"`);
+// Static workspace markup is inert until bootstrap mounts it. Delivering the
+// same release's templates together avoids a waterfall of fragment requests.
+html = html.replace(/<template data-fragment="([a-z/-]+)">\s*<\/template>/g, (_, name) => {
+  const markup = fs.readFileSync(path.join(root, 'partials', name + '.html'), 'utf8');
+  if (!markup.trim() || /<script\b/i.test(markup)) throw Error('Invalid embedded fragment: ' + name);
+  return `<template data-fragment="${name}" data-embedded-fragment="true">${markup}</template>`;
+});
 fs.writeFileSync(path.join(out, 'index.html'), html);
 let activation = fs.readFileSync(path.join(root, 'customer-activate.html'), 'utf8');
 activation = activation
   .replace('</head>', manifest + '</head>')
   .replace(/(src|href)="((?:js|css)\/[^"?]+)(?:\?[^" ]*)?"/g, (_, attr, file) => `${attr}="${prefix}/${file}"`);
 fs.writeFileSync(path.join(out, 'customer-activate.html'), activation);
-fs.writeFileSync(path.join(out, 'release.json'), JSON.stringify({ release, files, prefix }, null, 2) + '\n');
+fs.writeFileSync(path.join(out, 'release.json'), JSON.stringify({ release, files, prefix, compiled }, null, 2) + '\n');
 console.log('Built release ' + release + ' in dist/');

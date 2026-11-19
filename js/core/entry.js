@@ -6,7 +6,8 @@ import enIndex from '../../l10n/en/ui-index.js';
 // Sign-in is a public, lightweight surface. The private console and its
 // security SDKs start on sign-in intent, or immediately for a returning visit.
 // Storage is only a prefetch hint: it never grants access or replaces Auth.
-const bootstrapURL = new URL('./bootstrap.js', import.meta.url);
+const bootstrapPath = document.querySelector('meta[name="vertex-bootstrap"]')?.content;
+const bootstrapURL = bootstrapPath ? new URL(bootstrapPath, location.href) : new URL('./bootstrap.js', import.meta.url);
 const login = document.getElementById('login-container');
 const loader = document.getElementById('app-loader');
 let lang = 'tr',
@@ -91,6 +92,25 @@ function startConsole(blocking = false) {
   if (!loader.isConnected) document.body.append(loader);
   // Preparing while someone types must not cover or replace the sign-in form.
   loader.hidden = !blocking;
+  // Fetch SDK bytes alongside the console, without executing them or starting
+  // Auth/App Check until the existing initializer reaches those stages.
+  for (const service of ['app', 'auth', 'functions', 'app-check']) {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'script';
+    link.href = `https://www.gstatic.com/firebasejs/11.0.0/firebase-${service}-compat.js`;
+    document.head.append(link);
+  }
+  // Download and parse modules while the private stylesheet loads. Preload
+  // does not evaluate feature modules before their HTML has been mounted.
+  const preloadManifest = document.querySelector('meta[name="vertex-preloads"]')?.content;
+  const modules = preloadManifest ? JSON.parse(preloadManifest) : ['./bootstrap.js', './initializer.js', '../main.js'];
+  for (const module of modules) {
+    const link = document.createElement('link');
+    link.rel = 'modulepreload';
+    link.href = new URL(module, bootstrapURL).href;
+    document.head.append(link);
+  }
   startup = loadStyles()
     .then(() => import(bootstrapURL.href))
     .then(() => {

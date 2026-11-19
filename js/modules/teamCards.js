@@ -404,7 +404,7 @@ function renderWeeklyStars(container, starsData) {
                            placeholder="${__('team.ui.searchParticipants')}"
                            aria-label="${__('weekly_stars.contributors_label')}">
                     </div>
-                    <div id="stars-search-results" class="stars-search-results" role="listbox"></div>
+                    <div id="stars-search-results" class="stars-search-results" role="listbox" aria-label="${__('weekly_stars.contributors_label')}"></div>
                     ${
                       starsData.directoryError
                         ? `<div class="state-block" role="alert">${__('team.ui.couldNotLoadParticipantsExistingRecordsAre')}

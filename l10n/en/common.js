@@ -363,6 +363,7 @@ export default {
   'chat.select_hint': 'Select a channel.',
   'chat.readonly': 'Only Core members can post in this channel.',
   'chat.open_all': 'Open to all departments',
+  'chat.send': 'Send message',
   'chat.placeholder': 'Write a message — mention @Department or @email',
   'chat.as_task': 'Task/Issue',
   'chat.task_open': 'Open',

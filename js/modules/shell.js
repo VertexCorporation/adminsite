@@ -174,13 +174,15 @@ function initNavigation() {
       button.classList.add('active');
       refreshNavigation();
     };
-    if (changed && outgoing) animateViewSwitch(outgoing, target, update);
+    if (changed && outgoing && !restoringRoute) animateViewSwitch(outgoing, target, update);
     else {
       update();
-      if (changed) animateViewEntry(target);
+      if (changed && !restoringRoute) animateViewEntry(target);
     }
     if (target.id === 'tab-chat')
       document.dispatchEvent(new CustomEvent('vertex:workspace', { detail: { keys: ['chat.channels'] } }));
+    if (target.id === 'tab-home')
+      document.dispatchEvent(new CustomEvent('vertex:workspace', { detail: { keys: ['home'] } }));
     if (changed) window.scrollTo({ top: 0, behavior: 'instant' });
   };
   const dock = document.createElement('nav');
@@ -380,6 +382,7 @@ function initNavigation() {
     }
   });
   window.addEventListener('popstate', restoreRoute);
+  document.addEventListener('vertex:restore-route', restoreRoute);
   document.addEventListener('vertex:departments', () => setTimeout(restoreRoute, 0));
   nav?.addEventListener('click', (event) => {
     const button = event.target.closest('.dock-btn');

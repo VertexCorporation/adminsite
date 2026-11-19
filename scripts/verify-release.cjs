@@ -5,12 +5,27 @@ const fs = require('node:fs'),
 const { sourceFiles } = require('./source-files.cjs');
 const root = path.resolve(__dirname, '..'),
   out = path.join(root, 'dist'),
-  files = sourceFiles(root),
-  hash = crypto.createHash('sha256');
-for (const file of files) hash.update(file).update(fs.readFileSync(path.join(root, file)));
-const release = hash.digest('hex').slice(0, 12),
+  files = sourceFiles(root);
+const release = require('./release-hash.cjs').releaseHash(root, files),
   manifest = JSON.parse(fs.readFileSync(path.join(out, 'release.json'), 'utf8'));
 if (manifest.release !== release) throw Error('Release manifest differs from source');
+const modules = require('./console-modules.cjs').consoleModules(root);
+for (const file of modules) {
+  const relative = 'compiled/' + path.relative(path.join(root, 'compiled'), file.path);
+  const expected = crypto.createHash('sha256').update(file.contents).digest('hex');
+  const actual = crypto
+    .createHash('sha256')
+    .update(fs.readFileSync(path.join(out, manifest.prefix, relative)))
+    .digest('hex');
+  if (actual !== expected || manifest.compiled?.[relative] !== expected)
+    throw Error('Stale compiled module: ' + relative);
+}
+const consoleCSS = require('./console-styles.cjs').consoleStyles(
+  root,
+  fs.readFileSync(path.join(root, 'index.html'), 'utf8'),
+);
+if (fs.readFileSync(path.join(out, manifest.prefix, 'console.css'), 'utf8') !== consoleCSS)
+  throw Error('Stale console stylesheet bundle');
 for (const file of files) {
   if (!fs.readFileSync(path.join(root, file)).equals(fs.readFileSync(path.join(out, manifest.prefix, file))))
     throw Error('Stale release asset: ' + file);
@@ -28,4 +43,16 @@ for (const file of ['index.html', 'customer-activate.html']) {
   for (const module of files.filter((file) => file.endsWith('.js')))
     if (map['/' + module] !== '/' + manifest.prefix + '/' + module) throw Error('Missing release import: ' + module);
 }
+const builtHTML = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+const preloadURLs = modules.preloads.map((file) => '/' + manifest.prefix + '/' + file);
+if (!builtHTML.includes(`name="vertex-preloads" content='${JSON.stringify(preloadURLs)}'`))
+  throw Error('Stale console preload manifest');
+for (const match of fs
+  .readFileSync(path.join(root, 'index.html'), 'utf8')
+  .matchAll(/<template data-fragment="([a-z/-]+)">\s*<\/template>/g)) {
+  const markup = fs.readFileSync(path.join(root, 'partials', match[1] + '.html'), 'utf8');
+  if (!builtHTML.includes(`<template data-fragment="${match[1]}" data-embedded-fragment="true">${markup}</template>`))
+    throw Error('Stale embedded fragment: ' + match[1]);
+}
+
 console.log('Verified generated release ' + release);

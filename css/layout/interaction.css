@@ -11,7 +11,7 @@
 }
 .login-header h1,
 .brand-info .vertex-wordmark {
-  font-family: Ubuntu, sans-serif;
+  font-family: var(--font-sans);
   font-weight: 500;
   font-size: 18px;
   letter-spacing: 0;

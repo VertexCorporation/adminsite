@@ -195,16 +195,16 @@ note('Rapid navigation never cycles through intermediate screens');
 await page.locator('.dock-btn[data-target="tab-publications"]').click();
 await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
 const atomicDestination=await page.evaluate(()=>{
- const seen=[];
- const listener=event=>{const keys=event.detail?.keys||[];if(keys.some(k=>k.startsWith('users.')))seen.push(keys.join(','));};
+ const seen=[];window.__atomicWorkspace=seen;
+ const listener=event=>{const keys=event.detail?.keys||[];if(keys.some(k=>k.startsWith('users.'))){seen.push(keys.join(','));document.removeEventListener('vertex:workspace',listener);}};
  document.addEventListener('vertex:workspace',listener);
  document.querySelector('[data-nav-panel="users.status,users.deleteAccount"]').click();
- document.removeEventListener('vertex:workspace',listener);
  const tab=document.getElementById('tab-users');
  return {seen,workspace:tab.dataset.workspace,active:tab.classList.contains('active'),
   nestedGhost:!!tab.querySelector('.grid-layout > .ui-crossfade-ghost')};
 });
-assert.deepEqual(atomicDestination.seen,['users.status,users.deleteAccount'],JSON.stringify(atomicDestination));
+await page.waitForFunction(()=>window.__atomicWorkspace?.length===1);
+assert.deepEqual(await page.evaluate(()=>window.__atomicWorkspace),['users.status,users.deleteAccount'],JSON.stringify(atomicDestination));
 assert.equal(atomicDestination.workspace,'users.status,users.deleteAccount:');
 assert(atomicDestination.active&&!atomicDestination.nestedGhost,JSON.stringify(atomicDestination));
 await page.waitForFunction(()=>!document.querySelector('#tab-scroll-container > .ui-view-ghost'));
@@ -213,7 +213,7 @@ await page.locator('[data-nav-panel="contributors.list"][data-nav-action=""]').c
 note('Contributor sub-navigation enters its final workspace without an intermediate layout');
 const issueCount=()=>calls.filter(n=>n==='issuevertexcertificate').length;
 const openCert=async()=>{if(await page.locator('.certificate-drawer').count()){await page.keyboard.press('Escape');await page.waitForSelector('.vx-drawer',{state:'detached'});}await page.waitForSelector('.vx-popover.is-closing',{state:'detached'});await page.waitForSelector('.vx-modal[aria-hidden=true]',{state:'detached'});await page.locator('.certificate-manage-btn').first().click();await page.waitForSelector('[data-award]');};
-const selectTab=async id=>{const original=id;if(['news','events','notifications'].includes(id))id='publications';if(await page.evaluate(()=>innerWidth<1024)){const dock=page.locator(`[data-mobile-tab="tab-${id}"]`);if(await dock.count()&&await dock.isVisible())await dock.click();else{await page.locator('[data-mobile-more]').click();if(id==='profile')await page.locator('[data-more-profile]').click();else await page.locator(`.mobile-more-pages section[data-more-module="tab-${id}"] button`).first().click();await page.waitForSelector('.vx-modal',{state:'detached'});}}else {const button=page.locator(`[data-target="tab-${id}"]`);if(await button.getAttribute("aria-expanded")!=="true")await button.click();}const destination={news:'news.editor',events:'events.list',notifications:'notifications.sender'}[original];if(destination)await page.locator('[data-nav-panel="'+destination+'"]').evaluate(button=>button.click());};
+const selectTab=async id=>{const original=id;if(['news','events','notifications'].includes(id))id='publications';if(await page.evaluate(()=>innerWidth<1024)){const dock=page.locator(`[data-mobile-tab="tab-${id}"]`);if(await dock.count()&&await dock.isVisible())await dock.click();else{await page.locator('[data-mobile-more]').click();if(id==='profile')await page.locator('[data-more-profile]').click();else await page.locator(`.mobile-more-pages section[data-more-module="tab-${id}"] button`).first().click();await page.waitForSelector('.vx-modal',{state:'detached'});}}else {const button=page.locator(`[data-target="tab-${id}"]`);if(!await button.evaluate(el=>el.classList.contains('active'))||await button.getAttribute("aria-expanded")!=="true")await button.click();}const destination={news:'news.editor',events:'events.list',notifications:'notifications.sender'}[original];if(destination)await page.locator('[data-nav-panel="'+destination+'"]').evaluate(button=>button.click());await page.waitForFunction(()=>!document.querySelector('.tab-panel.active[data-feature-pending]'));};
 // Account deletion must require an explicit visible checkbox and exact e-mail.
 // This uses a mocked account and never invokes the destructive callable.
 {
@@ -468,7 +468,7 @@ assert.equal(editPayload.revision,0);assert.equal(editPayload.article.cover.en,'
 note('News edits preserve the original slug, revision and unchanged cover paths');
 
 await selectTab('notifications');await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('ALL_USERS');await page.locator('#notification-schedule-switch').check();await page.locator('#notification-schedule-time').fill('2027-01-01T12:00');await page.locator('#notification-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert(calls.includes('schedulenotification'));note('Notification template and scheduling payload (mock)');await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('SUBSCRIPTION_LEVEL');await page.locator('#notification-target-level').selectOption('3');await page.locator('#notification-schedule-switch').check();await page.locator('#notification-schedule-time').fill('2027-01-01T12:00');await page.locator('#notification-form').evaluate(f=>f.requestSubmit());await page.waitForTimeout(150);assert.deepEqual(payloads.filter(p=>p.name==='schedulenotification').at(-1).data.target,{type:'SUBSCRIPTION_TIER',tier:'ultra'});note('Notification subscription tier contract includes Ultra');failNotification=true;await page.locator('#notification-template-selector').selectOption('appUpdate');await page.locator('#notification-target-type').selectOption('ALL_USERS');await page.locator('#notification-form').evaluate(f=>{f.requestSubmit();f.requestSubmit();});await page.waitForTimeout(150);assert.equal(payloads.filter(p=>p.name==='sendtargetednotification').length,1);assert(await page.locator('#submit-notification-btn').isDisabled());note('Uncertain immediate delivery blocks duplicate submission and blind retry');
-await selectTab('subscriptions');await page.locator('[data-nav-panel="subscriptions.assign"]').evaluate(button=>button.click());await page.locator('#sub-user-email').fill('fixture@example.invalid');await page.locator('#sub-plan').selectOption('pro');await page.locator('#subscription-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert.equal(payloads.find(p=>p.name==='setusersubscription').data.tier,'pro');note('Subscription Pro assignment contract (mock)');
+await selectTab('subscriptions');await page.locator('[data-nav-panel="subscriptions.assign"]').evaluate(button=>button.click());await page.waitForFunction(()=>!document.querySelector('.tab-panel.active[data-feature-pending]'));await page.locator('#sub-user-email').fill('fixture@example.invalid');await page.locator('#sub-plan').selectOption('pro');await page.locator('#subscription-form').evaluate(form=>form.requestSubmit());await page.waitForTimeout(150);assert.equal(payloads.find(p=>p.name==='setusersubscription').data.tier,'pro');note('Subscription Pro assignment contract (mock)');
 await page.locator('#sub-bulk-toggle').click();
 await page.locator('#sub-bulk-input').fill('fixture@example.invalid');
 await page.locator('#sub-bulk-submit').click();

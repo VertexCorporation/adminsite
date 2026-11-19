@@ -9,6 +9,71 @@ let updateNewsArticleFn,
 
 // These will be populated by the initFirebase function
 let auth, db, storage, functions, appCheck;
+let firestoreSDK;
+function loadFirestoreSDK() {
+  if (typeof firebase.firestore === 'function') return Promise.resolve(firebase.firestore());
+  if (firestoreSDK) return firestoreSDK;
+  const attempt = () =>
+    new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      const timer = setTimeout(() => {
+        script.remove();
+        reject(new Error('Firestore SDK timed out'));
+      }, 10000);
+      script.async = true;
+      script.src = 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore-compat.js';
+      script.onload = () => {
+        clearTimeout(timer);
+        if (typeof firebase.firestore !== 'function') reject(new Error('Firestore SDK unavailable'));
+        else resolve(firebase.firestore());
+      };
+      script.onerror = () => {
+        clearTimeout(timer);
+        script.remove();
+        reject(new Error('Firestore SDK unavailable'));
+      };
+      document.head.appendChild(script);
+    });
+  firestoreSDK = attempt()
+    .catch(() => attempt())
+    .catch((error) => {
+      firestoreSDK = null;
+      throw error;
+    });
+  return firestoreSDK;
+}
+// References remain synchronous, while the first read/listener loads the SDK.
+// Auth and App Check continue to be initialized before protected operations.
+export function createDeferredFirestore(load) {
+  const reference = (steps) => {
+    const resolve = async () => {
+      let result = await load();
+      for (const [method, args] of steps) result = result[method](...args);
+      return result;
+    };
+    const chain = {};
+    for (const method of ['collection', 'doc', 'where', 'orderBy', 'limit'])
+      chain[method] = (...args) => reference([...steps, [method, args]]);
+    chain.get = async (...args) => (await resolve()).get(...args);
+    chain.onSnapshot = (...args) => {
+      let cancelled = false,
+        unsubscribe;
+      void resolve()
+        .then((target) => {
+          if (!cancelled) unsubscribe = target.onSnapshot(...args);
+        })
+        .catch((error) => {
+          if (!cancelled && typeof args[1] === 'function') args[1](error);
+        });
+      return () => {
+        cancelled = true;
+        unsubscribe?.();
+      };
+    };
+    return chain;
+  };
+  return reference([]);
+}
 let sendTargetedNotificationFn, scheduleNotificationFn, listScheduledNotificationsFn;
 let cancelScheduledNotificationFn, getServerStatusFn, setServerStatusFn, blockOnlineModelFn;
 let updateModelsListFn, createNewsArticleFn, deleteNewsArticleFn;
@@ -228,8 +293,9 @@ function initFirebase(firebaseConfig) {
       }
     }
   });
-  db = firebase.firestore();
-  storage = firebase.storage();
+  db = typeof firebase.firestore === 'function' ? firebase.firestore() : createDeferredFirestore(loadFirestoreSDK);
+  // Uploads use signed URLs; the unused Storage SDK is not a startup dependency.
+  storage = typeof firebase.storage === 'function' ? firebase.storage() : null;
   functions = firebase.app().functions(firebaseConfig.functionsRegion || 'europe-west1');
 
   // The SDK and server enforcement remain active for every protected call.
