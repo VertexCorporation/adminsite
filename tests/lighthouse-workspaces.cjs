@@ -30,8 +30,18 @@ const surfaces = [
   {panel:'reports.workspace',action:'Array:weekly',surface:'report-task-editor',selector:'#reports-new-task'},
   {panel:'legal.documents',action:'',surface:'legal-history',selector:'#legal-history-section summary'},
 ];
-const server=http.createServer((req,res)=>{
+const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost');
+  if(url.pathname==='/.audit/firebase-firestore.js'){
+    try{
+      const file=path.join(root,'.lighthouse/vendor','firebase-firestore-compat.js');
+      const body=process.env.AUDIT_CACHED_SDK==='1'?fs.readFileSync(file,'utf8'):await (await fetch('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore-compat.js')).text();
+      const wrapped='var __auditSavedFirebase=window.firebase;window.firebase=window.__auditRealFirebase;\n'+body+'\nwindow.firebase=__auditSavedFirebase;window.firebase.firestore=window.__auditFirestoreFactory;';
+      res.writeHead(200,{'Content-Type':'text/javascript','Content-Encoding':'gzip','Access-Control-Allow-Origin':'*','Cache-Control':'public,max-age=31536000'});
+      res.end(gzipSync(wrapped));
+    }catch(error){res.writeHead(502);res.end();console.error(error);}
+    return;
+  }
   const file=path.resolve(dist,'.'+(url.pathname==='/'?'/index.html':url.pathname));
   if(!file.startsWith(dist+path.sep)){res.writeHead(403);return res.end();}
   fs.readFile(file,(error,bytes)=>{res.statusCode=error?404:200;res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.json')?'application/json':file.endsWith('.svg')?'image/svg+xml':file.endsWith('.png')?'image/png':'text/html');if(!error&&/\.(js|css|html|json)$/.test(file)){res.setHeader('Content-Encoding','gzip');res.setHeader('Vary','Accept-Encoding');bytes=gzipSync(bytes);}res.end(error?'':bytes);});
@@ -99,12 +109,9 @@ const server=http.createServer((req,res)=>{
           }
           if(url.hostname==='cortexishere.com')return await req.respond({status:200,headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/json',body:JSON.stringify(url.pathname==='/models'?{producers:{Vertex:{Series:{Example:model}}}}:{models:[]})});
           if(url.hostname==='www.gstatic.com'&&url.pathname.endsWith('/firebase-firestore-compat.js')&&process.env.AUDIT_REAL_SDK==='1'){
-            const file=path.join(root,'.lighthouse/vendor','firebase-firestore-compat.js');
-            const body=process.env.AUDIT_CACHED_SDK==='1'?fs.readFileSync(file,'utf8'):await (await fetch(url.href)).text();
-            // The fixture wraps the real SDK to preserve synthetic identity. Match
-            // the CDN's compressed delivery instead of simulating a raw 346KB transfer.
-            const wrapped='var __auditSavedFirebase=window.firebase;window.firebase=window.__auditRealFirebase;\n'+body+'\nwindow.firebase=__auditSavedFirebase;window.firebase.firestore=window.__auditFirestoreFactory;';
-            return await req.respond({status:200,contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*','Cache-Control':'public,max-age=31536000','Content-Encoding':'gzip'},body:gzipSync(wrapped)});
+            // CDP synthetic responses contain decoded bytes; use the real HTTP
+            // test server so Chrome measures and decodes compressed delivery.
+            return await req.continue({url:base+'/.audit/firebase-firestore.js'});
           }
           if(url.hostname==='www.gstatic.com'&&process.env.AUDIT_CACHED_SDK==='1'){const file=path.join(root,'.lighthouse/vendor',path.basename(url.pathname));if(fs.existsSync(file))return await req.respond({status:200,contentType:'text/javascript',headers:{'Cache-Control':'public,max-age=31536000','Access-Control-Allow-Origin':'*'},body:fs.readFileSync(file)});}
           if(['www.gstatic.com','fonts.googleapis.com','fonts.gstatic.com'].includes(url.hostname))return await req.continue();
