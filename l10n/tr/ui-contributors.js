@@ -1,4 +1,9 @@
 export default {
+  'contributors.ui.linkedEmail':
+    'Ana e-posta bağlı hesabın adresi. Varsa kurumsal adres, ek hesap e-postası olarak görünür.',
+  'contributors.ui.linkedDepartment': 'Bağlı hesabın departmanı Personel Yönetimi üzerinden değiştirilir.',
+  'contributors.ui.emailConflict': 'Bu adres başka bir başvuru kaydında kullanılıyor.',
+  'contributors.ui.emailCoreOnly': 'Başvuru e-postasını yalnızca Core değiştirebilir.',
   'contributors.ui.additionalAccountEmail': 'Ek hesap e-postası',
   'contributors.ui.contributor': 'Katılımcı',
   'contributors.ui.emailDeliveryRequiresReviewNoDuplicateEmail':

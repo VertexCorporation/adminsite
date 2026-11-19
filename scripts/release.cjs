@@ -92,6 +92,13 @@ const manifest = `<meta name="vertex-release" content="${release}"><meta name="v
 html = html
   .replace('</head>', manifest + '</head>')
   .replace(/(src|href)="((?:js|css)\/[^"?]+)(?:\?[^" ]*)?"/g, (_, attr, file) => `${attr}="${prefix}/${file}"`);
+// Static workspace markup is inert until bootstrap mounts it. Delivering the
+// same release's templates together avoids a waterfall of fragment requests.
+html = html.replace(/<template data-fragment="([a-z/-]+)">\s*<\/template>/g, (_, name) => {
+  const markup = fs.readFileSync(path.join(root, 'partials', name + '.html'), 'utf8');
+  if (!markup.trim() || /<script\b/i.test(markup)) throw Error('Invalid embedded fragment: ' + name);
+  return `<template data-fragment="${name}" data-embedded-fragment="true">${markup}</template>`;
+});
 fs.writeFileSync(path.join(out, 'index.html'), html);
 let activation = fs.readFileSync(path.join(root, 'customer-activate.html'), 'utf8');
 activation = activation

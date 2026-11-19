@@ -4,10 +4,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-function harness(respond, fragmentPath = null) {
+function harness(respond, fragmentPath = null, embeddedHTML = null) {
     const mounted = [], requests = [];
     const slots = ['navigation', 'panels/models'].map(name => ({
-        dataset: {fragment: name}, replaceWith(content) {mounted.push(content.html);}
+        dataset: {fragment: name, ...(embeddedHTML===null?{}:{embeddedFragment:'true'})}, innerHTML: embeddedHTML, replaceWith(content) {mounted.push(content.html);}
     }));
     const document = {
         querySelector: () => fragmentPath ? {content: fragmentPath} : null,
@@ -54,4 +54,11 @@ test('compiled chunks use the release fragment root declared by their HTML', asy
     const h = harness(async () => ({ok:true,text:async()=>'<div>Workspace</div>'}), '/assets/runtime/current/partials/');
     await h.load();
     assert(h.requests.every(request=>request.url.startsWith('https://fixture.invalid/assets/runtime/current/partials/')));
+});
+
+test('embedded release templates mount atomically without extra network requests',async()=>{
+ const h=harness(()=>{throw Error('Unexpected network');},null,'<section>Workspace</section>');
+ await h.load();assert.equal(h.mounted.length,2);assert.equal(h.requests.length,0);
+ const invalid=harness(()=>{throw Error('Unexpected network');},null,'<script>unexpected()</script>');
+ await assert.rejects(invalid.load(),/Invalid HTML fragment/);assert.deepEqual(invalid.mounted,[]);
 });

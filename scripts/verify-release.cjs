@@ -42,4 +42,13 @@ for (const file of ['index.html', 'customer-activate.html']) {
   for (const module of files.filter((file) => file.endsWith('.js')))
     if (map['/' + module] !== '/' + manifest.prefix + '/' + module) throw Error('Missing release import: ' + module);
 }
+const builtHTML = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+for (const match of fs
+  .readFileSync(path.join(root, 'index.html'), 'utf8')
+  .matchAll(/<template data-fragment="([a-z/-]+)">\s*<\/template>/g)) {
+  const markup = fs.readFileSync(path.join(root, 'partials', match[1] + '.html'), 'utf8');
+  if (!builtHTML.includes(`<template data-fragment="${match[1]}" data-embedded-fragment="true">${markup}</template>`))
+    throw Error('Stale embedded fragment: ' + match[1]);
+}
+
 console.log('Verified generated release ' + release);

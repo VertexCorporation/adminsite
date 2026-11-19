@@ -11,10 +11,14 @@ export async function loadHtmlFragments(root = document) {
       slots.map(async (slot) => {
         const name = slot.dataset.fragment;
         if (!/^[a-z]+(?:\/[a-z-]+)*$/.test(name)) throw new Error('Invalid HTML fragment name.');
-        const response = await fetch(new URL(name + '.html', fragmentRoot), { signal: controller.signal });
-        if (!response.ok) throw new Error('HTML fragment unavailable: ' + name);
+        let html = slot.innerHTML;
+        if (slot.dataset.embeddedFragment !== 'true') {
+          const response = await fetch(new URL(name + '.html', fragmentRoot), { signal: controller.signal });
+          if (!response.ok) throw new Error('HTML fragment unavailable: ' + name);
+          html = await response.text();
+        }
         const template = document.createElement('template');
-        template.innerHTML = await response.text();
+        template.innerHTML = html;
         if (!template.content.childElementCount || template.content.querySelector('script')) {
           throw new Error('Invalid HTML fragment: ' + name);
         }

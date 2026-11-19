@@ -92,6 +92,15 @@ function startConsole(blocking = false) {
   if (!loader.isConnected) document.body.append(loader);
   // Preparing while someone types must not cover or replace the sign-in form.
   loader.hidden = !blocking;
+  // Fetch SDK bytes alongside the console, without executing them or starting
+  // Auth/App Check until the existing initializer reaches those stages.
+  for (const service of ['app', 'auth', 'functions', 'app-check']) {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'script';
+    link.href = `https://www.gstatic.com/firebasejs/11.0.0/firebase-${service}-compat.js`;
+    document.head.append(link);
+  }
   // Download and parse modules while the private stylesheet loads. Preload
   // does not evaluate feature modules before their HTML has been mounted.
   for (const module of ['./bootstrap.js', '../main.js']) {

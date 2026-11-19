@@ -82,7 +82,7 @@ const server=http.createServer((req,res)=>{
         try{
           if(url.origin===base){
             // Snapshot QA uses synthetic Auth. Cold performance mode retains
-            // all six real Firebase SDK downloads before installing that identity.
+            // the real Firebase SDK downloads before installing that identity.
             if(url.pathname.endsWith('/js/core/initializer.js')){
               const file=path.join(dist,url.pathname);
               let source=fs.readFileSync(file,'utf8');
@@ -159,5 +159,7 @@ const server=http.createServer((req,res)=>{
       fs.writeFileSync(path.join(out,`${device}-${lang}-${theme}.html`),await flow.generateReport());
       await page.close();
     }
+    const regressions=results.filter(item=>item.active.overflow||item.errors.length||['accessibility','best-practices'].some(category=>item.scores[category]!==100));
+    if(regressions.length)throw Error('Workspace quality gate failed: '+regressions.map(item=>item.device+':'+item.panel+':'+item.action).join(', '));
   }finally{await browser.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});
