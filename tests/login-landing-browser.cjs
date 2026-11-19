@@ -48,8 +48,13 @@ const server = http.createServer((req, res) => {
       await page.route('**/*', route => {
         const url = new URL(route.request().url());
         if (url.origin === base) {
-          if (mode === 'startup-error' && url.pathname.endsWith('/partials/panels/models.html'))
-            return route.fulfill({ status: 503, body: '' });
+          if (mode === 'startup-error' && url.pathname === '/') {
+            // Release markup is embedded: corrupt one inert template to exercise
+            // the same atomic bootstrap boundary before credentials are replayed.
+            const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8')
+              .replace('<template data-fragment="panels/models" data-embedded-fragment="true">', '$&<script>unexpected()</script>');
+            return route.fulfill({ contentType: 'text/html', body: html });
+          }
           return route.continue();
         }
         if (url.hostname === 'www.gstatic.com') return route.fulfill({ contentType: 'text/javascript', body: '' });
