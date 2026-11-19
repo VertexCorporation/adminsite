@@ -101,7 +101,10 @@ const server=http.createServer((req,res)=>{
           if(url.hostname==='www.gstatic.com'&&url.pathname.endsWith('/firebase-firestore-compat.js')&&process.env.AUDIT_REAL_SDK==='1'){
             const file=path.join(root,'.lighthouse/vendor','firebase-firestore-compat.js');
             const body=process.env.AUDIT_CACHED_SDK==='1'?fs.readFileSync(file,'utf8'):await (await fetch(url.href)).text();
-            return await req.respond({status:200,contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*','Cache-Control':'public,max-age=31536000'},body:'var __auditSavedFirebase=window.firebase;window.firebase=window.__auditRealFirebase;\n'+body+'\nwindow.firebase=__auditSavedFirebase;window.firebase.firestore=window.__auditFirestoreFactory;'});
+            // The fixture wraps the real SDK to preserve synthetic identity. Match
+            // the CDN's compressed delivery instead of simulating a raw 346KB transfer.
+            const wrapped='var __auditSavedFirebase=window.firebase;window.firebase=window.__auditRealFirebase;\n'+body+'\nwindow.firebase=__auditSavedFirebase;window.firebase.firestore=window.__auditFirestoreFactory;';
+            return await req.respond({status:200,contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*','Cache-Control':'public,max-age=31536000','Content-Encoding':'gzip'},body:gzipSync(wrapped)});
           }
           if(url.hostname==='www.gstatic.com'&&process.env.AUDIT_CACHED_SDK==='1'){const file=path.join(root,'.lighthouse/vendor',path.basename(url.pathname));if(fs.existsSync(file))return await req.respond({status:200,contentType:'text/javascript',headers:{'Cache-Control':'public,max-age=31536000','Access-Control-Allow-Origin':'*'},body:fs.readFileSync(file)});}
           if(['www.gstatic.com','fonts.googleapis.com','fonts.gstatic.com'].includes(url.hostname))return await req.continue();
@@ -133,7 +136,7 @@ const server=http.createServer((req,res)=>{
           history.replaceState({vertexRoute:{panel:route.panel,action:route.action}},'','?panel='+encodeURIComponent(route.panel)+'&view='+encodeURIComponent(route.action));
           dispatchEvent(new PopStateEvent('popstate'));
         },route);
-        await page.waitForFunction(()=>![...document.querySelectorAll('.tab-panel.active [aria-busy=\"true\"]')].some(el=>el.getClientRects().length),{timeout:15000});
+        await waitReady();
         await new Promise(r=>setTimeout(r,250));
         await page.evaluate(()=>document.fonts.ready);
         if(route.surface){
