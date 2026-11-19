@@ -103,7 +103,9 @@ function startConsole(blocking = false) {
   }
   // Download and parse modules while the private stylesheet loads. Preload
   // does not evaluate feature modules before their HTML has been mounted.
-  for (const module of ['./bootstrap.js', '../main.js']) {
+  const preloadManifest = document.querySelector('meta[name="vertex-preloads"]')?.content;
+  const modules = preloadManifest ? JSON.parse(preloadManifest) : ['./bootstrap.js', './initializer.js', '../main.js'];
+  for (const module of modules) {
     const link = document.createElement('link');
     link.rel = 'modulepreload';
     link.href = new URL(module, bootstrapURL).href;

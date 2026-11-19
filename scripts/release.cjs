@@ -40,7 +40,8 @@ let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const consoleCSS = require('./console-styles.cjs').consoleStyles(root, html);
 fs.writeFileSync(path.join(out, prefix, 'console.css'), consoleCSS);
 const compiled = {};
-for (const file of require('./console-modules.cjs').consoleModules(root)) {
+const modules = require('./console-modules.cjs').consoleModules(root);
+for (const file of modules) {
   const relative = path.relative(path.join(root, 'compiled'), file.path);
   const target = path.join(out, prefix, 'compiled', relative);
   fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -88,7 +89,8 @@ buildSync({
 html = html.replace('src="js/core/entry.js"', `src="/${prefix}/login-entry.js"`);
 const imports = {};
 for (const file of files.filter((file) => file.endsWith('.js'))) imports['/' + file] = '/' + prefix + '/' + file;
-const manifest = `<meta name="vertex-release" content="${release}"><meta name="vertex-bootstrap" content="/${prefix}/compiled/js/core/bootstrap.js"><meta name="vertex-fragments" content="/${prefix}/partials/"><script type="importmap">${JSON.stringify({ imports })}</script>`;
+const preloadURLs = modules.preloads.map((file) => '/' + prefix + '/' + file);
+const manifest = `<meta name="vertex-preloads" content='${JSON.stringify(preloadURLs)}'><meta name="vertex-release" content="${release}"><meta name="vertex-bootstrap" content="/${prefix}/compiled/js/core/bootstrap.js"><meta name="vertex-fragments" content="/${prefix}/partials/"><script type="importmap">${JSON.stringify({ imports })}</script>`;
 html = html
   .replace('</head>', manifest + '</head>')
   .replace(/(src|href)="((?:js|css)\/[^"?]+)(?:\?[^" ]*)?"/g, (_, attr, file) => `${attr}="${prefix}/${file}"`);

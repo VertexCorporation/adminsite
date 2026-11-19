@@ -9,7 +9,8 @@ const root = path.resolve(__dirname, '..'),
 const release = require('./release-hash.cjs').releaseHash(root, files),
   manifest = JSON.parse(fs.readFileSync(path.join(out, 'release.json'), 'utf8'));
 if (manifest.release !== release) throw Error('Release manifest differs from source');
-for (const file of require('./console-modules.cjs').consoleModules(root)) {
+const modules = require('./console-modules.cjs').consoleModules(root);
+for (const file of modules) {
   const relative = 'compiled/' + path.relative(path.join(root, 'compiled'), file.path);
   const expected = crypto.createHash('sha256').update(file.contents).digest('hex');
   const actual = crypto
@@ -43,6 +44,9 @@ for (const file of ['index.html', 'customer-activate.html']) {
     if (map['/' + module] !== '/' + manifest.prefix + '/' + module) throw Error('Missing release import: ' + module);
 }
 const builtHTML = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+const preloadURLs = modules.preloads.map((file) => '/' + manifest.prefix + '/' + file);
+if (!builtHTML.includes(`name="vertex-preloads" content='${JSON.stringify(preloadURLs)}'`))
+  throw Error('Stale console preload manifest');
 for (const match of fs
   .readFileSync(path.join(root, 'index.html'), 'utf8')
   .matchAll(/<template data-fragment="([a-z/-]+)">\s*<\/template>/g)) {

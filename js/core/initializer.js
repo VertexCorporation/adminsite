@@ -83,18 +83,9 @@ const loadScript = async (url) => {
   }
   throw lastError;
 };
-try {
-  if (['localhost', '127.0.0.1'].includes(location.hostname)) self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-  startupStage = 'sdk-core';
-  await loadScript('https://www.gstatic.com/firebasejs/11.0.0/firebase-app-compat.js');
-  if (typeof firebase === 'undefined') throw new Error('Firebase core SDK unavailable');
-  startupStage = 'sdk-services';
-  await Promise.all(
-    ['auth', 'functions', 'app-check'].map((service) =>
-      loadScript(`https://www.gstatic.com/firebasejs/11.0.0/firebase-${service}-compat.js`),
-    ),
-  );
-  startupStage = 'configuration';
+// Public configuration can load alongside SDK bytes. Observe rejection immediately
+// so a slow SDK cannot turn a configuration failure into an unhandled promise.
+const configuration = (async () => {
   let config;
   try {
     config = JSON.parse(sessionStorage.getItem('firebaseConfig'));
@@ -109,6 +100,22 @@ try {
       /* Cache is optional. */
     }
   }
+  return config;
+})();
+void configuration.catch(() => {});
+try {
+  if (['localhost', '127.0.0.1'].includes(location.hostname)) self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  startupStage = 'sdk-core';
+  await loadScript('https://www.gstatic.com/firebasejs/11.0.0/firebase-app-compat.js');
+  if (typeof firebase === 'undefined') throw new Error('Firebase core SDK unavailable');
+  startupStage = 'sdk-services';
+  await Promise.all(
+    ['auth', 'functions', 'app-check'].map((service) =>
+      loadScript(`https://www.gstatic.com/firebasejs/11.0.0/firebase-${service}-compat.js`),
+    ),
+  );
+  startupStage = 'configuration';
+  const config = await configuration;
   if (typeof firebase.functions !== 'function') throw new Error('Firebase Functions SDK unavailable');
   // Keep feature module fetch/evaluation errors inside the bootstrap error boundary.
   startupStage = 'application';
