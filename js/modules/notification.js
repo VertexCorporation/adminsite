@@ -429,7 +429,7 @@ async function handleCancelTask(taskId) {
   }
   showToast(() => __('notif.cancelling'), 'info');
   try {
-    const result = await cancelScheduledNotificationFn({ taskId });
+    await cancelScheduledNotificationFn({ taskId });
     showToast(() => __('notif.cancelled'), 'success');
   } catch (error) {
     console.error(`[CLIENT] Error cancelling task ${taskId}:`, error);
@@ -469,15 +469,11 @@ export function listenForScheduledTasks() {
         settle();
         finishLoading();
         const container = dom.scheduledTasksListContainer;
-        if (snapshot.empty) {
-          crossfade(container, () => {
-            container.innerHTML = `<p class="form-hint" data-i18n="notif.empty">${__('notif.empty')}</p>`;
-          });
-          return;
-        }
         const fragment = document.createDocumentFragment();
         snapshot.forEach((doc) => {
           const task = doc.data();
+          if (task.kind === 'IMMEDIATE') return;
+          if (task.status != null && !['SCHEDULED', 'QUEUE_FAILED', 'QUEUE_UNCERTAIN'].includes(task.status)) return;
           const scheduleDate = task.scheduleTime.toDate();
           const formattedTime = scheduleDate.toLocaleString(getLang() === 'tr' ? 'tr-TR' : 'en-US', {
             year: 'numeric',
@@ -504,6 +500,12 @@ export function listenForScheduledTasks() {
                 <div class="task-actions"><button class="cancel-task-btn chrome-btn-outline" data-task-id="${escapeHTML(doc.id)}">${__('common.cancel')}</button></div>`;
           fragment.appendChild(item);
         });
+        if (!fragment.childElementCount) {
+          crossfade(container, () => {
+            container.innerHTML = `<p class="form-hint" data-i18n="notif.empty">${__('notif.empty')}</p>`;
+          });
+          return;
+        }
         crossfade(container, () => container.replaceChildren(fragment));
       },
       (error) => {
