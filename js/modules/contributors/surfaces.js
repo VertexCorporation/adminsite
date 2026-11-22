@@ -269,8 +269,10 @@ export function createContributorSurfaces({
         ['contributors.field_interview', formatCertificateDate(person.interviewDate)],
         ['cert.joined', person.joinedAt ? formatCertificateDate(person.joinedAt) : __('cert.not_joined')],
       ];
-      const guardianStatus = person.guardianConsentStatus === 'pending' && person.guardianConsentExpiresAt <= Date.now()
-        ? 'expired' : person.guardianConsentStatus;
+      const guardianStatus =
+        person.guardianConsentStatus === 'pending' && person.guardianConsentExpiresAt <= Date.now()
+          ? 'expired'
+          : person.guardianConsentStatus;
       const guardianLabels = {
         pending: 'contributors.guardian_pending',
         approved: 'contributors.guardian_approved',
