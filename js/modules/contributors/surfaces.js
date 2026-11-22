@@ -269,6 +269,16 @@ export function createContributorSurfaces({
         ['contributors.field_interview', formatCertificateDate(person.interviewDate)],
         ['cert.joined', person.joinedAt ? formatCertificateDate(person.joinedAt) : __('cert.not_joined')],
       ];
+      const guardianStatus = person.guardianConsentStatus === 'pending' && person.guardianConsentExpiresAt <= Date.now()
+        ? 'expired' : person.guardianConsentStatus;
+      const guardianLabels = {
+        pending: 'contributors.guardian_pending',
+        approved: 'contributors.guardian_approved',
+        declined: 'contributors.guardian_declined',
+        expired: 'contributors.guardian_expired',
+      };
+      if (guardianLabels[guardianStatus])
+        rows.splice(4, 0, ['contributors.guardian_consent', __(guardianLabels[guardianStatus])]);
       if (person.additionalEmail)
         rows.splice(2, 0, [__('contributors.ui.additionalAccountEmail'), person.additionalEmail]);
       body.innerHTML = `<dl class="detail-list">${rows.map(([label, value]) => `<div class="detail-row"><dt>${__(label)}</dt><dd>${escapeHTML(String(value ?? '—'))}</dd></div>`).join('')}</dl>${person.about ? `<p class="drawer-bio">${escapeHTML(person.about)}</p>` : ''}<div class="contributor-links">${[
