@@ -196,7 +196,7 @@ export default {
   'notif.uid_required': 'User ID is required.',
   'notif.tier_required': 'Select a valid subscription tier.',
   'notif.time_required': 'Select a schedule date and time.',
-  'notif.time_future': 'Scheduled time must be in the future.',
+  'notif.time_future': 'Schedule the notification at least one minute ahead.',
   'notif.success': 'Notification operation completed.',
   'notif.cancelled': 'Scheduled notification cancelled.',
   'common.choose_file': 'Choose file',

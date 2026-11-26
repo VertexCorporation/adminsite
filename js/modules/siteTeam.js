@@ -10,6 +10,7 @@ import { icon } from '../utils/icons.js';
  * projections of current membership; this module only writes kind=honor. */
 
 import { userErrorMessage, showToast, __, escapeHTML } from '../utils/ui.js';
+import { getEffectivePanelLevel } from './roles.js';
 import { listSiteTeamFn, setSiteTeamEntryFn, deleteSiteTeamEntryFn, auth } from '../core/firebase.js';
 
 let mods = [];
@@ -93,6 +94,15 @@ function render() {
   }
 }
 
+function canSave(button) {
+  return button && !button.disabled && getEffectivePanelLevel('system.teamLog') === 'write';
+}
+
+function confirmSaved({ data }) {
+  if (data?.success !== true)
+    throw Object.assign(new Error('Unconfirmed honor roll result'), { code: 'functions/internal' });
+}
+
 async function add() {
   const input = el('team-mod-input');
   const name = input.value.trim();
@@ -101,9 +111,10 @@ async function add() {
     return;
   }
   const btn = el('team-mod-add');
+  if (!canSave(btn)) return;
   setButtonLoading(btn, true);
   try {
-    await setSiteTeamEntryFn({ kind: 'honor', name });
+    confirmSaved(await setSiteTeamEntryFn({ kind: 'honor', name }));
     input.value = '';
     showToast(() => __('team.added'), 'success');
     await loadTeam();
@@ -116,7 +127,7 @@ async function add() {
 
 async function rename(id) {
   const list = el('team-mod-list');
-  const row = list.querySelector(`.team-list-row--editing[data-id="${id}"]`);
+  const row = list.querySelector(`.team-list-row--editing[data-id="${CSS.escape(id)}"]`);
   const input = row && row.querySelector('.team-edit-input');
   const name = input ? input.value.trim() : '';
   if (!name) {
@@ -124,9 +135,10 @@ async function rename(id) {
     return;
   }
   const button = list.querySelector('.team-entry-save[data-save="' + CSS.escape(id) + '"]');
+  if (!canSave(button)) return;
   setButtonLoading(button, true);
   try {
-    await setSiteTeamEntryFn({ kind: 'honor', name, id });
+    confirmSaved(await setSiteTeamEntryFn({ kind: 'honor', name, id }));
     editingId = null;
     showToast(() => __('team.updated'), 'success');
     await loadTeam();
@@ -139,6 +151,8 @@ async function rename(id) {
 
 async function remove(id) {
   const mod = mods.find((m) => m.id === id);
+  const actor = auth?.currentUser?.uid;
+  if (!actor) return;
   if (
     !(await confirmDialog(() => ({
       title: __('team.remove'),
@@ -149,9 +163,10 @@ async function remove(id) {
   )
     return;
   const button = el('team-mod-list')?.querySelector('.team-entry-del[data-id="' + CSS.escape(id) + '"]');
+  if (actor !== auth.currentUser?.uid || !canSave(button)) return;
   setButtonLoading(button, true);
   try {
-    await deleteSiteTeamEntryFn({ id });
+    confirmSaved(await deleteSiteTeamEntryFn({ kind: 'honor', id }));
     showToast(() => __('team.removed'), 'success');
     await loadTeam();
   } catch (error) {

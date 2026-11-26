@@ -1,7 +1,7 @@
 import * as dom from '../../utils/dom.js';
 import { setButtonLoading } from '../../utils/loading.js';
 import { getModelImageUploadUrlFn, auth } from '../../core/firebase.js';
-import { showToast, __, getAuthToken } from '../../utils/ui.js';
+import { showToast, __, getAuthToken, userErrorMessage } from '../../utils/ui.js';
 import { openDrawer } from '../shell.js';
 import { setAttributionsOutOfSync } from '../admin.js';
 import { CURATOR_API_URL, MODEL_TYPE, CHAT_TEMPLATES } from './constants.js';
@@ -280,18 +280,26 @@ export function createModelForm({ state, refresh: fetchFullModelsData }) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `API operation failed with status ${response.status}`);
+        const code = {
+          400: 'invalid-argument',
+          401: 'unauthenticated',
+          403: 'permission-denied',
+          404: 'not-found',
+          409: 'aborted',
+          429: 'resource-exhausted',
+          503: 'unavailable',
+        }[response.status];
+        throw Object.assign(new Error('Curator rejected the model save'), { code });
       }
 
-      const result = await response.json();
+      if ((await response.json())?.success !== true) throw new Error('Unconfirmed model save');
       showToast(() => __('models.saved'), 'success');
       if (isOffline) setAttributionsOutOfSync();
       resetModelForm();
       await fetchFullModelsData();
     } catch (error) {
       console.error('[MODELS] Error saving model:', error);
-      showToast(() => __('system.error'), 'error');
+      showToast(() => userErrorMessage(error), 'error');
     } finally {
       setButtonLoading(dom.modelSubmitBtn, false);
       dom.modelSubmitBtn.textContent = __(state.editingId ? 'models.update_btn' : 'models.save_btn');

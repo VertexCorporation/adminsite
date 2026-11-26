@@ -183,10 +183,13 @@ async function handleAssignSubmit(e) {
   }
 
   const btn = document.getElementById('assign-subscription-btn');
+  if (btn.disabled || getEffectivePanelLevel('subscriptions.assign') !== 'write') return;
   setButtonLoading(btn, true);
 
   try {
     const data = await grantPremium({ email, displayName, tier, expiresAt: expiresAt.toISOString() });
+    if (data?.success !== true)
+      throw Object.assign(new Error('Unconfirmed subscription result'), { code: 'functions/internal' });
     showToast(() => __('subs.assign_success'), 'success');
     dom.subscriptionForm.reset();
     resetDefaultDates();

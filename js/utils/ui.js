@@ -56,18 +56,11 @@ export function simpleHash(str) {
  */
 export async function getAuthToken(auth) {
   const user = auth.currentUser;
-  if (!user) {
-    throw new Error('No user is signed in. Cannot get auth token.');
-  }
-  try {
-    // Force refresh the token to ensure it's not expired.
-    return await user.getIdToken(true);
-  } catch (error) {
-    console.error('[AUTH] Error getting ID token:', error);
-    showToast(() => __('auth.session_expired'), 'error');
-    auth.signOut(); // Sign out the user on token failure
-    throw new Error('Failed to get a valid auth token.');
-  }
+  if (!user) throw Object.assign(new Error('No active session'), { code: 'auth/user-token-expired' });
+  const token = await user.getIdToken();
+  if (auth.currentUser?.uid !== user.uid)
+    throw Object.assign(new Error('Session changed'), { code: 'auth/user-token-expired' });
+  return token;
 }
 /** Keep remote diagnostics out of user-facing errors. */
 export function userErrorMessage(error, context = '') {
