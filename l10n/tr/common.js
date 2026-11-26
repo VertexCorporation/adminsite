@@ -176,6 +176,7 @@ export default {
   'chat.desc_ph': 'Kanalın amacı',
   'common.loading': 'Yükleniyor',
   'subs.required': 'E-posta, seviye ve bitiş tarihi gerekli.',
+  'subs.invalid_email': 'Cortex hesabının e-posta adresini gir.',
   'subs.invalid_date': 'Geçerli bir bitiş tarihi gir.',
   'auth.denied':
     'Bu konsola erişim yetkin bulunmuyor. Yetkin olduğunu düşünüyorsan Vertex yöneticileriyle iletişime geç.',

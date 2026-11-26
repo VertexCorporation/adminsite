@@ -172,7 +172,10 @@ async function handleAssignSubmit(e) {
   const expiresAt = new Date(document.getElementById('sub-end').value);
   const now = new Date();
 
-  if (!email || !tier || isNaN(expiresAt)) return;
+  if (!email || !tier || Number.isNaN(expiresAt.getTime())) {
+    showToast(() => __('subs.required'), 'error');
+    return;
+  }
   if (expiresAt <= now) {
     showToast(() => __('subs.expires_past'), 'error');
     return;
