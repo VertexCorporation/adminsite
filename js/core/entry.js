@@ -105,6 +105,17 @@ function startConsole(blocking = false) {
   // does not evaluate feature modules before their HTML has been mounted.
   const preloadManifest = document.querySelector('meta[name="vertex-preloads"]')?.content;
   const modules = preloadManifest ? JSON.parse(preloadManifest) : ['./bootstrap.js', './initializer.js', '../main.js'];
+  if (blocking) {
+    const panel = new URLSearchParams(location.search).get('panel') || '';
+    const feature =
+      panel.startsWith('origin.') || panel === 'models.origin'
+        ? 'origin'
+        : panel === 'legal.documents'
+          ? 'legal'
+          : null;
+    const workspaceManifest = document.querySelector('meta[name="vertex-workspace-preloads"]')?.content;
+    if (feature && workspaceManifest) modules.push(...(JSON.parse(workspaceManifest)[feature] || []));
+  }
   for (const module of modules) {
     const link = document.createElement('link');
     link.rel = 'modulepreload';
