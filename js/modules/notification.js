@@ -313,6 +313,7 @@ async function handleNotificationFormSubmit(e) {
   const submitBtn = document.getElementById('submit-notification-btn');
   setButtonLoading(submitBtn, true);
 
+  const validationError = (key) => Object.assign(new Error(), { validationKey: key });
   try {
     const titleKey = document.getElementById('notification-title-key').value.trim();
     const bodyKey = document.getElementById('notification-body-key').value.trim();
@@ -327,36 +328,40 @@ async function handleNotificationFormSubmit(e) {
       try {
         dataPayload = JSON.parse(dataPayloadStr);
       } catch {
-        throw new Error(__('notif.json_error'));
+        throw validationError('notif.json_error');
       }
     }
+
+    if (!dataPayload || typeof dataPayload !== 'object' || Array.isArray(dataPayload))
+      throw validationError('notif.json_error');
 
     if (titleKey && bodyKey) {
       payload = { dataPayload, notification_title_key: titleKey, notification_body_key: bodyKey };
     } else if (fallbackTitle && fallbackBody) {
       payload = { notification: { title: fallbackTitle, body: fallbackBody }, data: dataPayload };
     } else {
-      throw new Error(__('notif.content_required'));
+      throw validationError('notif.content_required');
     }
 
     const target = { type: targetType };
     if (targetType === 'SINGLE_USER') {
       target.uid = document.getElementById('notification-target-uid').value.trim();
-      if (!target.uid) throw new Error(__('notif.uid_required'));
+      if (!target.uid) throw validationError('notif.uid_required');
     } else if (targetType === 'SUBSCRIPTION_LEVEL') {
       const tiers = ['free', 'plus', 'pro', 'ultra'];
       target.type = 'SUBSCRIPTION_TIER';
       target.tier = tiers[Number(document.getElementById('notification-target-level').value)];
-      if (!target.tier) throw new Error(__('notif.tier_required'));
+      if (!target.tier) throw validationError('notif.tier_required');
     }
 
     const isScheduled = dom.notificationScheduleSwitch.checked;
     let scheduleTimeISO = null;
     if (isScheduled) {
       const localTimeValue = document.getElementById('notification-schedule-time').value;
-      if (!localTimeValue) throw new Error(__('notif.time_required'));
+      if (!localTimeValue) throw validationError('notif.time_required');
       const scheduledDate = new Date(localTimeValue);
-      if (scheduledDate <= new Date()) throw new Error(__('notif.time_future'));
+      if (!Number.isFinite(scheduledDate.getTime()) || scheduledDate.getTime() <= Date.now() + 60000)
+        throw validationError('notif.time_future');
       scheduleTimeISO = scheduledDate.toISOString();
     }
 
@@ -381,7 +386,12 @@ async function handleNotificationFormSubmit(e) {
     } catch (error) {
       if (epoch !== notificationEpoch || auth?.currentUser?.uid !== uid) return;
       if (
-        ['functions/invalid-argument', 'functions/permission-denied', 'functions/unauthenticated'].includes(error.code)
+        [
+          'functions/invalid-argument',
+          'functions/permission-denied',
+          'functions/unauthenticated',
+          'functions/failed-precondition',
+        ].includes(error.code)
       )
         clearDelivery();
       else deliveryNotice(__('notif.uncertain'), true);
@@ -395,6 +405,22 @@ async function handleNotificationFormSubmit(e) {
     if (deploymentCapabilities.notificationStatus && result.data?.queued) {
       statusPollCount = 0;
       void checkDeliveryStatus(requestId, true);
+    } else if (
+      !isScheduled &&
+      Number.isInteger(result.data?.successCount) &&
+      Number.isInteger(result.data?.failureCount)
+    ) {
+      const { successCount, failureCount } = result.data;
+      const msg =
+        successCount === 0 && failureCount === 0
+          ? __('notification.ui.fcmAcceptedNoDeviceTokensCheckTokens')
+          : formatMessage('notification.ui.fcmAcceptedTokensAndRejectedDeviceDisplay', {
+              value0: successCount,
+              value1: failureCount,
+            });
+      clearDelivery();
+      deliveryNotice(msg);
+      showToast(msg, successCount === 0 || failureCount > 0 ? 'warning' : 'success');
     } else {
       // Legacy backend compatibility. Without a queued status record,
       // FCM counts cannot demonstrate actual device display.
@@ -404,8 +430,8 @@ async function handleNotificationFormSubmit(e) {
     handleScheduleSwitchChange();
   } catch (error) {
     if (epoch !== notificationEpoch || auth?.currentUser?.uid !== uid) return;
-    console.error('[CLIENT] Error submitting notification:', error);
-    showToast(() => (deliveryUncertain ? __('notif.uncertain') : userErrorMessage(error)), 'error');
+    if (error.validationKey) showToast(() => __(error.validationKey), 'error');
+    else showToast(() => (deliveryUncertain ? __('notif.uncertain') : userErrorMessage(error)), 'error');
   } finally {
     if (epoch !== notificationEpoch || auth?.currentUser?.uid !== uid) return;
     submissionPending = false;

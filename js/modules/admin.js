@@ -499,13 +499,14 @@ async function handleVertexStatusToggle(e) {
  */
 async function handleManualVerifySubmit(e) {
   e.preventDefault();
-  const identifier = document.getElementById('verify-user-id').value;
+  const identifier = document.getElementById('verify-user-id').value.trim();
   const btn = document.querySelector('#verify-user-form button[type="submit"]');
+  if (btn.disabled || !identifier || getEffectivePanelLevel('system.manualVerify') !== 'write') return;
   setButtonLoading(btn, true);
   btn.innerHTML = `<span data-i18n="system.saving">${__('system.saving')}</span>`;
 
   try {
-    const result = await verifyUserEmailFn({ identifier });
+    await verifyUserEmailFn({ identifier });
     showToast(() => __('system.verify_success'), 'success');
     document.getElementById('verify-user-form').reset();
   } catch (error) {

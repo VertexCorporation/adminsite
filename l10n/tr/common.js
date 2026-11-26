@@ -198,7 +198,7 @@ export default {
   'notif.uid_required': 'Kullanıcı kimliği gerekli.',
   'notif.tier_required': 'Geçerli abonelik seviyesi seç.',
   'notif.time_required': 'Planlama tarihi ve saati seç.',
-  'notif.time_future': 'Planlanan tarih gelecekte olmalı.',
+  'notif.time_future': 'Bildirim saatini en az bir dakika sonrasına ayarla.',
   'notif.success': 'Bildirim işlemi tamamlandı.',
   'notif.cancelled': 'Planlanan bildirim iptal edildi.',
   'common.choose_file': 'Dosya seç',

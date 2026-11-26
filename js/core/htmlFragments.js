@@ -11,18 +11,18 @@ export async function loadHtmlFragments(root = document) {
       slots.map(async (slot) => {
         const name = slot.dataset.fragment;
         if (!/^[a-z]+(?:\/[a-z-]+)*$/.test(name)) throw new Error('Invalid HTML fragment name.');
-        let html = slot.innerHTML;
+        let content = slot.content;
         if (slot.dataset.embeddedFragment !== 'true') {
           const response = await fetch(new URL(name + '.html', fragmentRoot), { signal: controller.signal });
           if (!response.ok) throw new Error('HTML fragment unavailable: ' + name);
-          html = await response.text();
+          const template = document.createElement('template');
+          template.innerHTML = await response.text();
+          content = template.content;
         }
-        const template = document.createElement('template');
-        template.innerHTML = html;
-        if (!template.content.childElementCount || template.content.querySelector('script')) {
+        if (!content.childElementCount || content.querySelector('script')) {
           throw new Error('Invalid HTML fragment: ' + name);
         }
-        return { slot, content: template.content };
+        return { slot, content };
       }),
     );
     // Do not mount a partially fetched application or start its controllers.

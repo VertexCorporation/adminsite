@@ -232,12 +232,20 @@ export function openCertificates(person, refresh, anchor = document.activeElemen
       );
     } catch (error) {
       selected = undefined;
+      // The Firebase SDK reports callable codes without an HTTP status. Lock
+      // only if the server might have accepted the issuance request.
+      const rejected = [
+        'invalid-argument',
+        'permission-denied',
+        'unauthenticated',
+        'failed-precondition',
+        'not-found',
+        'already-exists',
+        'aborted',
+      ];
+      if (!rejected.some((code) => error.code === `functions/${code}`)) unresolved.add(key);
+      pending.delete(key);
       if (alive && !historyOpen) render();
-      if (
-        !error.httpStatus ||
-        ['functions/internal', 'functions/deadline-exceeded', 'functions/unavailable'].includes(error.code)
-      )
-        unresolved.add(key);
       showToast(() => userErrorMessage(error), 'error');
     } finally {
       pending.delete(key);

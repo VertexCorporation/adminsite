@@ -6,16 +6,17 @@ const vm = require('node:vm');
 
 function harness(respond, fragmentPath = null, embeddedHTML = null) {
     const mounted = [], requests = [];
+    const parse = html => ({ html, childElementCount: html.trim() ? 1 : 0,
+        querySelector: selector => selector === 'script' && html.includes('<script') });
     const slots = ['navigation', 'panels/models'].map(name => ({
-        dataset: {fragment: name, ...(embeddedHTML===null?{}:{embeddedFragment:'true'})}, innerHTML: embeddedHTML, replaceWith(content) {mounted.push(content.html);}
+        dataset: {fragment: name, ...(embeddedHTML===null?{}:{embeddedFragment:'true'})}, content: embeddedHTML === null ? null : parse(embeddedHTML), replaceWith(content) {mounted.push(content.html);}
     }));
     const document = {
         querySelector: () => fragmentPath ? {content: fragmentPath} : null,
         querySelectorAll: () => slots,
         createElement: () => ({
             set innerHTML(html) {
-                this.content = {html, childElementCount: html.trim() ? 1 : 0,
-                    querySelector: selector => selector === 'script' && html.includes('<script')};
+                this.content = parse(html);
             }
         })
     };

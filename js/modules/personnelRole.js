@@ -85,21 +85,25 @@ export async function mountPersonnelRole(host, { user, uid, application, prefix 
         }));
         if (!confirmed || !current() || !isPanelAdmin()) return;
         setButtonLoading(button, true);
-        await consolePeopleCall('updateConsolePersonnel', {
+        const { data } = await consolePeopleCall('updateConsolePersonnel', {
           uid: user.uid,
           department: user.department,
           role,
           expectedVersion: user.authzVersion || 0,
         });
-        if (!current()) return;
+        if (!current() || !isPanelAdmin()) return;
+        if (!Number.isSafeInteger(data?.authzVersion))
+          throw Object.assign(new Error('Unconfirmed personnel role update'), { code: 'functions/internal' });
+        const fresh = { ...user, role, authzVersion: data.authzVersion };
         showToast(() => __('catalog.role_saved'), 'success');
         document.dispatchEvent(new CustomEvent('vertex:personnel-changed'));
-        const fresh = (await consolePeopleCall('getConsoleUser', { uid: user.uid })).data.user;
-        if (!current() || !isPanelAdmin()) return;
         if (onSaved) onSaved(fresh);
         else void mountPersonnelRole(host, { user: fresh, application, prefix });
       } catch (error) {
-        if (current()) showToast(() => userErrorMessage(error), 'error');
+        if (!current()) return;
+        showToast(() => userErrorMessage(error), 'error');
+        if (error.details?.reason === 'personnel-version-conflict')
+          void mountPersonnelRole(host, { uid: user.uid, application, prefix, onSaved });
       } finally {
         pending = false;
         if (current() && button.isConnected) {
