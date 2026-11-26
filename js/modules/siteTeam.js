@@ -166,7 +166,7 @@ async function remove(id) {
   if (actor !== auth.currentUser?.uid || !canSave(button)) return;
   setButtonLoading(button, true);
   try {
-    confirmSaved(await deleteSiteTeamEntryFn({ kind: 'honor', id }));
+    confirmSaved(await deleteSiteTeamEntryFn({ id }));
     showToast(() => __('team.removed'), 'success');
     await loadTeam();
   } catch (error) {
