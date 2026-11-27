@@ -90,7 +90,10 @@ html = html.replace('src="js/core/entry.js"', `src="/${prefix}/login-entry.js"`)
 const imports = {};
 for (const file of files.filter((file) => file.endsWith('.js'))) imports['/' + file] = '/' + prefix + '/' + file;
 const preloadURLs = modules.preloads.map((file) => '/' + prefix + '/' + file);
-const manifest = `<meta name="vertex-preloads" content='${JSON.stringify(preloadURLs)}'><meta name="vertex-release" content="${release}"><meta name="vertex-bootstrap" content="/${prefix}/compiled/js/core/bootstrap.js"><meta name="vertex-fragments" content="/${prefix}/partials/"><script type="importmap">${JSON.stringify({ imports })}</script>`;
+const workspacePreloads = Object.fromEntries(
+  Object.entries(modules.workspacePreloads).map(([id, files]) => [id, files.map((file) => '/' + prefix + '/' + file)]),
+);
+const manifest = `<meta name="vertex-workspace-preloads" content='${JSON.stringify(workspacePreloads)}'><meta name="vertex-preloads" content='${JSON.stringify(preloadURLs)}'><meta name="vertex-release" content="${release}"><meta name="vertex-bootstrap" content="/${prefix}/compiled/js/core/bootstrap.js"><meta name="vertex-fragments" content="/${prefix}/partials/"><script type="importmap">${JSON.stringify({ imports })}</script>`;
 html = html
   .replace('</head>', manifest + '</head>')
   .replace(/(src|href)="((?:js|css)\/[^"?]+)(?:\?[^" ]*)?"/g, (_, attr, file) => `${attr}="${prefix}/${file}"`);

@@ -44,6 +44,14 @@ for (const file of ['index.html', 'customer-activate.html']) {
     if (map['/' + module] !== '/' + manifest.prefix + '/' + module) throw Error('Missing release import: ' + module);
 }
 const builtHTML = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+const workspacePreloads = Object.fromEntries(
+  Object.entries(modules.workspacePreloads).map(([id, files]) => [
+    id,
+    files.map((file) => '/' + manifest.prefix + '/' + file),
+  ]),
+);
+if (!builtHTML.includes(`name="vertex-workspace-preloads" content='${JSON.stringify(workspacePreloads)}'`))
+  throw Error('Stale workspace preload manifest');
 const preloadURLs = modules.preloads.map((file) => '/' + manifest.prefix + '/' + file);
 if (!builtHTML.includes(`name="vertex-preloads" content='${JSON.stringify(preloadURLs)}'`))
   throw Error('Stale console preload manifest');

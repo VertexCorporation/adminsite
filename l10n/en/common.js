@@ -174,6 +174,7 @@ export default {
   'chat.desc_ph': 'Channel purpose',
   'common.loading': 'Loading',
   'subs.required': 'Email, tier and end date are required.',
+  'subs.invalid_email': 'Enter the email address of the Cortex account.',
   'subs.invalid_date': 'Enter a valid end date.',
   'auth.denied':
     'You do not have access to this console. If you believe you should, contact the Vertex administrators.',

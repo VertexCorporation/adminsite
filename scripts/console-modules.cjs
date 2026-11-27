@@ -28,6 +28,16 @@ function consoleModules(root) {
     if (['js/core/bootstrap.js', 'js/core/initializer.js', 'js/main.js'].includes(output.entryPoint)) visit(name);
   const files = result.outputFiles;
   files.preloads = [...visited];
+  // The slowest deep links can fetch their controller while Auth starts.
+  // Keep this list small so ordinary startup does not fetch unrelated tools.
+  files.workspacePreloads = {};
+  for (const id of ['origin', 'legal']) {
+    const output = Object.keys(outputs).find((name) => outputs[name].entryPoint === `js/modules/${id}.js`);
+    if (!output) throw Error(`Missing deferred workspace bundle: ${id}`);
+    visit(output);
+    files.workspacePreloads[id] = [...visited].filter((name) => !files.preloads.includes(name));
+    for (const name of files.workspacePreloads[id]) visited.delete(name);
+  }
   return files;
 }
 module.exports = { consoleModules };

@@ -79,7 +79,9 @@ const server = http.createServer((req, res) => {
         assert.equal(sdk.length, 0, 'idle signed-out visit must not load private console SDKs');
         assert.equal(await page.evaluate(() => landingTest.activations), 0);
         assert(await page.locator('#login-container').isVisible());
-        if (mode === 'email' || mode === 'signed-out-returning' || mode === 'startup-error') {
+        if (mode === 'startup-error') {
+          await page.locator('#google-login-btn').click();
+        } else if (mode === 'email' || mode === 'signed-out-returning') {
           await page.locator('#email').fill('example@example.invalid');
           await page.locator('#password').fill('example');
           await page.locator('#login-form').evaluate(form => form.requestSubmit());
