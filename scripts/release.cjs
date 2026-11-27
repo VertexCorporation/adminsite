@@ -52,7 +52,8 @@ html = html.replace(/(<template id="console-styles">)([\s\S]*?)(<\/template>)/, 
   const optional = content.replace(/<link rel="stylesheet" href="css\/[^\"]+"\s*\/>/g, '');
   return open + optional + `<link rel="stylesheet" href="/${prefix}/console.css" />` + close;
 });
-const copy = require('./login-copy.cjs')(root);
+const loginCopy = require('./login-copy.cjs');
+const copy = loginCopy(root);
 const escape = (value) =>
   String(value).replace(
     /[&<>"']/g,
@@ -77,13 +78,36 @@ const criticalCSS = buildSync({
 }).outputFiles[0].text;
 // No stylesheet request chain delays the sign-in surface's first paint.
 html = html.replace('<link rel="stylesheet" href="css/login.css" />', `<style>${criticalCSS}</style>`);
+// Only ship the text used before the private console starts. Derive form keys
+// from its markup so new sign-in controls automatically join both locales.
+const loginMarkup = html.match(/<div id="login-container"[\s\S]*?<div id="admin-panel"/)?.[0];
+if (!loginMarkup) throw Error('Missing login markup');
+const loginKeys = new Set([
+  ...Array.from(loginMarkup.matchAll(/data-i18n(?:-[a-z-]+)?="([^"]+)"/g), (match) => match[1]),
+  'page.title',
+  'init.error',
+  'init.retry',
+  'common.retry',
+]);
+function entryCopy(dictionary) {
+  return Object.fromEntries(
+    [...loginKeys].map((key) => {
+      if (typeof dictionary[key] !== 'string') throw Error('Missing login translation: ' + key);
+      return [key, dictionary[key]];
+    }),
+  );
+}
 buildSync({
   entryPoints: [path.join(root, 'js/core/entry.js')],
   bundle: true,
   minify: true,
   format: 'esm',
   outfile: path.join(out, prefix, 'login-entry.js'),
-  define: { 'import.meta.url': 'entryModuleURL' },
+  define: {
+    'import.meta.url': 'entryModuleURL',
+    COMPILED_LOGIN: 'true',
+    LOGIN_COPY: JSON.stringify({ tr: entryCopy(copy), en: entryCopy(loginCopy(root, 'en')) }),
+  },
   banner: { js: "const entryModuleURL = new URL('./js/core/entry.js', import.meta.url).href;" },
 });
 html = html.replace('src="js/core/entry.js"', `src="/${prefix}/login-entry.js"`);
