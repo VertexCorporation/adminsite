@@ -110,7 +110,10 @@ buildSync({
   },
   banner: { js: "const entryModuleURL = new URL('./js/core/entry.js', import.meta.url).href;" },
 });
-html = html.replace('src="js/core/entry.js"', `src="/${prefix}/login-entry.js"`);
+// Discover the entry before downloading the embedded workspace templates.
+const entryTag = '<script type="module" src="js/core/entry.js"></script>';
+if (!html.includes(entryTag)) throw Error('Missing console entry');
+html = html.replace(entryTag, '');
 const imports = {};
 for (const file of files.filter((file) => file.endsWith('.js'))) imports['/' + file] = '/' + prefix + '/' + file;
 const preloadURLs = modules.preloads.map((file) => '/' + prefix + '/' + file);
@@ -118,8 +121,28 @@ const workspacePreloads = Object.fromEntries(
   Object.entries(modules.workspacePreloads).map(([id, files]) => [id, files.map((file) => '/' + prefix + '/' + file)]),
 );
 const manifest = `<meta name="vertex-workspace-preloads" content='${JSON.stringify(workspacePreloads)}'><meta name="vertex-preloads" content='${JSON.stringify(preloadURLs)}'><meta name="vertex-release" content="${release}"><meta name="vertex-bootstrap" content="/${prefix}/compiled/js/core/bootstrap.js"><meta name="vertex-fragments" content="/${prefix}/partials/"><script type="importmap">${JSON.stringify({ imports })}</script>`;
+// A returning visit can fetch its critical stylesheet and security SDKs while
+// the parser reads the private workspace templates. No SDK executes here.
+const returningHints = `<script>(() => {
+  try {
+    if (localStorage.getItem('vertexConsoleSession') !== 'active') return;
+    function preload(as, href) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = as;
+      link.href = href;
+      document.head.append(link);
+    }
+    preload('style', '/${prefix}/console.css');
+    for (const service of ['app', 'auth', 'functions', 'app-check'])
+      preload('script', 'https://www.gstatic.com/firebasejs/11.0.0/firebase-' + service + '-compat.js');
+  } catch {}
+})();</script>`;
 html = html
-  .replace('</head>', manifest + '</head>')
+  .replace(
+    '</head>',
+    manifest + returningHints + `<script type="module" src="/${prefix}/login-entry.js"></script></head>`,
+  )
   .replace(/(src|href)="((?:js|css)\/[^"?]+)(?:\?[^" ]*)?"/g, (_, attr, file) => `${attr}="${prefix}/${file}"`);
 // Static workspace markup is inert until bootstrap mounts it. Delivering the
 // same release's templates together avoids a waterfall of fragment requests.
