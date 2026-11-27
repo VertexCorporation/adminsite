@@ -21,7 +21,12 @@ try {
 } catch {
   returning = true; // Preserve automatic session recovery when storage is restricted.
 }
-const messages = lang === 'en' ? { ...en, ...enIndex } : { ...tr, ...trIndex };
+const messages =
+  typeof COMPILED_LOGIN !== 'undefined' && COMPILED_LOGIN
+    ? LOGIN_COPY[lang]
+    : lang === 'en'
+      ? { ...en, ...enIndex }
+      : { ...tr, ...trIndex };
 document.documentElement.lang = lang;
 document.title = messages['page.title'];
 for (const node of login.querySelectorAll('[data-i18n]')) node.textContent = messages[node.dataset.i18n];
